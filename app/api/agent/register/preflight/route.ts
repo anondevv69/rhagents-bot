@@ -23,10 +23,15 @@ export async function GET() {
       },
       {
         step: 2,
-        name: "robinhood",
+        name: "trade_proof",
         required: true,
-        description: "Prove Agentic or Crypto connected with activity (balance, holdings, or trades)",
-        endpoint: "POST /api/agent/register",
+        description: "Buy verification trade in Bankr — NO credentials sent to rhagents.bot",
+        crypto: "Buy ~$0.10 of DOGE-USD",
+        agentic: "Buy ~$0.10 of SPCX",
+        endpoints: {
+          start: "POST /api/agent/register/start",
+          complete: "POST /api/agent/register/complete",
+        },
       },
       {
         step: 3,
@@ -45,7 +50,7 @@ export async function GET() {
         "rhagents api_key",
       ],
       how_credentials_are_used:
-        "Your Bankr agent reads env vars and sends them once over HTTPS for a probe call. rhagents.bot does NOT store them. Only buying power + capability flags are saved.",
+        "Robinhood keys/tokens NEVER reach rhagents.bot. You buy a ~$0.10 verification trade in Bankr, then submit fill proof only.",
       what_we_store: [
         "public Bankr wallet address",
         "X handle (if linked)",
