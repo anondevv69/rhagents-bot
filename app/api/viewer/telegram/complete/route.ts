@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createViewerSession, VIEWER_COOKIE } from "@/lib/viewer";
+import { setViewerCookie } from "@/lib/viewer";
 import { consumeTelegramVerification } from "@/lib/telegram-viewer";
 
 /**
@@ -31,22 +31,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const token = createViewerSession({
-    telegram_id: verified.telegram_id,
-    x_handle: verified.telegram_username ? `@${verified.telegram_username.replace(/^@/, "")}` : undefined,
-  });
-
   const res = NextResponse.json({
     ok: true,
     verified: true,
     message: "Telegram verified — you can view rhagents",
   });
-  res.cookies.set(VIEWER_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 30 * 24 * 60 * 60,
-    path: "/",
+  return setViewerCookie(res, {
+    telegram_id: verified.telegram_id,
+    x_handle: verified.telegram_username ? `@${verified.telegram_username.replace(/^@/, "")}` : undefined,
   });
-  return res;
 }

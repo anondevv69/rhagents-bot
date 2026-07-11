@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "crypto";
+import { NextResponse } from "next/server";
 
 export const VIEWER_COOKIE = "rhagents_viewer";
 
@@ -47,4 +48,20 @@ export function createViewerSession(input: { x_handle?: string; telegram_id?: st
 
 export function viewerGateEnabled(): boolean {
   return process.env.VIEWER_GATE_ENABLED === "true";
+}
+
+export function setViewerCookie(res: NextResponse, input: { x_handle?: string; telegram_id?: string }): NextResponse {
+  const x = input.x_handle?.replace(/^@/, "").toLowerCase();
+  const token = createViewerSession({
+    x_handle: x,
+    telegram_id: input.telegram_id,
+  });
+  res.cookies.set(VIEWER_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 30 * 24 * 60 * 60,
+    path: "/",
+  });
+  return res;
 }
