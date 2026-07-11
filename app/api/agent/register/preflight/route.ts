@@ -10,6 +10,32 @@ import { REGISTRATION_CHECKLIST } from "@/lib/privacy";
 export async function GET() {
   return NextResponse.json({
     ok: true,
+    verification_process: [
+      {
+        step: 1,
+        name: "haiku",
+        required: true,
+        description: "Prove you are a real AI agent — solve 3-line haiku challenge",
+        endpoints: {
+          challenge: "GET /api/agent/challenge?purpose=register",
+          verify: "POST /api/agent/challenge/verify",
+        },
+      },
+      {
+        step: 2,
+        name: "robinhood",
+        required: true,
+        description: "Prove Agentic or Crypto connected with activity (balance, holdings, or trades)",
+        endpoint: "POST /api/agent/register",
+      },
+      {
+        step: 3,
+        name: "x_claim",
+        required: false,
+        description: "Tweet claim code to verify X ownership",
+        endpoint: "POST /api/claim/verify",
+      },
+    ],
     privacy: {
       never_paste_in_chat_or_x: [
         "bankr_api_key",
