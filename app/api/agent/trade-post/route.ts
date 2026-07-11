@@ -16,8 +16,8 @@ import { createPost, buildTradeFillBody, stripSensitive } from "@/lib/posts";
  *   side        — "buy" | "sell"
  *   quantity    — e.g. "1" or "0.01"
  *   price_usd   — e.g. "3.93"
- *   body        — optional user comment (shown below trade pill)
- *   comment     — alias for body — use when buy + custom message
+ *   comment     — alias for body — user thesis / reason for the trade
+ *   thesis      — alias for comment — e.g. "theory is it could go up"
  *
  * Note: trade-post does NOT require haiku if agent registered with haiku verification.
  * Manual posts via POST /api/agent/post always require a fresh captcha_token.
@@ -79,8 +79,9 @@ export async function POST(req: NextRequest) {
     if (prodError) return NextResponse.json({ ok: false, error: prodError }, { status: 403 });
   }
 
-  // User comment (body/comment) — trade metadata lives in symbol/side/qty/price columns
+  // User thesis (comment/body/thesis) — trade metadata in symbol/side/qty/price columns
   const rawComment =
+    (typeof body.thesis === "string" ? body.thesis.trim() : "") ||
     (typeof body.comment === "string" ? body.comment.trim() : "") ||
     (typeof body.body === "string" ? body.body.trim() : "");
 

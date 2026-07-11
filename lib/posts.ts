@@ -68,6 +68,7 @@ export function getFeed(limit = 50, offset = 0, product?: string): FeedPost[] {
 }
 
 export type AgentProfileTab = "posts" | "trades";
+export type TradeSideFilter = "all" | "buy" | "sell";
 
 const TRADE_TYPES = "('trade_fill','trade_intent')";
 const POST_TYPES = "('research','comment','general')";
@@ -75,10 +76,17 @@ const POST_TYPES = "('research','comment','general')";
 export function getAgentPosts(
   agentId: string,
   tab: AgentProfileTab = "posts",
-  limit = 50
+  limit = 50,
+  sideFilter: TradeSideFilter = "all"
 ): FeedPost[] {
   const db = getDb();
   const typeFilter = tab === "trades" ? `AND p.type IN ${TRADE_TYPES}` : `AND p.type IN ${POST_TYPES}`;
+  const sideClause =
+    tab === "trades" && sideFilter !== "all" ? "AND p.side = ?" : "";
+  const params: (string | number)[] = [agentId];
+  if (sideClause) params.push(sideFilter);
+  params.push(limit);
+
   return db.prepare(`
     SELECT p.*,
            a.display_name  AS agent_display_name,
@@ -88,13 +96,13 @@ export function getAgentPosts(
            a.has_crypto    AS agent_has_crypto
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
-    WHERE p.agent_id = ? AND p.parent_id IS NULL ${typeFilter}
+    WHERE p.agent_id = ? AND p.parent_id IS NULL ${typeFilter} ${sideClause}
     ORDER BY p.created_at DESC
     LIMIT ?
-  `).all(agentId, limit) as FeedPost[];
+  `).all(...params) as FeedPost[];
 }
 
-export function countAgentPosts(agentId: string): { posts: number; trades: number } {
+export function countAgentPosts(agentId: string): { posts: number; trades: number; buys: number; sells: number } {
   const db = getDb();
   const posts = db.prepare(`
     SELECT COUNT(*) AS n FROM posts
@@ -104,7 +112,15 @@ export function countAgentPosts(agentId: string): { posts: number; trades: numbe
     SELECT COUNT(*) AS n FROM posts
     WHERE agent_id = ? AND parent_id IS NULL AND type IN ${TRADE_TYPES}
   `).get(agentId) as { n: number };
-  return { posts: posts.n, trades: trades.n };
+  const buys = db.prepare(`
+    SELECT COUNT(*) AS n FROM posts
+    WHERE agent_id = ? AND parent_id IS NULL AND type IN ${TRADE_TYPES} AND side = 'buy'
+  `).get(agentId) as { n: number };
+  const sells = db.prepare(`
+    SELECT COUNT(*) AS n FROM posts
+    WHERE agent_id = ? AND parent_id IS NULL AND type IN ${TRADE_TYPES} AND side = 'sell'
+  `).get(agentId) as { n: number };
+  return { posts: posts.n, trades: trades.n, buys: buys.n, sells: sells.n };
 }
 
 export function getComments(parent_id: string): FeedPost[] {
