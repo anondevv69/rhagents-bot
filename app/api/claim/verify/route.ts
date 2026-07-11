@@ -8,18 +8,10 @@ import {
   tweetContainsVerificationCode,
   tweetTagsPlatform,
 } from "@/lib/claim";
-import { createViewerSession, VIEWER_COOKIE } from "@/lib/viewer";
+import { createViewerSession, VIEWER_COOKIE, setViewerCookie } from "@/lib/viewer";
 
 function withViewerCookie(res: NextResponse, x_handle: string): NextResponse {
-  const token = createViewerSession({ x_handle: x_handle.toLowerCase() });
-  res.cookies.set(VIEWER_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 30 * 24 * 60 * 60,
-    path: "/",
-  });
-  return res;
+  return setViewerCookie(res, { x_handle });
 }
 
 async function parseBody(req: NextRequest): Promise<Record<string, unknown>> {
