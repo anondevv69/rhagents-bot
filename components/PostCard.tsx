@@ -1,5 +1,7 @@
+import Link from "next/link";
 import type { FeedPost } from "@/lib/posts";
 import { isAutoTradeBody } from "@/lib/posts";
+import { AgentAvatar } from "@/components/AgentAvatar";
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr + "Z").getTime();
@@ -28,20 +30,23 @@ export function PostCard({ post }: { post: FeedPost }) {
   const icon = TYPE_ICON[post.type] ?? "📡";
   const showTradePill = isTradePost(post) && !!post.symbol;
   const showComment = post.body && (!isTradePost(post) || !isAutoTradeBody(post.body));
+  const agentTradesHref = `/agent/${post.agent_id}?tab=trades`;
 
   return (
     <article className="post-card">
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-        <a href={`/agent/${post.agent_id}`} className="avatar" style={{
-          width: 36, height: 36, fontSize: 14,
-        }}>
-          {(name[0] ?? "?").toUpperCase()}
-        </a>
+        <AgentAvatar
+          name={name}
+          xHandle={xHandle}
+          agentId={post.agent_id}
+          size={36}
+          fontSize={14}
+        />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-            <a href={`/agent/${post.agent_id}`} style={{ fontWeight: 600, fontSize: 14 }}>
+            <Link href={`/agent/${post.agent_id}`} style={{ fontWeight: 600, fontSize: 14 }}>
               {name}
-            </a>
+            </Link>
             {xHandle && (
               <a
                 href={`https://x.com/${xHandle.replace(/^@/, "")}`}
@@ -64,27 +69,30 @@ export function PostCard({ post }: { post: FeedPost }) {
         </div>
 
         {(showTradePill || post.side) && (
-          <span className={`badge badge-${post.side ?? "buy"}`} style={{ flexShrink: 0 }}>
+          <Link href={agentTradesHref} className={`badge badge-${post.side ?? "buy"}`} style={{ flexShrink: 0, textDecoration: "none" }}>
             {post.side === "sell" ? "▼" : "▲"} {(post.side ?? "buy").toUpperCase()}
-          </span>
+          </Link>
         )}
       </div>
 
       {showTradePill && (
-        <div style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid var(--border)",
-          borderRadius: 8,
-          padding: "6px 12px",
-          marginBottom: showComment ? 10 : 0,
-          fontSize: 13,
-        }}>
-          <span style={{ fontWeight: 700, fontFamily: "monospace" }}>
-            <a href={`/symbol/${encodeURIComponent(post.symbol!)}`}>${post.symbol}</a>
-          </span>
+        <Link
+          href={agentTradesHref}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            padding: "6px 12px",
+            marginBottom: showComment ? 10 : 0,
+            fontSize: 13,
+            textDecoration: "none",
+            color: "inherit",
+          }}
+        >
+          <span style={{ fontWeight: 700, fontFamily: "monospace" }}>${post.symbol}</span>
           {post.price_usd && (
             <span style={{ color: "var(--muted)" }}>${post.price_usd}</span>
           )}
@@ -96,7 +104,7 @@ export function PostCard({ post }: { post: FeedPost }) {
               {post.product}
             </span>
           )}
-        </div>
+        </Link>
       )}
 
       {showComment ? (
@@ -117,9 +125,14 @@ export function PostCard({ post }: { post: FeedPost }) {
       ) : null}
 
       <div style={{ marginTop: 10, display: "flex", gap: 16, alignItems: "center" }}>
-        <a href={`/post/${post.id}`} style={{ color: "var(--muted)", fontSize: 12 }}>
+        <Link href={`/post/${post.id}`} style={{ color: "var(--muted)", fontSize: 12 }}>
           Reply
-        </a>
+        </Link>
+        {isTradePost(post) ? (
+          <Link href={agentTradesHref} style={{ color: "var(--muted)", fontSize: 12 }}>
+            View trades
+          </Link>
+        ) : null}
         <span style={{ color: "var(--muted)", fontSize: 12 }}>
           {post.upvotes > 0 ? `↑ ${post.upvotes}` : ""}
         </span>
