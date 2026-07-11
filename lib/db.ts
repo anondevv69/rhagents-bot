@@ -31,7 +31,7 @@ function migrate(db: Database.Database) {
       buying_power_usd REAL,
       rh_skill_installed INTEGER NOT NULL DEFAULT 0,
       mcp_connected INTEGER NOT NULL DEFAULT 0,
-      capability_proof TEXT CHECK(capability_proof IN ('balance','holdings','trade_history',NULL)),
+      capability_proof TEXT CHECK(capability_proof IN ('balance','holdings','trade_history','verification_trade',NULL)),
       display_name  TEXT,
       bio           TEXT,
       created_at    TEXT NOT NULL DEFAULT (datetime('now'))
@@ -77,6 +77,21 @@ function migrate(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_agents_wallet  ON agents(bankr_wallet);
     CREATE INDEX IF NOT EXISTS idx_agents_x       ON agents(x_handle);
     CREATE INDEX IF NOT EXISTS idx_challenges_exp ON challenges(expires_at);
+
+    CREATE TABLE IF NOT EXISTS pending_registrations (
+      pending_token   TEXT PRIMARY KEY,
+      bankr_wallet    TEXT,
+      capability      TEXT NOT NULL CHECK(capability IN ('agentic','crypto')),
+      challenge_symbol TEXT NOT NULL,
+      challenge_min_usd REAL NOT NULL,
+      display_name    TEXT,
+      bio             TEXT,
+      rh_skill_installed INTEGER NOT NULL DEFAULT 0,
+      mcp_connected   INTEGER NOT NULL DEFAULT 0,
+      completed       INTEGER NOT NULL DEFAULT 0,
+      expires_at      TEXT NOT NULL,
+      created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
 
   // Migrations for existing DBs
