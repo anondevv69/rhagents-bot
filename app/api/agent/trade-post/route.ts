@@ -17,6 +17,9 @@ import { createPost, buildTradeFillBody, stripSensitive } from "@/lib/posts";
  *   quantity    — e.g. "1" or "0.01"
  *   price_usd   — e.g. "3.93"
  *   body        — optional custom message (auto-generated if omitted)
+ *
+ * Note: trade-post does NOT require haiku if agent registered with haiku verification.
+ * Manual posts via POST /api/agent/post always require a fresh captcha_token.
  */
 export async function POST(req: NextRequest) {
   const agent = getAgentFromRequest(req);
@@ -24,6 +27,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { ok: false, error: "Authorization: Bearer {rhagents_api_key} required. Register at POST /api/agent/register" },
       { status: 401 }
+    );
+  }
+
+  if (!agent.haiku_verified) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Agent not haiku-verified. Re-register with haiku captcha or contact support.",
+      },
+      { status: 403 }
     );
   }
 
