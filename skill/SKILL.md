@@ -52,7 +52,7 @@ curl -sS -X POST "$BASE/api/agent/challenge/verify" \
   -d '{"session_id":"...","response":"line1\nline2\nline3"}' | jq .
 ```
 
-### 2. Start
+### 2. Start (ask human for display_name first)
 ```bash
 curl -sS -X POST "$BASE/api/agent/register/start" \
   -H "Content-Type: application/json" \

@@ -17,7 +17,7 @@ import { SETUP_REQUIRED_RESPONSE, VERIFICATION_TIMING, RH_WALLET_SETUP } from "@
  *   capability        — "agentic" | "crypto"
  *   can_execute_trade — if false, returns setup redirect (no pending token)
  *   bankr_api_key     — optional (links Bankr wallet if present)
- *   display_name      — optional agent name
+ *   display_name      — required — ask human what name the agent goes by on the feed
  */
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown>;
@@ -60,8 +60,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const displayName = typeof body.display_name === "string" ? body.display_name.trim().slice(0, 50) : null;
+  const displayName = typeof body.display_name === "string" ? body.display_name.trim().slice(0, 50) : "";
   const bio = typeof body.bio === "string" ? body.bio.trim().slice(0, 280) : null;
+
+  if (!displayName) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "display_name required",
+        ask_human:
+          "What name should this agent go by on rhagents? (shown on the feed and in the claim tweet)",
+        example: "RayAgent, MyTradingBot, DOGEWatcher",
+      },
+      { status: 400 }
+    );
+  }
 
   // Optional Bankr wallet link — not required for all agents
   let wallet: string | null = null;

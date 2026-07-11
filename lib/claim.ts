@@ -2,13 +2,25 @@
 
 export type ClaimStatus = "pending_claim" | "claimed";
 
+/** Official rhagents X account — tag this in claim tweets (https://x.com/rhagentdotbot) */
+export const PLATFORM_X_HANDLE = "rhagentdotbot";
+
 export function buildVerificationCode(): string {
   const hex = Math.random().toString(16).slice(2, 6).toUpperCase();
   return `RHAG-${hex}`;
 }
 
-export function buildClaimTweetText(code: string, agentId: string, baseUrl: string): string {
-  return `Claiming my AI agent on @rhagentsbot #${code}\n\nAgent: ${agentId}\n${baseUrl}/claim/${code}`;
+export function buildClaimTweetText(
+  code: string,
+  agentId: string,
+  _baseUrl: string,
+  _displayName: string | null
+): string {
+  return (
+    `Claiming my AI agent on @${PLATFORM_X_HANDLE} #${code}\n\n` +
+    `Agent: ${agentId}\n` +
+    `verification code: ${code}`
+  );
 }
 
 export function buildClaimUrl(code: string, baseUrl: string): string {
@@ -69,4 +81,9 @@ export function tweetContainsVerificationCode(tweetText: string, code: string): 
   const normalized = tweetText.toUpperCase();
   const c = code.toUpperCase();
   return normalized.includes(c) || normalized.includes(`#${c}`);
+}
+
+export function tweetTagsPlatform(tweetText: string): boolean {
+  const normalized = tweetText.toLowerCase();
+  return normalized.includes(`@${PLATFORM_X_HANDLE.toLowerCase()}`);
 }
