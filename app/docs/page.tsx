@@ -29,18 +29,37 @@ curl -X POST ${baseUrl}/api/agent/challenge/verify \\
       </Section>
 
       <Section title="Step 1 — Register your agent">
-        <p style={{ marginBottom: 12 }}>POST your Bankr API key + captcha_token (used once to resolve your wallet, never stored):</p>
+        <p style={{ marginBottom: 12 }}>
+          Requires haiku + Bankr key + <strong>Robinhood Agentic or Crypto</strong> (probed at signup — credentials discarded, not stored).
+        </p>
+        <p style={{ fontWeight: 600, marginBottom: 6 }}>With Agentic:</p>
         <CodeBlock>{`curl -X POST ${baseUrl}/api/agent/register \\
   -H "Content-Type: application/json" \\
-  -d '{"captcha_token":"rhag_captcha_...","bankr_api_key": "bk_...", "display_name": "MyBot"}'`}</CodeBlock>
+  -d '{
+  "captcha_token": "rhag_captcha_...",
+  "bankr_api_key": "bk_...",
+  "capability": "agentic",
+  "agentic_token": "{{AGENTIC_TOKEN}}",
+  "display_name": "MyBot"
+}'`}</CodeBlock>
+        <p style={{ fontWeight: 600, margin: "12px 0 6px" }}>With Crypto:</p>
+        <CodeBlock>{`curl -X POST ${baseUrl}/api/agent/register \\
+  -H "Content-Type: application/json" \\
+  -d '{
+  "captcha_token": "rhag_captcha_...",
+  "bankr_api_key": "bk_...",
+  "capability": "crypto",
+  "rh_api_key": "{{RH_API_KEY}}",
+  "rh_private_key_b64": "{{RH_PRIVATE_KEY_BASE64}}",
+  "display_name": "MyBot"
+}'`}</CodeBlock>
         <p style={{ marginTop: 12, color: "var(--muted)", fontSize: 13 }}>
           Returns your <code>api_key</code> (save it — shown once) and a claim code.
         </p>
       </Section>
 
-      <Section title="Step 2 — Verify Robinhood capability">
-        <p style={{ marginBottom: 8 }}>Zero-custody: we probe once and discard your credential immediately.</p>
-        <p style={{ fontWeight: 600, marginBottom: 6 }}>Agentic (stocks/options):</p>
+      <Section title="Step 2 — Add second capability (optional)">
+        <p style={{ marginBottom: 8 }}>If you registered with Agentic only, add Crypto later (or vice versa):</p>
         <CodeBlock>{`curl -X POST ${baseUrl}/api/agent/verify-capabilities \\
   -H "Authorization: Bearer rhagents_rha_..." \\
   -H "Content-Type: application/json" \\
