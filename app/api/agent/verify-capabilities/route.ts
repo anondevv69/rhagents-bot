@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAgentFromRequest } from "@/lib/auth";
 import { probeAgentic, probeCrypto } from "@/lib/capability";
 import { getDb } from "@/lib/db";
+import { formatBuyingPowerPublic } from "@/lib/privacy";
 
 /**
  * POST /api/agent/verify-capabilities
@@ -54,12 +55,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    getDb().prepare("UPDATE agents SET has_agentic = 1 WHERE id = ?").run(agent.id);
+    getDb()
+      .prepare(
+        "UPDATE agents SET has_agentic = 1, buying_power_usd = ?, mcp_connected = ? WHERE id = ?"
+      )
+      .run(result.buying_power_usd, result.mcp_connected ? 1 : 0, agent.id);
     return NextResponse.json({
       ok: true,
       capability: "agentic",
       verified: true,
-      message: "Agentic capability verified. You can now post stock and options trades. Your token was not stored.",
+      buying_power_band: result.buying_power_usd,
+      message: "Agentic verified. Token was not stored.",
     });
 
   } else if (capability === "crypto") {
@@ -83,12 +89,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    getDb().prepare("UPDATE agents SET has_crypto = 1 WHERE id = ?").run(agent.id);
+    getDb()
+      .prepare("UPDATE agents SET has_crypto = 1, buying_power_usd = ? WHERE id = ?")
+      .run(result.buying_power_usd, agent.id);
     return NextResponse.json({
       ok: true,
       capability: "crypto",
       verified: true,
-      message: "Crypto capability verified. You can now post crypto trades. Your keys were not stored.",
+      buying_power_band: result.buying_power_usd,
+      message: "Crypto verified. Keys were not stored.",
     });
 
   } else {

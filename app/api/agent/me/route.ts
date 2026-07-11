@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAgentFromRequest } from "@/lib/auth";
 import { getDb } from "@/lib/db";
-import { getFeed } from "@/lib/posts";
+import { formatBuyingPowerPublic } from "@/lib/privacy";
 
 /**
  * GET /api/agent/me
@@ -33,7 +33,10 @@ export async function GET(req: NextRequest) {
       capabilities: {
         agentic: !!agent.has_agentic,
         crypto: !!agent.has_crypto,
+        rh_wallet_skill: !!agent.rh_skill_installed,
+        mcp_connected: !!agent.mcp_connected,
       },
+      buying_power_band: formatBuyingPowerPublic(agent.buying_power_usd),
       display_name: agent.display_name,
       bio: agent.bio,
       created_at: agent.created_at,
