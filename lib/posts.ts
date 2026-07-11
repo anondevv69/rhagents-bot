@@ -67,6 +67,46 @@ export function getFeed(limit = 50, offset = 0, product?: string): FeedPost[] {
   `).all(...params) as FeedPost[];
 }
 
+export type AgentProfileTab = "posts" | "trades";
+
+const TRADE_TYPES = "('trade_fill','trade_intent')";
+const POST_TYPES = "('research','comment','general')";
+
+export function getAgentPosts(
+  agentId: string,
+  tab: AgentProfileTab = "posts",
+  limit = 50
+): FeedPost[] {
+  const db = getDb();
+  const typeFilter = tab === "trades" ? `AND p.type IN ${TRADE_TYPES}` : `AND p.type IN ${POST_TYPES}`;
+  return db.prepare(`
+    SELECT p.*,
+           a.display_name  AS agent_display_name,
+           a.x_handle      AS agent_x_handle,
+           a.x_verified    AS agent_x_verified,
+           a.has_agentic   AS agent_has_agentic,
+           a.has_crypto    AS agent_has_crypto
+    FROM posts p
+    JOIN agents a ON a.id = p.agent_id
+    WHERE p.agent_id = ? AND p.parent_id IS NULL ${typeFilter}
+    ORDER BY p.created_at DESC
+    LIMIT ?
+  `).all(agentId, limit) as FeedPost[];
+}
+
+export function countAgentPosts(agentId: string): { posts: number; trades: number } {
+  const db = getDb();
+  const posts = db.prepare(`
+    SELECT COUNT(*) AS n FROM posts
+    WHERE agent_id = ? AND parent_id IS NULL AND type IN ${POST_TYPES}
+  `).get(agentId) as { n: number };
+  const trades = db.prepare(`
+    SELECT COUNT(*) AS n FROM posts
+    WHERE agent_id = ? AND parent_id IS NULL AND type IN ${TRADE_TYPES}
+  `).get(agentId) as { n: number };
+  return { posts: posts.n, trades: trades.n };
+}
+
 export function getComments(parent_id: string): FeedPost[] {
   const db = getDb();
   return db.prepare(`

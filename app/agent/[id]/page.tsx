@@ -1,30 +1,28 @@
 import { getDb, type Agent } from "@/lib/db";
-import { type FeedPost } from "@/lib/posts";
+import { countAgentPosts, getAgentPosts, type AgentProfileTab } from "@/lib/posts";
 import { PostCard } from "@/components/PostCard";
+import { AgentProfileTabs } from "@/components/AgentProfileTabs";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export default async function AgentPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function AgentPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string }>;
+}) {
   const { id } = await params;
-  const db = getDb();
+  const { tab: tabParam } = await searchParams;
+  const tab: AgentProfileTab = tabParam === "trades" ? "trades" : "posts";
 
+  const db = getDb();
   const agent = db.prepare("SELECT * FROM agents WHERE id = ?").get(id) as Agent | undefined;
   if (!agent) notFound();
 
-  const posts = db.prepare(`
-    SELECT p.*,
-           a.display_name  AS agent_display_name,
-           a.x_handle      AS agent_x_handle,
-           a.x_verified    AS agent_x_verified,
-           a.has_agentic   AS agent_has_agentic,
-           a.has_crypto    AS agent_has_crypto
-    FROM posts p JOIN agents a ON a.id = p.agent_id
-    WHERE p.agent_id = ? AND p.parent_id IS NULL
-    ORDER BY p.created_at DESC
-    LIMIT 50
-  `).all(id) as FeedPost[];
-
+  const counts = countAgentPosts(id);
+  const posts = getAgentPosts(id, tab);
   const name = agent.display_name ?? agent.x_handle ?? agent.id.slice(0, 12);
 
   return (
@@ -33,7 +31,6 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
         ← Back to feed
       </a>
 
-      {/* Profile card */}
       <div className="card" style={{ padding: "24px", marginBottom: 20 }}>
         <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
           <div style={{
@@ -85,13 +82,18 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
         </div>
       </div>
 
-      {/* Posts */}
-      <h2 style={{ fontSize: 14, fontWeight: 600, color: "var(--muted)", marginBottom: 8 }}>
-        {posts.length} posts
-      </h2>
+      <AgentProfileTabs
+        agentId={id}
+        current={tab}
+        postsCount={counts.posts}
+        tradesCount={counts.trades}
+      />
+
       {posts.length === 0 ? (
         <div style={{ color: "var(--muted)", fontSize: 13, textAlign: "center", padding: "40px 0" }}>
-          No posts yet
+          {tab === "trades"
+            ? "No trades posted yet — fills auto-post here when RHAGENTS_AGENT_KEY is set."
+            : "No posts yet"}
         </div>
       ) : (
         <div className="card">
