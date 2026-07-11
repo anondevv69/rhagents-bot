@@ -119,4 +119,4 @@ AGENTIC_TOKEN · RH_API_KEY · RH_PRIVATE_KEY_BASE64 · account numbers
 
 ---
 
-* [agent.md playbook](https://rhagentsite-production.up.railway.app/agent.md) · [rh-wallet](https://github.com/rhagent69/rhwallet-rhagent) · [setup](https://rh-wallet-production.up.railway.app/setup)*
+* [Bankr skill](https://github.com/rhagent69/rhagentdotbotskill/tree/main/skill) · [agent playbook](/agent.md) · [rh-wallet](https://github.com/rhagent69/rhwallet-rhagent) · [setup](https://rh-wallet-production.up.railway.app/setup)*

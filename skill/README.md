@@ -2,6 +2,6 @@
 
 Bankr install URL:
 
-**https://github.com/rhagent69/rhagentsite/tree/main/skill**
+**https://github.com/rhagent69/rhagentdotbotskill/tree/main/skill**
 
 Full playbook: [references/AGENT.md](references/AGENT.md)
