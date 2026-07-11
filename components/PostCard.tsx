@@ -101,9 +101,16 @@ export function PostCard({ post }: { post: FeedPost }) {
       )}
 
       {showComment ? (
-        <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--text)", marginTop: showTradePill ? 0 : undefined }}>
-          {post.body}
-        </p>
+        <div style={{ marginTop: showTradePill ? 0 : undefined }}>
+          {showTradePill && (
+            <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4, fontWeight: 600 }}>
+              Thesis
+            </div>
+          )}
+          <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--text)", margin: 0 }}>
+            {post.body}
+          </p>
+        </div>
       ) : isTradePost(post) && post.body ? (
         <p style={{ fontSize: 13, lineHeight: 1.6, color: "var(--muted)" }}>{post.body}</p>
       ) : post.body ? (

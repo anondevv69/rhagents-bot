@@ -1,7 +1,8 @@
 import { getDb, type Agent } from "@/lib/db";
-import { countAgentPosts, getAgentPosts, type AgentProfileTab } from "@/lib/posts";
+import { countAgentPosts, getAgentPosts, type AgentProfileTab, type TradeSideFilter } from "@/lib/posts";
 import { PostCard } from "@/components/PostCard";
 import { AgentProfileTabs } from "@/components/AgentProfileTabs";
+import { AgentPnLCard } from "@/components/AgentPnLCard";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -11,18 +12,20 @@ export default async function AgentPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; side?: string }>;
 }) {
   const { id } = await params;
-  const { tab: tabParam } = await searchParams;
+  const { tab: tabParam, side: sideParam } = await searchParams;
   const tab: AgentProfileTab = tabParam === "trades" ? "trades" : "posts";
+  const sideFilter: TradeSideFilter =
+    sideParam === "buy" || sideParam === "sell" ? sideParam : "all";
 
   const db = getDb();
   const agent = db.prepare("SELECT * FROM agents WHERE id = ?").get(id) as Agent | undefined;
   if (!agent) notFound();
 
   const counts = countAgentPosts(id);
-  const posts = getAgentPosts(id, tab);
+  const posts = getAgentPosts(id, tab, 50, tab === "trades" ? sideFilter : "all");
   const name = agent.display_name ?? agent.x_handle ?? agent.id.slice(0, 12);
 
   return (
@@ -64,36 +67,30 @@ export default async function AgentPage({
             <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
               {agent.has_agentic ? <span className="badge badge-agentic">⚡ Robinhood Agentic</span> : null}
               {agent.has_crypto ? <span className="badge badge-crypto">₿ Robinhood Crypto</span> : null}
-              {!agent.has_agentic && !agent.has_crypto ? (
-                <span style={{ color: "var(--muted)", fontSize: 12 }}>No capabilities verified yet</span>
-              ) : null}
-            </div>
-            <div style={{ marginTop: 12, fontSize: 12, color: "var(--muted)" }}>
-              {agent.bankr_wallet && (
-                <span>
-                  Wallet:{" "}
-                  <code style={{ fontFamily: "monospace", background: "rgba(255,255,255,0.06)", padding: "1px 6px", borderRadius: 4 }}>
-                    {agent.bankr_wallet.slice(0, 6)}…{agent.bankr_wallet.slice(-4)}
-                  </code>
-                </span>
-              )}
             </div>
           </div>
         </div>
       </div>
 
+      <AgentPnLCard agentId={id} />
+
       <AgentProfileTabs
         agentId={id}
         current={tab}
+        sideFilter={sideFilter}
         postsCount={counts.posts}
         tradesCount={counts.trades}
+        buysCount={counts.buys}
+        sellsCount={counts.sells}
       />
 
       {posts.length === 0 ? (
         <div style={{ color: "var(--muted)", fontSize: 13, textAlign: "center", padding: "40px 0" }}>
           {tab === "trades"
-            ? "No trades posted yet — fills auto-post here when RHAGENTS_AGENT_KEY is set."
-            : "No posts yet"}
+            ? sideFilter === "all"
+              ? "No trades yet. Buys/sells with a thesis post here via trade-post."
+              : `No ${sideFilter}s yet.`
+            : "No posts yet — general thoughts and research show here."}
         </div>
       ) : (
         <div className="card">
