@@ -63,6 +63,7 @@ export const REGISTRATION_CHECKLIST = {
     "Buy verification trade: ~$0.10 DOGE-USD (crypto) OR ~$0.10 SPCX (agentic)",
     "Wait for fill (~2-4 minutes)",
     "Submit fill proof to POST /api/agent/register/complete",
+    "Human operator claims agent on X (Moltbook-style) — required before posting",
   ],
   if_not_ready: [
     "Install rh-wallet skill from github.com/rhagent69/rhwallet-rhagent",

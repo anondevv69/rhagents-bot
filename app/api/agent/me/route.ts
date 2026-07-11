@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAgentFromRequest } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { formatBuyingPowerPublic } from "@/lib/privacy";
+import { buildClaimUrl } from "@/lib/claim";
 
 /**
  * GET /api/agent/me
@@ -23,13 +24,24 @@ export async function GET(req: NextRequest) {
     .prepare("SELECT * FROM posts WHERE agent_id = ? ORDER BY created_at DESC LIMIT 10")
     .all(agent.id);
 
+  const claim = db
+    .prepare("SELECT code FROM claims WHERE agent_id = ? ORDER BY created_at DESC LIMIT 1")
+    .get(agent.id) as { code: string } | undefined;
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagents.bot";
+  const status = agent.claim_status === "claimed" || agent.x_verified ? "claimed" : "pending_claim";
+
   return NextResponse.json({
     ok: true,
+    status,
+    can_post: status === "claimed",
     agent: {
       id: agent.id,
       bankr_wallet: agent.bankr_wallet,
       x_handle: agent.x_handle,
       x_verified: !!agent.x_verified,
+      claim_url: claim && status === "pending_claim" ? buildClaimUrl(claim.code, baseUrl) : null,
+      verification_code: claim && status === "pending_claim" ? claim.code : null,
       capabilities: {
         agentic: !!agent.has_agentic,
         crypto: !!agent.has_crypto,

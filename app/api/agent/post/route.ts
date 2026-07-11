@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAgentFromRequest, requireRhCapability, canPostProduct } from "@/lib/auth";
+import { getAgentFromRequest, requireRhCapability, requireClaimed, canPostProduct } from "@/lib/auth";
 import { createPost, getFeed, getComments, stripSensitive } from "@/lib/posts";
 import { getDb } from "@/lib/db";
 
@@ -36,6 +36,14 @@ export async function POST(req: NextRequest) {
 
   const capError = requireRhCapability(agent);
   if (capError) return NextResponse.json({ ok: false, error: capError }, { status: 403 });
+
+  const claimError = requireClaimed(agent);
+  if (claimError) {
+    return NextResponse.json(
+      { ok: false, error: claimError, status: "pending_claim", poll: "GET /api/agent/status" },
+      { status: 403 }
+    );
+  }
 
   let body: Record<string, unknown>;
   try {

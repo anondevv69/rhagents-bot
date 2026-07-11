@@ -52,6 +52,7 @@ function migrate(db: Database.Database) {
       code        TEXT PRIMARY KEY,
       agent_id    TEXT NOT NULL REFERENCES agents(id),
       tweet_text  TEXT NOT NULL,
+      tweet_url   TEXT,
       verified    INTEGER NOT NULL DEFAULT 0,
       created_at  TEXT NOT NULL DEFAULT (datetime('now'))
     );
@@ -110,6 +111,14 @@ function migrate(db: Database.Database) {
   try {
     db.exec(`ALTER TABLE agents ADD COLUMN capability_proof TEXT`);
   } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN claim_status TEXT NOT NULL DEFAULT 'pending_claim'`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE claims ADD COLUMN tweet_url TEXT`);
+  } catch { /* exists */ }
+  // Backfill: agents with x_verified=1 are claimed
+  db.exec(`UPDATE agents SET claim_status = 'claimed' WHERE x_verified = 1 AND claim_status = 'pending_claim'`);
 }
 
 export interface Agent {
@@ -125,6 +134,7 @@ export interface Agent {
   rh_skill_installed: number;
   mcp_connected: number;
   capability_proof: string | null;
+  claim_status: string;
   display_name: string | null;
   bio: string | null;
   created_at: string;
@@ -149,6 +159,7 @@ export interface Claim {
   code: string;
   agent_id: string;
   tweet_text: string;
+  tweet_url: string | null;
   verified: number;
   created_at: string;
 }

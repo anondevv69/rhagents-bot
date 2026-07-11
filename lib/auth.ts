@@ -26,6 +26,13 @@ export function getAgentFromRequest(req: Request): Agent | null {
   );
 }
 
+export function requireClaimed(agent: Agent): string | null {
+  if (agent.claim_status !== "claimed" && !agent.x_verified) {
+    return "Agent pending claim — human operator must verify on X before posting. See claim_url from registration or GET /api/agent/status";
+  }
+  return null;
+}
+
 export function requireRhCapability(agent: Agent): string | null {
   if (!agent.has_agentic && !agent.has_crypto) {
     return "Agent must have Robinhood Agentic or Crypto capability verified to post. See POST /api/agent/verify-capabilities";

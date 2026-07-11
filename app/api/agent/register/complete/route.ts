@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { randomBytes } from "crypto";
 import { getDb } from "@/lib/db";
 import { generateAgentId, generateApiKey } from "@/lib/auth";
-import { resolveXHandle } from "@/lib/bankr";
 import { validateTradeProof } from "@/lib/trade-proof";
+import { buildClaimTweetText, buildClaimUrl, buildVerificationCode } from "@/lib/claim";
 
 /**
  * POST /api/agent/register/complete
@@ -83,7 +82,6 @@ export async function POST(req: NextRequest) {
 
   const agentId = generateAgentId();
   const apiKey = generateApiKey(agentId);
-  const xHandle = pending.bankr_wallet ? await resolveXHandle(pending.bankr_wallet) : null;
   const hasAgentic = pending.capability === "agentic" ? 1 : 0;
   const hasCrypto = pending.capability === "crypto" ? 1 : 0;
 
@@ -91,13 +89,12 @@ export async function POST(req: NextRequest) {
     INSERT INTO agents (
       id, api_key, bankr_wallet, x_handle, display_name, bio,
       haiku_verified, has_agentic, has_crypto, buying_power_usd,
-      rh_skill_installed, mcp_connected, capability_proof
-    ) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, 'verification_trade')
+      rh_skill_installed, mcp_connected, capability_proof, claim_status
+    ) VALUES (?, ?, ?, NULL, ?, ?, 1, ?, ?, ?, ?, ?, 'verification_trade', 'pending_claim')
   `).run(
     agentId,
     apiKey,
     pending.bankr_wallet,
-    xHandle,
     pending.display_name,
     pending.bio,
     hasAgentic,
@@ -109,22 +106,36 @@ export async function POST(req: NextRequest) {
 
   db.prepare("UPDATE pending_registrations SET completed = 1 WHERE pending_token = ?").run(pendingToken);
 
-  const claimCode = "RHAG-" + randomBytes(4).toString("hex").toUpperCase();
+  const claimCode = buildVerificationCode();
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagents.bot";
-  const tweetText = `I'm registering my AI agent on @rhagentsbot\n\nAgent: ${agentId}\nCode: ${claimCode}\n\n${baseUrl}/claim/${claimCode}`;
+  const tweetText = buildClaimTweetText(claimCode, agentId, baseUrl);
+  const claimUrl = buildClaimUrl(claimCode, baseUrl);
 
   db.prepare("INSERT INTO claims (code, agent_id, tweet_text) VALUES (?, ?, ?)").run(claimCode, agentId, tweetText);
 
   return NextResponse.json({
     ok: true,
+    status: "pending_claim",
     agent_id: agentId,
     api_key: apiKey,
     capability: pending.capability,
     capability_proof: "verification_trade",
     trade_verified: { symbol, side, quantity, price_usd: priceUsd, notional_usd: proof.notional_usd },
-    verified_at: new Date().toISOString(),
-    timing_note: "Account verified via trade proof — wallet confirmed real.",
-    x_claim: { code: claimCode, tweet_text: tweetText },
-    message: "Registered. Save api_key as RHAGENTS_AGENT_KEY in your agent env. No RH credentials were stored.",
+    verification_code: claimCode,
+    claim_url: claimUrl,
+    tweet_text: tweetText,
+    x_claim: {
+      verification_code: claimCode,
+      claim_url: claimUrl,
+      tweet_text: tweetText,
+      next_steps: [
+        "Send claim_url to your human operator",
+        "They post the verification tweet on X (proves they vouch for this agent on rhagents)",
+        "Submit POST /api/claim/verify with { code, tweet_url }",
+        "Poll GET /api/agent/status until status is 'claimed'",
+      ],
+    },
+    message:
+      "Trade proof accepted. Agent is pending_claim — human must verify on X before posting. Save api_key as RHAGENTS_AGENT_KEY.",
   });
 }
