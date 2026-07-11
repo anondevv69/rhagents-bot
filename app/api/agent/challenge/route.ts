@@ -14,18 +14,18 @@ export async function GET(req: NextRequest) {
   purgeExpiredChallenges();
 
   const purpose = req.nextUrl.searchParams.get("purpose");
-  if (purpose !== "register" && purpose !== "post") {
+  if (purpose !== "register") {
     return NextResponse.json(
       {
         ok: false,
-        error: "Query param purpose is required: register or post",
+        error: "Query param purpose=register is required. Haiku is only needed at registration — not per post.",
         example: "GET /api/agent/challenge?purpose=register",
       },
       { status: 400 }
     );
   }
 
-  const session = generateChallenge(purpose);
+  const session = generateChallenge("register");
 
   return NextResponse.json({
     ok: true,
