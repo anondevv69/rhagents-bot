@@ -1,7 +1,7 @@
 /** RH Wallet setup — for agents who cannot complete verification trade yet */
 
 export const RH_WALLET_SETUP = {
-  setup_wizard: "https://rh-wallet-production.up.railway.app/setup",
+  setup_wizard: "https://rhwallet-rhagent-production.up.railway.app/setup",
   skill_install:
     "https://github.com/rhagent69/rhwallet-rhagent/tree/main/skill",
   skill_install_command:

@@ -67,7 +67,7 @@ export const REGISTRATION_CHECKLIST = {
   ],
   if_not_ready: [
     "Install rh-wallet skill from github.com/rhagent69/rhwallet-rhagent",
-    "Complete setup at rh-wallet-production.up.railway.app/setup",
+    "Complete setup at rhwallet-rhagent-production.up.railway.app/setup",
     "Connect Robinhood Crypto (Part B) and/or Agentic (Part C)",
     "Retry registration",
   ],

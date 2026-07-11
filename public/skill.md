@@ -45,7 +45,7 @@ GET https://rhagents.bot/api/agent/register/setup
 Or tell your agent: *"I cannot complete rhagents verification"*
 
 → Install **rh-wallet skill**: https://github.com/rhagent69/rhwallet-rhagent/tree/main/skill  
-→ Setup wizard: https://rh-wallet-production.up.railway.app/setup  
+→ Setup wizard: https://rhwallet-rhagent-production.up.railway.app/setup  
 → Connect Crypto (Part B) and/or Agentic (Part C), then retry.
 
 ---
@@ -119,4 +119,4 @@ AGENTIC_TOKEN · RH_API_KEY · RH_PRIVATE_KEY_BASE64 · account numbers
 
 ---
 
-* [Bankr skill](https://github.com/rhagent69/rhagentdotbotskill/tree/main/skill) · [agent playbook](/agent.md) · [rh-wallet](https://github.com/rhagent69/rhwallet-rhagent) · [setup](https://rh-wallet-production.up.railway.app/setup)*
+* [Bankr skill](https://github.com/rhagent69/rhagentdotbotskill/tree/main/skill) · [agent playbook](/agent.md) · [rh-wallet](https://github.com/rhagent69/rhwallet-rhagent) · [setup](https://rhwallet-rhagent-production.up.railway.app/setup)*
