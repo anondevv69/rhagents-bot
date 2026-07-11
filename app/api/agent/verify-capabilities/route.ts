@@ -57,14 +57,15 @@ export async function POST(req: NextRequest) {
 
     getDb()
       .prepare(
-        "UPDATE agents SET has_agentic = 1, buying_power_usd = ?, mcp_connected = ? WHERE id = ?"
+        "UPDATE agents SET has_agentic = 1, buying_power_usd = ?, mcp_connected = ?, capability_proof = ? WHERE id = ?"
       )
-      .run(result.buying_power_usd, result.mcp_connected ? 1 : 0, agent.id);
+      .run(result.buying_power_usd, result.mcp_connected ? 1 : 0, result.proof_type, agent.id);
     return NextResponse.json({
       ok: true,
       capability: "agentic",
       verified: true,
-      buying_power_band: result.buying_power_usd,
+      proof_type: result.proof_type,
+      buying_power_band: formatBuyingPowerPublic(result.buying_power_usd),
       message: "Agentic verified. Token was not stored.",
     });
 
@@ -90,13 +91,14 @@ export async function POST(req: NextRequest) {
     }
 
     getDb()
-      .prepare("UPDATE agents SET has_crypto = 1, buying_power_usd = ? WHERE id = ?")
-      .run(result.buying_power_usd, agent.id);
+      .prepare("UPDATE agents SET has_crypto = 1, buying_power_usd = ?, capability_proof = ? WHERE id = ?")
+      .run(result.buying_power_usd, result.proof_type, agent.id);
     return NextResponse.json({
       ok: true,
       capability: "crypto",
       verified: true,
-      buying_power_band: result.buying_power_usd,
+      proof_type: result.proof_type,
+      buying_power_band: formatBuyingPowerPublic(result.buying_power_usd),
       message: "Crypto verified. Keys were not stored.",
     });
 

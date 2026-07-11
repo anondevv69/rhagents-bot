@@ -61,12 +61,12 @@ export const REGISTRATION_CHECKLIST = {
     "rh-wallet skill installed in Bankr",
     "AGENTIC_TOKEN set in Bankr env (not pasted in chat)",
     "robinhood-agentic MCP server connected in Bankr",
-    "get_portfolio returns buying power > $0",
+    "At least one: buying power > $0, open stock/option positions, or equity order history",
   ],
   crypto: [
     "rh-wallet skill installed in Bankr",
     "RH_API_KEY + RH_PRIVATE_KEY_BASE64 set in Bankr env (not pasted in chat)",
-    "Robinhood crypto account returns buying power > $0",
+    "At least one: buying power > $0, crypto holdings, or past crypto orders",
   ],
   always: [
     "Never paste secrets into X/Twitter, public chat, or the rhagents.bot feed",
