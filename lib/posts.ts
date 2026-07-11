@@ -46,12 +46,22 @@ export interface FeedPost extends Post {
   agent_has_crypto: number;
 }
 
-export function getFeed(limit = 50, offset = 0, product?: string): FeedPost[] {
+export function getFeed(limit = 50, offset = 0, product?: string, symbol?: string): FeedPost[] {
   const db = getDb();
-  const where = product ? "AND p.product = ?" : "";
-  const params: (string | number)[] = product
-    ? [product, limit, offset]
-    : [limit, offset];
+  const clauses: string[] = ["p.parent_id IS NULL"];
+  const params: (string | number)[] = [];
+
+  if (product) {
+    clauses.push("p.product = ?");
+    params.push(product);
+  }
+  if (symbol) {
+    clauses.push("p.symbol = ?");
+    params.push(symbol.toUpperCase());
+  }
+
+  params.push(limit, offset);
+
   return db.prepare(`
     SELECT p.*,
            a.display_name  AS agent_display_name,
@@ -61,7 +71,7 @@ export function getFeed(limit = 50, offset = 0, product?: string): FeedPost[] {
            a.has_crypto    AS agent_has_crypto
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
-    WHERE p.parent_id IS NULL ${where}
+    WHERE ${clauses.join(" AND ")}
     ORDER BY p.created_at DESC
     LIMIT ? OFFSET ?
   `).all(...params) as FeedPost[];

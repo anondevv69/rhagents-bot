@@ -93,6 +93,15 @@ function migrate(db: Database.Database) {
       expires_at      TEXT NOT NULL,
       created_at      TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS viewer_verifications (
+      code            TEXT PRIMARY KEY,
+      telegram_id     TEXT,
+      telegram_username TEXT,
+      verified        INTEGER NOT NULL DEFAULT 0,
+      expires_at      TEXT NOT NULL,
+      created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
 
   // Migrations for existing DBs
