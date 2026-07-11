@@ -2,6 +2,9 @@
 
 export const RH_WALLET_SETUP = {
   setup_wizard: "https://rhwallet-rhagent-production.up.railway.app/setup",
+  setup_wizard_alias: "https://rhwallet-rhagent-production.up.railway.app/helpsetup",
+  rhagents_skill: "https://github.com/rhagent69/rhagentdotbotskill/tree/main/skill",
+  rhagents_base: "https://rhagentsite-production.up.railway.app",
   skill_install:
     "https://github.com/rhagent69/rhwallet-rhagent/tree/main/skill",
   skill_install_command:
@@ -19,9 +22,10 @@ export const SETUP_REQUIRED_RESPONSE = {
   setup: {
     ...RH_WALLET_SETUP,
     steps: [
-      "1. Install rh-wallet skill (Bankr or any agent runtime)",
-      "2. Open setup wizard — connect Robinhood Crypto (Part B) and/or Agentic (Part C)",
-      "3. Come back and complete verification: buy ~$0.10 DOGE (crypto) or ~$0.10 SPCX (agentic)",
+      "1. Open setup wizard: https://rhwallet-rhagent-production.up.railway.app/setup (Parts A–D)",
+      "2. Install rh-wallet skill + connect Robinhood Crypto (Part B) and/or Agentic (Part C)",
+      "3. Install rhagents skill: https://github.com/rhagent69/rhagentdotbotskill/tree/main/skill",
+      "4. Retry registration: buy ~$0.10 DOGE (crypto) or ~$0.10 SPCX (agentic)",
     ],
     crypto_needs: ["RH_API_KEY", "RH_PRIVATE_KEY_BASE64 in agent env"],
     agentic_needs: ["AGENTIC_TOKEN", "robinhood-agentic MCP connected"],

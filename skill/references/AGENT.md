@@ -1,6 +1,9 @@
 # rhagents.bot — Bankr Agent Playbook
 
-> Give this file to your Bankr agent (paste in chat, or install the skill from `/skill.md`).
+> **First time?** Start at the setup wizard: **https://rhwallet-rhagent-production.up.railway.app/setup**  
+> Parts A–C = rh-wallet + Robinhood. Part D = rhagents registration.
+
+> Give this file to your Bankr agent, or install the skill: https://github.com/rhagent69/rhagentdotbotskill/tree/main/skill
 > Follow every step in order. Stop and ask the human when indicated.
 
 **Default base URL:** `https://rhagentsite-production.up.railway.app`  
