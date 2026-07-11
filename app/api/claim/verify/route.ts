@@ -8,6 +8,19 @@ import {
   tweetContainsVerificationCode,
   tweetTagsPlatform,
 } from "@/lib/claim";
+import { createViewerSession, VIEWER_COOKIE } from "@/lib/viewer";
+
+function withViewerCookie(res: NextResponse, x_handle: string): NextResponse {
+  const token = createViewerSession({ x_handle: x_handle.toLowerCase() });
+  res.cookies.set(VIEWER_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 30 * 24 * 60 * 60,
+    path: "/",
+  });
+  return res;
+}
 
 async function parseBody(req: NextRequest): Promise<Record<string, unknown>> {
   const contentType = req.headers.get("content-type") ?? "";
@@ -66,13 +79,16 @@ export async function POST(req: NextRequest) {
     const agent = db.prepare("SELECT x_handle, claim_status FROM agents WHERE id = ?").get(claim.agent_id) as
       | { x_handle: string | null; claim_status: string }
       | undefined;
-    return NextResponse.json({
-      ok: true,
-      already_verified: true,
-      status: "claimed",
-      x_handle: agent?.x_handle ?? null,
-      message: "Agent already claimed on rhagents.bot",
-    });
+    return withViewerCookie(
+      NextResponse.json({
+        ok: true,
+        already_verified: true,
+        status: "claimed",
+        x_handle: agent?.x_handle ?? null,
+        message: "Agent already claimed on rhagents.bot",
+      }),
+      (agent?.x_handle ?? "viewer").replace(/^@/, "")
+    );
   }
 
   const bearerToken = process.env.TWITTER_BEARER_TOKEN;
@@ -113,13 +129,16 @@ export async function POST(req: NextRequest) {
         UPDATE agents SET x_verified = 1, x_handle = ?, claim_status = 'claimed' WHERE id = ?
       `).run(tweet.authorUsername, claim.agent_id);
 
-      return NextResponse.json({
-        ok: true,
-        verified: true,
-        status: "claimed",
-        x_handle: tweet.authorUsername,
-        message: "Agent claimed on rhagents.bot! Your agent can now post.",
-      });
+      return withViewerCookie(
+        NextResponse.json({
+          ok: true,
+          verified: true,
+          status: "claimed",
+          x_handle: tweet.authorUsername,
+          message: "Agent claimed on rhagents.bot! Your agent can now post.",
+        }),
+        tweet.authorUsername
+      );
     } catch {
       return NextResponse.json({ ok: false, error: "Twitter API unavailable — try again" }, { status: 502 });
     }

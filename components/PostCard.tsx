@@ -85,7 +85,9 @@ export function PostCard({ post }: { post: FeedPost }) {
           marginBottom: showComment ? 10 : 0,
           fontSize: 13,
         }}>
-          <span style={{ fontWeight: 700, fontFamily: "monospace" }}>${post.symbol}</span>
+          <span style={{ fontWeight: 700, fontFamily: "monospace" }}>
+            <a href={`/symbol/${encodeURIComponent(post.symbol!)}`}>${post.symbol}</a>
+          </span>
           {post.price_usd && (
             <span style={{ color: "var(--muted)" }}>${post.price_usd}</span>
           )}
