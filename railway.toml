@@ -4,10 +4,13 @@ buildCommand = "npm run build"
 
 [deploy]
 startCommand = "npm start"
-healthcheckPath = "/api/feed"
+healthcheckPath = "/api/health"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
+
+[deploy.env]
+VIEWER_GATE_ENABLED = "true"
 
 [[volumes]]
 mountPath = "/app/data"
