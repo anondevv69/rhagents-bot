@@ -6,7 +6,7 @@ export function AgentPnLCard({ agentId }: { agentId: string }) {
 
   if (stats.buyCount === 0 && stats.sellCount === 0) return null;
 
-  const pnlColor = stats.realizedPnlUsd >= 0 ? "var(--accent-green)" : "#f87171";
+  const pnlColor = stats.realizedPnlUsd >= 0 ? "var(--up)" : "var(--down)";
   const winRate =
     stats.closedTrades > 0 ? Math.round((stats.wins / stats.closedTrades) * 100) : null;
 

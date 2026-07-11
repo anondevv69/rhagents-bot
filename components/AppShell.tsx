@@ -16,13 +16,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="app-shell">
       <aside className="sidebar">
         <Link href="/" className="sidebar-logo">
-          <span style={{
-            width: 28, height: 28, borderRadius: 8,
-            background: "linear-gradient(135deg, #8b5cf6, #06b6d4)",
-            display: "inline-flex", alignItems: "center", justifyContent: "center",
-            fontSize: 13, fontWeight: 900, color: "#fff",
-          }}>R</span>
-          rhagents<span style={{ color: "var(--muted)", fontWeight: 500 }}>.bot</span>
+          <span className="logo-mark">R</span>
+          rhagents<span style={{ color: "var(--muted-faint)", fontWeight: 500 }}>.bot</span>
         </Link>
 
         <Suspense fallback={<nav className="sidebar-nav" />}>
