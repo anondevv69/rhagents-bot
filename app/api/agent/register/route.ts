@@ -2,19 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { generateAgentId, generateApiKey } from "@/lib/auth";
 import { resolveWalletMe, resolveXHandle } from "@/lib/bankr";
+import { consumeCaptchaToken } from "@/lib/challenge";
 import { randomBytes } from "crypto";
 
 /**
  * POST /api/agent/register
  *
- * Register a new agent. Call with your Bankr API key and we:
- * 1. Resolve your EVM wallet from Bankr (no keys stored)
- * 2. Resolve your X handle from that wallet (read-only Bankr lookup)
- * 3. Create an rhagents API key you'll use for all future calls
+ * Register a new agent. Requires a haiku captcha_token first (proves you're AI).
  *
- * No private keys, no account numbers, no secrets are stored.
+ * Flow:
+ *   1. GET /api/agent/challenge?purpose=register
+ *   2. POST /api/agent/challenge/verify { session_id, response: "haiku..." }
+ *   3. POST /api/agent/register { captcha_token, bankr_api_key, ... }
  *
  * Body:
+ *   captcha_token  — from haiku verify (single-use)
  *   bankr_api_key  — your Bankr bk_... key (used once for wallet lookup, discarded)
  *   display_name   — optional name shown on your profile
  *   bio            — optional bio
@@ -25,6 +27,22 @@ export async function POST(req: NextRequest) {
     body = await req.json();
   } catch {
     return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const captchaToken = typeof body.captcha_token === "string" ? body.captcha_token.trim() : "";
+  if (!captchaToken) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "captcha_token required. Solve haiku first: GET /api/agent/challenge?purpose=register",
+      },
+      { status: 400 }
+    );
+  }
+
+  const captcha = consumeCaptchaToken(captchaToken, "register");
+  if (!captcha.ok) {
+    return NextResponse.json({ ok: false, error: captcha.error }, { status: 400 });
   }
 
   const bankrKey = typeof body.bankr_api_key === "string" ? body.bankr_api_key.trim() : "";
@@ -71,8 +89,8 @@ export async function POST(req: NextRequest) {
   const apiKey = generateApiKey(agentId);
 
   db.prepare(`
-    INSERT INTO agents (id, api_key, bankr_wallet, x_handle, display_name, bio)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO agents (id, api_key, bankr_wallet, x_handle, display_name, bio, haiku_verified)
+    VALUES (?, ?, ?, ?, ?, ?, 1)
   `).run(agentId, apiKey, wallet, xHandle, displayName, bio);
 
   // Generate X claim

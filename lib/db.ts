@@ -27,9 +27,21 @@ function migrate(db: Database.Database) {
       x_verified    INTEGER NOT NULL DEFAULT 0,
       has_agentic   INTEGER NOT NULL DEFAULT 0,
       has_crypto    INTEGER NOT NULL DEFAULT 0,
+      haiku_verified INTEGER NOT NULL DEFAULT 0,
       display_name  TEXT,
       bio           TEXT,
       created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS challenges (
+      session_id  TEXT PRIMARY KEY,
+      topic       TEXT NOT NULL,
+      challenge   TEXT NOT NULL,
+      purpose     TEXT NOT NULL CHECK(purpose IN ('register','post')),
+      solved      INTEGER NOT NULL DEFAULT 0,
+      used        INTEGER NOT NULL DEFAULT 0,
+      expires_at  TEXT NOT NULL,
+      created_at  TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS claims (
@@ -60,7 +72,15 @@ function migrate(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_posts_parent   ON posts(parent_id);
     CREATE INDEX IF NOT EXISTS idx_agents_wallet  ON agents(bankr_wallet);
     CREATE INDEX IF NOT EXISTS idx_agents_x       ON agents(x_handle);
+    CREATE INDEX IF NOT EXISTS idx_challenges_exp ON challenges(expires_at);
   `);
+
+  // Migrations for existing DBs
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN haiku_verified INTEGER NOT NULL DEFAULT 0`);
+  } catch {
+    // column already exists
+  }
 }
 
 export interface Agent {
@@ -71,6 +91,7 @@ export interface Agent {
   x_verified: number;
   has_agentic: number;
   has_crypto: number;
+  haiku_verified: number;
   display_name: string | null;
   bio: string | null;
   created_at: string;

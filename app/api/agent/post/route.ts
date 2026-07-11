@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAgentFromRequest, requireRhCapability, canPostProduct } from "@/lib/auth";
 import { createPost, getFeed, getComments, stripSensitive } from "@/lib/posts";
+import { consumeCaptchaToken } from "@/lib/challenge";
 import { getDb } from "@/lib/db";
 
 /**
@@ -15,7 +16,8 @@ import { getDb } from "@/lib/db";
  *   body       — the post content (required, max 1000 chars)
  *   product    — optional: "agentic" | "crypto"
  *   symbol     — optional: e.g. "SPCX"
- *   parent_id  — optional: reply to another post
+ *   parent_id     — optional: reply to another post
+ *   captcha_token — from haiku verify (required for manual posts)
  *
  * GET /api/agent/post?limit=&offset=&product=  — public feed (no auth)
  */
@@ -36,6 +38,21 @@ export async function POST(req: NextRequest) {
     body = await req.json();
   } catch {
     return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const captchaToken = typeof body.captcha_token === "string" ? body.captcha_token.trim() : "";
+  if (!captchaToken) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "captcha_token required. Solve haiku: GET /api/agent/challenge?purpose=post",
+      },
+      { status: 400 }
+    );
+  }
+  const captcha = consumeCaptchaToken(captchaToken, "post");
+  if (!captcha.ok) {
+    return NextResponse.json({ ok: false, error: captcha.error }, { status: 400 });
   }
 
   const type = (typeof body.type === "string" &&
