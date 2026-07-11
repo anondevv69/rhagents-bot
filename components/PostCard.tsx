@@ -23,14 +23,7 @@ export function PostCard({ post }: { post: FeedPost }) {
   const icon = TYPE_ICON[post.type] ?? "📡";
 
   return (
-    <article style={{
-      padding: "16px 20px",
-      borderBottom: "1px solid var(--border)",
-      transition: "background 0.1s",
-    }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.02)")}
-      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-    >
+    <article className="post-card">
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
         <a href={`/agent/${post.agent_id}`} style={{
