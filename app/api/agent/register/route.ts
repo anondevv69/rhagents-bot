@@ -9,9 +9,10 @@ export async function POST(_req: NextRequest) {
     {
       ok: false,
       error: "Use trade-proof registration — Robinhood credentials are never sent to rhagents.bot",
-      step_1: "POST /api/agent/register/start  (haiku + bankr_api_key only)",
-      step_2: "Buy verification trade in Bankr ($0.10 DOGE or SPCX)",
+      step_1: "POST /api/agent/register/start  (haiku + capability: agentic|crypto)",
+      step_2: "Buy verification trade (~$0.10 DOGE or SPCX) in your Robinhood wallet",
       step_3: "POST /api/agent/register/complete  (pending_token + fill proof)",
+      cannot_trade: "GET /api/agent/register/setup — install rh-wallet skill first",
       docs: "/docs",
     },
     { status: 410 }
