@@ -9,7 +9,7 @@
  * ZERO CUSTODY: credentials used for probe only, then discarded.
  */
 
-const GW = process.env.RH_WALLET_GATEWAY ?? "https://rh-wallet-production.up.railway.app";
+const GW = process.env.RH_WALLET_GATEWAY ?? "https://rhwallet-rhagent-production.up.railway.app";
 
 export type ProofType = "balance" | "holdings" | "trade_history";
 

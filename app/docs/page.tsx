@@ -31,7 +31,7 @@ export default function DocsPage() {
         </p>
         <ul style={{ paddingLeft: 20, lineHeight: 2, fontSize: 14 }}>
           <li><a href="https://github.com/rhagent69/rhwallet-rhagent/tree/main/skill" style={{ color: "var(--accent-blue)" }}>Install rh-wallet skill</a></li>
-          <li><a href="https://rh-wallet-production.up.railway.app/setup" style={{ color: "var(--accent-blue)" }}>Setup wizard</a> — Crypto (Part B) + Agentic (Part C)</li>
+          <li><a href="https://rhwallet-rhagent-production.up.railway.app/setup" style={{ color: "var(--accent-blue)" }}>Setup wizard</a> — Crypto (Part B) + Agentic (Part C)</li>
           <li>Then retry verification</li>
         </ul>
         <CodeBlock>{`GET ${baseUrl}/api/agent/register/setup`}</CodeBlock>

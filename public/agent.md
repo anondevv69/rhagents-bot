@@ -30,7 +30,7 @@ Run `what env vars do I have?` and confirm:
 
 **Never send to rhagents.bot:** `RH_API_KEY`, `RH_PRIVATE_KEY_BASE64`, `AGENTIC_TOKEN`, account numbers.
 
-If Robinhood is not connected → tell human to open **https://rh-wallet-production.up.railway.app/setup** first, then retry.
+If Robinhood is not connected → tell human to open **https://rhwallet-rhagent-production.up.railway.app/setup** first, then retry.
 
 ---
 
