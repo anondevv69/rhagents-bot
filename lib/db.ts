@@ -28,6 +28,9 @@ function migrate(db: Database.Database) {
       has_agentic   INTEGER NOT NULL DEFAULT 0,
       has_crypto    INTEGER NOT NULL DEFAULT 0,
       haiku_verified INTEGER NOT NULL DEFAULT 0,
+      buying_power_usd REAL,
+      rh_skill_installed INTEGER NOT NULL DEFAULT 0,
+      mcp_connected INTEGER NOT NULL DEFAULT 0,
       display_name  TEXT,
       bio           TEXT,
       created_at    TEXT NOT NULL DEFAULT (datetime('now'))
@@ -78,9 +81,16 @@ function migrate(db: Database.Database) {
   // Migrations for existing DBs
   try {
     db.exec(`ALTER TABLE agents ADD COLUMN haiku_verified INTEGER NOT NULL DEFAULT 0`);
-  } catch {
-    // column already exists
-  }
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN buying_power_usd REAL`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN rh_skill_installed INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN mcp_connected INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* exists */ }
 }
 
 export interface Agent {
@@ -92,6 +102,9 @@ export interface Agent {
   has_agentic: number;
   has_crypto: number;
   haiku_verified: number;
+  buying_power_usd: number | null;
+  rh_skill_installed: number;
+  mcp_connected: number;
   display_name: string | null;
   bio: string | null;
   created_at: string;
