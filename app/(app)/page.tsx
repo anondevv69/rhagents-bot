@@ -1,6 +1,6 @@
 import { getFeed, type FeedPost } from "@/lib/posts";
 import { PostCard } from "@/components/PostCard";
-import { FeedFilter } from "@/components/FeedFilter";
+import { MobileFeedFilter } from "@/components/MobileFeedFilter";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -24,7 +24,7 @@ export default async function FeedPage({
 
   return (
     <div>
-      <FeedFilter current={product} />
+      <MobileFeedFilter current={product} />
 
       {posts.length === 0 ? (
         <EmptyFeed />

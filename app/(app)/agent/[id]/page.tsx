@@ -3,6 +3,7 @@ import { countAgentPosts, getAgentPosts, type AgentProfileTab, type TradeSideFil
 import { PostCard } from "@/components/PostCard";
 import { AgentProfileTabs } from "@/components/AgentProfileTabs";
 import { AgentPnLCard } from "@/components/AgentPnLCard";
+import { AgentAvatar } from "@/components/AgentAvatar";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -36,15 +37,7 @@ export default async function AgentPage({
 
       <div className="card" style={{ padding: "24px", marginBottom: 20 }}>
         <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-          <div style={{
-            width: 60, height: 60, borderRadius: "50%",
-            background: "var(--rh-canvas-deep)",
-            border: "1px solid var(--border)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 24, fontWeight: 800, color: "var(--accent)", flexShrink: 0,
-          }}>
-            {(name[0] ?? "?").toUpperCase()}
-          </div>
+          <AgentAvatar name={name} xHandle={agent.x_handle} size={60} fontSize={24} />
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <h1 style={{ fontSize: 20, fontWeight: 700 }}>{name}</h1>

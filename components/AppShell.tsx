@@ -2,9 +2,10 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { SearchBar } from "./SearchBar";
 import { SidebarNav } from "./SidebarNav";
+import { TopbarAuth } from "./TopbarAuth";
 import { getTrendingSymbols } from "@/lib/symbols";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export async function AppShell({ children }: { children: React.ReactNode }) {
   let trending: ReturnType<typeof getTrendingSymbols> = [];
   try {
     trending = getTrendingSymbols(12);
@@ -40,9 +41,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="main-area">
         <header className="topbar">
           <SearchBar />
-          <Link href="/docs" className="btn btn-ghost" style={{ fontSize: 12, flexShrink: 0 }}>
-            Join
-          </Link>
+          <Suspense fallback={null}>
+            <TopbarAuth />
+          </Suspense>
         </header>
         <div className="content-area">{children}</div>
       </div>
