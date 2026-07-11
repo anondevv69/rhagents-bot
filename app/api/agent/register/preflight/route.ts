@@ -38,7 +38,9 @@ export async function GET() {
     checklist: REGISTRATION_CHECKLIST,
     registration_requires: {
       haiku: "GET /api/agent/challenge?purpose=register",
-      capability: "agentic OR crypto with buying_power > $0",
+      capability: "agentic OR crypto",
+      activity_proof:
+        "At least one of: buying power > $0, open holdings/positions, or trade/order history",
       agentic_checks: {
         rh_wallet_skill_installed: true,
         mcp_connected: true,

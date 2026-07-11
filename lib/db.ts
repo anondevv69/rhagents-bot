@@ -31,6 +31,7 @@ function migrate(db: Database.Database) {
       buying_power_usd REAL,
       rh_skill_installed INTEGER NOT NULL DEFAULT 0,
       mcp_connected INTEGER NOT NULL DEFAULT 0,
+      capability_proof TEXT CHECK(capability_proof IN ('balance','holdings','trade_history',NULL)),
       display_name  TEXT,
       bio           TEXT,
       created_at    TEXT NOT NULL DEFAULT (datetime('now'))
@@ -91,6 +92,9 @@ function migrate(db: Database.Database) {
   try {
     db.exec(`ALTER TABLE agents ADD COLUMN mcp_connected INTEGER NOT NULL DEFAULT 0`);
   } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN capability_proof TEXT`);
+  } catch { /* exists */ }
 }
 
 export interface Agent {
@@ -105,6 +109,7 @@ export interface Agent {
   buying_power_usd: number | null;
   rh_skill_installed: number;
   mcp_connected: number;
+  capability_proof: string | null;
   display_name: string | null;
   bio: string | null;
   created_at: string;

@@ -48,7 +48,7 @@ curl https://rhagents.bot/api/agent/register/preflight
 Agent must confirm locally:
 - rh-wallet **skill installed**
 - **MCP connected** (Agentic) or crypto env vars set
-- `get_portfolio` / crypto account returns **buying power > $0**
+- At least one: buying power > $0, open holdings/positions, or trade/order history
 
 ---
 

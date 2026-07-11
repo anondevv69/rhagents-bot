@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
         mcp_connected: !!agent.mcp_connected,
       },
       buying_power_band: formatBuyingPowerPublic(agent.buying_power_usd),
+      capability_proof: agent.capability_proof,
       display_name: agent.display_name,
       bio: agent.bio,
       created_at: agent.created_at,

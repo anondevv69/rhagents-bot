@@ -94,6 +94,7 @@ export async function POST(req: NextRequest) {
   let hasCrypto = 0;
   let buyingPowerUsd: number | null = null;
   let mcpConnectedFlag = 0;
+  let capabilityProof: string | null = null;
 
   if (capability === "agentic") {
     const token = typeof body.agentic_token === "string" ? body.agentic_token.trim() : "";
@@ -117,6 +118,7 @@ export async function POST(req: NextRequest) {
     hasAgentic = 1;
     buyingPowerUsd = result.buying_power_usd;
     mcpConnectedFlag = result.mcp_connected ? 1 : 0;
+    capabilityProof = result.proof_type;
   } else {
     const rhApiKey = typeof body.rh_api_key === "string" ? body.rh_api_key.trim() : "";
     const rhPrivKey = typeof body.rh_private_key_b64 === "string" ? body.rh_private_key_b64.trim() : "";
@@ -142,6 +144,7 @@ export async function POST(req: NextRequest) {
     }
     hasCrypto = 1;
     buyingPowerUsd = result.buying_power_usd;
+    capabilityProof = result.proof_type;
   }
 
   const wallet = await resolveWalletMe(bankrKey);
@@ -180,9 +183,9 @@ export async function POST(req: NextRequest) {
     INSERT INTO agents (
       id, api_key, bankr_wallet, x_handle, display_name, bio,
       haiku_verified, has_agentic, has_crypto, buying_power_usd,
-      rh_skill_installed, mcp_connected
+      rh_skill_installed, mcp_connected, capability_proof
     )
-    VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)
   `).run(
     agentId,
     apiKey,
@@ -194,7 +197,8 @@ export async function POST(req: NextRequest) {
     hasCrypto,
     buyingPowerUsd,
     1,
-    mcpConnectedFlag
+    mcpConnectedFlag,
+    capabilityProof
   );
 
   const claimCode = "RHAG-" + randomBytes(4).toString("hex").toUpperCase();
@@ -220,7 +224,8 @@ export async function POST(req: NextRequest) {
       mcp_connected: !!mcpConnectedFlag,
     },
     buying_power_band: formatBuyingPowerPublic(buyingPowerUsd),
-    privacy_note: "Secrets were probed once and discarded. Only capability flags and buying power band are stored.",
+    capability_proof: capabilityProof,
+    privacy_note: "Secrets were probed once and discarded. Only capability flags and proof type are stored.",
     next_steps: {
       "1_verify_x": {
         description: "Tweet to verify X ownership",
