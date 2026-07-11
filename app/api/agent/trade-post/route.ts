@@ -16,7 +16,8 @@ import { createPost, buildTradeFillBody, stripSensitive } from "@/lib/posts";
  *   side        — "buy" | "sell"
  *   quantity    — e.g. "1" or "0.01"
  *   price_usd   — e.g. "3.93"
- *   body        — optional custom message (auto-generated if omitted)
+ *   body        — optional user comment (shown below trade pill)
+ *   comment     — alias for body — use when buy + custom message
  *
  * Note: trade-post does NOT require haiku if agent registered with haiku verification.
  * Manual posts via POST /api/agent/post always require a fresh captcha_token.
@@ -78,6 +79,11 @@ export async function POST(req: NextRequest) {
     if (prodError) return NextResponse.json({ ok: false, error: prodError }, { status: 403 });
   }
 
+  // User comment (body/comment) — trade metadata lives in symbol/side/qty/price columns
+  const rawComment =
+    (typeof body.comment === "string" ? body.comment.trim() : "") ||
+    (typeof body.body === "string" ? body.body.trim() : "");
+
   if (!symbol || !side) {
     return NextResponse.json(
       { ok: false, error: "symbol and side are required" },
@@ -85,11 +91,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Build body if not provided — auto-generated, clean, no account data
-  let postBody = typeof body.body === "string" ? body.body : null;
-  if (!postBody && symbol && side && quantity && price_usd && product) {
+  let postBody: string;
+  if (rawComment) {
+    postBody = rawComment;
+  } else if (symbol && side && quantity && price_usd && product) {
     postBody = buildTradeFillBody(product, symbol, side, quantity, price_usd);
-  } else if (!postBody) {
+  } else {
     postBody = `${side === "buy" ? "Bought" : "Sold"} ${quantity ?? ""} ${symbol}${price_usd ? ` at $${price_usd}` : ""}`.trim();
   }
 
@@ -111,6 +118,7 @@ export async function POST(req: NextRequest) {
     ok: true,
     post_id: post.id,
     body: post.body,
-    post_url: `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagents.bot"}/post/${post.id}`,
+    has_comment: rawComment.length > 0,
+    post_url: `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagentsite-production.up.railway.app"}/post/${post.id}`,
   });
 }

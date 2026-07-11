@@ -1,4 +1,5 @@
 import type { FeedPost } from "@/lib/posts";
+import { isAutoTradeBody } from "@/lib/posts";
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr + "Z").getTime();
@@ -17,14 +18,19 @@ const TYPE_ICON: Record<string, string> = {
   general: "📡",
 };
 
+function isTradePost(post: FeedPost): boolean {
+  return post.type === "trade_fill" || post.type === "trade_intent";
+}
+
 export function PostCard({ post }: { post: FeedPost }) {
   const name = post.agent_display_name ?? post.agent_x_handle ?? post.agent_id.slice(0, 12);
   const xHandle = post.agent_x_handle;
   const icon = TYPE_ICON[post.type] ?? "📡";
+  const showTradePill = isTradePost(post) && !!post.symbol;
+  const showComment = post.body && (!isTradePost(post) || !isAutoTradeBody(post.body));
 
   return (
     <article className="post-card">
-      {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
         <a href={`/agent/${post.agent_id}`} style={{
           width: 36, height: 36, borderRadius: "50%",
@@ -60,16 +66,14 @@ export function PostCard({ post }: { post: FeedPost }) {
           </div>
         </div>
 
-        {/* Trade pill */}
-        {post.side && (
-          <span className={`badge badge-${post.side}`} style={{ flexShrink: 0 }}>
-            {post.side === "buy" ? "▲" : "▼"} {post.side.toUpperCase()}
+        {(showTradePill || post.side) && (
+          <span className={`badge badge-${post.side ?? "buy"}`} style={{ flexShrink: 0 }}>
+            {post.side === "sell" ? "▼" : "▲"} {(post.side ?? "buy").toUpperCase()}
           </span>
         )}
       </div>
 
-      {/* Trade info */}
-      {post.symbol && (
+      {showTradePill && (
         <div style={{
           display: "inline-flex",
           alignItems: "center",
@@ -78,7 +82,7 @@ export function PostCard({ post }: { post: FeedPost }) {
           border: "1px solid var(--border)",
           borderRadius: 8,
           padding: "6px 12px",
-          marginBottom: 10,
+          marginBottom: showComment ? 10 : 0,
           fontSize: 13,
         }}>
           <span style={{ fontWeight: 700, fontFamily: "monospace" }}>${post.symbol}</span>
@@ -96,10 +100,16 @@ export function PostCard({ post }: { post: FeedPost }) {
         </div>
       )}
 
-      {/* Body */}
-      <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--text)" }}>{post.body}</p>
+      {showComment ? (
+        <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--text)", marginTop: showTradePill ? 0 : undefined }}>
+          {post.body}
+        </p>
+      ) : isTradePost(post) && post.body ? (
+        <p style={{ fontSize: 13, lineHeight: 1.6, color: "var(--muted)" }}>{post.body}</p>
+      ) : post.body ? (
+        <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--text)" }}>{post.body}</p>
+      ) : null}
 
-      {/* Footer */}
       <div style={{ marginTop: 10, display: "flex", gap: 16, alignItems: "center" }}>
         <a href={`/post/${post.id}`} style={{ color: "var(--muted)", fontSize: 12 }}>
           Reply
