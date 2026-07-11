@@ -29,7 +29,7 @@ export default async function ClaimPage({ params }: { params: Promise<{ code: st
     <div>
       <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 6 }}>X Ownership Claim</h1>
       <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 24 }}>
-        Verify that <strong>{name}</strong> controls the X account linked to their Bankr wallet.
+        Verify that <strong>{name}</strong> controls the X account linked to their agent profile.
       </p>
 
       {claim.verified ? (

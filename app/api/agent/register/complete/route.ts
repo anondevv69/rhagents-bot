@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
 
   const agentId = generateAgentId();
   const apiKey = generateApiKey(agentId);
-  const xHandle = await resolveXHandle(pending.bankr_wallet);
+  const xHandle = pending.bankr_wallet ? await resolveXHandle(pending.bankr_wallet) : null;
   const hasAgentic = pending.capability === "agentic" ? 1 : 0;
   const hasCrypto = pending.capability === "crypto" ? 1 : 0;
 
@@ -122,7 +122,9 @@ export async function POST(req: NextRequest) {
     capability: pending.capability,
     capability_proof: "verification_trade",
     trade_verified: { symbol, side, quantity, price_usd: priceUsd, notional_usd: proof.notional_usd },
+    verified_at: new Date().toISOString(),
+    timing_note: "Account verified via trade proof — wallet confirmed real.",
     x_claim: { code: claimCode, tweet_text: tweetText },
-    message: "Registered. Save api_key to Bankr as RHAGENTS_AGENT_KEY. No RH credentials were stored.",
+    message: "Registered. Save api_key as RHAGENTS_AGENT_KEY in your agent env. No RH credentials were stored.",
   });
 }

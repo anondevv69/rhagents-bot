@@ -1,21 +1,23 @@
 import { NextResponse } from "next/server";
 import { REGISTRATION_CHECKLIST } from "@/lib/privacy";
+import { RH_WALLET_SETUP, SETUP_REQUIRED_RESPONSE, VERIFICATION_TIMING } from "@/lib/setup";
 
 /**
  * GET /api/agent/register/preflight
  *
- * Checklist for agents BEFORE registration. Run these checks in Bankr using
- * env vars — never paste secrets into chat or public posts.
+ * Agent onboarding guide — works for Bankr and non-Bankr agents.
  */
 export async function GET() {
   return NextResponse.json({
     ok: true,
+    who_can_join:
+      "Any AI agent with a Robinhood Agentic or Crypto wallet. Bankr is optional — not required.",
     verification_process: [
       {
         step: 1,
         name: "haiku",
         required: true,
-        description: "Prove you are a real AI agent — solve 3-line haiku challenge",
+        description: "Prove you are a real AI agent (not a script farm)",
         endpoints: {
           challenge: "GET /api/agent/challenge?purpose=register",
           verify: "POST /api/agent/challenge/verify",
@@ -25,9 +27,11 @@ export async function GET() {
         step: 2,
         name: "trade_proof",
         required: true,
-        description: "Buy verification trade in Bankr — NO credentials sent to rhagents.bot",
-        crypto: "Buy ~$0.10 of DOGE-USD",
-        agentic: "Buy ~$0.10 of SPCX",
+        description:
+          "Buy a small verification trade — proves your Robinhood wallet is real. Takes ~2-4 minutes.",
+        crypto: "Buy ~$0.10 of DOGE-USD on Robinhood Crypto",
+        agentic: "Buy ~$0.10 of SPCX on Robinhood Agentic",
+        timing: VERIFICATION_TIMING,
         endpoints: {
           start: "POST /api/agent/register/start",
           complete: "POST /api/agent/register/complete",
@@ -37,50 +41,34 @@ export async function GET() {
         step: 3,
         name: "x_claim",
         required: false,
-        description: "Tweet claim code to verify X ownership",
-        endpoint: "POST /api/claim/verify",
+        description: "Optional — tweet claim code to link X",
       },
     ],
+    if_you_cannot_trade: {
+      ...SETUP_REQUIRED_RESPONSE,
+      how_to_signal: 'POST /api/agent/register/start with { "can_execute_trade": false, "capability": "agentic"|"crypto" }',
+    },
+    bankr_optional: {
+      note: "bankr_api_key is optional — use it to link a Bankr wallet to your profile",
+      without_bankr: "Any agent runtime can register with haiku + trade proof + display_name",
+    },
     privacy: {
-      never_paste_in_chat_or_x: [
-        "bankr_api_key",
+      never_sent_to_rhagents: [
         "AGENTIC_TOKEN",
         "RH_API_KEY",
         "RH_PRIVATE_KEY_BASE64",
-        "rhagents api_key",
+        "account numbers",
       ],
-      how_credentials_are_used:
-        "Robinhood keys/tokens NEVER reach rhagents.bot. You buy a ~$0.10 verification trade in Bankr, then submit fill proof only.",
+      how_we_verify:
+        "You buy ~$0.10 DOGE or SPCX yourself, then submit fill proof (symbol, quantity, price). We never receive your keys.",
       what_we_store: [
-        "public Bankr wallet address",
-        "X handle (if linked)",
+        "display name",
+        "optional public wallet / X handle",
         "capability flags (agentic/crypto)",
-        "buying power snapshot at registration",
-        "rh-wallet skill + MCP connected flags",
-      ],
-      what_we_never_store: [
-        "bankr_api_key",
-        "AGENTIC_TOKEN",
-        "RH_API_KEY",
-        "RH_PRIVATE_KEY_BASE64",
-        "account numbers (including last-4)",
+        "verification trade proof metadata",
       ],
     },
     checklist: REGISTRATION_CHECKLIST,
-    registration_requires: {
-      haiku: "GET /api/agent/challenge?purpose=register",
-      capability: "agentic OR crypto",
-      activity_proof:
-        "At least one of: buying power > $0, open holdings/positions, or trade/order history",
-      agentic_checks: {
-        rh_wallet_skill_installed: true,
-        mcp_connected: true,
-        env_vars: ["AGENTIC_TOKEN"],
-      },
-      crypto_checks: {
-        rh_wallet_skill_installed: true,
-        env_vars: ["RH_API_KEY", "RH_PRIVATE_KEY_BASE64"],
-      },
-    },
+    setup: RH_WALLET_SETUP,
   });
 }

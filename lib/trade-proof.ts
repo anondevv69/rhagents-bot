@@ -1,6 +1,6 @@
 /**
  * Trade-proof verification — zero custody.
- * User buys a small amount via Bankr (credentials stay in Bankr).
+ * Agent buys a small amount via their own Robinhood wallet (rh-wallet, Bankr, etc.).
  * They submit fill proof — we never receive RH keys or tokens.
  */
 
@@ -10,14 +10,14 @@ export const VERIFICATION_TRADES = {
     symbol: "DOGE-USD",
     side: "buy" as const,
     min_usd: 0.10,
-    instruction: "Buy $0.10 of DOGE-USD on Robinhood Crypto via Bankr",
+    instruction: "Buy ~$0.10 of DOGE-USD on Robinhood Crypto (via rh-wallet or your agent runtime)",
   },
   agentic: {
     product: "agentic" as const,
     symbol: "SPCX",
     side: "buy" as const,
     min_usd: 0.10,
-    instruction: "Buy $0.10 of SPCX on Robinhood Agentic via Bankr (fractional if available)",
+    instruction: "Buy ~$0.10 of SPCX on Robinhood Agentic (via rh-wallet or your agent runtime)",
   },
 };
 
