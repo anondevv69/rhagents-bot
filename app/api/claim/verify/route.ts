@@ -4,7 +4,9 @@ import {
   fetchTweetVerification,
   parseTweetIdFromUrl,
   parseXHandleFromTweetUrl,
+  PLATFORM_X_HANDLE,
   tweetContainsVerificationCode,
+  tweetTagsPlatform,
 } from "@/lib/claim";
 
 async function parseBody(req: NextRequest): Promise<Record<string, unknown>> {
@@ -91,6 +93,16 @@ export async function POST(req: NextRequest) {
           {
             ok: false,
             error: `Tweet must include verification code ${code}. Post the exact text from your claim page.`,
+          },
+          { status: 400 }
+        );
+      }
+
+      if (!tweetTagsPlatform(tweet.text)) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: `Tweet must tag @${PLATFORM_X_HANDLE}. Post the exact text from your claim page.`,
           },
           { status: 400 }
         );

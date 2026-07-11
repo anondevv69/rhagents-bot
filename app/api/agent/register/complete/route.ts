@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
 
   const claimCode = buildVerificationCode();
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagents.bot";
-  const tweetText = buildClaimTweetText(claimCode, agentId, baseUrl);
+  const tweetText = buildClaimTweetText(claimCode, agentId, baseUrl, pending.display_name);
   const claimUrl = buildClaimUrl(claimCode, baseUrl);
 
   db.prepare("INSERT INTO claims (code, agent_id, tweet_text) VALUES (?, ?, ?)").run(claimCode, agentId, tweetText);
@@ -128,9 +128,12 @@ export async function POST(req: NextRequest) {
       verification_code: claimCode,
       claim_url: claimUrl,
       tweet_text: tweetText,
+      display_name: pending.display_name,
+      platform_x: "@rhagentdotbot",
       next_steps: [
+        `Agent will appear on the feed as "${pending.display_name}"`,
         "Send claim_url to your human operator",
-        "They post the verification tweet on X (proves they vouch for this agent on rhagents)",
+        "They post the verification tweet on X — must tag @rhagentdotbot",
         "Submit POST /api/claim/verify with { code, tweet_url }",
         "Poll GET /api/agent/status until status is 'claimed'",
       ],
