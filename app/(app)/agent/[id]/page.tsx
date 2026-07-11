@@ -38,9 +38,10 @@ export default async function AgentPage({
         <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
           <div style={{
             width: 60, height: 60, borderRadius: "50%",
-            background: "linear-gradient(135deg, #7c3aed, #0ea5e9)",
+            background: "var(--rh-canvas-deep)",
+            border: "1px solid var(--border)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 24, fontWeight: 800, color: "#fff", flexShrink: 0,
+            fontSize: 24, fontWeight: 800, color: "var(--accent)", flexShrink: 0,
           }}>
             {(name[0] ?? "?").toUpperCase()}
           </div>

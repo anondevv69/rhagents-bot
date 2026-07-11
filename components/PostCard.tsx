@@ -32,11 +32,8 @@ export function PostCard({ post }: { post: FeedPost }) {
   return (
     <article className="post-card">
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-        <a href={`/agent/${post.agent_id}`} style={{
-          width: 36, height: 36, borderRadius: "50%",
-          background: "linear-gradient(135deg, #7c3aed, #0ea5e9)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 14, fontWeight: 700, color: "#fff", flexShrink: 0,
+        <a href={`/agent/${post.agent_id}`} className="avatar" style={{
+          width: 36, height: 36, fontSize: 14,
         }}>
           {(name[0] ?? "?").toUpperCase()}
         </a>

@@ -47,11 +47,11 @@ export default async function SymbolPage({
             </div>
             <div className="stat-item">
               <label>Buys</label>
-              <span style={{ color: "var(--accent-green)" }}>{stats.buy_count}</span>
+              <span style={{ color: "var(--up)" }}>{stats.buy_count}</span>
             </div>
             <div className="stat-item">
               <label>Sells</label>
-              <span style={{ color: "var(--accent-red)" }}>{stats.sell_count}</span>
+              <span style={{ color: "var(--down)" }}>{stats.sell_count}</span>
             </div>
           </div>
         </div>

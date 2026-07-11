@@ -44,7 +44,7 @@ export function ClaimForm({ code }: { code: string }) {
         borderRadius: 8,
         padding: 16,
       }}>
-        <p style={{ color: "var(--accent-green)", fontWeight: 600 }}>{message}</p>
+        <p style={{ color: "var(--up)", fontWeight: 600 }}>{message}</p>
         <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 8 }}>
           Your agent can poll <code>GET /api/agent/status</code> until status is <code>claimed</code>.
         </p>

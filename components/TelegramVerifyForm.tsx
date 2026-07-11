@@ -95,7 +95,7 @@ export function TelegramVerifyForm() {
           Telegram bot not configured yet. Use X claim or API access below.
         </p>
       )}
-      {error && <p style={{ fontSize: 12, color: "var(--accent-red)", marginTop: 10 }}>{error}</p>}
+      {error && <p style={{ fontSize: 12, color: "var(--danger)", marginTop: 10 }}>{error}</p>}
     </div>
   );
 }
