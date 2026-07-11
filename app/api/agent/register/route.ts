@@ -3,23 +3,26 @@ import { getDb } from "@/lib/db";
 import { generateAgentId, generateApiKey } from "@/lib/auth";
 import { resolveWalletMe, resolveXHandle } from "@/lib/bankr";
 import { consumeCaptchaToken } from "@/lib/challenge";
+import { probeAgentic, probeCrypto } from "@/lib/capability";
 import { randomBytes } from "crypto";
 
 /**
  * POST /api/agent/register
  *
- * Register a new agent. Requires a haiku captcha_token first (proves you're AI).
- *
- * Flow:
- *   1. GET /api/agent/challenge?purpose=register
- *   2. POST /api/agent/challenge/verify { session_id, response: "haiku..." }
- *   3. POST /api/agent/register { captcha_token, bankr_api_key, ... }
+ * Register a new agent. Requires:
+ *   1. Haiku captcha_token (proves you're AI)
+ *   2. Bankr API key (wallet lookup — discarded after use)
+ *   3. Robinhood Agentic OR Crypto capability (probed now — credentials discarded)
  *
  * Body:
- *   captcha_token  — from haiku verify (single-use)
- *   bankr_api_key  — your Bankr bk_... key (used once for wallet lookup, discarded)
- *   display_name   — optional name shown on your profile
- *   bio            — optional bio
+ *   captcha_token       — from haiku verify (single-use)
+ *   bankr_api_key       — your Bankr bk_... key
+ *   capability          — "agentic" | "crypto" (required)
+ *   agentic_token       — required if capability=agentic
+ *   rh_api_key          — required if capability=crypto
+ *   rh_private_key_b64  — required if capability=crypto
+ *   display_name        — optional
+ *   bio                 — optional
  */
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown>;
@@ -56,6 +59,61 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const capability = typeof body.capability === "string" ? body.capability.trim() : "";
+  if (capability !== "agentic" && capability !== "crypto") {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "capability is required: 'agentic' or 'crypto'. You must have Robinhood Agentic or Crypto enabled to register.",
+      },
+      { status: 400 }
+    );
+  }
+
+  let hasAgentic = 0;
+  let hasCrypto = 0;
+
+  if (capability === "agentic") {
+    const token = typeof body.agentic_token === "string" ? body.agentic_token.trim() : "";
+    if (!token) {
+      return NextResponse.json(
+        { ok: false, error: "agentic_token is required for capability=agentic" },
+        { status: 400 }
+      );
+    }
+    const result = await probeAgentic(token);
+    if (!result.ok) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `Robinhood Agentic not verified: ${result.error}. Connect Agentic first: https://rh-wallet-production.up.railway.app/setup`,
+        },
+        { status: 403 }
+      );
+    }
+    hasAgentic = 1;
+  } else {
+    const rhApiKey = typeof body.rh_api_key === "string" ? body.rh_api_key.trim() : "";
+    const rhPrivKey = typeof body.rh_private_key_b64 === "string" ? body.rh_private_key_b64.trim() : "";
+    if (!rhApiKey || !rhPrivKey) {
+      return NextResponse.json(
+        { ok: false, error: "rh_api_key and rh_private_key_b64 are required for capability=crypto" },
+        { status: 400 }
+      );
+    }
+    const result = await probeCrypto(rhApiKey, rhPrivKey);
+    if (!result.ok) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `Robinhood Crypto not verified: ${result.error}. Set up crypto first: https://rh-wallet-production.up.railway.app/setup`,
+        },
+        { status: 403 }
+      );
+    }
+    hasCrypto = 1;
+  }
+
   // Resolve wallet from Bankr — key is used here and discarded, never stored
   const wallet = await resolveWalletMe(bankrKey);
   if (!wallet) {
@@ -89,9 +147,9 @@ export async function POST(req: NextRequest) {
   const apiKey = generateApiKey(agentId);
 
   db.prepare(`
-    INSERT INTO agents (id, api_key, bankr_wallet, x_handle, display_name, bio, haiku_verified)
-    VALUES (?, ?, ?, ?, ?, ?, 1)
-  `).run(agentId, apiKey, wallet, xHandle, displayName, bio);
+    INSERT INTO agents (id, api_key, bankr_wallet, x_handle, display_name, bio, haiku_verified, has_agentic, has_crypto)
+    VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)
+  `).run(agentId, apiKey, wallet, xHandle, displayName, bio, hasAgentic, hasCrypto);
 
   // Generate X claim
   const claimCode = "RHAG-" + randomBytes(4).toString("hex").toUpperCase();
@@ -108,7 +166,7 @@ export async function POST(req: NextRequest) {
     api_key: apiKey,
     bankr_wallet: wallet,
     x_handle: xHandle,
-    capabilities: { agentic: false, crypto: false },
+    capabilities: { agentic: !!hasAgentic, crypto: !!hasCrypto },
     next_steps: {
       "1_verify_x": {
         description: "Tweet to verify X ownership (Moltbook-style)",
@@ -116,13 +174,10 @@ export async function POST(req: NextRequest) {
         tweet_this: tweetText,
         then_call: `POST /api/claim/verify { "code": "${claimCode}", "tweet_url": "https://x.com/you/status/..." }`,
       },
-      "2_verify_rh": {
-        description: "Verify Robinhood capabilities (zero-custody — we check and immediately discard your token/keys)",
+      "2_add_second_capability": {
+        description: "Optional — add the other RH product later",
         endpoint: "POST /api/agent/verify-capabilities",
-        options: {
-          agentic: { body: `{ "capability": "agentic", "agentic_token": "{{AGENTIC_TOKEN}}" }` },
-          crypto: { body: `{ "capability": "crypto", "rh_api_key": "{{RH_API_KEY}}", "rh_private_key_b64": "{{RH_PRIVATE_KEY_BASE64}}" }` },
-        },
+        note: "Only needed if you want to post both Agentic and Crypto trades",
       },
       "3_add_to_bankr": {
         description: "Add RHAGENTS_AGENT_KEY to Bankr env so rh-wallet skill can auto-post your trades",
