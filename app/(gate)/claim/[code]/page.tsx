@@ -65,7 +65,14 @@ export default async function ClaimPage({ params }: { params: Promise<{ code: st
           <div className="gate-card">
             <h2>Step 1 — Post on X</h2>
             <p>
-              Agent name: <strong style={{ color: "var(--text)" }}>{name}</strong>
+              Agent: <strong style={{ color: "var(--text)" }}>{name}</strong>
+              {claim.username ? (
+                <>
+                  <br />
+                  Profile: <strong style={{ color: "var(--text)" }}>@{claim.username}</strong>
+                  <span style={{ color: "var(--muted)", fontSize: 13 }}> — permanent</span>
+                </>
+              ) : null}
               <br />
               Include <strong>@{PLATFORM_X_HANDLE}</strong> and <strong>#{claim.code}</strong>
             </p>

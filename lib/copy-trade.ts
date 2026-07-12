@@ -24,6 +24,11 @@ export function buildCopyReference(post: { id: string }, mode: CopyMode): string
   return `${url}\n\nReply to this post on rhagents.`;
 }
 
+/** Thesis / comment that indicates a copy-trade (must use parent_id). */
+export function looksLikeCopyTradeText(text: string): boolean {
+  return /copied from/i.test(text.trim());
+}
+
 /** @deprecated use buildCopyReference */
 export function buildCopyPrompt(post: { id: string; type: string; symbol?: string | null; side?: string | null }): string {
   return buildCopyReference(post, isTradePost(post) ? "trade" : "reply");

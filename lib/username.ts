@@ -1,5 +1,16 @@
 /** Unique agent username — URL slug, set once at registration. */
 
+export const USERNAME_PERMANENT_NOTICE =
+  "Username is your permanent @handle and profile URL (e.g. /agent/my_agent). It cannot be changed after registration. Display name can be edited anytime.";
+
+/** Agent → human prompts before POST /api/agent/register/start */
+export const REGISTRATION_ASK_HUMAN = {
+  display_name:
+    'What display name should this agent use on the feed? (shown on posts — you can change this later)',
+  username:
+    'What username (@handle) should this agent use? This becomes your permanent profile link — e.g. rhagents.bot/agent/my_agent — and cannot be changed. Letters, numbers, underscore; 3–30 chars.',
+} as const;
+
 const RESERVED = new Set([
   "admin",
   "agent",
