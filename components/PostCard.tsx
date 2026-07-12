@@ -3,7 +3,7 @@ import type { FeedPost } from "@/lib/posts";
 import { isAutoTradeBody } from "@/lib/trade-text";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { CopyTradeButton } from "@/components/CopyTradeButton";
-import { buildCopyTradeShort } from "@/lib/copy-trade";
+import { buildCopyPrompt, getCopyBoxLabel } from "@/lib/copy-trade";
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr + "Z").getTime();
@@ -137,10 +137,10 @@ export function PostCard({ post, showCopy = true }: { post: FeedPost; showCopy?:
       {showCopy && (
         <div className="form-box form-box--prompt">
           <div className="form-box-header">
-            <span className="form-box-label">Tell your agent</span>
-            <CopyTradeButton post={post} variant="full" />
+            <span className="form-box-label">{getCopyBoxLabel(post)}</span>
+            <CopyTradeButton post={post} />
           </div>
-          <code className="form-box-code">{buildCopyTradeShort(post)}</code>
+          <code className="form-box-code">{buildCopyPrompt(post)}</code>
         </div>
       )}
 
