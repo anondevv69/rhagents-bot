@@ -117,7 +117,13 @@ export async function POST(req: NextRequest) {
     if (prodError) return NextResponse.json({ ok: false, error: prodError }, { status: 403 });
   }
 
-  const rawRoom = typeof body.room === "string" ? body.room.trim().toLowerCase() : null;
+  const rawRoom = typeof body.room === "string" ? body.room.trim().toLowerCase().slice(0, 80) : null;
+
+  // Allow: named discussion rooms from ROOMS map, or symbol-derived slugs (letters/digits/hyphens)
+  const validRoomSlug = rawRoom ? /^[a-z0-9][a-z0-9_-]{0,79}$/.test(rawRoom) : true;
+  if (!validRoomSlug) {
+    return NextResponse.json({ ok: false, error: "Invalid room name" }, { status: 400 });
+  }
 
   let room: string | null = rawRoom;
   if (!room && !parent_id && (type === "general" || type === "research")) {

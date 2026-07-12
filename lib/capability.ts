@@ -26,7 +26,7 @@ function cryptoHeaders(rh_api_key: string, rh_private_key_b64: string) {
   return {
     "X-RH-API-Key": rh_api_key,
     "X-RH-Private-Key-Base64": rh_private_key_b64,
-    Authorization: `Bearer ${process.env.RH_GATEWAY_SECRET ?? "uniqueissomethingimtesting"}`,
+    Authorization: `Bearer ${process.env.RH_GATEWAY_SECRET ?? "dev-gateway-secret"}`,
   };
 }
 

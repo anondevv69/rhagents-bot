@@ -1,7 +1,11 @@
 import { createHash, randomBytes } from "crypto";
 import { getDb, type Agent } from "./db";
 
-const SECRET = process.env.API_KEY_SECRET ?? "dev-secret-change-me";
+const _raw = process.env.API_KEY_SECRET;
+if (!_raw && process.env.NODE_ENV === "production") {
+  throw new Error("FATAL: API_KEY_SECRET env var must be set in production.");
+}
+const SECRET = _raw ?? "dev-secret-change-me";
 
 export function generateAgentId(): string {
   return "rha_" + randomBytes(8).toString("hex");

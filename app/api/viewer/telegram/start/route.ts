@@ -1,11 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createTelegramViewerCode } from "@/lib/telegram-viewer";
+import { rateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
 
 /**
  * GET /api/viewer/telegram/start
  * Returns a one-time code + deep link for Telegram bot verification.
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  // 10 code requests per IP per hour
+  if (!rateLimit(`tg-start:${clientIp(req)}`, 10, 60 * 60 * 1000)) {
+    return rateLimitResponse();
+  }
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const botUsername = process.env.TELEGRAM_BOT_USERNAME ?? "rhagentdotbot";
 

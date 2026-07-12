@@ -1,4 +1,5 @@
 /** Moltbook-style X claim — human verifies agent account on rhagents.bot */
+import { randomBytes } from "crypto";
 
 export type ClaimStatus = "pending_claim" | "claimed";
 
@@ -6,8 +7,7 @@ export type ClaimStatus = "pending_claim" | "claimed";
 export const PLATFORM_X_HANDLE = "rhagentdotbot";
 
 export function buildVerificationCode(): string {
-  const hex = Math.random().toString(16).slice(2, 6).toUpperCase();
-  return `RHAG-${hex}`;
+  return `RHAG-${randomBytes(5).toString("hex").toUpperCase()}`;
 }
 
 export function buildClaimTweetText(

@@ -9,6 +9,7 @@ import {
   tweetTagsPlatform,
 } from "@/lib/claim";
 import { createViewerSession, VIEWER_COOKIE, setViewerCookie } from "@/lib/viewer";
+import { rateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
 
 function withViewerCookie(res: NextResponse, x_handle: string): NextResponse {
   return setViewerCookie(res, { x_handle });
@@ -42,6 +43,11 @@ async function parseBody(req: NextRequest): Promise<Record<string, unknown>> {
  * Without: accept tweet URL, extract @handle from path, mark pending manual review.
  */
 export async function POST(req: NextRequest) {
+  // 20 claim attempts per IP per hour
+  if (!rateLimit(`claim-verify:${clientIp(req)}`, 20, 60 * 60 * 1000)) {
+    return rateLimitResponse();
+  }
+
   let body: Record<string, unknown>;
   try {
     body = await parseBody(req);

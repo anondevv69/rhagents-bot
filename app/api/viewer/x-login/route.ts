@@ -8,6 +8,7 @@ import {
 } from "@/lib/claim";
 import { findClaimedAgentByHandle, findVerifiedClaim } from "@/lib/viewer-login";
 import { setViewerCookie } from "@/lib/viewer";
+import { rateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
 
 /**
  * POST /api/viewer/x-login
@@ -15,11 +16,18 @@ import { setViewerCookie } from "@/lib/viewer";
  * Log in for users who already claimed an agent on X.
  *
  * Body (one of):
- *   { x_handle: "rayblancoeth" }     — matches a claimed agent
- *   { claim_code: "RHAG-XXXX" }      — verified claim code
- *   { tweet_url: "https://x.com/..." } — author must match a claimed agent
+ *   { claim_code: "RHAG-XXXX" }        — verified claim code from registration
+ *   { tweet_url: "https://x.com/..." } — tweet author must match a claimed agent
+ *
+ * NOTE: x_handle-only login is intentionally NOT supported — it would allow
+ * anyone who knows a handle to impersonate that agent owner without proof.
  */
 export async function POST(req: NextRequest) {
+  // 10 login attempts per IP per 15 minutes
+  if (!rateLimit(`x-login:${clientIp(req)}`, 10, 15 * 60 * 1000)) {
+    return rateLimitResponse();
+  }
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -28,7 +36,6 @@ export async function POST(req: NextRequest) {
   }
 
   const claimCode = typeof body.claim_code === "string" ? body.claim_code.trim().toUpperCase() : "";
-  const xHandle = typeof body.x_handle === "string" ? body.x_handle.trim() : "";
   const tweetUrl = typeof body.tweet_url === "string" ? body.tweet_url.trim() : "";
 
   // 1. Claim code — fastest for users who saved RHAG-XXXX
@@ -54,30 +61,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 2. X handle — user already claimed; handle was verified at claim time
-  if (xHandle) {
-    const agent = findClaimedAgentByHandle(xHandle);
-    if (!agent) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: `No claimed agent found for @${xHandle.replace(/^@/, "")}. Register first or check the handle.`,
-        },
-        { status: 404 }
-      );
-    }
-    return setViewerCookie(
-      NextResponse.json({
-        ok: true,
-        method: "x_handle",
-        x_handle: agent.x_handle.replace(/^@/, ""),
-        agent_id: agent.id,
-      }),
-      { x_handle: agent.x_handle }
-    );
-  }
-
-  // 3. Tweet URL — verify author matches a claimed agent
+  // 2. Tweet URL — verify author matches a claimed agent
   if (tweetUrl) {
     const handleFromUrl = parseXHandleFromTweetUrl(tweetUrl);
     const bearerToken = process.env.TWITTER_BEARER_TOKEN;
@@ -124,7 +108,7 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json(
-    { ok: false, error: "Provide claim_code, x_handle, or tweet_url" },
+    { ok: false, error: "Provide claim_code or tweet_url" },
     { status: 400 }
   );
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { getDb } from "@/lib/db";
 import { consumeCaptchaToken } from "@/lib/challenge";
+import { rateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
 import { resolveWalletMe } from "@/lib/bankr";
 import { getVerificationChallenge, type VerificationProduct } from "@/lib/trade-proof";
 import { SETUP_REQUIRED_RESPONSE, VERIFICATION_TIMING, RH_WALLET_SETUP } from "@/lib/setup";
@@ -22,6 +23,11 @@ import { validateUsername, isUsernameTaken } from "@/lib/username";
  *   username          — required — permanent URL slug (a-z, 0-9, underscore; 3–30 chars)
  */
 export async function POST(req: NextRequest) {
+  // 5 registration attempts per IP per hour
+  if (!rateLimit(`register-start:${clientIp(req)}`, 5, 60 * 60 * 1000)) {
+    return rateLimitResponse();
+  }
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();

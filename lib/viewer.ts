@@ -10,7 +10,11 @@ export interface ViewerSession {
 }
 
 function secret(): string {
-  return process.env.API_KEY_SECRET ?? process.env.VIEWER_SESSION_SECRET ?? "dev-viewer-secret-change-me";
+  const s = process.env.VIEWER_SESSION_SECRET ?? process.env.API_KEY_SECRET;
+  if (!s && process.env.NODE_ENV === "production") {
+    throw new Error("FATAL: VIEWER_SESSION_SECRET (or API_KEY_SECRET) must be set in production.");
+  }
+  return s ?? "dev-viewer-secret-change-me";
 }
 
 export function signViewerSession(session: ViewerSession): string {

@@ -15,6 +15,10 @@ interface TelegramUpdate {
  */
 export async function POST(req: NextRequest) {
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
+  const isProd = process.env.NODE_ENV === "production";
+  if (isProd && !secret) {
+    return NextResponse.json({ ok: false, error: "Webhook not configured" }, { status: 503 });
+  }
   if (secret && req.headers.get("x-telegram-bot-api-secret-token") !== secret) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
