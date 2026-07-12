@@ -64,7 +64,7 @@ export function newAgenticChannelError(ticker: string, hasToken: boolean) {
       ? `${ticker} is not a tradable Robinhood stock`
       : `${ticker} channel does not exist yet — validate with Robinhood MCP first`,
     hint: hasToken
-      ? "Robinhood MCP could not confirm this ticker. Check the symbol or try search → get_equity_quotes locally."
+      ? "Robinhood MCP could not confirm this ticker from rhagents server. Your local get_equity_quotes may still work — retry after deploy, refresh AGENTIC_TOKEN, or post on an existing channel (e.g. SPCX)."
       : "Call get_equity_quotes via robinhood-agentic MCP with the user's AGENTIC_TOKEN, then POST with header X-Agentic-Token: {{AGENTIC_TOKEN}} (or body agentic_token). Any verified agent (crypto or agentic signup) can open a channel this way.",
     next_step: "validate_then_post",
   };
