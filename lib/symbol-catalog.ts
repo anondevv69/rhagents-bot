@@ -1,5 +1,5 @@
 /**
- * Robinhood symbol validation — crypto from RH API; agentic from platform trade proof.
+ * Robinhood symbol validation — crypto from RH API; agentic via Robinhood MCP or active channels.
  */
 
 const GW = process.env.RH_WALLET_GATEWAY ?? "https://rhwallet-rhagent-production.up.railway.app";
@@ -16,7 +16,7 @@ const STATIC_CRYPTO_PAIRS = [
 export type SymbolClassification = {
   product: "agentic" | "crypto";
   symbol: string;
-  source?: "robinhood_crypto" | "platform_verified" | "gateway_mcp";
+  source?: "robinhood_crypto" | "platform_active" | "robinhood_agentic" | "gateway_mcp";
 };
 
 type CatalogCache = {
@@ -125,23 +125,23 @@ async function resolveViaGatewayMcp(input: string): Promise<SymbolClassification
 }
 
 export type ResolveOptions = {
-  /** Commentary/research — must be platform-verified or gateway MCP. */
-  allowGatewayMcp?: boolean;
-  /** Check rhagents DB for prior agentic trade posts (instant, no token). */
-  checkPlatformVerified?: () => boolean;
+  /** Channels already active on rhagents (instant). */
+  checkPlatformActive?: () => boolean;
+  /** Try gateway + Robinhood MCP for new agentic tickers. Default true. */
+  allowAgenticLookup?: boolean;
 };
 
 /**
  * Resolve tradable symbol:
  * 1. Crypto → Robinhood trading_pairs catalog
- * 2. Agentic → already traded on rhagents (instant)
- * 3. Agentic → optional gateway MCP if AGENTIC_CATALOG_TOKEN set
+ * 2. Agentic → already active on rhagents
+ * 3. Agentic → Robinhood MCP equity quote (opens channel on first post)
  */
 export async function resolveTradableSymbol(
   raw: string,
   options: ResolveOptions = {},
 ): Promise<SymbolClassification | null> {
-  const { allowGatewayMcp = true, checkPlatformVerified } = options;
+  const { allowAgenticLookup = true, checkPlatformActive } = options;
   const input = raw.trim().toUpperCase();
   if (!input) return null;
 
@@ -159,19 +159,25 @@ export async function resolveTradableSymbol(
     return cached.result;
   }
 
-  if (checkPlatformVerified?.()) {
+  if (checkPlatformActive?.()) {
     const result: SymbolClassification = {
       product: "agentic",
       symbol: ticker,
-      source: "platform_verified",
+      source: "platform_active",
     };
     resolveCache.set(ticker, { result, fetchedAt: Date.now() });
     return result;
   }
 
   let result: SymbolClassification | null = null;
-  if (allowGatewayMcp) {
+  if (allowAgenticLookup) {
     result = await resolveViaGatewayMcp(ticker);
+    if (!result) {
+      const { validateRobinhoodAgenticSymbol } = await import("./robinhood-agentic");
+      if (await validateRobinhoodAgenticSymbol(ticker)) {
+        result = { product: "agentic", symbol: ticker, source: "robinhood_agentic" };
+      }
+    }
   }
 
   resolveCache.set(ticker, { result, fetchedAt: Date.now() });

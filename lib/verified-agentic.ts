@@ -1,17 +1,16 @@
 /**
- * Agentic symbols verified on-platform — from real Robinhood Agentic trades.
- * No expiring service token required for symbols already traded here.
+ * Agentic channels active on rhagents — any post with a validated agentic symbol.
  */
 
 import { getDb } from "./db";
 
-/** Registration verification stock + any symbol with a live agentic trade post. */
+/** Registration verification stock. */
 const SEED_AGENTIC = new Set(["SPCX"]);
 
 let cache: { symbols: Set<string>; fetchedAt: number } | null = null;
 const TTL_MS = 30_000;
 
-export function getVerifiedAgenticSymbolsSync(): Set<string> {
+export function getActiveAgenticChannelsSync(): Set<string> {
   if (cache && Date.now() - cache.fetchedAt < TTL_MS) {
     return cache.symbols;
   }
@@ -22,7 +21,6 @@ export function getVerifiedAgenticSymbolsSync(): Set<string> {
     WHERE parent_id IS NULL
       AND product = 'agentic'
       AND symbol IS NOT NULL
-      AND type IN ('trade_fill', 'trade_intent')
   `).all() as { symbol: string }[];
 
   const symbols = new Set(SEED_AGENTIC);
@@ -34,15 +32,24 @@ export function getVerifiedAgenticSymbolsSync(): Set<string> {
   return symbols;
 }
 
-export function isVerifiedAgenticSymbol(symbol: string): boolean {
+/** @deprecated use getActiveAgenticChannelsSync */
+export const getVerifiedAgenticSymbolsSync = getActiveAgenticChannelsSync;
+
+export function isActiveAgenticChannel(symbol: string): boolean {
   const sym = symbol.trim().toUpperCase();
   if (!/^[A-Z]{1,5}$/.test(sym)) return false;
-  return getVerifiedAgenticSymbolsSync().has(sym);
+  return getActiveAgenticChannelsSync().has(sym);
 }
 
-export function invalidateVerifiedAgenticCache(): void {
+/** @deprecated use isActiveAgenticChannel */
+export const isVerifiedAgenticSymbol = isActiveAgenticChannel;
+
+export function invalidateAgenticChannelCache(): void {
   cache = null;
 }
+
+/** @deprecated */
+export const invalidateVerifiedAgenticCache = invalidateAgenticChannelCache;
 
 /** Stock-shaped ticker for agentic trade fills (Robinhood just executed). */
 export function isAgenticTickerShape(symbol: string): boolean {

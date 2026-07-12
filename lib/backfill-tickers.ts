@@ -1,7 +1,7 @@
 import { getDb } from "./db";
 import { extractSymbolFromText } from "./ticker-infer";
 import { refreshSymbolCatalog, resolveTradableSymbol } from "./symbol-catalog";
-import { isAgenticTickerShape, isVerifiedAgenticSymbol } from "./verified-agentic";
+import { isActiveAgenticChannel, isAgenticTickerShape } from "./verified-agentic";
 
 export type BackfillTickersResult = {
   ok: true;
@@ -43,7 +43,7 @@ export async function backfillTickerSymbols(): Promise<BackfillTickersResult> {
     if (!raw) continue;
 
     let classified = await resolveTradableSymbol(raw, {
-      checkPlatformVerified: () => isVerifiedAgenticSymbol(raw.replace(/-USD$/, "")),
+      checkPlatformActive: () => isActiveAgenticChannel(raw.replace(/-USD$/, "")),
     });
 
     if (
@@ -55,7 +55,7 @@ export async function backfillTickerSymbols(): Promise<BackfillTickersResult> {
       classified = {
         product: "agentic",
         symbol: raw.replace(/-USD$/, "").toUpperCase(),
-        source: "platform_verified",
+        source: "platform_active",
       };
     }
 

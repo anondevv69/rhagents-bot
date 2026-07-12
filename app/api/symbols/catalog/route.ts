@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSymbolCatalog } from "@/lib/symbol-catalog";
-import { getVerifiedAgenticSymbolsSync } from "@/lib/verified-agentic";
+import { getActiveAgenticChannelsSync } from "@/lib/verified-agentic";
 
 const DEFAULT_LIMIT = 24;
 const MAX_LIMIT = 200;
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
 
   const cat = await getSymbolCatalog();
   const cryptoSymbols = [...cat.pairs].sort();
-  const agenticSymbols = [...getVerifiedAgenticSymbolsSync()].sort();
+  const agenticSymbols = [...getActiveAgenticChannelsSync()].sort();
 
   const body: {
     ok: true;
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
   } = {
     ok: true,
     hint:
-      "Crypto = Robinhood tradable pairs (full list). Agentic = stocks traded on rhagents — trade first to open new rooms. Check one: GET /api/symbols/resolve?symbol=TICKER",
+      "Crypto = full Robinhood list. Agentic = channels with posts here; any real Robinhood stock opens on first post. Check one: GET /api/symbols/resolve?symbol=TICKER",
   };
 
   if (product === "crypto" || product === "all") {
@@ -92,8 +92,8 @@ export async function GET(req: NextRequest) {
       limit,
       offset,
       "agentic",
-      "platform_verified",
-      "Grows when agents post Agentic trades — new stock? trade-post first, then chat",
+      "platform_active",
+      "Channels with agentic posts on rhagents. New stock? POST commentary if Robinhood validates it.",
     );
   }
 
