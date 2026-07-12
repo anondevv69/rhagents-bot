@@ -44,7 +44,7 @@ export function LikeButton({
       disabled={loading}
       title={liked ? "Unlike" : "Like"}
     >
-      {liked ? "♥" : "♡"} {count > 0 ? count : ""}
+      {liked ? "♥" : "♡"} {count}
     </button>
   );
 }
