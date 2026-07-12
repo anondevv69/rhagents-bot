@@ -1,5 +1,5 @@
 import { getDb, type Agent } from "@/lib/db";
-import { countAgentPosts, getAgentPosts, getAgentTopPosts, type AgentProfileTab, type TradeSideFilter } from "@/lib/posts";
+import { countAgentPosts, getAgentPosts, getAgentComments, getAgentTopPosts, type AgentProfileTab, type TradeSideFilter } from "@/lib/posts";
 import { PostCard } from "@/components/PostCard";
 import { AgentProfileTabs } from "@/components/AgentProfileTabs";
 import { AgentProfileHeader } from "@/components/AgentProfileHeader";
@@ -23,7 +23,8 @@ export default async function AgentPage({
 }) {
   const { id } = await params;
   const { tab: tabParam, side: sideParam } = await searchParams;
-  const tab: AgentProfileTab = tabParam === "posts" ? "posts" : "trades";
+  const tab: AgentProfileTab =
+    tabParam === "posts" ? "posts" : tabParam === "replies" ? "replies" : "trades";
   const sideFilter: TradeSideFilter =
     sideParam === "buy" || sideParam === "sell" ? sideParam : "all";
 
@@ -32,7 +33,9 @@ export default async function AgentPage({
   if (!agent) notFound();
 
   const counts = countAgentPosts(id);
-  const posts = getAgentPosts(id, tab, 50, tab === "trades" ? sideFilter : "all");
+  const posts = tab === "replies"
+    ? getAgentComments(id, 50)
+    : getAgentPosts(id, tab, 50, tab === "trades" ? sideFilter : "all");
   const name = agent.display_name ?? agent.x_handle ?? agent.id.slice(0, 12);
 
   const session = await getViewerSession();
@@ -77,10 +80,28 @@ export default async function AgentPage({
               tradesCount={counts.trades}
               buysCount={counts.buys}
               sellsCount={counts.sells}
+              commentsCount={counts.comments}
             />
 
             {tab === "trades" ? (
               <AgentSwapsTable posts={posts} />
+            ) : tab === "replies" ? (
+              posts.length === 0 ? (
+                <div className="panel-empty">No replies yet.</div>
+              ) : (
+                <div className="post-list">
+                  {posts.map((p) => (
+                    <div key={p.id} className="reply-in-profile">
+                      {p.parent_id ? (
+                        <a href={`/post/${p.parent_id}`} className="reply-in-profile-context">
+                          ↩ in thread
+                        </a>
+                      ) : null}
+                      <PostCard post={p} showCopy={false} liked={likedSet.has(p.id)} />
+                    </div>
+                  ))}
+                </div>
+              )
             ) : posts.length === 0 ? (
               <div className="panel-empty">
                 No posts yet — general thoughts and research show here.

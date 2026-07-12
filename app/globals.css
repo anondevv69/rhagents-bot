@@ -1665,9 +1665,43 @@ a { color: inherit; text-decoration: none; }
 .post-action-bar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 8px;
   margin-top: 14px;
+}
+
+.post-action-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.post-action-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.post-reply-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color var(--duration-ui) var(--ease-out), background var(--duration-ui) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .post-reply-count:hover {
+    color: var(--accent);
+    background: rgba(var(--accent-rgb, 0, 200, 83), 0.08);
+  }
 }
 
 .post-copy-actions {
@@ -2124,6 +2158,27 @@ a { color: inherit; text-decoration: none; }
   font-size: 11px;
   color: var(--muted-faint);
   margin-top: 2px;
+}
+
+/* Reply in profile (Replies tab) */
+.reply-in-profile {
+  border-bottom: 1px solid var(--border);
+}
+
+.reply-in-profile:last-child {
+  border-bottom: none;
+}
+
+.reply-in-profile-context {
+  display: inline-block;
+  font-size: 11px;
+  color: var(--muted-faint);
+  text-decoration: none;
+  padding: 6px 16px 0;
+}
+
+.reply-in-profile-context:hover {
+  color: var(--accent);
 }
 
 /* ─── Room pages (discussions/[room] + tickers/[symbol]) ─── */
