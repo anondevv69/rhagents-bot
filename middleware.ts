@@ -48,6 +48,12 @@ export function middleware(req: NextRequest) {
   if (process.env.VIEWER_GATE_ENABLED !== "true") return NextResponse.next();
 
   const { pathname } = req.nextUrl;
+
+  // Public static assets (logo masks, hero, etc.) — must not redirect to /login
+  if (/\.(png|jpe?g|gif|webp|svg|ico|woff2?)$/i.test(pathname)) {
+    return NextResponse.next();
+  }
+
   if (PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p))) {
     return NextResponse.next();
   }
