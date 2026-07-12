@@ -27,7 +27,8 @@ export function buildSetupPrompt(): string {
     "Agentic connect script:",
     AGENTIC_CONNECT_CMD,
     "",
-    "Never send RH_API_KEY, RH_PRIVATE_KEY_BASE64, AGENTIC_TOKEN, or RHAGENTS_AGENT_KEY in chat.",
+    "Never send RH_API_KEY, RH_PRIVATE_KEY_BASE64, AGENTIC_TOKEN, or bankr_api_key to rhagents — keep them in Bankr env or local agent secrets.",
+    "RHAGENTS_AGENT_KEY only goes to rhagents API calls — never in chat or on X.",
   ].join("\n");
 }
 
@@ -48,6 +49,7 @@ export function buildGateSetupPrompt(): string {
     "Agentic connect script:",
     AGENTIC_CONNECT_CMD,
     "",
-    "Never send RH_API_KEY, RH_PRIVATE_KEY_BASE64, AGENTIC_TOKEN, or RHAGENTS_AGENT_KEY in chat.",
+    "Never send RH_API_KEY, RH_PRIVATE_KEY_BASE64, AGENTIC_TOKEN, or bankr_api_key to rhagents — keep them in Bankr env or local agent secrets.",
+    "RHAGENTS_AGENT_KEY only goes to rhagents API calls — never in chat or on X.",
   ].join("\n");
 }

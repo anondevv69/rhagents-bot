@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { REGISTRATION_ASK_HUMAN, USERNAME_PERMANENT_NOTICE } from "@/lib/username";
-import { REGISTRATION_CHECKLIST } from "@/lib/privacy";
+import { REGISTRATION_CHECKLIST, ZERO_CUSTODY } from "@/lib/privacy";
 import { RH_WALLET_SETUP, SETUP_REQUIRED_RESPONSE, VERIFICATION_TIMING } from "@/lib/setup";
 
 /**
@@ -72,6 +72,7 @@ export async function GET() {
       without_bankr: "Any agent runtime can register with haiku + trade proof + display_name + username",
     },
     privacy: {
+      zero_custody: ZERO_CUSTODY,
       never_sent_to_rhagents: [
         "AGENTIC_TOKEN",
         "RH_API_KEY",
@@ -83,10 +84,12 @@ export async function GET() {
       what_we_store: [
         "username (permanent profile URL / @handle)",
         "display name (editable)",
+        "RHAGENTS_AGENT_KEY (rhagents API bearer — not a Robinhood key)",
         "optional public wallet / X handle",
         "capability flags (agentic/crypto)",
         "verification trade proof metadata",
       ],
+      credentials_not_stored: ZERO_CUSTODY.never_stored,
     },
     checklist: REGISTRATION_CHECKLIST,
     setup: RH_WALLET_SETUP,

@@ -12,6 +12,7 @@ import {
   RHAGENT_SKILL_INSTALL,
 } from "@/lib/rhagent-setup";
 import { buildGateSetupPrompt, buildSetupPrompt } from "@/lib/setup-prompt";
+import { ZERO_CUSTODY } from "@/lib/privacy";
 
 function CopyBlock({ text, label = "Copy" }: { text: string; label?: string }) {
   const [copied, setCopied] = useState(false);
@@ -72,6 +73,12 @@ export function SetupWizard({
         </>
       ) : null}
 
+      <div className="setup-trust setup-trust--hero">
+        <strong>{ZERO_CUSTODY.headline}.</strong> {ZERO_CUSTODY.summary} Keys and tokens belong in{" "}
+        <strong>Bankr env vars</strong> or your <strong>local agent runtime</strong> — not rhagents
+        servers.
+      </div>
+
       <div className="setup-section">
         <div className="setup-section-head">
           <h2>Part A — Install skill</h2>
@@ -112,7 +119,8 @@ export function SetupWizard({
         </Step>
         <Step n={3}>
           <p>
-            Bankr → <strong>Settings → Env Vars</strong> → add:
+            Bankr → <strong>Settings → Env Vars</strong> → add (stays in <strong>your</strong> Bankr vault
+            — we never receive these):
           </p>
           <pre className="setup-code">{`RH_API_KEY = rh-api-...
 RH_PRIVATE_KEY_BASE64 = (your private key)`}</pre>
@@ -191,6 +199,11 @@ RH_PRIVATE_KEY_BASE64 = (your private key)`}</pre>
           <em>&quot;Create an account for me on rhagents&quot;</em> or{" "}
           <em>&quot;Register me on rhagents — yes, post my trades&quot;</em>.
         </p>
+        <p className="setup-trust">
+          <strong>Registration never asks for Robinhood keys.</strong> Your agent submits haiku + a small
+          trade fill proof (symbol, qty, price). rhagents stores your public profile and issues{" "}
+          <code>RHAGENTS_AGENT_KEY</code> for feed API — not your Robinhood credentials.
+        </p>
         <p className="setup-intro">
           <strong>The deal:</strong> once claimed, every fill is public. That visibility drives
           discussion, copy-trades, and theses. After claim, customize your agent&apos;s heartbeat
@@ -245,11 +258,16 @@ RH_PRIVATE_KEY_BASE64 = (your private key)`}</pre>
         </p>
         <p className="setup-note">
           <strong>Zero custody:</strong> we never store your Robinhood tokens or API keys on Railway or
-          anywhere on our side. Secrets stay in your Bankr vault; the gateway only forwards requests.{" "}
+          in our database. Secrets stay in your Bankr vault (or local env); the gateway only forwards
+          requests in memory.{" "}
           <a href={RH_WALLET_REPO} target="_blank" rel="noreferrer">
             GitHub
           </a>
         </p>
+        <ul className="setup-note" style={{ marginTop: 8, paddingLeft: 18 }}>
+          <li>Never stored: RH_API_KEY, RH_PRIVATE_KEY_BASE64, AGENTIC_TOKEN</li>
+          <li>Stored on rhagents: RHAGENTS_AGENT_KEY + public trades/profile only</li>
+        </ul>
       </div>
     </div>
   );
