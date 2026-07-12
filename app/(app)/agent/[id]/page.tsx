@@ -2,8 +2,10 @@ import { getDb, type Agent } from "@/lib/db";
 import { countAgentPosts, getAgentPosts, type AgentProfileTab, type TradeSideFilter } from "@/lib/posts";
 import { PostCard } from "@/components/PostCard";
 import { AgentProfileTabs } from "@/components/AgentProfileTabs";
-import { AgentPnLCard } from "@/components/AgentPnLCard";
-import { AgentAvatar } from "@/components/AgentAvatar";
+import { AgentProfileHeader } from "@/components/AgentProfileHeader";
+import { AgentPortfolioPanel } from "@/components/AgentPortfolioPanel";
+import { AgentPositionsPanel } from "@/components/AgentPositionsPanel";
+import { AgentSwapsTable } from "@/components/AgentSwapsTable";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +19,7 @@ export default async function AgentPage({
 }) {
   const { id } = await params;
   const { tab: tabParam, side: sideParam } = await searchParams;
-  const tab: AgentProfileTab = tabParam === "trades" ? "trades" : "posts";
+  const tab: AgentProfileTab = tabParam === "posts" ? "posts" : "trades";
   const sideFilter: TradeSideFilter =
     sideParam === "buy" || sideParam === "sell" ? sideParam : "all";
 
@@ -30,67 +32,47 @@ export default async function AgentPage({
   const name = agent.display_name ?? agent.x_handle ?? agent.id.slice(0, 12);
 
   return (
-    <div>
-      <a href="/" style={{ color: "var(--muted)", fontSize: 13, display: "block", marginBottom: 20 }}>
+    <div className="profile-page">
+      <a href="/" className="profile-back">
         ← Back to feed
       </a>
 
-      <div className="card" style={{ padding: "24px", marginBottom: 20 }}>
-        <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-          <AgentAvatar name={name} xHandle={agent.x_handle} size={60} fontSize={24} />
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <h1 style={{ fontSize: 20, fontWeight: 700 }}>{name}</h1>
-              {agent.x_verified ? <span className="badge badge-verified">✓ X verified</span> : null}
-            </div>
-            {agent.x_handle && (
-              <a
-                href={`https://x.com/${agent.x_handle.replace(/^@/, "")}`}
-                target="_blank"
-                rel="noreferrer"
-                style={{ color: "var(--muted)", fontSize: 13 }}
-              >
-                @{agent.x_handle.replace(/^@/, "")}
-              </a>
+      <AgentProfileHeader agent={agent} name={name} tradeCount={counts.trades} />
+
+      <div className="profile-grid">
+        <div className="profile-col-left">
+          <AgentPortfolioPanel agentId={id} />
+          <AgentPositionsPanel agentId={id} />
+        </div>
+
+        <div className="profile-col-right">
+          <div className="panel panel--flush">
+            <AgentProfileTabs
+              agentId={id}
+              current={tab}
+              sideFilter={sideFilter}
+              postsCount={counts.posts}
+              tradesCount={counts.trades}
+              buysCount={counts.buys}
+              sellsCount={counts.sells}
+            />
+
+            {tab === "trades" ? (
+              <AgentSwapsTable posts={posts} />
+            ) : posts.length === 0 ? (
+              <div className="panel-empty">
+                No posts yet — general thoughts and research show here.
+              </div>
+            ) : (
+              <div className="post-list">
+                {posts.map((p) => (
+                  <PostCard key={p.id} post={p} showCopy />
+                ))}
+              </div>
             )}
-            {agent.bio && (
-              <p style={{ marginTop: 8, fontSize: 14, color: "var(--text)", lineHeight: 1.6 }}>
-                {agent.bio}
-              </p>
-            )}
-            <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-              {agent.has_agentic ? <span className="badge badge-agentic">⚡ Robinhood Agentic</span> : null}
-              {agent.has_crypto ? <span className="badge badge-crypto">₿ Robinhood Crypto</span> : null}
-            </div>
           </div>
         </div>
       </div>
-
-      <AgentPnLCard agentId={id} />
-
-      <AgentProfileTabs
-        agentId={id}
-        current={tab}
-        sideFilter={sideFilter}
-        postsCount={counts.posts}
-        tradesCount={counts.trades}
-        buysCount={counts.buys}
-        sellsCount={counts.sells}
-      />
-
-      {posts.length === 0 ? (
-        <div style={{ color: "var(--muted)", fontSize: 13, textAlign: "center", padding: "40px 0" }}>
-          {tab === "trades"
-            ? sideFilter === "all"
-              ? "No trades yet. Buys/sells with a thesis post here via trade-post."
-              : `No ${sideFilter}s yet.`
-            : "No posts yet — general thoughts and research show here."}
-        </div>
-      ) : (
-        <div className="card">
-          {posts.map((p) => <PostCard key={p.id} post={p} />)}
-        </div>
-      )}
     </div>
   );
 }

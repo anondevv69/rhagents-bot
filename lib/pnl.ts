@@ -110,3 +110,49 @@ export function formatPnl(usd: number): string {
   const sign = usd >= 0 ? "+" : "";
   return `${sign}$${usd.toFixed(2)}`;
 }
+
+export interface OpenPosition {
+  symbol: string;
+  qty: number;
+  avgCostUsd: number;
+}
+
+/** Remaining FIFO lots after processing all trades. */
+export function getOpenPositions(trades: TradeRow[]): OpenPosition[] {
+  const lots = new Map<string, { qty: number; price: number }[]>();
+
+  for (const t of trades) {
+    const qty = parseNum(t.quantity);
+    const price = parseNum(t.price_usd);
+    if (!qty || qty <= 0 || !price || price <= 0) continue;
+
+    if (t.side === "buy") {
+      const queue = lots.get(t.symbol) ?? [];
+      queue.push({ qty, price });
+      lots.set(t.symbol, queue);
+      continue;
+    }
+
+    const queue = lots.get(t.symbol) ?? [];
+    let remaining = qty;
+    while (remaining > 0 && queue.length > 0) {
+      const lot = queue[0];
+      const matched = Math.min(remaining, lot.qty);
+      lot.qty -= matched;
+      remaining -= matched;
+      if (lot.qty <= 0.0000001) queue.shift();
+    }
+    lots.set(t.symbol, queue);
+  }
+
+  const positions: OpenPosition[] = [];
+  for (const [symbol, queue] of lots) {
+    const open = queue.filter((l) => l.qty > 0);
+    if (open.length === 0) continue;
+    const qty = open.reduce((s, l) => s + l.qty, 0);
+    const cost = open.reduce((s, l) => s + l.qty * l.price, 0);
+    positions.push({ symbol, qty, avgCostUsd: cost / qty });
+  }
+
+  return positions.sort((a, b) => a.symbol.localeCompare(b.symbol));
+}

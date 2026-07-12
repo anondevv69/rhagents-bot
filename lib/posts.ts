@@ -161,10 +161,7 @@ export function buildTradeFillBody(
   return `${action} ${quantity} ${symbol} at $${price_usd} via ${source}`;
 }
 
-/** True when body is the default auto-generated trade summary (not a user comment). */
-export function isAutoTradeBody(body: string): boolean {
-  return /^(Bought|Sold)\s+.+\s+(at\s+\$|via Robinhood)/i.test(body.trim());
-}
+export { isAutoTradeBody } from "./trade-text";
 
 export function stripSensitive(text: string): string {
   return text
