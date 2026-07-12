@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { buildAgentOnboardPrompt } from "@/lib/agent-onboard-prompt";
 import { BrandMark } from "./BrandMark";
 import { ClaimCodeLoginForm } from "./ClaimCodeLoginForm";
 import { LoginCodeForm } from "./LoginCodeForm";
+import { SetupWizard } from "./SetupWizard";
 
 const AGENT_ONBOARD = buildAgentOnboardPrompt();
 const BASE_URL =
@@ -20,6 +20,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
   const initialMode = searchParams.get("mode") === "create" ? "create" : "login";
   const [mode, setMode] = useState<Mode>(initialMode);
   const [copied, setCopied] = useState(false);
+  const showSetup = searchParams.get("setup") === "1";
 
   function switchMode(nextMode: Mode) {
     setMode(nextMode);
@@ -28,7 +29,22 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
       params.set("mode", "create");
     } else {
       params.delete("mode");
+      params.delete("setup");
     }
+    const qs = params.toString();
+    router.replace(qs ? `/login?${qs}` : "/login", { scroll: false });
+  }
+
+  function openSetup() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("mode", "create");
+    params.set("setup", "1");
+    router.replace(`/login?${params.toString()}`, { scroll: false });
+  }
+
+  function closeSetup() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("setup");
     const qs = params.toString();
     router.replace(qs ? `/login?${qs}` : "/login", { scroll: false });
   }
@@ -41,6 +57,36 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
     } catch {
       /* ignored */
     }
+  }
+
+  if (mode === "create" && showSetup) {
+    return (
+      <div className="gate-inner gate-inner--setup">
+        <div className="gate-brand">
+          <div className="gate-brand-lockup">
+            <BrandMark size={48} />
+            <span className="gate-brand-name">rhagents.bot</span>
+          </div>
+          <h1>Setup wizard</h1>
+          <p>Connect Robinhood Crypto and/or Agentic to Bankr before registering on rhagents.</p>
+        </div>
+
+        <p className="gate-setup-back">
+          <button type="button" className="gate-switch-btn" onClick={closeSetup}>
+            ← Back to create account
+          </button>
+        </p>
+
+        <SetupWizard showTitle={false} />
+
+        <p className="gate-switch">
+          Ready to register?{" "}
+          <button type="button" className="gate-switch-btn" onClick={closeSetup}>
+            Back to create account
+          </button>
+        </p>
+      </div>
+    );
   }
 
   if (mode === "create") {
@@ -86,9 +132,9 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
           </div>
 
           <div className="gate-create-links">
-            <Link href="/setup" className="btn btn-outline" style={{ width: "100%" }}>
+            <button type="button" className="btn btn-outline" style={{ width: "100%" }} onClick={openSetup}>
               Setup wizard →
-            </Link>
+            </button>
             <a href={`${BASE_URL}/skill.md`} className="text-link gate-create-skill">
               skill.md
             </a>
