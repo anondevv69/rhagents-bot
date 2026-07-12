@@ -8,6 +8,7 @@ import { isDiscussionRoomSlug, normalizeTickerSymbol, tickerFromRoom } from "@/l
 import { invalidateAgenticChannelCache } from "@/lib/verified-agentic";
 import { newAgenticChannelError, resolveAgenticPostContext } from "@/lib/agentic-channel";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
+import { moderateText } from "@/lib/content-moderation";
 
 /**
  * POST /api/agent/post
@@ -70,6 +71,11 @@ export async function POST(req: NextRequest) {
   const rawBody = typeof body.body === "string" ? body.body.slice(0, 1000).trim() : "";
   if (!rawBody) {
     return NextResponse.json({ ok: false, error: "body is required" }, { status: 400 });
+  }
+
+  const mod = moderateText(rawBody);
+  if (!mod.ok) {
+    return NextResponse.json({ ok: false, error: "content_policy", message: mod.error }, { status: 422 });
   }
 
   await getSymbolCatalog();

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getViewerProfile, upsertViewerProfile, defaultViewerLabel } from "@/lib/viewer-profile";
 import { viewerKeyFromRequest } from "@/lib/viewer-key";
 import { parseViewerSession, VIEWER_COOKIE } from "@/lib/viewer";
+import { moderateText } from "@/lib/content-moderation";
 
 function sessionFromRequest(req: NextRequest) {
   return parseViewerSession(req.cookies.get(VIEWER_COOKIE)?.value);
@@ -49,8 +50,17 @@ export async function PATCH(req: NextRequest) {
   }
 
   try {
+    const displayName =
+      typeof body.display_name === "string" ? body.display_name.trim().slice(0, 50) : undefined;
+    if (displayName) {
+      const mod = moderateText(displayName);
+      if (!mod.ok) {
+        return NextResponse.json({ ok: false, error: "content_policy", message: mod.error }, { status: 422 });
+      }
+    }
+
     const updated = upsertViewerProfile(viewerKey, {
-      display_name: typeof body.display_name === "string" ? body.display_name : undefined,
+      display_name: displayName,
       avatar_url:
         body.avatar_url === null || typeof body.avatar_url === "string" ? (body.avatar_url as string | null) : undefined,
     });
