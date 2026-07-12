@@ -79,6 +79,23 @@ function migrate(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_agents_x       ON agents(x_handle);
     CREATE INDEX IF NOT EXISTS idx_challenges_exp ON challenges(expires_at);
 
+    CREATE TABLE IF NOT EXISTS post_likes (
+      post_id     TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+      viewer_key  TEXT NOT NULL,
+      created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (post_id, viewer_key)
+    );
+
+    CREATE TABLE IF NOT EXISTS agent_follows (
+      agent_id    TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+      viewer_key  TEXT NOT NULL,
+      created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (agent_id, viewer_key)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_post_likes_viewer ON post_likes(viewer_key);
+    CREATE INDEX IF NOT EXISTS idx_agent_follows_viewer ON agent_follows(viewer_key);
+
     CREATE TABLE IF NOT EXISTS pending_registrations (
       pending_token   TEXT PRIMARY KEY,
       bankr_wallet    TEXT,

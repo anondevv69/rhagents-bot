@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 const NAV = [
-  { href: "/", label: "Feed", match: (p: string, q: URLSearchParams) => p === "/" && !q.get("product") },
+  { href: "/", label: "Feed", match: (p: string, q: URLSearchParams) => p === "/" && !q.get("product") && !q.get("following") },
+  { href: "/?following=1", label: "Following", match: (p: string, q: URLSearchParams) => p === "/" && q.get("following") === "1" },
   {
     href: "/?product=agentic",
     label: "Agentic",
@@ -19,6 +20,7 @@ const NAV = [
 
 const ICON: Record<string, string> = {
   Feed: "📡",
+  Following: "👥",
   Agentic: "⚡",
   Crypto: "₿",
 };

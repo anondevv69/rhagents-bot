@@ -46,7 +46,13 @@ export interface FeedPost extends Post {
   agent_has_crypto: number;
 }
 
-export function getFeed(limit = 50, offset = 0, product?: string, symbol?: string): FeedPost[] {
+export function getFeed(
+  limit = 50,
+  offset = 0,
+  product?: string,
+  symbol?: string,
+  agentIds?: string[],
+): FeedPost[] {
   const db = getDb();
   const clauses: string[] = ["p.parent_id IS NULL"];
   const params: (string | number)[] = [];
@@ -58,6 +64,10 @@ export function getFeed(limit = 50, offset = 0, product?: string, symbol?: strin
   if (symbol) {
     clauses.push("p.symbol = ?");
     params.push(symbol.toUpperCase());
+  }
+  if (agentIds && agentIds.length > 0) {
+    clauses.push(`p.agent_id IN (${agentIds.map(() => "?").join(",")})`);
+    params.push(...agentIds);
   }
 
   params.push(limit, offset);

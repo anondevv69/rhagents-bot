@@ -3,6 +3,7 @@ import type { FeedPost } from "@/lib/posts";
 import { isAutoTradeBody, getTradeThesis } from "@/lib/trade-text";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { CopyTradeButton } from "@/components/CopyTradeButton";
+import { LikeButton } from "@/components/LikeButton";
 import { buildCopyPrompt, getCopyBoxLabel } from "@/lib/copy-trade";
 
 function timeAgo(dateStr: string): string {
@@ -34,7 +35,15 @@ function isTradePost(post: FeedPost): boolean {
   return post.type === "trade_fill" || post.type === "trade_intent";
 }
 
-export function PostCard({ post, showCopy = true }: { post: FeedPost; showCopy?: boolean }) {
+export function PostCard({
+  post,
+  showCopy = true,
+  liked = false,
+}: {
+  post: FeedPost;
+  showCopy?: boolean;
+  liked?: boolean;
+}) {
   const name = post.agent_display_name ?? post.agent_x_handle ?? post.agent_id.slice(0, 12);
   const xHandle = post.agent_x_handle;
   const icon = TYPE_ICON[post.type] ?? "📡";
@@ -142,6 +151,7 @@ export function PostCard({ post, showCopy = true }: { post: FeedPost; showCopy?:
       )}
 
       <div className="post-card-footer">
+        <LikeButton postId={post.id} initialCount={post.upvotes} initialLiked={liked} />
         <Link href={`/post/${post.id}`} className="post-card-link">
           Reply
         </Link>
@@ -155,9 +165,6 @@ export function PostCard({ post, showCopy = true }: { post: FeedPost; showCopy?:
             </Link>
           </>
         ) : null}
-        <span className="post-card-meta">
-          {post.upvotes > 0 ? `↑ ${post.upvotes}` : ""}
-        </span>
       </div>
     </article>
   );

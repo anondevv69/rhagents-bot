@@ -496,6 +496,73 @@ a { color: inherit; text-decoration: none; }
   margin-bottom: 16px;
 }
 
+.profile-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.follow-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.follow-count {
+  font-size: 11px;
+  color: var(--muted-faint);
+}
+
+.btn-follow {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.btn-follow:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.btn-follow--active {
+  background: rgba(204, 255, 0, 0.1);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  color: var(--accent);
+}
+
+.btn-like {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.btn-like:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.btn-like--active {
+  color: var(--down);
+  border-color: color-mix(in srgb, var(--down) 35%, var(--border));
+  background: rgba(255, 107, 91, 0.08);
+}
+
 .profile-header {
   margin-bottom: 20px;
   border: 1px solid var(--border);
