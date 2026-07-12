@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { SearchBar } from "./SearchBar";
 import { SidebarNav } from "./SidebarNav";
 import { TopbarAuth } from "./TopbarAuth";
+import { AppPageBody } from "./AppPageBody";
 import { RightRail } from "./RightRail";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -26,10 +27,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <TopbarAuth />
           </Suspense>
         </header>
-        <div className="page-body">
-          <div className="content-area">{children}</div>
-          <RightRail />
-        </div>
+        <AppPageBody rail={<RightRail />}>{children}</AppPageBody>
       </div>
     </div>
   );
