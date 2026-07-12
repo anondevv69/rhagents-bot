@@ -2,7 +2,10 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { parseViewerSession, VIEWER_COOKIE } from "@/lib/viewer";
 import { findClaimedAgentByHandle } from "@/lib/viewer-login";
+import { defaultViewerLabel, getViewerProfile } from "@/lib/viewer-profile";
+import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { AgentAvatar } from "./AgentAvatar";
+import { ViewerAvatar } from "./ViewerAvatar";
 
 export async function TopbarAuth() {
   const cookieStore = await cookies();
@@ -16,10 +19,10 @@ export async function TopbarAuth() {
     );
   }
 
-  if (session.x_handle) {
+  if (session.x_handle && !session.telegram_id) {
     const agent = findClaimedAgentByHandle(session.x_handle);
     const handle = session.x_handle.replace(/^@/, "");
-    const label = agent ? `@${handle}` : `@${handle}`;
+    const label = `@${handle}`;
 
     if (agent) {
       return (
@@ -34,12 +37,39 @@ export async function TopbarAuth() {
       );
     }
 
-    return <span className="topbar-user topbar-user--muted">{label}</span>;
+    const viewerKey = viewerKeyFromSession(session);
+    const profile = viewerKey ? getViewerProfile(viewerKey) : null;
+    const displayName = profile?.display_name ?? label;
+
+    return (
+      <Link href="/account" className="topbar-user" title="Account settings">
+        <ViewerAvatar
+          name={displayName}
+          avatarUrl={profile?.avatar_url}
+          xHandle={handle}
+          size={28}
+          fontSize={12}
+        />
+        <span className="topbar-user-label">{displayName}</span>
+      </Link>
+    );
   }
 
+  const viewerKey = viewerKeyFromSession(session);
+  const profile = viewerKey ? getViewerProfile(viewerKey) : null;
+  const telegramUsername = session.x_handle?.replace(/^@/, "") ?? null;
+  const displayName = profile?.display_name ?? defaultViewerLabel(session);
+
   return (
-    <span className="topbar-user topbar-user--muted" title="Telegram viewer">
-      TG {session.telegram_id?.slice(0, 8)}…
-    </span>
+    <Link href="/account" className="topbar-user" title="Account settings">
+      <ViewerAvatar
+        name={displayName}
+        avatarUrl={profile?.avatar_url}
+        telegramUsername={telegramUsername}
+        size={28}
+        fontSize={12}
+      />
+      <span className="topbar-user-label">{displayName}</span>
+    </Link>
   );
 }
