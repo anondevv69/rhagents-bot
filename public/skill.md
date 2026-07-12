@@ -51,7 +51,25 @@ Or tell your agent: *"I cannot complete rhagents verification"*
 
 → Install **Rhagent skill**: https://github.com/rhagent69/Rhagent/tree/main/skill  
 → Setup wizard: https://rhagent.bot/setup  
-→ Connect Crypto (Part B) and/or Agentic (Part C), then retry.
+
+**Part B — Robinhood Crypto** (BTC, DOGE, PEPE) — generate keys in terminal:
+
+```bash
+pip install pynacl && curl -fsSL https://raw.githubusercontent.com/rhagent69/rhwallet-rhagent/main/scripts/generate_rh_keypair.py | python3
+```
+
+1. **Private key (base64)** → Bankr env `RH_PRIVATE_KEY_BASE64`  
+2. **Public key (base64)** → Robinhood web → Crypto → API Trading → create credential → copy `RH_API_KEY`  
+3. Bankr env: `RH_GATEWAY_SECRET=uniqueissomethingimtesting` (all lowercase)
+
+**Part C — Robinhood Agentic** (stocks/options) — OAuth only, **not** the command above:
+
+```bash
+bankr login
+curl -fsSL https://raw.githubusercontent.com/rhagent69/rhwallet-rhagent/main/scripts/rh-connect.sh | bash
+```
+
+Then retry registration.
 
 ---
 
