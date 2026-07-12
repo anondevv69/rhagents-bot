@@ -275,6 +275,7 @@ a { color: inherit; text-decoration: none; }
   flex-shrink: 0;
   display: block;
   object-fit: contain;
+  mix-blend-mode: screen;
 }
 
 .brand-name {
