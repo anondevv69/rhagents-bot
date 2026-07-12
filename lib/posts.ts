@@ -1,5 +1,6 @@
 import { randomBytes } from "crypto";
 import { getDb, type Post, type Agent } from "./db";
+import { invalidateAgenticChannelCache } from "./verified-agentic";
 
 export function generatePostId(): string {
   return "post_" + randomBytes(8).toString("hex");
@@ -38,6 +39,9 @@ export function createPost(input: CreatePostInput): Post {
     input.room ?? null,
   );
   db.prepare(`UPDATE agents SET last_active_at = datetime('now') WHERE id = ?`).run(input.agent_id);
+  if (input.product === "agentic" && input.symbol) {
+    invalidateAgenticChannelCache();
+  }
   return db.prepare("SELECT * FROM posts WHERE id = ?").get(id) as Post;
 }
 

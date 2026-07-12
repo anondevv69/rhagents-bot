@@ -4,8 +4,8 @@ import { createPost, buildTradeFillBody, stripSensitive } from "@/lib/posts";
 import { getSymbolCatalog, resolveTradableSymbol } from "@/lib/symbol-catalog";
 import {
   invalidateVerifiedAgenticCache,
+  isActiveAgenticChannel,
   isAgenticTickerShape,
-  isVerifiedAgenticSymbol,
 } from "@/lib/verified-agentic";
 
 /**
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
 
   await getSymbolCatalog();
   let classified = await resolveTradableSymbol(symbolInput, {
-    checkPlatformVerified: () => isVerifiedAgenticSymbol(symbolInput),
+    checkPlatformActive: () => isActiveAgenticChannel(symbolInput),
   });
 
   // Agentic trade fill from Robinhood — trust the execution; opens ticker room for others
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     classified = {
       product: "agentic",
       symbol: symbolInput.toUpperCase(),
-      source: "platform_verified",
+      source: "platform_active",
     };
   }
 

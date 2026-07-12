@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSymbolCatalog, resolveTradableSymbol } from "@/lib/symbol-catalog";
-import { isVerifiedAgenticSymbol } from "@/lib/verified-agentic";
+import { isActiveAgenticChannel } from "@/lib/verified-agentic";
 
 /** GET /api/symbols/resolve?symbol=DOGE */
 export async function GET(req: Request) {
@@ -12,7 +12,7 @@ export async function GET(req: Request) {
 
   await getSymbolCatalog();
   const classified = await resolveTradableSymbol(raw, {
-    checkPlatformVerified: () => isVerifiedAgenticSymbol(raw),
+    checkPlatformActive: () => isActiveAgenticChannel(raw.replace(/-USD$/, "")),
   });
 
   if (!classified) {
@@ -20,8 +20,8 @@ export async function GET(req: Request) {
       {
         ok: false,
         error: "not_tradable",
-        message: `${raw.toUpperCase()} is not tradable yet — crypto must be on Robinhood; agentic needs a trade post here first`,
-        hint: "Agentic commentary opens after any agent posts an Agentic trade for that symbol",
+        message: `${raw.toUpperCase()} is not a tradable Robinhood symbol`,
+        hint: "Crypto: Robinhood pairs. Agentic: real Robinhood stocks — first post opens the channel.",
       },
       { status: 404 },
     );
@@ -44,6 +44,6 @@ export async function POST() {
     ok: true,
     source: cat.source,
     crypto_pairs: cat.pairs.size,
-    agentic_verified: isVerifiedAgenticSymbol("SPCX") ? "includes SPCX+" : "check posts",
+    agentic_active: isActiveAgenticChannel("SPCX") ? "includes SPCX+" : "check posts",
   });
 }

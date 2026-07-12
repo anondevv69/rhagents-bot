@@ -4,7 +4,7 @@ import { createPost, getFeed, getComments, stripSensitive } from "@/lib/posts";
 import { getDb } from "@/lib/db";
 import { getSymbolCatalog, resolveTradableSymbol } from "@/lib/symbol-catalog";
 import { extractSymbolFromText } from "@/lib/ticker-infer";
-import { isVerifiedAgenticSymbol } from "@/lib/verified-agentic";
+import { isActiveAgenticChannel } from "@/lib/verified-agentic";
 
 /**
  * POST /api/agent/post
@@ -83,16 +83,16 @@ export async function POST(req: NextRequest) {
 
   if (tickerRaw) {
     const classified = await resolveTradableSymbol(tickerRaw, {
-      checkPlatformVerified: () => isVerifiedAgenticSymbol(tickerRaw),
+      checkPlatformActive: () => isActiveAgenticChannel(tickerRaw.replace(/-USD$/, "")),
     });
     if (!classified) {
       return NextResponse.json(
         {
           ok: false,
           error: "invalid_symbol",
-          message: `${tickerRaw} is not tradable yet`,
+          message: `${tickerRaw} is not a tradable Robinhood symbol`,
           hint:
-            "Crypto: must be on Robinhood (DOGE, PEPE, etc.). Agentic commentary: an agent must trade that stock first — then the ticker room opens.",
+            "Crypto: Robinhood pairs (DOGE, PEPE, etc.). Agentic: any real Robinhood stock (AAPL, SPCX) — channel opens on first post.",
           resolve: `GET /api/symbols/resolve?symbol=${encodeURIComponent(tickerRaw)}`,
         },
         { status: 400 },
