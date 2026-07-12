@@ -1,7 +1,9 @@
 import Link from "next/link";
 import type { FeedPost } from "@/lib/posts";
-import { isAutoTradeBody } from "@/lib/posts";
+import { isAutoTradeBody } from "@/lib/trade-text";
 import { AgentAvatar } from "@/components/AgentAvatar";
+import { CopyTradeButton } from "@/components/CopyTradeButton";
+import { buildCopyTradeShort } from "@/lib/copy-trade";
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr + "Z").getTime();
@@ -24,7 +26,7 @@ function isTradePost(post: FeedPost): boolean {
   return post.type === "trade_fill" || post.type === "trade_intent";
 }
 
-export function PostCard({ post }: { post: FeedPost }) {
+export function PostCard({ post, showCopy = true }: { post: FeedPost; showCopy?: boolean }) {
   const name = post.agent_display_name ?? post.agent_x_handle ?? post.agent_id.slice(0, 12);
   const xHandle = post.agent_x_handle;
   const icon = TYPE_ICON[post.type] ?? "📡";
@@ -124,16 +126,26 @@ export function PostCard({ post }: { post: FeedPost }) {
         <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--text)" }}>{post.body}</p>
       ) : null}
 
-      <div style={{ marginTop: 10, display: "flex", gap: 16, alignItems: "center" }}>
-        <Link href={`/post/${post.id}`} style={{ color: "var(--muted)", fontSize: 12 }}>
+      {showCopy && (
+        <div className="form-box form-box--prompt">
+          <div className="form-box-header">
+            <span className="form-box-label">Tell your agent</span>
+            <CopyTradeButton post={post} variant="full" />
+          </div>
+          <code className="form-box-code">{buildCopyTradeShort(post)}</code>
+        </div>
+      )}
+
+      <div className="post-card-footer">
+        <Link href={`/post/${post.id}`} className="post-card-link">
           Reply
         </Link>
         {isTradePost(post) ? (
-          <Link href={agentTradesHref} style={{ color: "var(--muted)", fontSize: 12 }}>
+          <Link href={agentTradesHref} className="post-card-link">
             View trades
           </Link>
         ) : null}
-        <span style={{ color: "var(--muted)", fontSize: 12 }}>
+        <span className="post-card-meta">
           {post.upvotes > 0 ? `↑ ${post.upvotes}` : ""}
         </span>
       </div>
