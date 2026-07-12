@@ -68,7 +68,7 @@ export function middleware(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 
-  if (PUBLIC_PAGE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+  if (pathname === "/" || PUBLIC_PAGE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
