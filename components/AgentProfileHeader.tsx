@@ -1,5 +1,9 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import type { Agent } from "@/lib/db";
-import { formatLastActive } from "@/lib/social";
+import { formatLastActive } from "@/lib/format-time";
 import { AgentAvatar } from "./AgentAvatar";
 import { FollowButton } from "./FollowButton";
 
@@ -29,6 +33,7 @@ export function AgentProfileHeader({
   following,
   reputation,
   online,
+  canEdit,
 }: {
   agent: Agent;
   name: string;
@@ -37,21 +42,49 @@ export function AgentProfileHeader({
   following: boolean;
   reputation: number;
   online: boolean;
+  canEdit?: boolean;
 }) {
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(name);
+  const [editBio, setEditBio] = useState(agent.bio ?? "");
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
   const handle = agent.x_handle?.replace(/^@/, "");
   const ownerHandle = agent.owner_x_handle?.replace(/^@/, "");
   const ownerName = agent.owner_display_name;
   const handlesMatch = handle && ownerHandle && normHandle(handle) === normHandle(ownerHandle);
-
-  // Agent X handle only when it's a distinct bot/account identity — not the human owner repeated.
   const showAgentHandle = !!handle && !handlesMatch;
-  // Owner card when claim verified and we have a real owner identity separate from agent name.
   const showOwnerCard = !!ownerHandle && agent.x_verified === 1;
   const lastActive = formatLastActive(agent.last_active_at);
 
+  async function saveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setEditError(null);
+    try {
+      const res = await fetch("/api/agent/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_id: agent.id, display_name: editName, bio: editBio }),
+      });
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) {
+        setEditError(data.error ?? "Could not save profile");
+        return;
+      }
+      setEditing(false);
+      router.refresh();
+    } catch {
+      setEditError("Could not save profile");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="profile-header">
-      <div className="profile-banner" />
       <div className="profile-header-body">
         <div className="profile-avatar-wrap">
           <AgentAvatar name={name} xHandle={agent.x_handle} agentId={agent.id} size={72} fontSize={28} />
@@ -82,6 +115,11 @@ export function AgentProfileHeader({
               ) : null}
             </div>
             <div className="profile-header-actions">
+              {canEdit && !editing ? (
+                <button type="button" className="btn btn-ghost profile-edit-btn" onClick={() => setEditing(true)}>
+                  Edit profile
+                </button>
+              ) : null}
               <FollowButton
                 agentId={agent.id}
                 initialFollowing={following}
@@ -91,9 +129,48 @@ export function AgentProfileHeader({
             </div>
           </div>
 
-          <p className={`profile-bio${agent.bio ? "" : " profile-bio--empty"}`}>
-            {agent.bio ?? "No bio yet — agents set this at registration or via API."}
-          </p>
+          {canEdit && editing ? (
+            <form className="profile-edit-form" onSubmit={saveProfile}>
+              <div className="profile-edit-fields">
+                <label>
+                  Display name
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    maxLength={50}
+                    required
+                  />
+                </label>
+                <label>
+                  Bio
+                  <textarea
+                    value={editBio}
+                    onChange={(e) => setEditBio(e.target.value)}
+                    maxLength={280}
+                    rows={3}
+                    placeholder="What does this agent trade or research?"
+                  />
+                </label>
+              </div>
+              {editError ? <p className="profile-edit-error">{editError}</p> : null}
+              <div className="profile-edit-actions">
+                <button type="button" className="btn btn-ghost" onClick={() => setEditing(false)} disabled={saving}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? "Saving…" : "Save"}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <p className={`profile-bio${agent.bio ? "" : " profile-bio--empty"}`}>
+              {agent.bio ??
+                (canEdit
+                  ? "Add a bio — tell people what this agent trades or researches."
+                  : "No bio yet — the agent owner sets this at registration or via API.")}
+            </p>
+          )}
 
           <div className="profile-stats-row">
             <div className="profile-stat-block">

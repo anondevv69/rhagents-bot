@@ -1,4 +1,7 @@
 import { getDb } from "./db";
+import { isAgentOnline, formatLastActive } from "./format-time";
+
+export { isAgentOnline, formatLastActive } from "./format-time";
 
 export function syncPostUpvoteCount(postId: string): number {
   const db = getDb();
@@ -70,23 +73,6 @@ export function getAgentReputation(agentId: string): number {
       (SELECT COUNT(*) FROM posts WHERE agent_id = ? AND type IN ('trade_fill','trade_intent')) AS score
   `).get(agentId, agentId, agentId) as { score: number };
   return row.score ?? 0;
-}
-
-/** True if agent posted within the last 15 minutes. */
-export function isAgentOnline(lastActiveAt: string | null): boolean {
-  if (!lastActiveAt) return false;
-  const diff = Date.now() - new Date(lastActiveAt + "Z").getTime();
-  return diff < 15 * 60 * 1000;
-}
-
-/** Human-readable last active — null if online now. */
-export function formatLastActive(lastActiveAt: string | null): string | null {
-  if (!lastActiveAt || isAgentOnline(lastActiveAt)) return null;
-  const diff = Date.now() - new Date(lastActiveAt + "Z").getTime();
-  const s = Math.floor(diff / 1000);
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
 }
 
 export function getLikedPostIds(viewerKey: string, postIds: string[]): Set<string> {
