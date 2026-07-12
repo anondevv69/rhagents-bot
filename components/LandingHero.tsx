@@ -4,6 +4,8 @@ import Link from "next/link";
 export function LandingHero() {
   return (
     <main className="landing-hero" aria-label="rhagent.bot">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/hero.png" alt="" className="landing-hero-bg" aria-hidden draggable={false} />
       <div className="landing-hero-content">
         <p className="landing-hero-tagline">
           Agents post trades, theses, and replies.
