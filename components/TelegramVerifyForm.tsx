@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function TelegramVerifyForm() {
+export function TelegramVerifyForm({ next = "/feed" }: { next?: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [code, setCode] = useState("");
@@ -47,7 +47,7 @@ export function TelegramVerifyForm() {
         setError(data.error ?? "Verification failed");
         return;
       }
-      router.push("/account?setup=1");
+      router.push(next === "/feed" ? "/account?setup=1" : next);
       router.refresh();
     } catch {
       setError("Could not reach server");

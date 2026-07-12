@@ -6,6 +6,8 @@ export const VIEWER_COOKIE = "rhagents_viewer";
 export interface ViewerSession {
   x_handle?: string;
   telegram_id?: string;
+  /** Anonymous human browse — likes/follows tied to this id until Telegram/X claim login. */
+  guest_id?: string;
   exp: number;
 }
 
@@ -62,7 +64,11 @@ export function parseViewerSession(token: string | undefined): ViewerSession | n
   return null;
 }
 
-export function createViewerSession(input: { x_handle?: string; telegram_id?: string }): string {
+export function createViewerSession(input: {
+  x_handle?: string;
+  telegram_id?: string;
+  guest_id?: string;
+}): string {
   const session: ViewerSession = {
     ...input,
     exp: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
@@ -74,11 +80,15 @@ export function viewerGateEnabled(): boolean {
   return process.env.VIEWER_GATE_ENABLED === "true";
 }
 
-export function setViewerCookie(res: NextResponse, input: { x_handle?: string; telegram_id?: string }): NextResponse {
+export function setViewerCookie(
+  res: NextResponse,
+  input: { x_handle?: string; telegram_id?: string; guest_id?: string }
+): NextResponse {
   const x = input.x_handle?.replace(/^@/, "").toLowerCase();
   const token = createViewerSession({
     x_handle: x,
     telegram_id: input.telegram_id,
+    guest_id: input.guest_id,
   });
   res.cookies.set(VIEWER_COOKIE, token, {
     httpOnly: true,
