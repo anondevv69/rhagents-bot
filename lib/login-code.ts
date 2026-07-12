@@ -4,10 +4,9 @@ import { ownerSessionHandle } from "./agent-identity";
 
 const CHARSET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 const CODE_TTL_MS = 5 * 60 * 1000;
-const MAX_ACTIVE_CODES_PER_AGENT = 3;
 
 const redeemAttempts = new Map<string, { count: number; resetAt: number }>();
-const REDEEM_MAX = 8;
+const REDEEM_MAX = 12;
 const REDEEM_WINDOW_MS = 10 * 60 * 1000;
 
 function normalizeCode(input: string): string {
@@ -25,6 +24,13 @@ function generateRawCode(): string {
     out += CHARSET[bytes[i]! % CHARSET.length];
   }
   return out;
+}
+
+/** expires_at stored as unix ms string for reliable SQLite comparisons. */
+function parseExpiresAt(value: string): number {
+  if (/^\d+$/.test(value)) return Number(value);
+  const t = new Date(value).getTime();
+  return Number.isFinite(t) ? t : 0;
 }
 
 function loadLoginCodeRow(code: string) {
@@ -82,20 +88,15 @@ export function createLoginCode(agentId: string): { code: string; expires_in: nu
     return { error: "No human owner on file — complete X claim first" };
   }
 
-  const active = db.prepare(`
-    SELECT COUNT(*) AS n FROM login_codes
-    WHERE agent_id = ? AND used = 0 AND expires_at > datetime('now')
-  `).get(agentId) as { n: number };
-  if (active.n >= MAX_ACTIVE_CODES_PER_AGENT) {
-    db.prepare(`
-      UPDATE login_codes SET used = 1
-      WHERE agent_id = ? AND used = 0 AND expires_at > datetime('now')
-    `).run(agentId);
-  }
+  // Only the latest minted code is valid — invalidate older unused codes.
+  db.prepare(`
+    UPDATE login_codes SET used = 1 WHERE agent_id = ? AND used = 0
+  `).run(agentId);
+
+  const expiresAtMs = Date.now() + CODE_TTL_MS;
+  const expiresAt = String(expiresAtMs);
 
   let code = formatCode(generateRawCode());
-  const expiresAt = new Date(Date.now() + CODE_TTL_MS).toISOString();
-
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const normalized = normalizeCode(code);
     try {
@@ -104,7 +105,7 @@ export function createLoginCode(agentId: string): { code: string; expires_in: nu
       `).run(normalized, agentId, expiresAt);
       return { code: formatCode(normalized), expires_in: CODE_TTL_MS / 1000 };
     } catch {
-      /* Primary key collision — extremely rare; retry with a new code. */
+      /* Primary key collision — retry. */
     }
     code = formatCode(generateRawCode());
   }
@@ -126,16 +127,26 @@ export function redeemLoginCode(inputCode: string): {
   }
 
   const row = loadLoginCodeRow(code);
-  if (!row || row.used) {
-    return { ok: false, error: "Invalid or already used login code" };
+  if (!row) {
+    return {
+      ok: false,
+      error:
+        "Code not recognized. Your agent must call POST /api/agent/login-code with RHAGENTS_AGENT_KEY and send you the exact code from the JSON response — not a made-up code.",
+    };
   }
-  if (new Date(row.expires_at).getTime() < Date.now()) {
+  if (row.used) {
+    return {
+      ok: false,
+      error: "This login code was already used or replaced — ask your agent for a fresh one (only the latest code works).",
+    };
+  }
+  if (parseExpiresAt(row.expires_at) < Date.now()) {
     return { ok: false, error: "Login code expired — ask your agent for a new one" };
   }
 
   const owner = ownerSessionHandle(row);
   if (!owner) {
-    return { ok: false, error: "Agent has no verified human owner" };
+    return { ok: false, error: "Agent has no verified human owner — finish X claim first" };
   }
 
   const db = getDb();
@@ -143,7 +154,7 @@ export function redeemLoginCode(inputCode: string): {
     UPDATE login_codes SET used = 1 WHERE code = ? AND used = 0
   `).run(code);
   if (updated.changes !== 1) {
-    return { ok: false, error: "Invalid or already used login code" };
+    return { ok: false, error: "This login code was already used — ask your agent for a new one" };
   }
 
   const ownerHandle = owner.replace(/^@/, "");
