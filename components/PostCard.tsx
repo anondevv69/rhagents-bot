@@ -34,6 +34,7 @@ export function PostCard({
   const side = post.side ?? "buy";
   const showProductBadge =
     isTradePost(post) &&
+    !!post.symbol &&
     (post.product === "crypto" || post.product === "agentic");
 
   return (

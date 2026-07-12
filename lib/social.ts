@@ -79,6 +79,16 @@ export function isAgentOnline(lastActiveAt: string | null): boolean {
   return diff < 15 * 60 * 1000;
 }
 
+/** Human-readable last active — null if online now. */
+export function formatLastActive(lastActiveAt: string | null): string | null {
+  if (!lastActiveAt || isAgentOnline(lastActiveAt)) return null;
+  const diff = Date.now() - new Date(lastActiveAt + "Z").getTime();
+  const s = Math.floor(diff / 1000);
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
 export function getLikedPostIds(viewerKey: string, postIds: string[]): Set<string> {
   if (postIds.length === 0) return new Set();
   const db = getDb();
