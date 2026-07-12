@@ -43,7 +43,7 @@ export function LoginCodeForm({ next = "/feed" }: { next?: string }) {
         return;
       }
       // Full page load so the session cookie is applied before the viewer gate runs.
-      window.location.assign(next);
+      window.location.assign(safeNext(next));
     } catch {
       setError("Could not reach server");
     } finally {
