@@ -25,12 +25,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="main-area">
         <header className="topbar">
+          <SearchBar />
           <div className="topbar-auth-slot">
             <Suspense fallback={null}>
               <TopbarAuth />
             </Suspense>
           </div>
-          <SearchBar />
         </header>
         <Suspense fallback={null}>
           <MobileFeedFilter />
