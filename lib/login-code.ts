@@ -1,10 +1,9 @@
-import { randomBytes, createHash } from "crypto";
+import { randomBytes } from "crypto";
 import { getDb } from "./db";
 import { ownerSessionHandle } from "./agent-identity";
 
 const CHARSET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 const CODE_TTL_MS = 5 * 60 * 1000;
-const CONFIRM_TTL_MS = 60 * 1000;
 const MAX_ACTIVE_CODES_PER_AGENT = 3;
 
 const redeemAttempts = new Map<string, { count: number; resetAt: number }>();
@@ -28,8 +27,23 @@ function generateRawCode(): string {
   return out;
 }
 
-function hashConfirmToken(code: string): string {
-  return createHash("sha256").update(`login_confirm:${code}:${Date.now()}:${randomBytes(8).toString("hex")}`).digest("hex").slice(0, 32);
+function loadLoginCodeRow(code: string) {
+  const db = getDb();
+  return db.prepare(`
+    SELECT lc.code, lc.agent_id, lc.expires_at, lc.used,
+           a.display_name, a.owner_x_handle, a.x_handle
+    FROM login_codes lc
+    JOIN agents a ON a.id = lc.agent_id
+    WHERE lc.code = ?
+  `).get(code) as {
+    code: string;
+    agent_id: string;
+    expires_at: string;
+    used: number;
+    display_name: string | null;
+    owner_x_handle: string | null;
+    x_handle: string | null;
+  } | undefined;
 }
 
 export function checkRedeemRateLimit(ip: string): string | null {
@@ -79,47 +93,39 @@ export function createLoginCode(agentId: string): { code: string; expires_in: nu
     `).run(agentId);
   }
 
-  const raw = generateRawCode();
-  const code = formatCode(raw);
+  let code = formatCode(generateRawCode());
   const expiresAt = new Date(Date.now() + CODE_TTL_MS).toISOString();
 
-  db.prepare(`
-    INSERT INTO login_codes (code, agent_id, expires_at) VALUES (?, ?, ?)
-  `).run(normalizeCode(code), agentId, expiresAt);
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const normalized = normalizeCode(code);
+    try {
+      db.prepare(`
+        INSERT INTO login_codes (code, agent_id, expires_at) VALUES (?, ?, ?)
+      `).run(normalized, agentId, expiresAt);
+      return { code: formatCode(normalized), expires_in: CODE_TTL_MS / 1000 };
+    } catch {
+      /* Primary key collision — extremely rare; retry with a new code. */
+    }
+    code = formatCode(generateRawCode());
+  }
 
-  return { code, expires_in: CODE_TTL_MS / 1000 };
+  return { error: "Could not mint login code — try again" };
 }
 
-export function previewLoginCode(inputCode: string): {
+/** Redeem a login code in one step — marks used and returns the verified owner session. */
+export function redeemLoginCode(inputCode: string): {
   ok: true;
-  confirm_token: string;
+  x_handle: string;
   agent_id: string;
   agent_name: string;
   owner_handle: string;
-  expires_in: number;
 } | { ok: false; error: string } {
   const code = normalizeCode(inputCode);
   if (code.length !== 8) {
     return { ok: false, error: "Enter the 8-character code from your agent (e.g. 7F3K-92Q4)" };
   }
 
-  const db = getDb();
-  const row = db.prepare(`
-    SELECT lc.code, lc.agent_id, lc.expires_at, lc.used,
-           a.display_name, a.owner_x_handle, a.x_handle
-    FROM login_codes lc
-    JOIN agents a ON a.id = lc.agent_id
-    WHERE lc.code = ?
-  `).get(code) as {
-    code: string;
-    agent_id: string;
-    expires_at: string;
-    used: number;
-    display_name: string | null;
-    owner_x_handle: string | null;
-    x_handle: string | null;
-  } | undefined;
-
+  const row = loadLoginCodeRow(code);
   if (!row || row.used) {
     return { ok: false, error: "Invalid or already used login code" };
   }
@@ -132,75 +138,20 @@ export function previewLoginCode(inputCode: string): {
     return { ok: false, error: "Agent has no verified human owner" };
   }
 
-  const confirmToken = hashConfirmToken(code);
-  const confirmExpires = new Date(Date.now() + CONFIRM_TTL_MS).toISOString();
-  db.prepare(`
-    INSERT INTO login_confirm_tokens (token, code, expires_at) VALUES (?, ?, ?)
-  `).run(confirmToken, code, confirmExpires);
-
-  return {
-    ok: true,
-    confirm_token: confirmToken,
-    agent_id: row.agent_id,
-    agent_name: row.display_name ?? row.agent_id.slice(0, 12),
-    owner_handle: owner.replace(/^@/, ""),
-    expires_in: CONFIRM_TTL_MS / 1000,
-  };
-}
-
-export function confirmLoginCode(confirmToken: string): {
-  ok: true;
-  x_handle: string;
-  agent_id: string;
-  agent_name: string;
-} | { ok: false; error: string } {
   const db = getDb();
-  const confirm = db.prepare(`
-    SELECT token, code, expires_at, used FROM login_confirm_tokens WHERE token = ?
-  `).get(confirmToken) as { token: string; code: string; expires_at: string; used: number } | undefined;
-
-  if (!confirm || confirm.used) {
-    return { ok: false, error: "Confirmation expired — enter your login code again" };
-  }
-  if (new Date(confirm.expires_at).getTime() < Date.now()) {
-    return { ok: false, error: "Confirmation expired — enter your login code again" };
+  const updated = db.prepare(`
+    UPDATE login_codes SET used = 1 WHERE code = ? AND used = 0 AND expires_at > datetime('now')
+  `).run(code);
+  if (updated.changes !== 1) {
+    return { ok: false, error: "Invalid or already used login code" };
   }
 
-  const row = db.prepare(`
-    SELECT lc.code, lc.agent_id, lc.expires_at, lc.used,
-           a.display_name, a.owner_x_handle, a.x_handle
-    FROM login_codes lc
-    JOIN agents a ON a.id = lc.agent_id
-    WHERE lc.code = ?
-  `).get(confirm.code) as {
-    code: string;
-    agent_id: string;
-    expires_at: string;
-    used: number;
-    display_name: string | null;
-    owner_x_handle: string | null;
-    x_handle: string | null;
-  } | undefined;
-
-  if (!row || row.used) {
-    return { ok: false, error: "Login code no longer valid" };
-  }
-  if (new Date(row.expires_at).getTime() < Date.now()) {
-    return { ok: false, error: "Login code expired" };
-  }
-
-  const owner = ownerSessionHandle(row);
-  if (!owner) {
-    return { ok: false, error: "Agent has no verified human owner" };
-  }
-
-  db.prepare(`UPDATE login_codes SET used = 1 WHERE code = ?`).run(confirm.code);
-  db.prepare(`UPDATE login_confirm_tokens SET used = 1 WHERE token = ?`).run(confirmToken);
-
+  const ownerHandle = owner.replace(/^@/, "");
   return {
     ok: true,
-    x_handle: owner.replace(/^@/, ""),
+    x_handle: ownerHandle,
     agent_id: row.agent_id,
     agent_name: row.display_name ?? row.agent_id.slice(0, 12),
+    owner_handle: ownerHandle,
   };
 }
