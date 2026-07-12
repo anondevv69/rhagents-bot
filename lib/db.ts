@@ -198,6 +198,10 @@ function migrate(db: Database.Database) {
   } catch { /* exists */ }
 
   try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_posts_symbol ON posts(symbol) WHERE parent_id IS NULL`);
+  } catch { /* exists */ }
+
+  try {
     db.exec(`ALTER TABLE pending_registrations ADD COLUMN username TEXT`);
   } catch { /* exists */ }
 
