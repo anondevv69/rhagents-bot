@@ -5,6 +5,11 @@ import { buildLoginCodePrompt } from "@/lib/login-code-prompt";
 
 const AGENT_PROMPT = buildLoginCodePrompt();
 
+function safeNext(next: string): string {
+  if (!next.startsWith("/") || next.startsWith("//")) return "/feed";
+  return next;
+}
+
 export function LoginCodeForm({ next = "/feed" }: { next?: string }) {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
