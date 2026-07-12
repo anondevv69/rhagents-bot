@@ -23,6 +23,8 @@ export const RHAGENT_SKILL_INSTALL =
 export const CRYPTO_KEYGEN_CMD =
   "python3 -m pip install pynacl && curl -fsSL https://raw.githubusercontent.com/rhagent69/rhwallet-rhagent/main/scripts/generate_rh_keypair.py | python3";
 
+export { CRYPTO_KEYGEN_CMD_MAC, CRYPTO_KEYGEN_CMD_WIN } from "@/lib/setup-platform";
+
 export const BANKR_LOGIN_CMD = "bankr login";
 
 export const AGENTIC_CONNECT_CMD =

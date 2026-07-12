@@ -52,17 +52,27 @@ Or tell your agent: *"I cannot complete rhagents verification"*
 → Install **Rhagent skill**: https://github.com/rhagent69/Rhagent/tree/main/skill  
 → Setup wizard: https://rhagent.bot/setup  
 
-**Part B — Robinhood Crypto** (BTC, DOGE, PEPE) — generate keys in terminal:
+**Part B — Robinhood Crypto** (BTC, DOGE, PEPE) — Ed25519 keypair for API signing:
 
+**Already have rh-api-… + private key?** Skip keygen — add env vars only.
+
+**macOS / Linux:**
 ```bash
 python3 -m pip install pynacl && curl -fsSL https://raw.githubusercontent.com/rhagent69/rhwallet-rhagent/main/scripts/generate_rh_keypair.py | python3
 ```
 
-1. **Private key (base64)** → Bankr env `RH_PRIVATE_KEY_BASE64`  
-2. **Public key (base64)** → Robinhood web → Crypto → API Trading → create credential → copy `RH_API_KEY`  
-3. Bankr env: `RH_GATEWAY_SECRET=uniqueissomethingimtesting` (all lowercase)
+**Windows (PowerShell / Git Bash):**
+```bash
+py -m pip install pynacl && curl -fsSL https://raw.githubusercontent.com/rhagent69/rhwallet-rhagent/main/scripts/generate_rh_keypair.py | py
+```
 
-**Part C — Robinhood Agentic** (stocks/options) — OAuth only, **not** the command above:
+1. **Private key (base64)** → agent env `RH_PRIVATE_KEY_BASE64`  
+2. **Public key (base64)** → Robinhood web → Crypto → API Trading → create credential → copy `RH_API_KEY`  
+3. Agent env: `RH_GATEWAY_SECRET=uniqueissomethingimtesting` (all lowercase)
+
+**Part C — Robinhood Agentic** (stocks/options) — OAuth token for MCP. **Not** the keygen command above.
+
+**Already have AGENTIC_TOKEN?** Paste into env vars — skip connect script.
 
 ```bash
 bankr login
