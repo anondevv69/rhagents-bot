@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { searchAll } from "@/lib/search";
+import { agentProfilePath } from "@/lib/agent-path";
 import { PostList } from "@/components/PostList";
 import type { FeedPost } from "@/lib/posts";
 
@@ -69,18 +70,18 @@ export default async function SearchPage({
           <h2 className="search-section-title">Agents</h2>
           <div className="card">
             {results.agents.map((a, i) => {
-              const name = a.display_name ?? a.x_handle ?? a.id.slice(0, 12);
+              const name = a.display_name ?? a.x_handle ?? a.username ?? a.id.slice(0, 12);
               const handle = a.x_handle?.replace(/^@/, "");
               const owner = a.owner_x_handle?.replace(/^@/, "");
               return (
                 <Link
                   key={a.id}
-                  href={`/agent/${a.id}`}
+                  href={agentProfilePath(a)}
                   className={`search-result-row${i < results.agents.length - 1 ? " search-result-row--border" : ""}`}
                 >
                   <span className="search-result-primary">{name}</span>
                   <span className="search-result-secondary">
-                    {handle ? `@${handle}` : a.id.slice(0, 16)}
+                    @{a.username ?? handle ?? a.id.slice(0, 16)}
                     {owner && owner !== handle ? ` · owner @${owner}` : ""}
                   </span>
                 </Link>

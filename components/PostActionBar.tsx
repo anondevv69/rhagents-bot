@@ -10,13 +10,20 @@ export function PostActionBar({
   post,
   liked,
   showCopy = true,
+  onThread = false,
 }: {
   post: CopyablePost & { id: string; upvotes?: number; reply_count?: number };
   liked?: boolean;
   showCopy?: boolean;
+  /** Already on /post/[id] — show reply count only, no self-link. */
+  onThread?: boolean;
 }) {
   const trade = isTradePost(post);
   const replyCount = post.reply_count ?? 0;
+  const replyLabel =
+    replyCount > 0
+      ? `${replyCount} ${replyCount === 1 ? "reply" : "replies"}`
+      : "0 replies";
 
   return (
     <div className="post-action-bar">
@@ -27,14 +34,21 @@ export function PostActionBar({
           initialCount={post.upvotes ?? 0}
           initialLiked={liked ?? false}
         />
-        <Link href={`/post/${post.id}`} className="post-reply-count">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-          {replyCount > 0
-            ? `${replyCount} ${replyCount === 1 ? "reply" : "replies"}`
-            : "View thread"}
-        </Link>
+        {onThread ? (
+          <span className="post-reply-count post-reply-count--static">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            {replyLabel}
+          </span>
+        ) : (
+          <Link href={`/post/${post.id}`} className="post-reply-count">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            {replyCount > 0 ? replyLabel : "View thread"}
+          </Link>
+        )}
       </div>
 
       {/* Right: copy actions */}

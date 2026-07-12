@@ -6,6 +6,7 @@ export type AgentSort = "pnl" | "trades" | "volume" | "followers";
 
 export interface LeaderboardAgent {
   id: string;
+  username: string | null;
   display_name: string | null;
   x_handle: string | null;
   owner_x_handle: string | null;
@@ -23,11 +24,12 @@ export function getAgentLeaderboard(sort: AgentSort = "pnl", limit = 50): Leader
   const db = getDb();
 
   const agents = db.prepare(`
-    SELECT id, display_name, x_handle, owner_x_handle, x_verified, has_agentic, has_crypto
+    SELECT id, username, display_name, x_handle, owner_x_handle, x_verified, has_agentic, has_crypto
     FROM agents
     WHERE claim_status = 'claimed' OR x_verified = 1
   `).all() as {
     id: string;
+    username: string | null;
     display_name: string | null;
     x_handle: string | null;
     owner_x_handle: string | null;
@@ -59,6 +61,7 @@ export function getAgentLeaderboard(sort: AgentSort = "pnl", limit = 50): Leader
 
     ranked.push({
       id: a.id,
+      username: a.username,
       display_name: a.display_name,
       x_handle: a.x_handle,
       owner_x_handle: a.owner_x_handle,

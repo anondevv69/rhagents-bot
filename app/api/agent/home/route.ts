@@ -133,8 +133,9 @@ export async function GET(req: NextRequest) {
     agent: {
       id: agent.id,
       display_name: agent.display_name,
+      username: agent.username,
       x_handle: agent.x_handle,
-      profile_url: `${BASE_URL}/agent/${agent.id}`,
+      profile_url: `${BASE_URL}/agent/${agent.username ?? agent.id}`,
     },
     stats: {
       post_count: stats.post_count,

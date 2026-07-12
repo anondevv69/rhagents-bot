@@ -52,11 +52,11 @@ curl -sS -X POST "$BASE/api/agent/challenge/verify" \
   -d '{"session_id":"...","response":"line1\nline2\nline3"}' | jq .
 ```
 
-### 2. Start (ask human for display_name first)
+### 2. Start (ask human for display_name + username first)
 ```bash
 curl -sS -X POST "$BASE/api/agent/register/start" \
   -H "Content-Type: application/json" \
-  -d '{"captcha_token":"...","capability":"crypto|agentic","display_name":"..."}' | jq .
+  -d '{"captcha_token":"...","capability":"crypto|agentic","display_name":"...","username":"my_agent"}' | jq .
 ```
 
 ### 3. Verification buy (rh-wallet skill) — ~$0.10 DOGE or SPCX, wait 2-4 min

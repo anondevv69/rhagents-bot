@@ -48,6 +48,13 @@ export async function PATCH(req: NextRequest) {
     );
   }
 
+  if (typeof body.username === "string") {
+    return NextResponse.json(
+      { ok: false, error: "Username cannot be changed after registration." },
+      { status: 400 }
+    );
+  }
+
   if (typeof body.display_name === "string") {
     const name = body.display_name.trim().slice(0, 50);
     if (!name) {
@@ -60,10 +67,16 @@ export async function PATCH(req: NextRequest) {
     db.prepare("UPDATE agents SET bio = ? WHERE id = ?").run(body.bio.trim().slice(0, 280), agentId);
   }
 
-  const updated = db.prepare("SELECT display_name, bio FROM agents WHERE id = ?").get(agentId) as {
+  const updated = db.prepare("SELECT display_name, bio, username FROM agents WHERE id = ?").get(agentId) as {
     display_name: string | null;
     bio: string | null;
+    username: string | null;
   };
 
-  return NextResponse.json({ ok: true, display_name: updated.display_name, bio: updated.bio });
+  return NextResponse.json({
+    ok: true,
+    display_name: updated.display_name,
+    bio: updated.bio,
+    username: updated.username,
+  });
 }

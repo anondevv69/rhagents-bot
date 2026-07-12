@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { FeedPost } from "@/lib/posts";
 import { agentPublicXHandle } from "@/lib/agent-identity";
-import { isAutoTradeBody, getTradeThesis } from "@/lib/trade-text";
+import { isAutoTradeBody, getTradeThesis, formatTradeNotional, formatTradeFillDetail } from "@/lib/trade-text";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { PostActionBar } from "@/components/PostActionBar";
 import { PostChannelMeta } from "@/components/PostChannelMeta";
@@ -15,12 +15,15 @@ export function PostCard({
   showCopy = true,
   liked = false,
   standalone = false,
+  onThread = false,
 }: {
   post: FeedPost;
   showCopy?: boolean;
   liked?: boolean;
   standalone?: boolean;
+  onThread?: boolean;
 }) {
+  const profileSlug = post.agent_username ?? post.agent_id;
   const name = post.agent_display_name ?? post.agent_x_handle ?? post.agent_id.slice(0, 12);
   const xHandle = agentPublicXHandle(post.agent_x_handle, post.agent_owner_x_handle);
   const showTradePill = isTradePost(post) && !!post.symbol;
@@ -33,10 +36,7 @@ export function PostCard({
     ? `/tickers/${encodeURIComponent(post.symbol)}?tab=${post.side === "sell" ? "sells" : "buys"}`
     : symbolHref;
   const side = post.side ?? "buy";
-  const showProductBadge =
-    isTradePost(post) &&
-    !!post.symbol &&
-    (post.product === "crypto" || post.product === "agentic");
+  const fillDetail = showTradePill ? formatTradeFillDetail(post) : null;
 
   return (
     <article className={`post-card${standalone ? " post-card--standalone card" : ""}`}>
@@ -45,13 +45,13 @@ export function PostCard({
           name={name}
           xHandle={xHandle}
           ownerHandle={post.agent_owner_x_handle}
-          agentId={post.agent_id}
+          profileSlug={profileSlug}
           size={36}
           fontSize={14}
         />
         <div className="post-card-header-main">
           <div className="post-card-identity">
-            <Link href={`/agent/${post.agent_id}`} className="post-card-name">
+            <Link href={`/agent/${profileSlug}`} className="post-card-name">
               {name}
             </Link>
             {xHandle ? (
@@ -63,15 +63,6 @@ export function PostCard({
               >
                 @{xHandle.replace(/^@/, "")}
               </a>
-            ) : null}
-            {post.agent_x_verified ? (
-              <span className="badge badge-verified" style={{ fontSize: 10 }}>✓</span>
-            ) : null}
-            {showProductBadge && post.product === "agentic" ? (
-              <span className="badge badge-agentic" style={{ fontSize: 10 }}>Agentic</span>
-            ) : null}
-            {showProductBadge && post.product === "crypto" ? (
-              <span className="badge badge-crypto" style={{ fontSize: 10 }}>Crypto</span>
             ) : null}
           </div>
           <PostChannelMeta post={post} />
@@ -87,12 +78,8 @@ export function PostCard({
       {showTradePill && symbolHref ? (
         <Link href={symbolHref} className="trade-pill trade-pill--compact">
           <span className="trade-pill-symbol">${post.symbol}</span>
-          {post.price_usd ? (
-            <span className="trade-pill-muted">${post.price_usd}</span>
-          ) : null}
-          {post.quantity ? (
-            <span className="trade-pill-muted">× {post.quantity}</span>
-          ) : null}
+          <span className="trade-pill-amount">{formatTradeNotional(post)}</span>
+          {fillDetail ? <span className="trade-pill-muted">{fillDetail}</span> : null}
         </Link>
       ) : null}
 
@@ -105,7 +92,7 @@ export function PostCard({
         <p className="post-card-text">{post.body}</p>
       ) : null}
 
-      <PostActionBar post={post} liked={liked} showCopy={showCopy} />
+      <PostActionBar post={post} liked={liked} showCopy={showCopy} onThread={onThread} />
     </article>
   );
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getAgentLeaderboard, type AgentSort } from "@/lib/agents-leaderboard";
 import { formatPnlShort, formatVolume } from "@/lib/stats";
+import { agentProfilePath } from "@/lib/agent-path";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { PageHeader } from "@/components/PageHeader";
 import { PageSortTabs } from "@/components/PageSortTabs";
@@ -44,10 +45,11 @@ export default async function AgentsPage({
           {agents.map((a, i) => {
             const name = a.display_name ?? a.x_handle ?? a.id.slice(0, 12);
             const pnlClass = a.realized_pnl_usd >= 0 ? "stat-up" : "stat-down";
+            const slug = a.username ?? a.id;
             return (
-              <Link key={a.id} href={`/agent/${a.id}`} className="agent-leaderboard-row">
+              <Link key={a.id} href={agentProfilePath(a)} className="agent-leaderboard-row">
                 <span className="agent-leaderboard-rank">{i + 1}</span>
-                <AgentAvatar name={name} xHandle={a.x_handle} ownerHandle={a.owner_x_handle} agentId={a.id} size={36} fontSize={14} />
+                <AgentAvatar name={name} xHandle={a.x_handle} ownerHandle={a.owner_x_handle} profileSlug={slug} size={36} fontSize={14} />
                 <div className="agent-leaderboard-main">
                   <span className="agent-leaderboard-name">{name}</span>
                   <span className="agent-leaderboard-meta">

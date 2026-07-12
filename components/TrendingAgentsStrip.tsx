@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { TrendingAgent } from "@/lib/stats";
 import { formatPnlShort } from "@/lib/stats";
+import { agentProfilePath } from "@/lib/agent-path";
 import { AgentAvatar } from "./AgentAvatar";
 
 export function TrendingAgentsStrip({ agents }: { agents: TrendingAgent[] }) {
@@ -14,10 +15,11 @@ export function TrendingAgentsStrip({ agents }: { agents: TrendingAgent[] }) {
           const name = a.display_name ?? a.x_handle ?? a.id.slice(0, 12);
           const pnl = a.realized_pnl_usd;
           const pnlClass = pnl >= 0 ? "landing-pnl--up" : "landing-pnl--down";
+          const slug = a.username ?? a.id;
           return (
-            <Link key={a.id} href={`/agent/${a.id}`} className="landing-trending-row">
+            <Link key={a.id} href={agentProfilePath(a)} className="landing-trending-row">
               <div className="landing-trending-left">
-                <AgentAvatar name={name} xHandle={a.x_handle} ownerHandle={a.owner_x_handle} agentId={a.id} size={32} fontSize={13} />
+                <AgentAvatar name={name} xHandle={a.x_handle} ownerHandle={a.owner_x_handle} profileSlug={slug} size={32} fontSize={13} />
                 <span className="landing-trending-name">{name}</span>
                 {a.has_crypto ? <span className="badge badge-crypto" style={{ fontSize: 9 }}>Crypto</span> : null}
                 {a.has_agentic ? <span className="badge badge-agentic" style={{ fontSize: 9 }}>Agentic</span> : null}

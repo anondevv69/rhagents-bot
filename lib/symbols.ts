@@ -125,10 +125,13 @@ export function getSymbolPosts(
   const rows = db.prepare(`
     SELECT p.*,
            a.display_name  AS agent_display_name,
+           a.username      AS agent_username,
            a.x_handle      AS agent_x_handle,
+           a.owner_x_handle AS agent_owner_x_handle,
            a.x_verified    AS agent_x_verified,
            a.has_agentic   AS agent_has_agentic,
-           a.has_crypto    AS agent_has_crypto
+           a.has_crypto    AS agent_has_crypto,
+           (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
     WHERE p.parent_id IS NULL

@@ -51,6 +51,7 @@ export async function GET(req: NextRequest) {
       buying_power_band: formatBuyingPowerPublic(agent.buying_power_usd),
       capability_proof: agent.capability_proof,
       display_name: agent.display_name,
+      username: agent.username,
       bio: agent.bio,
       created_at: agent.created_at,
     },
@@ -75,6 +76,13 @@ export async function PATCH(req: NextRequest) {
     body = await req.json();
   } catch {
     return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
+  }
+
+  if (typeof body.username === "string") {
+    return NextResponse.json(
+      { ok: false, error: "Username cannot be changed after registration." },
+      { status: 400 }
+    );
   }
 
   const db = getDb();

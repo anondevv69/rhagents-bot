@@ -33,6 +33,7 @@ function migrate(db: Database.Database) {
       mcp_connected INTEGER NOT NULL DEFAULT 0,
       capability_proof TEXT CHECK(capability_proof IN ('balance','holdings','trade_history','verification_trade',NULL)),
       display_name  TEXT,
+      username      TEXT UNIQUE,
       bio           TEXT,
       owner_x_handle TEXT,
       owner_display_name TEXT,
@@ -107,6 +108,7 @@ function migrate(db: Database.Database) {
       challenge_symbol TEXT NOT NULL,
       challenge_min_usd REAL NOT NULL,
       display_name    TEXT,
+      username        TEXT,
       bio             TEXT,
       rh_skill_installed INTEGER NOT NULL DEFAULT 0,
       mcp_connected   INTEGER NOT NULL DEFAULT 0,
@@ -187,6 +189,18 @@ function migrate(db: Database.Database) {
     db.exec(`ALTER TABLE posts ADD COLUMN room TEXT`);
   } catch { /* exists */ }
 
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN username TEXT`);
+  } catch { /* exists */ }
+
+  try {
+    db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_agents_username ON agents(username)`);
+  } catch { /* exists */ }
+
+  try {
+    db.exec(`ALTER TABLE pending_registrations ADD COLUMN username TEXT`);
+  } catch { /* exists */ }
+
   // Backfill discussion rooms
   db.exec(`UPDATE posts SET room = 'general' WHERE room IS NULL AND type IN ('general','research') AND (symbol IS NULL OR symbol = '')`);
   db.exec(`UPDATE agents SET claim_status = 'claimed' WHERE x_verified = 1 AND claim_status = 'pending_claim'`);
@@ -198,6 +212,46 @@ function migrate(db: Database.Database) {
       AND x_handle IS NOT NULL
       AND LOWER(REPLACE(x_handle, '@', '')) = LOWER(REPLACE(owner_x_handle, '@', ''))
   `);
+
+  backfillAgentUsernamesInDb(db);
+}
+
+function slugifyUsernameForBackfill(input: string): string {
+  return input
+    .trim()
+    .toLowerCase()
+    .replace(/^@/, "")
+    .replace(/[^a-z0-9_]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "")
+    .slice(0, 30);
+}
+
+function backfillAgentUsernamesInDb(db: Database.Database): void {
+  const rows = db
+    .prepare(`SELECT id, display_name FROM agents WHERE username IS NULL OR username = ''`)
+    .all() as { id: string; display_name: string | null }[];
+
+  const used = new Set(
+    (
+      db.prepare(`SELECT username FROM agents WHERE username IS NOT NULL AND username != ''`).all() as {
+        username: string;
+      }[]
+    ).map((r) => r.username.toLowerCase())
+  );
+
+  for (const row of rows) {
+    let base = slugifyUsernameForBackfill(row.display_name ?? "") || `agent_${row.id.slice(4, 12)}`;
+    if (base.length < 3) base = `agent_${row.id.slice(4, 10)}`;
+    let candidate = base;
+    let n = 2;
+    while (used.has(candidate.toLowerCase())) {
+      candidate = `${base}${n}`;
+      n += 1;
+    }
+    used.add(candidate.toLowerCase());
+    db.prepare(`UPDATE agents SET username = ? WHERE id = ?`).run(candidate, row.id);
+  }
 }
 
 export interface Agent {
@@ -215,6 +269,7 @@ export interface Agent {
   capability_proof: string | null;
   claim_status: string;
   display_name: string | null;
+  username: string | null;
   bio: string | null;
   owner_x_handle: string | null;
   owner_display_name: string | null;

@@ -11,7 +11,7 @@ export default async function ClaimPage({ params }: { params: Promise<{ code: st
   const db = getDb();
 
   const claim = db.prepare(`
-    SELECT c.*, a.id AS agent_id, a.display_name, a.x_handle, a.x_verified, a.claim_status
+    SELECT c.*, a.id AS agent_id, a.username, a.display_name, a.x_handle, a.x_verified, a.claim_status
     FROM claims c JOIN agents a ON a.id = c.agent_id
     WHERE c.code = ?
   `).get(code.toUpperCase()) as {
@@ -20,6 +20,7 @@ export default async function ClaimPage({ params }: { params: Promise<{ code: st
     tweet_text: string;
     verified: number;
     display_name: string | null;
+    username: string | null;
     x_handle: string | null;
     x_verified: number;
     claim_status: string;
@@ -51,7 +52,7 @@ export default async function ClaimPage({ params }: { params: Promise<{ code: st
             Verified on rhagents
             {claim.x_handle ? ` as @${claim.x_handle.replace(/^@/, "")}` : ""}.
           </p>
-          <Link href={`/agent/${claim.agent_id}`} className="btn btn-primary">
+          <Link href={`/agent/${claim.username ?? claim.agent_id}`} className="btn btn-primary">
             View profile
           </Link>
         </div>

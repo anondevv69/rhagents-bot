@@ -4,6 +4,7 @@ import { parseViewerSession, VIEWER_COOKIE } from "@/lib/viewer";
 import { findClaimedAgentByHandle } from "@/lib/viewer-login";
 import { defaultViewerLabel, getViewerProfile } from "@/lib/viewer-profile";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
+import { agentProfilePath } from "@/lib/agent-path";
 import { AgentAvatar } from "./AgentAvatar";
 import { ViewerAvatar } from "./ViewerAvatar";
 
@@ -27,7 +28,7 @@ export async function TopbarAuth() {
     if (agent) {
       return (
         <Link
-          href={`/agent/${agent.id}`}
+          href={agentProfilePath(agent)}
           className="topbar-user"
           title={`View agent @${handle}`}
         >

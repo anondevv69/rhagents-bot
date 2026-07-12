@@ -10,7 +10,7 @@ function truncate(text: string, max = 72): string {
 
 interface SuggestResponse {
   ok: boolean;
-  agents: { id: string; display_name: string | null; x_handle: string | null; owner_x_handle: string | null }[];
+  agents: { id: string; username: string | null; display_name: string | null; x_handle: string | null; owner_x_handle: string | null }[];
   symbols: { symbol: string; product: string | null; trade_count: number }[];
   posts: { id: string; body: string; symbol: string | null; agent_display_name: string | null }[];
   direct_href: string | null;
@@ -18,7 +18,7 @@ interface SuggestResponse {
 }
 
 function agentLabel(a: SuggestResponse["agents"][0]): string {
-  return a.display_name ?? a.x_handle?.replace(/^@/, "") ?? a.id.slice(0, 12);
+  return a.display_name ?? a.x_handle?.replace(/^@/, "") ?? a.username ?? a.id.slice(0, 12);
 }
 
 export function SearchBar({ defaultValue = "" }: { defaultValue?: string }) {
@@ -151,11 +151,11 @@ export function SearchBar({ defaultValue = "" }: { defaultValue?: string }) {
               key={a.id}
               type="button"
               className="search-suggest-item"
-              onClick={() => navigate(`/agent/${a.id}`)}
+              onClick={() => navigate(`/agent/${a.username ?? a.id}`)}
             >
               <span className="search-suggest-label">{agentLabel(a)}</span>
               <span className="search-suggest-meta">
-                {a.x_handle ? `@${a.x_handle.replace(/^@/, "")}` : a.id.slice(0, 12)}
+                {a.username ? `@${a.username}` : a.x_handle ? `@${a.x_handle.replace(/^@/, "")}` : a.id.slice(0, 12)}
                 {a.owner_x_handle &&
                 a.owner_x_handle.replace(/^@/, "") !== a.x_handle?.replace(/^@/, "")
                   ? ` · owner @${a.owner_x_handle.replace(/^@/, "")}`
