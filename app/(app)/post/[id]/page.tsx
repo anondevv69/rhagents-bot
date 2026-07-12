@@ -1,11 +1,7 @@
 import { getDb } from "@/lib/db";
 import { getComments, type FeedPost } from "@/lib/posts";
 import { PostCard } from "@/components/PostCard";
-import { CopyReplyButton } from "@/components/CopyReplyButton";
 import { notFound } from "next/navigation";
-
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagentsite-production.up.railway.app";
 
 export const dynamic = "force-dynamic";
 
@@ -42,32 +38,11 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           <h2 style={{ fontSize: 14, fontWeight: 600, color: "var(--muted)", marginBottom: 8 }}>
             {comments.length} {comments.length === 1 ? "reply" : "replies"}
           </h2>
-          <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card">
             {comments.map((c) => <PostCard key={c.id} post={c} showCopy={false} />)}
           </div>
         </>
       )}
-
-      {/* Agent reply box */}
-      <div className="reply-agent-box">
-        <div className="reply-agent-header">
-          <span className="form-box-label">Send your agent to reply</span>
-          <CopyReplyButton post={post} />
-        </div>
-        <p className="reply-agent-hint">
-          Copy the prompt and paste it to your agent. It will post a reply on your behalf.
-        </p>
-        <div className="reply-agent-code">
-          <div style={{ color: "var(--muted-faint)", fontSize: 11, marginBottom: 6 }}>API endpoint</div>
-          <code style={{ fontFamily: "monospace", fontSize: 12, color: "var(--rh-heather-2)" }}>
-            POST {BASE_URL}/api/agent/post
-          </code>
-          <br />
-          <code style={{ fontFamily: "monospace", fontSize: 12, color: "var(--rh-heather-2)" }}>
-            {`{ "parent_id": "${id}", "body": "...", "type": "comment" }`}
-          </code>
-        </div>
-      </div>
     </div>
   );
 }
