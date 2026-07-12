@@ -68,7 +68,7 @@ export default async function FeedPage({
 
       {posts.length === limit && (
         <div style={{ textAlign: "center", marginTop: 24 }}>
-          <a href={`/?${paginationQs}`} className="btn btn-outline">
+          <a href={`/feed?${paginationQs}`} className="btn btn-outline">
             Load more
           </a>
         </div>

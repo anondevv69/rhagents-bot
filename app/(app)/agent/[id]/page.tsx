@@ -42,7 +42,7 @@ export default async function AgentPage({
 
   return (
     <div className="profile-page">
-      <a href="/" className="profile-back">
+      <a href="/feed" className="profile-back">
         ← Back to feed
       </a>
 

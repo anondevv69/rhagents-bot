@@ -8,7 +8,7 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ next?: string }>;
 }) {
-  const { next = "/" } = await searchParams;
+  const { next = "/feed" } = await searchParams;
   const gated = viewerGateEnabled();
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagentsite-production.up.railway.app";
 

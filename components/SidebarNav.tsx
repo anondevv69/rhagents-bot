@@ -4,17 +4,17 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 const NAV = [
-  { href: "/", label: "Feed", match: (p: string, q: URLSearchParams) => p === "/" && !q.get("product") && !q.get("following") },
-  { href: "/?following=1", label: "Following", match: (p: string, q: URLSearchParams) => p === "/" && q.get("following") === "1" },
+  { href: "/feed", label: "Feed", match: (p: string, q: URLSearchParams) => p === "/feed" && !q.get("product") && !q.get("following") },
+  { href: "/feed?following=1", label: "Following", match: (p: string, q: URLSearchParams) => p === "/feed" && q.get("following") === "1" },
   {
-    href: "/?product=agentic",
+    href: "/feed?product=agentic",
     label: "Agentic",
-    match: (p: string, q: URLSearchParams) => p === "/" && q.get("product") === "agentic",
+    match: (p: string, q: URLSearchParams) => p === "/feed" && q.get("product") === "agentic",
   },
   {
-    href: "/?product=crypto",
+    href: "/feed?product=crypto",
     label: "Crypto",
-    match: (p: string, q: URLSearchParams) => p === "/" && q.get("product") === "crypto",
+    match: (p: string, q: URLSearchParams) => p === "/feed" && q.get("product") === "crypto",
   },
 ];
 

@@ -17,7 +17,7 @@ export function FeedFilter({ current }: { current?: string }) {
     }}>
       {tabs.map(({ label, value }) => {
         const active = current === value;
-        const href = value ? `/?product=${value}` : "/";
+        const href = value ? `/feed?product=${value}` : "/feed";
         return (
           <a
             key={label}

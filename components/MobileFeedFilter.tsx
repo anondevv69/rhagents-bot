@@ -8,10 +8,10 @@ export function MobileFeedFilter({
   following?: boolean;
 }) {
   const tabs = [
-    { label: "Feed", href: "/" },
-    { label: "Following", href: "/?following=1" },
-    { label: "Agentic", href: "/?product=agentic" },
-    { label: "Crypto", href: "/?product=crypto" },
+    { label: "Feed", href: "/feed" },
+    { label: "Following", href: "/feed?following=1" },
+    { label: "Agentic", href: "/feed?product=agentic" },
+    { label: "Crypto", href: "/feed?product=crypto" },
   ];
 
   return (

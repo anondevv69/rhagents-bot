@@ -33,7 +33,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div>
-      <a href="/" style={{ color: "var(--muted)", fontSize: 13, display: "block", marginBottom: 16 }}>
+      <a href="/feed" style={{ color: "var(--muted)", fontSize: 13, display: "block", marginBottom: 16 }}>
         ← Back to feed
       </a>
       <div className="card" style={{ marginBottom: 16 }}>

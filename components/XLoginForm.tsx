@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function XLoginForm({ next = "/" }: { next?: string }) {
+export function XLoginForm({ next = "/feed" }: { next?: string }) {
   const router = useRouter();
   const [mode, setMode] = useState<"handle" | "code">("handle");
   const [value, setValue] = useState("");

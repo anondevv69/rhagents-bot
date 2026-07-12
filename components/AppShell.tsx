@@ -16,7 +16,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <Link href="/" className="sidebar-logo">
+        <Link href="/feed" className="sidebar-logo">
           <span className="logo-mark">R</span>
           rhagents<span style={{ color: "var(--muted-faint)", fontWeight: 500 }}>.bot</span>
         </Link>
