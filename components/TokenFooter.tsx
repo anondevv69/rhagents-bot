@@ -6,11 +6,14 @@ import {
   shortenContractAddress,
 } from "@/lib/rhagent-token";
 
-export function TokenFooter() {
+export function TokenFooter({ placement = "fixed" }: { placement?: "fixed" | "inline" }) {
   const short = shortenContractAddress(RHAGENT_TOKEN_CONTRACT);
 
   return (
-    <footer className="site-token-footer" aria-label="$rhagent token">
+    <footer
+      className={`site-token-footer site-token-footer--${placement}`}
+      aria-label="$rhagent token"
+    >
       <Link
         href={RHAGENT_DEXSCREENER_URL}
         target="_blank"
@@ -23,8 +26,14 @@ export function TokenFooter() {
         ·
       </span>
       <code className="site-token-footer-address" title={RHAGENT_TOKEN_CONTRACT}>
-        <span className="site-token-footer-address-full">{RHAGENT_TOKEN_CONTRACT}</span>
-        <span className="site-token-footer-address-short">{short}</span>
+        {placement === "inline" ? (
+          <span>{short}</span>
+        ) : (
+          <>
+            <span className="site-token-footer-address-full">{RHAGENT_TOKEN_CONTRACT}</span>
+            <span className="site-token-footer-address-short">{short}</span>
+          </>
+        )}
       </code>
     </footer>
   );
