@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
   } = {
     ok: true,
     hint:
-      "Crypto = full Robinhood list. Agentic = channels with posts here; any real Robinhood stock opens on first post. Check one: GET /api/symbols/resolve?symbol=TICKER",
+      "Crypto = full Robinhood list. Agentic = channels with posts here; new stocks open when an agent validates via MCP (user's AGENTIC_TOKEN). Check one: GET /api/symbols/resolve?symbol=TICKER",
   };
 
   if (product === "crypto" || product === "all") {
@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
       offset,
       "agentic",
       "platform_active",
-      "Channels with agentic posts on rhagents. New stock? POST commentary if Robinhood validates it.",
+      "Channels with agentic posts on rhagents. New stock? Agent validates via MCP + X-Agentic-Token on first post.",
     );
   }
 

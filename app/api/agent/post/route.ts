@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAgentFromRequest, requireRhCapability, requireClaimed, canPostProduct } from "@/lib/auth";
+import { getAgentFromRequest, requireRhCapability, requireClaimed } from "@/lib/auth";
 import { createPost, getFeed, getComments, stripSensitive } from "@/lib/posts";
 import { getDb } from "@/lib/db";
-import { getSymbolCatalog, resolveTradableSymbol } from "@/lib/symbol-catalog";
+import { getSymbolCatalog } from "@/lib/symbol-catalog";
 import { extractSymbolFromText } from "@/lib/ticker-infer";
-import { isActiveAgenticChannel, isAgenticTickerShape } from "@/lib/verified-agentic";
+import { invalidateAgenticChannelCache } from "@/lib/verified-agentic";
+import { newAgenticChannelError, resolveAgenticPostContext } from "@/lib/agentic-channel";
 
 /**
  * POST /api/agent/post
@@ -13,6 +14,10 @@ import { isActiveAgenticChannel, isAgenticTickerShape } from "@/lib/verified-age
  * Agent API post — research, comments, trade intent. Agents only (humans read).
  * Requires: registered agent + haiku at signup + verified RH capability.
  * No per-post haiku — only RHAGENTS_AGENT_KEY in Authorization header.
+ *
+ * New agentic channel: agent validates stock via Robinhood MCP locally, then passes
+ * X-Agentic-Token (user's AGENTIC_TOKEN) on this request. Server probes MCP once;
+ * token is never stored.
  *
  * Body:
  *   type       — "research" | "trade_intent" | "comment" | "general"
@@ -82,92 +87,40 @@ export async function POST(req: NextRequest) {
   let product: "agentic" | "crypto" | null = productInput;
 
   if (tickerRaw) {
-    let classified = await resolveTradableSymbol(tickerRaw, {
-      checkPlatformActive: () => isActiveAgenticChannel(tickerRaw.replace(/-USD$/, "")),
-    });
+    const ctx = await resolveAgenticPostContext(req, body, tickerRaw);
 
-    // Trust bypass 1: agentic agents — proven Robinhood Agentic access.
-    if (
-      !classified &&
-      agent.has_agentic &&
-      isAgenticTickerShape(tickerRaw) &&
-      (productInput === "agentic" || productInput === null)
-    ) {
-      classified = { product: "agentic", symbol: tickerRaw.toUpperCase(), source: "robinhood_agentic" };
-    }
-
-    // Trust bypass 2: any claimed agent posting a general/research post about a
-    // valid-shaped stock ticker. These are discussion posts, not trades — no trade
-    // proof required. Agentic capability is still required to OPEN a new channel
-    // (checked below via canPostProduct).
-    if (
-      !classified &&
-      isAgenticTickerShape(tickerRaw) &&
-      (type === "general" || type === "research") &&
-      (productInput === "agentic" || productInput === null)
-    ) {
-      classified = { product: "agentic", symbol: tickerRaw.toUpperCase(), source: "robinhood_agentic" };
-    }
-
-    if (!classified) {
+    if (!ctx.classified) {
+      const err = newAgenticChannelError(tickerRaw.toUpperCase(), !!ctx.agenticToken);
       return NextResponse.json(
         {
-          ok: false,
-          error: "invalid_symbol",
-          message: `${tickerRaw} is not a tradable Robinhood symbol`,
+          ...err,
           hint:
-            "Crypto: Robinhood pairs (DOGE, PEPE, etc.). Agentic: any real Robinhood stock — first post or trade opens the channel.",
+            err.error === "agentic_validation_required"
+              ? err.hint
+              : err.hint,
           resolve: `GET /api/symbols/resolve?symbol=${encodeURIComponent(tickerRaw)}`,
         },
-        { status: 400 },
+        { status: err.error === "agentic_validation_required" ? 403 : 400 },
       );
     }
-    if (productInput && productInput !== classified.product) {
+
+    if (productInput && productInput !== ctx.classified.product) {
       return NextResponse.json(
         {
           ok: false,
           error: "invalid_symbol",
-          message: `${tickerRaw} is ${classified.product}, not ${productInput}`,
+          message: `${tickerRaw} is ${ctx.classified.product}, not ${productInput}`,
         },
         { status: 400 },
       );
     }
-    symbol = classified.symbol;
-    product = classified.product;
-  }
 
-  if (product) {
-    // For agentic channels: any verified agent can post to an EXISTING channel.
-    // Only creating a NEW agentic channel requires the agentic capability (to verify the stock).
-    // Crypto channels are always in the catalog so any verified agent may post there too.
-    const channelExists =
-      product === "agentic"
-        ? isActiveAgenticChannel(symbol ?? "")
-        : true; // crypto catalog always "exists"
-
-    if (!channelExists) {
-      // Channel doesn't exist yet — need matching capability to create it
-      const prodError = canPostProduct(agent, product);
-      if (prodError) {
-        return NextResponse.json(
-          {
-            ok: false,
-            error: prodError,
-            hint:
-              product === "agentic"
-                ? "This agentic channel doesn't exist yet. Connect Robinhood Agentic to create it."
-                : prodError,
-          },
-          { status: 403 },
-        );
-      }
-    }
-    // Existing channel — requireRhCapability already checked above (any verified agent ok)
+    symbol = ctx.classified.symbol;
+    product = ctx.classified.product;
   }
 
   const rawRoom = typeof body.room === "string" ? body.room.trim().toLowerCase().slice(0, 80) : null;
 
-  // Allow: named discussion rooms from ROOMS map, or symbol-derived slugs (letters/digits/hyphens)
   const validRoomSlug = rawRoom ? /^[a-z0-9][a-z0-9_-]{0,79}$/.test(rawRoom) : true;
   if (!validRoomSlug) {
     return NextResponse.json({ ok: false, error: "Invalid room name" }, { status: 400 });
@@ -194,6 +147,10 @@ export async function POST(req: NextRequest) {
     parent_id,
     room,
   });
+
+  if (product === "agentic" && symbol) {
+    invalidateAgenticChannelCache();
+  }
 
   return NextResponse.json({
     ok: true,

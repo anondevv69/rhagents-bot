@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAgentFromRequest, requireRhCapability, requireClaimed, canPostProduct } from "@/lib/auth";
+import { getAgentFromRequest, requireRhCapability, requireClaimed } from "@/lib/auth";
 import { createPost, buildTradeFillBody, stripSensitive } from "@/lib/posts";
-import { getSymbolCatalog, resolveTradableSymbol } from "@/lib/symbol-catalog";
-import {
-  invalidateAgenticChannelCache,
-  isActiveAgenticChannel,
-  isAgenticTickerShape,
-} from "@/lib/verified-agentic";
+import { getSymbolCatalog } from "@/lib/symbol-catalog";
+import { invalidateAgenticChannelCache } from "@/lib/verified-agentic";
+import { newAgenticChannelError, resolveAgenticPostContext } from "@/lib/agentic-channel";
 
 /**
  * POST /api/agent/trade-post
@@ -14,6 +11,9 @@ import {
  *
  * Auto-post a completed trade. Called by the rh-wallet skill after a fill.
  * No account numbers. No private keys. Post is automatically redacted.
+ *
+ * New agentic channel: pass X-Agentic-Token (user's AGENTIC_TOKEN) or include
+ * complete fill data (side + quantity + price_usd) after a Robinhood execution.
  *
  * Body:
  *   product     — "agentic" | "crypto"
@@ -24,9 +24,6 @@ import {
  *   price_usd   — e.g. "3.93"
  *   comment     — alias for body — user thesis / reason for the trade
  *   thesis      — alias for comment — e.g. "theory is it could go up"
- *
- * Note: trade-post does NOT require haiku if agent registered with haiku verification.
- * Manual posts via POST /api/agent/post always require a fresh captcha_token.
  */
 export async function POST(req: NextRequest) {
   const agent = getAgentFromRequest(req);
@@ -47,7 +44,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Must have at least one RH capability
   const capError = requireRhCapability(agent);
   if (capError) {
     return NextResponse.json({ ok: false, error: capError }, { status: 403 });
@@ -87,34 +83,32 @@ export async function POST(req: NextRequest) {
   }
 
   await getSymbolCatalog();
-  let classified = await resolveTradableSymbol(symbolInput, {
-    checkPlatformActive: () => isActiveAgenticChannel(symbolInput),
-  });
+  const ctx = await resolveAgenticPostContext(req, body, symbolInput);
 
-  // Agentic trade fill from Robinhood — trust the execution; opens ticker room for others
+  let classified = ctx.classified;
+
+  // Completed agentic fill on Robinhood is proof the stock is real — opens the channel.
   if (
     !classified &&
-    agent.has_agentic &&
-    isAgenticTickerShape(symbolInput) &&
-    (productInput === "agentic" || productInput === null)
+    !ctx.channelExists &&
+    (productInput === "agentic" || productInput === null) &&
+    type === "trade_fill" &&
+    side &&
+    quantity &&
+    price_usd
   ) {
     classified = {
       product: "agentic",
       symbol: symbolInput.toUpperCase(),
-      source: "platform_active",
+      source: "robinhood_agentic",
     };
   }
 
   if (!classified) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "invalid_symbol",
-        message: `${symbolInput} is not a tradable Robinhood symbol`,
-        hint: "Crypto: Robinhood pairs. Agentic: real stocks — first trade or commentary opens the channel.",
-      },
-      { status: 400 },
-    );
+    const err = newAgenticChannelError(symbolInput, !!ctx.agenticToken);
+    return NextResponse.json(err, {
+      status: err.error === "agentic_validation_required" ? 403 : 400,
+    });
   }
 
   const symbol = classified.symbol;
@@ -130,29 +124,6 @@ export async function POST(req: NextRequest) {
   }
   const product = classified.product;
 
-  // Existing channel → any verified agent can post.
-  // New agentic channel → need agentic capability to verify and create it.
-  const channelExists =
-    product === "agentic" ? isActiveAgenticChannel(symbol) : true;
-
-  if (!channelExists) {
-    const prodError = canPostProduct(agent, product);
-    if (prodError) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: prodError,
-          hint:
-            product === "agentic"
-              ? "This agentic channel doesn't exist yet. Connect Robinhood Agentic to create it."
-              : prodError,
-        },
-        { status: 403 },
-      );
-    }
-  }
-
-  // User thesis (comment/body/thesis) — trade metadata in symbol/side/qty/price columns
   const rawComment =
     (typeof body.thesis === "string" ? body.thesis.trim() : "") ||
     (typeof body.comment === "string" ? body.comment.trim() : "") ||
@@ -167,7 +138,6 @@ export async function POST(req: NextRequest) {
     postBody = `${side === "buy" ? "Bought" : "Sold"} ${quantity ?? ""} ${symbol}${price_usd ? ` at $${price_usd}` : ""}`.trim();
   }
 
-  // Redact any accidentally-included sensitive data
   postBody = stripSensitive(postBody);
 
   const post = createPost({

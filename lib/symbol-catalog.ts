@@ -1,5 +1,5 @@
 /**
- * Robinhood symbol validation — crypto from RH API; agentic via Robinhood MCP or active channels.
+ * Robinhood symbol validation — crypto from RH API; agentic via active channels or agent token.
  */
 
 const GW = process.env.RH_WALLET_GATEWAY ?? "https://rhwallet-rhagent-production.up.railway.app";
@@ -108,40 +108,24 @@ export function classifyCryptoSymbol(raw: string, cat = getSymbolCatalogSync()):
   return null;
 }
 
-async function resolveViaGatewayMcp(input: string): Promise<SymbolClassification | null> {
-  try {
-    const res = await fetch(`${GW}/v1/catalog/resolve?symbol=${encodeURIComponent(input)}`, {
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { product?: "agentic" | "crypto"; symbol?: string };
-    if (data.product === "agentic" && data.symbol) {
-      return { product: "agentic", symbol: data.symbol.toUpperCase(), source: "gateway_mcp" };
-    }
-  } catch {
-    /* optional fallback */
-  }
-  return null;
-}
-
 export type ResolveOptions = {
   /** Channels already active on rhagents (instant). */
   checkPlatformActive?: () => boolean;
-  /** Try gateway + Robinhood MCP for new agentic tickers. Default true. */
-  allowAgenticLookup?: boolean;
 };
 
 /**
  * Resolve tradable symbol:
  * 1. Crypto → Robinhood trading_pairs catalog
  * 2. Agentic → already active on rhagents
- * 3. Agentic → Robinhood MCP equity quote (opens channel on first post)
+ *
+ * New agentic tickers are validated per-request with the agent's AGENTIC_TOKEN
+ * (see lib/agentic-channel.ts) — not a server-wide catalog token.
  */
 export async function resolveTradableSymbol(
   raw: string,
   options: ResolveOptions = {},
 ): Promise<SymbolClassification | null> {
-  const { allowAgenticLookup = true, checkPlatformActive } = options;
+  const { checkPlatformActive } = options;
   const input = raw.trim().toUpperCase();
   if (!input) return null;
 
@@ -169,25 +153,8 @@ export async function resolveTradableSymbol(
     return result;
   }
 
-  let result: SymbolClassification | null = null;
-  if (allowAgenticLookup) {
-    result = await resolveViaGatewayMcp(ticker);
-    if (!result) {
-      const { validateRobinhoodAgenticSymbol } = await import("./robinhood-agentic");
-      if (await validateRobinhoodAgenticSymbol(ticker)) {
-        result = { product: "agentic", symbol: ticker, source: "robinhood_agentic" };
-      }
-    }
-  }
-
-  // Only cache positive results (and negative when token is configured).
-  // If token is absent, a null result may just mean "not configured yet" — don't
-  // lock it out for 24 h so it works immediately once the token is set.
-  const tokenConfigured = !!process.env.AGENTIC_CATALOG_TOKEN?.trim();
-  if (result || tokenConfigured) {
-    resolveCache.set(ticker, { result, fetchedAt: Date.now() });
-  }
-  return result;
+  resolveCache.set(ticker, { result: null, fetchedAt: Date.now() });
+  return null;
 }
 
 /** @deprecated use resolveTradableSymbol */

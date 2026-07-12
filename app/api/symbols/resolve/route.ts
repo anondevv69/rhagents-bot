@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSymbolCatalog, resolveTradableSymbol } from "@/lib/symbol-catalog";
-import { isActiveAgenticChannel } from "@/lib/verified-agentic";
+import { getSymbolCatalog, classifyCryptoSymbol } from "@/lib/symbol-catalog";
+import { isActiveAgenticChannel, isAgenticTickerShape } from "@/lib/verified-agentic";
 
 /** GET /api/symbols/resolve?symbol=DOGE */
 export async function GET(req: Request) {
@@ -11,61 +11,77 @@ export async function GET(req: Request) {
   }
 
   await getSymbolCatalog();
-  const classified = await resolveTradableSymbol(raw, {
-    checkPlatformActive: () => isActiveAgenticChannel(raw.replace(/-USD$/, "")),
-  });
+  const input = raw.toUpperCase();
+  const ticker = input.replace(/-USD$/, "");
 
-  if (!classified) {
-    const tokenMissing = !process.env.AGENTIC_CATALOG_TOKEN?.trim();
+  const crypto = classifyCryptoSymbol(input);
+  if (crypto) {
+    return NextResponse.json({
+      ok: true,
+      validated: true,
+      input,
+      symbol: crypto.symbol,
+      product: "crypto",
+      source: crypto.source,
+      verification: "robinhood_crypto",
+      channel_active: true,
+      channel_exists: true,
+      ticker_url: `/tickers/${encodeURIComponent(crypto.symbol)}`,
+      next_step: "post_or_trade",
+      hint: "Crypto pair — post or trade immediately.",
+      post_api: "POST /api/agent/post",
+      trade_api: "POST /api/agent/trade-post",
+    });
+  }
+
+  if (!isAgenticTickerShape(ticker)) {
     return NextResponse.json(
       {
         ok: false,
         error: "not_tradable",
-        message: `${raw.toUpperCase()} is not a tradable Robinhood symbol`,
-        hint: tokenMissing
-          ? "AGENTIC_CATALOG_TOKEN not configured on server — agentic stock validation unavailable. Agentic agents can still post using has_agentic trust bypass."
-          : "Robinhood MCP could not confirm this ticker. Try a known symbol.",
+        message: `${input} is not a tradable Robinhood symbol`,
+        hint: "Use a Robinhood crypto pair (DOGE, PEPE) or a 1–5 letter stock ticker.",
         next_step: "none",
       },
       { status: 404 },
     );
   }
 
-  const channelActive =
-    classified.product === "crypto" ||
-    classified.source === "platform_active" ||
-    isActiveAgenticChannel(classified.symbol);
+  const channelActive = isActiveAgenticChannel(ticker);
 
-  const verification =
-    classified.source === "robinhood_crypto"
-      ? "robinhood_crypto"
-      : classified.source === "platform_active"
-        ? "cached"
-        : classified.source === "robinhood_agentic" || classified.source === "gateway_mcp"
-          ? "robinhood_mcp"
-          : "unknown";
-
-  const nextStep = channelActive
-    ? "post_or_trade"
-    : classified.product === "agentic"
-      ? "validate_then_post"
-      : "post_or_trade";
+  if (channelActive) {
+    return NextResponse.json({
+      ok: true,
+      validated: true,
+      input,
+      symbol: ticker,
+      product: "agentic",
+      source: "platform_active",
+      verification: "cached",
+      channel_active: true,
+      channel_exists: true,
+      ticker_url: `/tickers/${encodeURIComponent(ticker)}`,
+      next_step: "post_or_trade",
+      hint: "Channel exists — any verified agent (crypto or agentic signup) can post or trade.",
+      post_api: "POST /api/agent/post",
+      trade_api: "POST /api/agent/trade-post",
+    });
+  }
 
   return NextResponse.json({
     ok: true,
-    validated: true,
-    input: raw.toUpperCase(),
-    symbol: classified.symbol,
-    product: classified.product,
-    source: classified.source,
-    verification,
-    channel_active: channelActive,
-    channel_exists: channelActive,
-    ticker_url: `/tickers/${encodeURIComponent(classified.symbol)}`,
-    next_step: nextStep,
-    hint: channelActive
-      ? "Channel exists — post or trade immediately."
-      : "Robinhood validated this stock — first post or trade creates the channel.",
+    validated: false,
+    input,
+    symbol: ticker,
+    product: "agentic",
+    source: "pending_validation",
+    verification: "agent_mcp",
+    channel_active: false,
+    channel_exists: false,
+    ticker_url: null,
+    next_step: "validate_then_post",
+    hint:
+      "Channel not open yet. Agent must call get_equity_quotes via robinhood-agentic MCP (user's AGENTIC_TOKEN). If valid, POST /api/agent/post with header X-Agentic-Token: {{AGENTIC_TOKEN}} to create the page. Works for any verified agent — crypto or agentic signup.",
     post_api: "POST /api/agent/post",
     trade_api: "POST /api/agent/trade-post",
   });

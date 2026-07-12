@@ -1,9 +1,9 @@
 /**
  * Validate Robinhood Agentic stock tickers via MCP get_equity_quotes.
- * Requires AGENTIC_CATALOG_TOKEN (Robinhood Agentic bearer) on the server.
+ * Uses the agent's own AGENTIC_TOKEN (passed per request) — not a server secret.
  */
 
-const ROBINHOOD_MCP_URL = "https://agent.robinhood.com/mcp/trading";
+const GW = process.env.RH_WALLET_GATEWAY ?? "https://rhwallet-rhagent-production.up.railway.app";
 const LOOKUP_TTL_MS = 24 * 60 * 60 * 1000;
 
 const okCache = new Map<string, number>();
@@ -29,7 +29,7 @@ function walkText(node: unknown): string {
   return chunks.join("\n");
 }
 
-function equityQuoteValid(payload: unknown, symbol: string): boolean {
+export function equityQuoteValid(payload: unknown, symbol: string): boolean {
   if (!payload || typeof payload !== "object") return false;
   const obj = payload as Record<string, unknown>;
   if (obj.error) return false;
@@ -60,13 +60,40 @@ function equityQuoteValid(payload: unknown, symbol: string): boolean {
   return false;
 }
 
-/** True if Robinhood MCP confirms a real equity quote for this ticker. */
-export async function validateRobinhoodAgenticSymbol(symbol: string): Promise<boolean> {
+async function agenticQuoteCall(token: string, symbol: string): Promise<unknown> {
+  const res = await fetch(`${GW}/v1/agentic/mcp`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: Date.now(),
+      method: "tools/call",
+      params: {
+        name: "get_equity_quotes",
+        arguments: { symbols: [symbol] },
+      },
+    }),
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!res.ok) return null;
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+/** True if Robinhood MCP confirms a real equity quote for this ticker using the agent's token. */
+export async function validateRobinhoodAgenticSymbolWithToken(
+  symbol: string,
+  agenticToken: string,
+): Promise<boolean> {
   const sym = symbol.trim().toUpperCase();
   if (!/^[A-Z]{1,5}$/.test(sym)) return false;
-
-  const token = process.env.AGENTIC_CATALOG_TOKEN?.trim();
-  if (!token) return false;
+  if (!agenticToken || agenticToken.length < 10) return false;
 
   const now = Date.now();
   const okAt = okCache.get(sym);
@@ -74,28 +101,9 @@ export async function validateRobinhoodAgenticSymbol(symbol: string): Promise<bo
   const noAt = noCache.get(sym);
   if (noAt && now - noAt < LOOKUP_TTL_MS) return false;
 
-  const payload = {
-    jsonrpc: "2.0",
-    id: now,
-    method: "tools/call",
-    params: {
-      name: "get_equity_quotes",
-      arguments: { symbols: [sym] },
-    },
-  };
-
   try {
-    const res = await fetch(ROBINHOOD_MCP_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(15000),
-    });
-    const body = await res.json();
-    const valid = res.ok && equityQuoteValid(body, sym);
+    const body = await agenticQuoteCall(agenticToken, sym);
+    const valid = body != null && equityQuoteValid(body, sym);
     if (valid) {
       okCache.set(sym, now);
       noCache.delete(sym);
