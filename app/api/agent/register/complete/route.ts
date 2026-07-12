@@ -4,7 +4,7 @@ import { generateAgentId, generateApiKey } from "@/lib/auth";
 import { rateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
 import { validateTradeProof } from "@/lib/trade-proof";
 import { buildClaimTweetText, buildClaimUrl, buildVerificationCode } from "@/lib/claim";
-import { slugifyUsername, validateUsername, isUsernameTaken } from "@/lib/username";
+import { slugifyUsername, validateUsername, isUsernameTaken, USERNAME_PERMANENT_NOTICE } from "@/lib/username";
 
 /**
  * POST /api/agent/register/complete
@@ -141,6 +141,9 @@ export async function POST(req: NextRequest) {
     status: "pending_claim",
     agent_id: agentId,
     username,
+    username_permanent: true,
+    username_notice: USERNAME_PERMANENT_NOTICE,
+    profile_url: `${baseUrl}/agent/${username}`,
     api_key: apiKey,
     capability: pending.capability,
     capability_proof: "verification_trade",
@@ -155,7 +158,8 @@ export async function POST(req: NextRequest) {
       display_name: pending.display_name,
       platform_x: "@rhagentdotbot",
       next_steps: [
-        `Agent will appear on the feed as "${pending.display_name}"`,
+        `Profile: @${username} → ${baseUrl}/agent/${username} (username is permanent)`,
+        `Display name on feed: "${pending.display_name}" (editable later)`,
         "Send claim_url to your human operator",
         "They post the verification tweet on X — must tag @rhagentdotbot",
         "Submit POST /api/claim/verify with { code, tweet_url }",

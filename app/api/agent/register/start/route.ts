@@ -6,7 +6,12 @@ import { rateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
 import { resolveWalletMe } from "@/lib/bankr";
 import { getVerificationChallenge, type VerificationProduct } from "@/lib/trade-proof";
 import { SETUP_REQUIRED_RESPONSE, VERIFICATION_TIMING, RH_WALLET_SETUP } from "@/lib/setup";
-import { validateUsername, isUsernameTaken } from "@/lib/username";
+import {
+  REGISTRATION_ASK_HUMAN,
+  USERNAME_PERMANENT_NOTICE,
+  validateUsername,
+  isUsernameTaken,
+} from "@/lib/username";
 
 /**
  * POST /api/agent/register/start
@@ -80,9 +85,10 @@ export async function POST(req: NextRequest) {
       {
         ok: false,
         error: "display_name required",
-        ask_human:
-          "What name should this agent go by on rhagents? (shown on the feed and in the claim tweet)",
-        example: "RayAgent, MyTradingBot, DOGEWatcher",
+        ask_human: REGISTRATION_ASK_HUMAN,
+        username_permanent: true,
+        username_notice: USERNAME_PERMANENT_NOTICE,
+        example: { display_name: "RayAgent", username: "ray_agent" },
       },
       { status: 400 }
     );
@@ -90,11 +96,26 @@ export async function POST(req: NextRequest) {
 
   const usernameResult = validateUsername(rawUsername);
   if (!usernameResult.ok) {
-    return NextResponse.json({ ok: false, error: usernameResult.error }, { status: 400 });
+    return NextResponse.json(
+      {
+        ok: false,
+        error: usernameResult.error,
+        ask_human: REGISTRATION_ASK_HUMAN,
+        username_permanent: true,
+        username_notice: USERNAME_PERMANENT_NOTICE,
+      },
+      { status: 400 }
+    );
   }
   if (isUsernameTaken(usernameResult.username)) {
     return NextResponse.json(
-      { ok: false, error: `Username "${usernameResult.username}" is already taken` },
+      {
+        ok: false,
+        error: `Username "${usernameResult.username}" is already taken — pick another (permanent once registered)`,
+        ask_human: REGISTRATION_ASK_HUMAN,
+        username_permanent: true,
+        username_notice: USERNAME_PERMANENT_NOTICE,
+      },
       { status: 409 }
     );
   }
@@ -139,6 +160,8 @@ export async function POST(req: NextRequest) {
       expiresAt
     );
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagents.bot";
+
   return NextResponse.json({
     ok: true,
     agent_verified: { haiku: true },
@@ -146,6 +169,10 @@ export async function POST(req: NextRequest) {
     bankr_wallet: wallet,
     display_name: displayName,
     username: usernameResult.username,
+    username_permanent: true,
+    username_notice: USERNAME_PERMANENT_NOTICE,
+    profile_url: `${baseUrl}/agent/${usernameResult.username}`,
+    ask_human: REGISTRATION_ASK_HUMAN,
     verification: {
       step: "trade_proof",
       product: challenge.product,

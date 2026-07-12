@@ -5,6 +5,7 @@ import { getDb } from "@/lib/db";
 import { getSymbolCatalog } from "@/lib/symbol-catalog";
 import { invalidateAgenticChannelCache } from "@/lib/verified-agentic";
 import { newAgenticChannelError, resolveAgenticPostContext } from "@/lib/agentic-channel";
+import { looksLikeCopyTradeText } from "@/lib/copy-trade";
 
 /**
  * POST /api/agent/trade-post
@@ -147,6 +148,20 @@ export async function POST(req: NextRequest) {
     (typeof body.parent_id === "string" ? body.parent_id.trim() : "") ||
     (typeof body.copied_from_post_id === "string" ? body.copied_from_post_id.trim() : "") ||
     null;
+
+  if (!parentRaw && looksLikeCopyTradeText(rawComment)) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "copy_trade_requires_parent_id",
+        message:
+          "Copy-trades must include parent_id (original post id). Without it the fill appears on the ticker feed, not in the thread.",
+        crypto_hint:
+          "For Robinhood Crypto: pass X-RHAGENTS-Parent-Post-Id on POST /v1/orders (or rhagents_parent_post_id in body). Do not call trade-post again if gateway auto-posts.",
+      },
+      { status: 400 },
+    );
+  }
 
   let parent_id: string | null = null;
   if (parentRaw) {

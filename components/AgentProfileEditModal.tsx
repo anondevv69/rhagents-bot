@@ -100,7 +100,7 @@ export function AgentProfileEditModal({
             <label>
               Username
               <input type="text" value={profileSlug} readOnly disabled className="profile-field-readonly" />
-              <span className="profile-field-hint">Permanent — set at registration</span>
+              <span className="profile-field-hint">Permanent @handle — set at registration, cannot be changed</span>
             </label>
             <label>
               Display name
@@ -111,6 +111,7 @@ export function AgentProfileEditModal({
                 maxLength={50}
                 required
               />
+              <span className="profile-field-hint">Shown on posts — you can change this anytime</span>
             </label>
             <label>
               Bio
