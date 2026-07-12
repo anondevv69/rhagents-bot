@@ -5,9 +5,44 @@
 
 const GW = process.env.RH_WALLET_GATEWAY ?? "https://rhwallet-rhagent-production.up.railway.app";
 const LOOKUP_TTL_MS = 24 * 60 * 60 * 1000;
+const MCP_ACCEPT = "application/json, text/event-stream";
 
 const okCache = new Map<string, number>();
-const noCache = new Map<string, number>();
+
+export type QuoteValidation = "valid" | "invalid" | "unknown";
+
+/** Parse JSON or SSE (text/event-stream) MCP responses from the gateway. */
+export function parseMcpHttpBody(raw: string): unknown {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      /* fall through to SSE */
+    }
+  }
+
+  const dataLines: string[] = [];
+  for (const line of trimmed.split(/\r?\n/)) {
+    const t = line.trim();
+    if (t.startsWith("data:")) {
+      const payload = t.slice(5).trim();
+      if (payload && payload !== "[DONE]") dataLines.push(payload);
+    }
+  }
+
+  for (let i = dataLines.length - 1; i >= 0; i--) {
+    try {
+      return JSON.parse(dataLines[i]!);
+    } catch {
+      continue;
+    }
+  }
+
+  return trimmed;
+}
 
 function walkText(node: unknown): string {
   const chunks: string[] = [];
@@ -15,6 +50,11 @@ function walkText(node: unknown): string {
     if (v == null) return;
     if (typeof v === "string") {
       chunks.push(v);
+      try {
+        walk(JSON.parse(v));
+      } catch {
+        /* plain text */
+      }
       return;
     }
     if (typeof v === "object") {
@@ -29,18 +69,33 @@ function walkText(node: unknown): string {
   return chunks.join("\n");
 }
 
-export function equityQuoteValid(payload: unknown, symbol: string): boolean {
-  if (!payload || typeof payload !== "object") return false;
+function hasQuotePrice(text: string): boolean {
+  if (/\$?\d+\.?\d*/.test(text)) return true;
+  return ["LAST", "PRICE", "QUOTE", "BID", "ASK", "CLOSE", "MARK"].some((k) => text.includes(k));
+}
+
+/** Classify MCP get_equity_quotes payload — unknown = transport/parse/auth, not "bad ticker". */
+export function classifyEquityQuote(payload: unknown, symbol: string): QuoteValidation {
+  if (payload == null) return "unknown";
+  if (typeof payload === "string") {
+    const upper = payload.toUpperCase();
+    if (upper.includes("JWT") && upper.includes("FAIL")) return "unknown";
+    return classifyEquityQuote(parseMcpHttpBody(payload), symbol);
+  }
+  if (typeof payload !== "object") return "unknown";
+
   const obj = payload as Record<string, unknown>;
-  if (obj.error) return false;
+  if (obj.error) return "unknown";
+
   const result = obj.result;
-  if (result && typeof result === "object" && (result as Record<string, unknown>).isError) {
-    return false;
+  if (result && typeof result === "object") {
+    const r = result as Record<string, unknown>;
+    if (r.isError === true) return "invalid";
   }
 
   const text = walkText(payload).toUpperCase();
   const sym = symbol.toUpperCase();
-  if (!text.includes(sym)) return false;
+  if (!text.includes(sym)) return "invalid";
 
   const bad = [
     "NOT FOUND",
@@ -50,40 +105,87 @@ export function equityQuoteValid(payload: unknown, symbol: string): boolean {
     "UNRECOGNIZED",
     "COULD NOT FIND",
     "DOES NOT EXIST",
+    "NOT TRADABLE",
   ];
-  if (bad.some((b) => text.includes(b))) return false;
+  if (bad.some((b) => text.includes(b))) return "invalid";
 
-  if (/\$?\d+\.?\d*/.test(text)) return true;
-  if (["LAST", "PRICE", "QUOTE", "BID", "ASK", "CLOSE"].some((k) => text.includes(k))) {
-    return true;
+  if (hasQuotePrice(text)) return "valid";
+  if (text.includes("HAS_TRADED") || text.includes('"ACTIVE"')) return "valid";
+
+  return "unknown";
+}
+
+export function equityQuoteValid(payload: unknown, symbol: string): boolean {
+  return classifyEquityQuote(payload, symbol) === "valid";
+}
+
+type McpRawResult = {
+  status: number;
+  body: unknown;
+  sessionId: string | null;
+};
+
+async function agenticMcpRaw(
+  token: string,
+  method: string,
+  params: Record<string, unknown> = {},
+  sessionId: string | null = null,
+): Promise<McpRawResult> {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+    Accept: MCP_ACCEPT,
+  };
+  if (sessionId) headers["Mcp-Session-Id"] = sessionId;
+
+  const res = await fetch(`${GW}/v1/agentic/mcp`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params }),
+    signal: AbortSignal.timeout(15000),
+  });
+
+  const text = await res.text();
+  const body = parseMcpHttpBody(text);
+  const nextSession =
+    res.headers.get("Mcp-Session-Id") ?? res.headers.get("mcp-session-id") ?? sessionId;
+
+  return { status: res.status, body, sessionId: nextSession };
+}
+
+async function openAgenticSession(token: string): Promise<string | null> {
+  const init = await agenticMcpRaw(token, "initialize", {
+    protocolVersion: "2024-11-05",
+    capabilities: {},
+    clientInfo: { name: "rhagents-validate", version: "1" },
+  });
+
+  if (init.status === 401 || init.status === 403) return null;
+  if (init.status >= 400) return null;
+
+  const sessionId = init.sessionId;
+  if (sessionId) {
+    await agenticMcpRaw(token, "notifications/initialized", {}, sessionId);
   }
-  return false;
+  return sessionId;
 }
 
 async function agenticQuoteCall(token: string, symbol: string): Promise<unknown> {
-  const res = await fetch(`${GW}/v1/agentic/mcp`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      id: Date.now(),
-      method: "tools/call",
-      params: {
-        name: "get_equity_quotes",
-        arguments: { symbols: [symbol] },
-      },
-    }),
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!res.ok) return null;
-  try {
-    return await res.json();
-  } catch {
-    return null;
+  const sessionId = await openAgenticSession(token);
+
+  const call = await agenticMcpRaw(
+    token,
+    "tools/call",
+    { name: "get_equity_quotes", arguments: { symbols: [symbol] } },
+    sessionId,
+  );
+
+  if (call.status === 401 || call.status === 403) {
+    return { error: "token_rejected", status: call.status, detail: call.body };
   }
+
+  if (call.status >= 400) return null;
+  return call.body;
 }
 
 /** True if Robinhood MCP confirms a real equity quote for this ticker using the agent's token. */
@@ -98,18 +200,17 @@ export async function validateRobinhoodAgenticSymbolWithToken(
   const now = Date.now();
   const okAt = okCache.get(sym);
   if (okAt && now - okAt < LOOKUP_TTL_MS) return true;
-  const noAt = noCache.get(sym);
-  if (noAt && now - noAt < LOOKUP_TTL_MS) return false;
 
   try {
     const body = await agenticQuoteCall(agenticToken, sym);
-    const valid = body != null && equityQuoteValid(body, sym);
-    if (valid) {
+    const verdict = classifyEquityQuote(body, sym);
+
+    if (verdict === "valid") {
       okCache.set(sym, now);
-      noCache.delete(sym);
       return true;
     }
-    noCache.set(sym, now);
+
+    // unknown = parse/auth/transport — do not negative-cache (token may work locally)
     return false;
   } catch {
     return false;
