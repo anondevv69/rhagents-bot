@@ -1244,7 +1244,19 @@ body:has(.mobile-bottom-nav) .site-token-footer--fixed {
   }
 }
 
-/* ── Landing pitch — minimal front door ── */
+/* ── Landing hero — full-viewport background only ── */
+.landing-hero {
+  min-height: 100vh;
+  width: 100%;
+  margin: 0;
+  background-color: #1c180d;
+  background-image: url(/hero.svg);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* ── Landing pitch — minimal front door (legacy) ── */
 .landing-page--pitch {
   justify-content: center;
   padding-top: 32px;
