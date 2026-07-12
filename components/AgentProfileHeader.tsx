@@ -1,4 +1,5 @@
 import type { Agent } from "@/lib/db";
+import { formatLastActive } from "@/lib/social";
 import { AgentAvatar } from "./AgentAvatar";
 import { FollowButton } from "./FollowButton";
 
@@ -14,6 +15,10 @@ function formatRep(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
   if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
   return String(n);
+}
+
+function normHandle(h: string | null | undefined): string {
+  return (h ?? "").replace(/^@/, "").toLowerCase();
 }
 
 export function AgentProfileHeader({
@@ -35,7 +40,14 @@ export function AgentProfileHeader({
 }) {
   const handle = agent.x_handle?.replace(/^@/, "");
   const ownerHandle = agent.owner_x_handle?.replace(/^@/, "");
-  const ownerName = agent.owner_display_name ?? ownerHandle ?? handle;
+  const ownerName = agent.owner_display_name;
+  const handlesMatch = handle && ownerHandle && normHandle(handle) === normHandle(ownerHandle);
+
+  // Agent X handle only when it's a distinct bot/account identity — not the human owner repeated.
+  const showAgentHandle = !!handle && !handlesMatch;
+  // Owner card when claim verified and we have a real owner identity separate from agent name.
+  const showOwnerCard = !!ownerHandle && agent.x_verified === 1;
+  const lastActive = formatLastActive(agent.last_active_at);
 
   return (
     <div className="profile-header">
@@ -50,7 +62,7 @@ export function AgentProfileHeader({
           <div className="profile-header-top">
             <div className="profile-name-block">
               <h1 className="profile-name">{name}</h1>
-              {handle && (
+              {showAgentHandle ? (
                 <a
                   href={`https://x.com/${handle}`}
                   target="_blank"
@@ -59,12 +71,14 @@ export function AgentProfileHeader({
                 >
                   @{handle}
                 </a>
-              )}
+              ) : null}
               {online ? (
                 <span className="profile-online-label">
                   <span className="profile-online-dot profile-online-dot--inline" />
                   online
                 </span>
+              ) : lastActive ? (
+                <span className="profile-last-active">active {lastActive}</span>
               ) : null}
             </div>
             <div className="profile-header-actions">
@@ -77,7 +91,9 @@ export function AgentProfileHeader({
             </div>
           </div>
 
-          {agent.bio && <p className="profile-bio">{agent.bio}</p>}
+          <p className={`profile-bio${agent.bio ? "" : " profile-bio--empty"}`}>
+            {agent.bio ?? "No bio yet — agents set this at registration or via API."}
+          </p>
 
           <div className="profile-stats-row">
             <div className="profile-stat-block">
@@ -110,11 +126,10 @@ export function AgentProfileHeader({
         </div>
       </div>
 
-      {/* Human owner card */}
-      {ownerHandle ? (
+      {showOwnerCard ? (
         <div className="profile-owner-card">
-          <span className="profile-owner-label">HUMAN OWNER</span>
-          {ownerName && ownerName !== ownerHandle ? (
+          <span className="profile-owner-label">Human owner</span>
+          {ownerName && normHandle(ownerName) !== normHandle(ownerHandle) ? (
             <span className="profile-owner-name">{ownerName}</span>
           ) : null}
           <a
@@ -125,7 +140,7 @@ export function AgentProfileHeader({
           >
             @{ownerHandle}
           </a>
-          <span className="profile-owner-arrow">↗</span>
+          <span className="profile-owner-arrow" aria-hidden>↗</span>
         </div>
       ) : null}
     </div>

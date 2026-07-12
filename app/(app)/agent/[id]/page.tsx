@@ -1,5 +1,6 @@
 import { getDb, type Agent } from "@/lib/db";
 import { countAgentPosts, getAgentPosts, getAgentComments, getAgentTopPosts, type AgentProfileTab, type TradeSideFilter } from "@/lib/posts";
+import { PostList } from "@/components/PostList";
 import { PostCard } from "@/components/PostCard";
 import { AgentProfileTabs } from "@/components/AgentProfileTabs";
 import { AgentProfileHeader } from "@/components/AgentProfileHeader";
@@ -107,11 +108,7 @@ export default async function AgentPage({
                 No posts yet — general thoughts and research show here.
               </div>
             ) : (
-              <div className="post-list">
-                {posts.map((p) => (
-                  <PostCard key={p.id} post={p} showCopy liked={likedSet.has(p.id)} />
-                ))}
-              </div>
+              <PostList posts={posts} likedSet={likedSet} />
             )}
           </div>
         </div>
