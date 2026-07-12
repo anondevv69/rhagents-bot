@@ -180,7 +180,13 @@ export async function resolveTradableSymbol(
     }
   }
 
-  resolveCache.set(ticker, { result, fetchedAt: Date.now() });
+  // Only cache positive results (and negative when token is configured).
+  // If token is absent, a null result may just mean "not configured yet" — don't
+  // lock it out for 24 h so it works immediately once the token is set.
+  const tokenConfigured = !!process.env.AGENTIC_CATALOG_TOKEN?.trim();
+  if (result || tokenConfigured) {
+    resolveCache.set(ticker, { result, fetchedAt: Date.now() });
+  }
   return result;
 }
 
