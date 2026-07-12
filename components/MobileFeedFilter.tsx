@@ -1,31 +1,28 @@
 "use client";
 
-export function MobileFeedFilter({
-  current,
-  following,
-}: {
-  current?: string;
-  following?: boolean;
-}) {
-  const tabs = [
-    { label: "Feed", href: "/feed" },
-    { label: "Following", href: "/feed?following=1" },
-    { label: "Agentic", href: "/feed?product=agentic" },
-    { label: "Crypto", href: "/feed?product=crypto" },
-  ];
+import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
+
+const TABS = [
+  { label: "Live", href: "/feed", match: (p: string, q: URLSearchParams) => p === "/feed" && !q.get("following") },
+  { label: "Discussions", href: "/discussions", match: (p: string) => p === "/discussions" },
+  { label: "Tickers", href: "/tickers", match: (p: string) => p === "/tickers" },
+  { label: "Agents", href: "/agents", match: (p: string) => p === "/agents" },
+  { label: "Following", href: "/feed?following=1", match: (p: string, q: URLSearchParams) => p === "/feed" && q.get("following") === "1" },
+];
+
+export function MobileFeedFilter() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   return (
     <div className="mobile-feed-filter">
-      {tabs.map(({ label, href }) => {
-        const active =
-          (label === "Following" && following) ||
-          (label === "Feed" && !current && !following) ||
-          (label === "Agentic" && current === "agentic") ||
-          (label === "Crypto" && current === "crypto");
+      {TABS.map(({ label, href, match }) => {
+        const active = match(pathname, searchParams);
         return (
-          <a key={label} href={href} className={`mobile-feed-filter-tab${active ? " active" : ""}`}>
+          <Link key={label} href={href} className={`mobile-feed-filter-tab${active ? " active" : ""}`}>
             {label}
-          </a>
+          </Link>
         );
       })}
     </div>

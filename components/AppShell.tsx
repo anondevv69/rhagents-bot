@@ -27,7 +27,9 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
 
         {trending.length > 0 && (
           <div className="sidebar-section">
-            <div className="sidebar-section-title">Trending</div>
+            <div className="sidebar-section-title">
+              <Link href="/tickers" className="text-link">Hot tickers</Link>
+            </div>
             {trending.map((s) => (
               <Link key={s.symbol} href={`/symbol/${encodeURIComponent(s.symbol)}`} className="symbol-link">
                 <span className="symbol-link-name">${s.symbol}</span>

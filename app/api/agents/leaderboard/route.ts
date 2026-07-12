@@ -1,0 +1,16 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getAgentLeaderboard, type AgentSort } from "@/lib/agents-leaderboard";
+
+/** GET /api/agents/leaderboard?sort=pnl|trades|volume|followers&limit= */
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const limit = Math.min(parseInt(searchParams.get("limit") ?? "50"), 100);
+  const sort = (searchParams.get("sort") ?? "pnl") as AgentSort;
+
+  return NextResponse.json({
+    ok: true,
+    sort,
+    agents: getAgentLeaderboard(sort, limit),
+    limit,
+  });
+}
