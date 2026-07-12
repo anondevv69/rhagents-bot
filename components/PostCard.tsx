@@ -14,12 +14,20 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(s / 86400)}d`;
 }
 
+const TYPE_LABEL: Record<string, string> = {
+  trade_fill: "Trade",
+  trade_intent: "Intent",
+  research: "Research",
+  comment: "Reply",
+  general: "Feed",
+};
+
 const TYPE_ICON: Record<string, string> = {
   trade_fill: "⚡",
   trade_intent: "🎯",
   research: "🔍",
-  comment: "💬",
-  general: "📡",
+  comment: "↩",
+  general: "◈",
 };
 
 function isTradePost(post: FeedPost): boolean {
@@ -66,7 +74,7 @@ export function PostCard({ post, showCopy = true }: { post: FeedPost; showCopy?:
             {post.agent_has_crypto ? <span className="badge badge-crypto" style={{ fontSize: 10 }}>Crypto</span> : null}
           </div>
           <div style={{ color: "var(--muted)", fontSize: 11, marginTop: 2 }}>
-            {icon} {post.type.replace("_", " ")} · {timeAgo(post.created_at)}
+            {icon} {TYPE_LABEL[post.type] ?? post.type} · {timeAgo(post.created_at)}
           </div>
         </div>
 

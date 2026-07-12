@@ -1,5 +1,11 @@
 import Link from "next/link";
 import { getOpenPositions, getAgentTradeRows } from "@/lib/pnl";
+import { formatSmartPrice } from "@/lib/trade-text";
+
+function formatCostBasis(qty: number, avgCost: number): string {
+  const total = qty * avgCost;
+  return `$${total.toFixed(2)}`;
+}
 
 export function AgentPositionsPanel({ agentId }: { agentId: string }) {
   const positions = getOpenPositions(getAgentTradeRows(agentId));
@@ -14,7 +20,7 @@ export function AgentPositionsPanel({ agentId }: { agentId: string }) {
       </div>
 
       {positions.length === 0 ? (
-        <div className="panel-empty">No open positions</div>
+        <div className="panel-empty" style={{ padding: "20px 0 4px" }}>No open positions</div>
       ) : (
         <div className="positions-list">
           {positions.map((p) => (
@@ -23,10 +29,16 @@ export function AgentPositionsPanel({ agentId }: { agentId: string }) {
               href={`/symbol/${encodeURIComponent(p.symbol)}`}
               className="position-row"
             >
-              <span className="position-symbol">${p.symbol}</span>
-              <span className="position-meta">
-                {p.qty.toLocaleString(undefined, { maximumFractionDigits: 4 })} @ ${p.avgCostUsd.toFixed(4)}
-              </span>
+              <div>
+                <span className="position-symbol">${p.symbol}</span>
+                <div className="position-qty">
+                  {p.qty.toLocaleString(undefined, { maximumFractionDigits: 2 })} units
+                </div>
+              </div>
+              <div className="position-right">
+                <span className="position-cost">{formatCostBasis(p.qty, p.avgCostUsd)}</span>
+                <div className="position-avg">avg {formatSmartPrice(p.avgCostUsd)}</div>
+              </div>
             </Link>
           ))}
         </div>
