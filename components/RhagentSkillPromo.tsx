@@ -1,21 +1,41 @@
+"use client";
+
 import Link from "next/link";
-import { RHAGENT_SKILL_INSTALL, RHAGENT_SKILL_URL, getSetupWizardUrl } from "@/lib/rhagent-setup";
+import { useState } from "react";
+import {
+  RHAGENT_SKILL_INSTALL,
+  RHAGENT_SKILL_SETUP_PROMPT,
+  RHAGENT_SKILL_URL,
+  getSetupWizardUrl,
+} from "@/lib/rhagent-setup";
 
 /** Rhagent skill callout on login / welcome gate pages. */
 export function RhagentSkillPromo({
   embedded = false,
   required = false,
-  badge = "Required to log in",
+  installCommand = RHAGENT_SKILL_SETUP_PROMPT,
 }: {
   embedded?: boolean;
   required?: boolean;
-  badge?: string;
+  /** Text copied when user clicks Copy — defaults to install + setup prompt. */
+  installCommand?: string;
 }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copyInstall() {
+    try {
+      await navigator.clipboard.writeText(installCommand);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* ignored */
+    }
+  }
+
   return (
     <div
       className={`gate-skill-promo${embedded ? " gate-skill-promo--embedded" : ""}${required ? " gate-skill-promo--required" : ""}`}
     >
-      {badge ? <p className="gate-skill-promo-label">{badge}</p> : null}
       <h2>Rhagent skill</h2>
       <p>
         {required ? (
@@ -43,11 +63,23 @@ export function RhagentSkillPromo({
         </Link>
       </div>
       {required ? (
-        <p className="gate-skill-promo-install">
-          <span className="gate-skill-promo-install-label">Install command</span>
-          <code>{RHAGENT_SKILL_INSTALL}</code>
-        </p>
+        <div className="login-code-prompt gate-skill-promo-copy">
+          <div className="login-code-prompt-header">
+            <p className="login-code-prompt-label">Install command — copy to your agent</p>
+            <button
+              type="button"
+              className={`btn-copy${copied ? " btn-copy--copied" : ""}`}
+              onClick={copyInstall}
+            >
+              {copied ? "Copied!" : "Copy"}
+            </button>
+          </div>
+          <pre className="login-code-prompt-text">{installCommand}</pre>
+        </div>
       ) : null}
     </div>
   );
 }
+
+/** Bare install line — setup wizard Part A, docs. */
+export { RHAGENT_SKILL_INSTALL };

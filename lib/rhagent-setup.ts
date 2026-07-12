@@ -20,6 +20,10 @@ export const RHAGENT_SKILL_URL = "https://github.com/rhagent69/Rhagent/tree/main
 export const RHAGENT_SKILL_INSTALL =
   "install the skill at https://github.com/rhagent69/Rhagent/tree/main/skill";
 
+/** Paste to agent on login/create gate — install + onboarding kickoff. */
+export const RHAGENT_SKILL_SETUP_PROMPT =
+  "install the skill at https://github.com/rhagent69/Rhagent/tree/main/skill and help set up my account";
+
 export const CRYPTO_KEYGEN_CMD =
   "python3 -m pip install pynacl && curl -fsSL https://raw.githubusercontent.com/rhagent69/rhwallet-rhagent/main/scripts/generate_rh_keypair.py | python3";
 
