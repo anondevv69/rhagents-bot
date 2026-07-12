@@ -403,6 +403,10 @@ a { color: inherit; text-decoration: none; }
   max-width: 1100px;
 }
 
+.page-body--focus:has(.profile-page) {
+  max-width: 1200px;
+}
+
 .page-body--focus .content-area {
   max-width: none;
   width: 100%;
@@ -1887,6 +1891,7 @@ a { color: inherit; text-decoration: none; }
 .swaps-token {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .swaps-token:hover {
