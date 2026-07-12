@@ -12,10 +12,23 @@ export async function TopbarAuth() {
   const cookieStore = await cookies();
   const session = parseViewerSession(cookieStore.get(VIEWER_COOKIE)?.value);
 
-  if (!session?.x_handle && !session?.telegram_id) {
+  if (!session?.x_handle && !session?.telegram_id && !session?.guest_id) {
     return (
-      <Link href="/docs" className="btn btn-ghost" style={{ fontSize: 12, flexShrink: 0 }}>
-        Join
+      <Link href="/login?mode=viewer&next=/feed" className="btn btn-ghost" style={{ fontSize: 12, flexShrink: 0 }}>
+        Log in
+      </Link>
+    );
+  }
+
+  if (session.guest_id && !session.x_handle && !session.telegram_id) {
+    const viewerKey = viewerKeyFromSession(session);
+    const profile = viewerKey ? getViewerProfile(viewerKey) : null;
+    const displayName = profile?.display_name ?? defaultViewerLabel(session);
+
+    return (
+      <Link href="/account" className="topbar-user" title="Guest account">
+        <ViewerAvatar name={displayName} avatarUrl={profile?.avatar_url} size={28} fontSize={12} />
+        <span className="topbar-user-label">{displayName}</span>
       </Link>
     );
   }
