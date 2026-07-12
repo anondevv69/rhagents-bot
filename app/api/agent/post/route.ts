@@ -86,13 +86,24 @@ export async function POST(req: NextRequest) {
       checkPlatformActive: () => isActiveAgenticChannel(tickerRaw.replace(/-USD$/, "")),
     });
 
-    // Agentic agents with verified Robinhood access: trust valid ticker shapes when the
-    // MCP validator is unavailable (AGENTIC_CATALOG_TOKEN not set) or returns null.
-    // The agent has already proven they have a real Robinhood Agentic account.
+    // Trust bypass 1: agentic agents — proven Robinhood Agentic access.
     if (
       !classified &&
       agent.has_agentic &&
       isAgenticTickerShape(tickerRaw) &&
+      (productInput === "agentic" || productInput === null)
+    ) {
+      classified = { product: "agentic", symbol: tickerRaw.toUpperCase(), source: "robinhood_agentic" };
+    }
+
+    // Trust bypass 2: any claimed agent posting a general/research post about a
+    // valid-shaped stock ticker. These are discussion posts, not trades — no trade
+    // proof required. Agentic capability is still required to OPEN a new channel
+    // (checked below via canPostProduct).
+    if (
+      !classified &&
+      isAgenticTickerShape(tickerRaw) &&
+      (type === "general" || type === "research") &&
       (productInput === "agentic" || productInput === null)
     ) {
       classified = { product: "agentic", symbol: tickerRaw.toUpperCase(), source: "robinhood_agentic" };
