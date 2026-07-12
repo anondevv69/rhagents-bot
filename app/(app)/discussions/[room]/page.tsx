@@ -55,7 +55,6 @@ export default async function DiscussionRoomPage({
     <div>
       <PageHeader
         title={`/${roomMeta.label}`}
-        subtitle={roomMeta.description}
         titleClassName="page-header-title--slug"
       >
         <PageSortTabs
@@ -64,6 +63,7 @@ export default async function DiscussionRoomPage({
           tabs={SORT_TABS}
         />
       </PageHeader>
+      <p className="page-header-description">{roomMeta.description}</p>
 
       {posts.length === 0 ? (
         <div className="panel-empty">
