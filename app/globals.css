@@ -4176,3 +4176,61 @@ body:has(.mobile-bottom-nav) .site-token-footer--fixed {
   border-top: 1px solid var(--border);
   margin: 36px 0 32px;
 }
+
+.setup-path-callout {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(204, 255, 0, 0.22);
+  background: rgba(204, 255, 0, 0.05);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.setup-path-callout strong {
+  color: var(--text);
+}
+
+.setup-note--flush {
+  margin-top: 0;
+  margin-bottom: 14px;
+}
+
+.platform-tabs {
+  margin-bottom: 4px;
+}
+
+.platform-tabs-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.platform-tabs-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-soft);
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.platform-tabs-btn:hover {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.platform-tabs-btn--active {
+  color: var(--accent);
+  border-color: rgba(204, 255, 0, 0.4);
+  background: rgba(204, 255, 0, 0.08);
+}
+
+.platform-tabs-panel {
+  min-height: 0;
+}

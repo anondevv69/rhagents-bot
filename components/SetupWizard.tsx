@@ -5,7 +5,6 @@ import {
   AGENTIC_CAPABILITIES_URL,
   AGENTIC_CONNECT_CMD,
   BANKR_LOGIN_CMD,
-  CRYPTO_KEYGEN_CMD,
   getSiteBaseUrl,
   RH_WALLET_GATEWAY,
   RH_WALLET_REPO,
@@ -14,6 +13,18 @@ import {
 } from "@/lib/rhagent-setup";
 import { buildGateSetupPrompt, buildSetupPrompt } from "@/lib/setup-prompt";
 import { ZERO_CUSTODY } from "@/lib/privacy";
+import { PlatformTabs } from "@/components/PlatformTabs";
+import {
+  AGENTIC_ALREADY_HAVE,
+  AGENTIC_SHELL_HINT,
+  AGENTIC_WHAT_FOR,
+  CRYPTO_ALREADY_HAVE,
+  CRYPTO_ENV_VARS,
+  CRYPTO_KEYGEN_CMD_MAC,
+  CRYPTO_KEYGEN_CMD_WIN,
+  CRYPTO_KEYGEN_HINT,
+  CRYPTO_WHAT_FOR,
+} from "@/lib/setup-platform";
 
 function CopyBlock({ text, label = "Copy" }: { text: string; label?: string }) {
   const [copied, setCopied] = useState(false);
@@ -68,7 +79,7 @@ export function SetupWizard({
         <>
           <h1 className="setup-title">Rhagent Setup</h1>
           <p className="setup-sub">
-            Connect Robinhood Crypto + Agentic to Bankr. Optional rhagents social feed when you ask.
+            Connect Robinhood Crypto and/or Agentic to your agent. Optional social feed when you ask.
             ~5 min one-time setup.
           </p>
         </>
@@ -83,10 +94,14 @@ export function SetupWizard({
       <div className="setup-section">
         <div className="setup-section-head">
           <h2>Part A — Install skill</h2>
-          <span className="setup-badge">Bankr terminal</span>
+          <span className="setup-badge">Your agent</span>
         </div>
+        <p className="setup-intro">
+          Teaches your agent Robinhood + rhagents APIs. Install once in whatever runtime you use
+          (Bankr, Claude Code, OpenClaw, etc.).
+        </p>
         <Step n={1}>
-          <p>In Bankr chat, paste:</p>
+          <p>In your agent chat, paste:</p>
           <CopyBlock text={RHAGENT_SKILL_INSTALL} />
         </Step>
         <Step n={2}>
@@ -105,27 +120,39 @@ export function SetupWizard({
           <h2>Part B — Robinhood Crypto</h2>
           <span className="setup-badge">BTC, DOGE, ETH</span>
         </div>
+        <p className="setup-intro">{CRYPTO_WHAT_FOR}</p>
+        <div className="setup-path-callout">
+          <strong>Already set up?</strong> {CRYPTO_ALREADY_HAVE}
+        </div>
         <Step n={1}>
-          <p>Generate keys (once):</p>
-          <CopyBlock text={CRYPTO_KEYGEN_CMD} label="Copy command" />
-          <p className="setup-note">
-            macOS: use <code>python3 -m pip</code> if <code>pip</code> is not found. Or clone the repo and run{" "}
-            <code>python3 scripts/generate_rh_keypair.py</code>
-          </p>
+          <p>Generate a keypair (skip if you already have one):</p>
+          <PlatformTabs
+            mac={
+              <>
+                <CopyBlock text={CRYPTO_KEYGEN_CMD_MAC} label="Copy macOS command" />
+                <p className="setup-note">{CRYPTO_KEYGEN_HINT.mac}</p>
+              </>
+            }
+            windows={
+              <>
+                <CopyBlock text={CRYPTO_KEYGEN_CMD_WIN} label="Copy Windows command" />
+                <p className="setup-note">{CRYPTO_KEYGEN_HINT.windows}</p>
+              </>
+            }
+          />
         </Step>
         <Step n={2}>
           <p>
-            Register the <strong>public key</strong> in Robinhood crypto API settings (web).
+            Register the <strong>public key</strong> in Robinhood web → Settings → Crypto → API
+            Trading. Robinhood returns <code>rh-api-…</code> — that becomes <code>RH_API_KEY</code>.
           </p>
         </Step>
         <Step n={3}>
           <p>
-            Bankr → <strong>Settings → Env Vars</strong> → add (stays in <strong>your</strong> Bankr vault
-            — we never receive these):
+            Add to your agent env (Bankr → Settings → Env Vars, or your runtime&apos;s secrets
+            vault — we never receive these):
           </p>
-          <pre className="setup-code">{`RH_API_KEY = rh-api-...
-RH_PRIVATE_KEY_BASE64 = (your private key from keygen)
-RH_GATEWAY_SECRET = uniqueissomethingimtesting`}</pre>
+          <pre className="setup-code">{CRYPTO_ENV_VARS}</pre>
           <p className="setup-note">
             <code>RH_GATEWAY_SECRET</code> is a public gateway door code (all lowercase) — not your
             Robinhood key. Same value for everyone.
@@ -143,16 +170,27 @@ RH_GATEWAY_SECRET = uniqueissomethingimtesting`}</pre>
           <h2>Part C — Robinhood Agentic</h2>
           <span className="setup-badge">stocks &amp; options</span>
         </div>
+        <p className="setup-intro">{AGENTIC_WHAT_FOR}</p>
+        <div className="setup-path-callout">
+          <strong>Already set up?</strong> {AGENTIC_ALREADY_HAVE}
+        </div>
         <div className="setup-trust">
           <strong>We hold nothing.</strong> RH Wallet does not store your Robinhood tokens, API keys,
           or account data on our servers. OAuth runs on your machine; credentials save only to your
-          Bankr vault. Our Railway gateway is a stateless pass-through — it never writes your secrets
+          agent env. Our Railway gateway is a stateless pass-through — it never writes your secrets
           to disk.
         </div>
+        <PlatformTabs
+          mac={
+            <p className="setup-note setup-note--flush">{AGENTIC_SHELL_HINT.mac}</p>
+          }
+          windows={
+            <p className="setup-note setup-note--flush">{AGENTIC_SHELL_HINT.windows}</p>
+          }
+        />
         <Step n={1}>
-          <p>On your Mac/PC, copy and run in Terminal:</p>
+          <p>Copy and run (logs into Bankr CLI so the script can auto-save your token):</p>
           <CopyBlock text={BANKR_LOGIN_CMD} label="Copy command" />
-          <p className="setup-note">Logs you into Bankr so the connect script can auto-save your token.</p>
         </Step>
         <Step n={2}>
           <p>Copy and run in Terminal:</p>
@@ -168,10 +206,10 @@ RH_GATEWAY_SECRET = uniqueissomethingimtesting`}</pre>
         </Step>
         <Step n={4}>
           <p>
-            Token saves to <strong>your Bankr vault</strong> as <code>AGENTIC_TOKEN</code>. MCP server
-            is added automatically.
+            Token saves to <strong>your agent env</strong> as <code>AGENTIC_TOKEN</code>. MCP server
+            is added automatically when using Bankr.
           </p>
-          <p className="setup-note">Manual fallback: Env Vars → AGENTIC_TOKEN · MCP URL below</p>
+          <p className="setup-note">Manual fallback: env vars → AGENTIC_TOKEN · MCP URL below</p>
         </Step>
         <Step n={5}>
           <p>
