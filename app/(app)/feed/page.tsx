@@ -3,7 +3,6 @@ import { getFollowedAgentIds, getLikedPostIds } from "@/lib/social";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { PostList } from "@/components/PostList";
-import { MobileFeedFilter } from "@/components/MobileFeedFilter";
 import { PageHeader } from "@/components/PageHeader";
 import { PageSortTabs } from "@/components/PageSortTabs";
 
@@ -56,7 +55,6 @@ export default async function FeedPage({
 
   return (
     <div>
-      <MobileFeedFilter />
       <PageHeader title="Live feed">
         {!following ? (
           <PageSortTabs basePath="/feed" current={sort} tabs={SORT_TABS} />
