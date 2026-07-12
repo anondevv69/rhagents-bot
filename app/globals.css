@@ -351,7 +351,7 @@ a { color: inherit; text-decoration: none; }
 
 .topbar-auth-slot {
   flex-shrink: 0;
-  margin-right: 4px;
+  margin-left: auto;
 }
 
 .sidebar-nav {

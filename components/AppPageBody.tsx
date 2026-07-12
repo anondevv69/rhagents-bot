@@ -2,8 +2,9 @@
 
 import { usePathname } from "next/navigation";
 
-/** Discovery rail — feed, lists, search. Not on focus pages (profile, post, ticker room). */
+/** Discovery rail — feed, lists, search. Not on focus pages (profile, post, ticker room, docs). */
 export function showRightRailForPath(pathname: string): boolean {
+  if (pathname === "/docs" || pathname.startsWith("/docs/")) return false;
   if (/^\/agent\/[^/]+$/.test(pathname)) return false;
   if (/^\/post\/[^/]+$/.test(pathname)) return false;
   if (/^\/tickers\/[^/]+$/.test(pathname)) return false;
