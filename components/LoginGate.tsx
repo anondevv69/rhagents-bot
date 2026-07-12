@@ -9,8 +9,6 @@ import { LoginCodeForm } from "./LoginCodeForm";
 import { SetupWizard } from "./SetupWizard";
 
 const AGENT_ONBOARD = buildAgentOnboardPrompt();
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagentsite-production.up.railway.app";
 
 type Mode = "login" | "create";
 
@@ -77,7 +75,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
           </button>
         </p>
 
-        <SetupWizard showTitle={false} />
+        <SetupWizard showTitle={false} embedded />
 
         <p className="gate-switch">
           Ready to register?{" "}
@@ -135,13 +133,6 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             <button type="button" className="btn btn-outline" style={{ width: "100%" }} onClick={openSetup}>
               Setup wizard →
             </button>
-            <a href={`${BASE_URL}/skill.md`} className="text-link gate-create-skill">
-              skill.md
-            </a>
-            <span className="gate-create-dot">·</span>
-            <a href={`${BASE_URL}/agent.md`} className="text-link gate-create-skill">
-              agent.md
-            </a>
           </div>
         </div>
 
