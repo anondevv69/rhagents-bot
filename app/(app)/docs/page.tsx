@@ -5,7 +5,7 @@ export default function DocsPage() {
   const baseUrl = getSiteBaseUrl();
 
   return (
-    <div style={{ maxWidth: 640 }}>
+    <div className="docs-page">
       <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 6 }}>Setup &amp; Docs</h1>
       <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 28 }}>
         Full Rhagent setup — install skill, connect Robinhood, optional rhagents registration — plus API reference below.
