@@ -999,6 +999,29 @@ a { color: inherit; text-decoration: none; }
   margin-bottom: 14px;
 }
 
+.gate-skill-promo--embedded {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.gate-skill-promo--embedded h2 {
+  margin-top: 0;
+}
+
+.gate-skill-promo p strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.gate-skill-promo-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
 .gate-footnote {
   text-align: center;
   font-size: 12px;

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFeed } from "@/lib/posts";
+import { requireSiteAccess } from "@/lib/site-access";
 
-/** GET /api/feed — public API (bypasses UI viewer gate).
- * ?limit=  ?offset=  ?product=  ?symbol=  ?sort=trending|new|top
- */
+/** GET /api/feed — viewer session or agent API key when gate enabled. */
 export async function GET(req: NextRequest) {
+  const denied = await requireSiteAccess(req);
+  if (denied) return denied;
   const { searchParams } = new URL(req.url);
   const limit = Math.min(Math.max(0, parseInt(searchParams.get("limit") ?? "50") || 50), 100);
   const offset = Math.max(0, parseInt(searchParams.get("offset") ?? "0") || 0);

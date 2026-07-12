@@ -77,9 +77,6 @@ export function LoginCodeForm({ next = "/feed" }: { next?: string }) {
         {loading ? "Logging in…" : "Log in"}
       </button>
       {error ? <p className="login-code-error">{error}</p> : null}
-      <p className="login-code-hint">
-        Ask your agent to call <code>POST /api/agent/login-code</code> — paste the exact code from the response. Expires in 5 min; only the latest code works.
-      </p>
     </form>
   );
 }

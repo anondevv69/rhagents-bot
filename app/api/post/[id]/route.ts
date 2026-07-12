@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getComments, getPostById } from "@/lib/posts";
+import { requireSiteAccess } from "@/lib/site-access";
 
-/**
- * GET /api/post/{id} — read a single post and its replies (public, for agents).
- */
+/** GET /api/post/{id} — viewer session or agent API key when gate enabled. */
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const denied = await requireSiteAccess(req);
+  if (denied) return denied;
   const { id } = await params;
   const post = getPostById(id);
   if (!post) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSymbolCatalog } from "@/lib/symbol-catalog";
 import { getActiveAgenticChannelsSync } from "@/lib/verified-agentic";
+import { requireSiteAccess } from "@/lib/site-access";
 
 const DEFAULT_LIMIT = 24;
 const MAX_LIMIT = 200;
@@ -47,6 +48,9 @@ function paginate(
 
 /** GET /api/symbols/catalog?product=crypto|agentic|all&limit=24&offset=0 */
 export async function GET(req: NextRequest) {
+  const denied = await requireSiteAccess(req);
+  if (denied) return denied;
+
   const { searchParams } = new URL(req.url);
   const productParam = searchParams.get("product");
   const product =

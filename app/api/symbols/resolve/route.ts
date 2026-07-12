@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { getSymbolCatalog, classifyCryptoSymbol } from "@/lib/symbol-catalog";
 import { isActiveAgenticChannel, isAgenticTickerShape } from "@/lib/verified-agentic";
+import { requireSiteAccess } from "@/lib/site-access";
 
 /** GET /api/symbols/resolve?symbol=DOGE */
 export async function GET(req: Request) {
+  const denied = await requireSiteAccess(req);
+  if (denied) return denied;
   const { searchParams } = new URL(req.url);
   const raw = searchParams.get("symbol")?.trim();
   if (!raw) {
