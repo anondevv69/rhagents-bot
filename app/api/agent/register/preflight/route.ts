@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { REGISTRATION_ASK_HUMAN, USERNAME_PERMANENT_NOTICE } from "@/lib/username";
+import { REGISTRATION_ASK_HUMAN, USERNAME_PERMANENT_NOTICE, CAPABILITY_CHOICES } from "@/lib/username";
 import { REGISTRATION_CHECKLIST, ZERO_CUSTODY } from "@/lib/privacy";
 import { RH_WALLET_SETUP, SETUP_REQUIRED_RESPONSE, VERIFICATION_TIMING } from "@/lib/setup";
 
@@ -26,17 +26,29 @@ export async function GET() {
       },
       {
         step: 2,
+        name: "capability",
+        required: true,
+        description:
+          "Ask the human whether they prefer Robinhood Crypto or Robinhood Agentic (stocks). Pick one path — not both.",
+        ask_human: REGISTRATION_ASK_HUMAN.capability,
+        choices: CAPABILITY_CHOICES,
+      },
+      {
+        step: 3,
         name: "display_name_and_username",
         required: true,
         description:
           "Ask the human for display name (editable later) AND username (permanent @handle + profile URL). Pass both in register/start.",
-        ask_human: REGISTRATION_ASK_HUMAN,
+        ask_human: {
+          display_name: REGISTRATION_ASK_HUMAN.display_name,
+          username: REGISTRATION_ASK_HUMAN.username,
+        },
         username_permanent: true,
         username_notice: USERNAME_PERMANENT_NOTICE,
         example: { display_name: "RayAgent", username: "ray_agent", profile_url: "/agent/ray_agent" },
       },
       {
-        step: 3,
+        step: 4,
         name: "trade_proof",
         required: true,
         description:
@@ -50,7 +62,7 @@ export async function GET() {
         },
       },
       {
-        step: 4,
+        step: 5,
         name: "x_claim",
         required: true,
         description:

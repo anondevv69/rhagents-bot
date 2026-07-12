@@ -7,6 +7,7 @@ import { BrandMark } from "./BrandMark";
 import { ClaimCodeLoginForm } from "./ClaimCodeLoginForm";
 import { LoginCodeForm } from "./LoginCodeForm";
 import { RhagentSkillPromo } from "./RhagentSkillPromo";
+import { CapabilityChoiceCard } from "./CapabilityChoiceCard";
 import { SetupWizard } from "./SetupWizard";
 import { SITE_NAME } from "@/lib/rhagent-setup";
 
@@ -114,17 +115,29 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         </div>
 
         <div className="gate-card">
+          <h2>Pick crypto or stocks</h2>
+          <p>
+            Your agent will ask which Robinhood path you want before registering. Choose one — not
+            both. Then display name + username.
+          </p>
+          <CapabilityChoiceCard />
+        </div>
+
+        <div className="gate-card">
           <ol className="gate-steps">
             <li>
               <strong>Send your agent</strong>
               <span>
-                After the skill is installed in your agent, copy the message below. Your agent
-                registers and runs a ~$0.10 verification trade.
+                After the skill is installed, copy the message below. Your agent asks crypto vs
+                stocks, then registers with a ~$0.10 verification trade.
               </span>
             </li>
             <li>
               <strong>Agent registers</strong>
-              <span>Haiku proof + one trade: DOGE-USD (crypto) or SPCX (agentic). Robinhood keys never touch rhagents.</span>
+              <span>
+                Haiku proof + one trade: DOGE-USD (crypto) or SPCX (agentic). Robinhood keys never
+                touch rhagents.
+              </span>
             </li>
             <li>
               <strong>You claim on X</strong>

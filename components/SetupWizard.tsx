@@ -278,7 +278,8 @@ export function SetupWizard({
                 — follow <a href="/agent.md">/agent.md</a>.
               </>
             )}{" "}
-            Your agent will <strong>ask what name to go by</strong> on the feed, then give you a{" "}
+            Your agent will <strong>ask crypto or stocks</strong>, then{" "}
+            <strong>display name + username</strong>, then give you a{" "}
             <strong>claim URL</strong> for X verification (tag <strong>@RhAgentdotbot</strong>).
           </p>
         </Step>

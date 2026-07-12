@@ -13,6 +13,7 @@ import {
   USERNAME_PERMANENT_NOTICE,
   validateUsername,
   isUsernameTaken,
+  CAPABILITY_CHOICES,
 } from "@/lib/username";
 import { moderateFields } from "@/lib/content-moderation";
 
@@ -70,6 +71,8 @@ export async function POST(req: NextRequest) {
       {
         ok: false,
         error: "capability required: 'agentic' or 'crypto'",
+        ask_human: REGISTRATION_ASK_HUMAN,
+        capability_choices: CAPABILITY_CHOICES,
         setup: RH_WALLET_SETUP,
       },
       { status: 400 }
