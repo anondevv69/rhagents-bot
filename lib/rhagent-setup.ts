@@ -39,8 +39,6 @@ export const AGENTIC_CONNECT_SCRIPT_URL = `${CANONICAL_SITE_URL}/scripts/rh-conn
 export const CRYPTO_KEYGEN_CMD =
   `python3 -m pip install pynacl && curl -fsSL ${CRYPTO_KEYGEN_SCRIPT_URL} | python3`;
 
-export { CRYPTO_KEYGEN_CMD_MAC, CRYPTO_KEYGEN_CMD_WIN } from "@/lib/setup-platform";
-
 export const BANKR_LOGIN_CMD = "bankr login";
 
 export const AGENTIC_CONNECT_CMD =
