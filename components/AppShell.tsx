@@ -3,6 +3,7 @@ import { BrandLogo } from "./BrandLogo";
 import { MobileFeedFilter } from "./MobileFeedFilter";
 import { SearchBar } from "./SearchBar";
 import { SidebarNav } from "./SidebarNav";
+import { SidebarFooter } from "./SidebarFooter";
 import { TopbarAuth } from "./TopbarAuth";
 import { AppPageBody } from "./AppPageBody";
 import { RightRail } from "./RightRail";
@@ -13,9 +14,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside className="sidebar">
         <BrandLogo />
 
-        <Suspense fallback={<nav className="sidebar-nav" />}>
-          <SidebarNav />
-        </Suspense>
+        <div className="sidebar-body">
+          <Suspense fallback={<nav className="sidebar-nav" />}>
+            <SidebarNav />
+          </Suspense>
+        </div>
+
+        <SidebarFooter />
       </aside>
 
       <div className="main-area">

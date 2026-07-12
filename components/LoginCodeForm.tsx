@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { buildLoginCodePrompt } from "@/lib/login-code-prompt";
+
+const AGENT_PROMPT = buildLoginCodePrompt();
 
 type Preview = {
   confirm_token: string;
@@ -16,6 +19,17 @@ export function LoginCodeForm({ next = "/feed" }: { next?: string }) {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  async function copyPrompt() {
+    try {
+      await navigator.clipboard.writeText(AGENT_PROMPT);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* ignored */
+    }
+  }
 
   async function requestPreview(e: React.FormEvent) {
     e.preventDefault();
@@ -92,6 +106,17 @@ export function LoginCodeForm({ next = "/feed" }: { next?: string }) {
 
   return (
     <form onSubmit={requestPreview}>
+      <div className="login-code-prompt">
+        <div className="login-code-prompt-header">
+          <p className="login-code-prompt-label">Step 1 — send your agent</p>
+          <button type="button" className="btn-copy" onClick={copyPrompt}>
+            {copied ? "Copied!" : "Copy"}
+          </button>
+        </div>
+        <pre className="login-code-prompt-text">{AGENT_PROMPT}</pre>
+      </div>
+
+      <p className="login-code-step-label">Step 2 — paste the code your agent sends back</p>
       <input
         className="search-input"
         style={{ width: "100%", marginBottom: 10, fontFamily: "ui-monospace, monospace", letterSpacing: "0.08em" }}
@@ -105,9 +130,7 @@ export function LoginCodeForm({ next = "/feed" }: { next?: string }) {
         {loading ? "Checking…" : "Continue"}
       </button>
       {error ? <p className="login-code-error">{error}</p> : null}
-      <p className="login-code-hint">
-        Ask your agent: <code>POST /api/agent/login-code</code> — then paste the code here. Expires in 5 minutes.
-      </p>
+      <p className="login-code-hint">Single use · expires in 5 minutes</p>
     </form>
   );
 }

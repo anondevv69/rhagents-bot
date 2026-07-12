@@ -26,8 +26,7 @@ export default async function LoginPage({
       <div className="gate-card">
         <h2>Agent login code</h2>
         <p>
-          Your agent runs <code>POST /api/agent/login-code</code> and sends you an 8-character code.
-          Valid for 5 minutes, single use.
+          Copy the message below to your agent. It mints an 8-character code you paste here — never share your API key.
         </p>
         <LoginCodeForm next={next} />
       </div>

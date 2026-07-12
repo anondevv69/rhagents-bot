@@ -6,6 +6,7 @@ const VIEWER_COOKIE = "rhagents_viewer";
 const PUBLIC_PREFIXES = [
   "/login",
   "/claim",
+  "/docs",
   "/api",
   "/skill.md",
   "/agent.md",
