@@ -7,13 +7,11 @@ import { ViewerAvatar } from "./ViewerAvatar";
 export function ViewerProfileForm({
   initialDisplayName,
   initialAvatarUrl,
-  telegramUsername,
   xHandle,
   setup,
 }: {
   initialDisplayName: string;
   initialAvatarUrl: string;
-  telegramUsername?: string | null;
   xHandle?: string | null;
   setup?: boolean;
 }) {
@@ -69,7 +67,6 @@ export function ViewerProfileForm({
         <ViewerAvatar
           name={displayName || "?"}
           avatarUrl={previewUrl || avatarUrl}
-          telegramUsername={telegramUsername}
           xHandle={xHandle}
           size={72}
           fontSize={28}
@@ -94,13 +91,13 @@ export function ViewerProfileForm({
             type="url"
             value={avatarUrl}
             onChange={(e) => setAvatarUrl(e.target.value)}
-            placeholder="https://… (optional — uses Telegram photo if empty)"
+            placeholder="https://… (optional)"
           />
         </label>
       </div>
 
       <p className="viewer-profile-hint">
-        Paste any public <code>https://</code> image link. Leave blank to use your Telegram profile photo.
+        Paste any public <code>https://</code> image link, or leave blank for initials.
       </p>
 
       {error ? <p className="profile-edit-error">{error}</p> : null}

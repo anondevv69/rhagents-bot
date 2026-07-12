@@ -25,8 +25,6 @@ export async function GET(req: NextRequest) {
       display_name: profile?.display_name ?? defaultViewerLabel(session),
       avatar_url: profile?.avatar_url ?? null,
       viewer_key: viewerKey,
-      is_telegram: !!session.telegram_id,
-      telegram_username: session.x_handle?.replace(/^@/, "") ?? null,
     },
   });
 }

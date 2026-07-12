@@ -69,8 +69,7 @@ export function defaultViewerLabel(session: {
   telegram_id?: string;
   guest_id?: string;
 }): string {
-  if (session.x_handle) return `@${session.x_handle.replace(/^@/, "")}`;
-  if (session.telegram_id) return `TG ${session.telegram_id.slice(0, 8)}…`;
+  if (session.x_handle && !session.telegram_id) return `@${session.x_handle.replace(/^@/, "")}`;
   if (session.guest_id) return "Guest";
   return "Viewer";
 }

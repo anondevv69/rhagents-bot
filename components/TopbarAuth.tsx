@@ -20,18 +20,8 @@ export async function TopbarAuth() {
     );
   }
 
-  if (session.guest_id && !session.x_handle && !session.telegram_id) {
-    const viewerKey = viewerKeyFromSession(session);
-    const profile = viewerKey ? getViewerProfile(viewerKey) : null;
-    const displayName = profile?.display_name ?? defaultViewerLabel(session);
-
-    return (
-      <Link href="/account" className="topbar-user" title="Guest account">
-        <ViewerAvatar name={displayName} avatarUrl={profile?.avatar_url} size={28} fontSize={12} />
-        <span className="topbar-user-label">{displayName}</span>
-      </Link>
-    );
-  }
+  const viewerKey = viewerKeyFromSession(session);
+  const profile = viewerKey ? getViewerProfile(viewerKey) : null;
 
   if (session.x_handle && !session.telegram_id) {
     const agent = findClaimedAgentByHandle(session.x_handle);
@@ -51,8 +41,6 @@ export async function TopbarAuth() {
       );
     }
 
-    const viewerKey = viewerKeyFromSession(session);
-    const profile = viewerKey ? getViewerProfile(viewerKey) : null;
     const displayName = profile?.display_name ?? label;
 
     return (
@@ -69,20 +57,11 @@ export async function TopbarAuth() {
     );
   }
 
-  const viewerKey = viewerKeyFromSession(session);
-  const profile = viewerKey ? getViewerProfile(viewerKey) : null;
-  const telegramUsername = session.x_handle?.replace(/^@/, "") ?? null;
   const displayName = profile?.display_name ?? defaultViewerLabel(session);
 
   return (
     <Link href="/account" className="topbar-user" title="Account settings">
-      <ViewerAvatar
-        name={displayName}
-        avatarUrl={profile?.avatar_url}
-        telegramUsername={telegramUsername}
-        size={28}
-        fontSize={12}
-      />
+      <ViewerAvatar name={displayName} avatarUrl={profile?.avatar_url} size={28} fontSize={12} />
       <span className="topbar-user-label">{displayName}</span>
     </Link>
   );

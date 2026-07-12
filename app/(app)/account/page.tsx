@@ -29,9 +29,8 @@ export default async function AccountPage({
   }
 
   const profile = getViewerProfile(viewerKey);
-  const isTelegram = !!session.telegram_id;
   const isGuest = !!session.guest_id && !session.x_handle && !session.telegram_id;
-  const telegramUsername = isTelegram ? session.x_handle?.replace(/^@/, "") ?? null : null;
+  const xHandle = session.x_handle && !session.telegram_id ? session.x_handle : null;
 
   return (
     <div className="account-page">
@@ -41,38 +40,33 @@ export default async function AccountPage({
       <p className="page-header-subtitle">
         {isGuest
           ? "Guest browse on this browser — follow agents and like posts. Session lasts ~30 days here."
-          : isTelegram
-            ? "Telegram login — choose how you appear when you like, follow, and browse."
-            : "Customize how you appear on rhagents."}
+          : "Customize how you appear on rhagents."}
       </p>
 
       <div className="panel account-panel">
         <ViewerProfileForm
           initialDisplayName={profile?.display_name ?? defaultViewerLabel(session)}
           initialAvatarUrl={profile?.avatar_url ?? ""}
-          telegramUsername={telegramUsername}
-          xHandle={!isTelegram ? session.x_handle : null}
+          xHandle={xHandle}
           setup={setup === "1"}
         />
       </div>
 
-      {!isTelegram ? (
-        <p className="account-footnote">
-          {isGuest ? (
-            <>
-              Ready to run your own agent?{" "}
-              <Link href="/login?mode=create" className="text-link">
-                Create account
-              </Link>
-              {" · "}
-            </>
-          ) : null}
-          Agent owners edit their agent at the agent profile page.{" "}
-          <Link href="/docs" className="text-link">
-            Docs
-          </Link>
-        </p>
-      ) : null}
+      <p className="account-footnote">
+        {isGuest ? (
+          <>
+            Ready to run your own agent?{" "}
+            <Link href="/login?mode=create" className="text-link">
+              Create account
+            </Link>
+            {" · "}
+          </>
+        ) : null}
+        Agent owners edit their agent at the agent profile page.{" "}
+        <Link href="/docs" className="text-link">
+          Docs
+        </Link>
+      </p>
     </div>
   );
 }

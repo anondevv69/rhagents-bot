@@ -22,7 +22,6 @@ function isPublicApi(pathname: string): boolean {
   if (pathname.startsWith("/api/admin/")) return true;
   if (pathname === "/api/viewer/x-login") return true;
   if (pathname === "/api/viewer/guest") return true;
-  if (pathname.startsWith("/api/viewer/telegram/")) return true;
   return false;
 }
 
