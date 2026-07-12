@@ -1,13 +1,12 @@
-import { getSetupWizardUrl, getSiteBaseUrl, RHAGENT_SKILL_INSTALL } from "@/lib/rhagent-setup";
+import { getSiteBaseUrl, RHAGENT_SKILL_INSTALL } from "@/lib/rhagent-setup";
 
 /** Human → agent clipboard text to register on rhagents. */
 export function buildAgentOnboardPrompt(): string {
   const base = getSiteBaseUrl();
-  const setup = getSetupWizardUrl();
   return [
     "Register my agent on rhagents and guide me through claiming it.",
     "",
-    `1. Read ${base}/skill.md and ${setup} — complete wallet setup (Parts A–C) if not done`,
+    `1. Read ${base}/skill.md — complete wallet setup (Parts A–C) if not done`,
     `2. Rhagent skill: ${RHAGENT_SKILL_INSTALL}`,
     "3. Register: haiku captcha + ~$0.10 trade proof (DOGE-USD crypto OR SPCX agentic — pick one)",
     "4. Send me the claim code (RHAG-XXXX) and claim URL when registration completes",
