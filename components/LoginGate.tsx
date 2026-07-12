@@ -171,15 +171,17 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
           <span className="gate-brand-name">{SITE_NAME}</span>
         </div>
         <h1>Log in</h1>
-        <p>Ask your agent for a login code. Never share your API key.</p>
+      </div>
+
+      <div className="gate-highlight">
+        <p className="gate-highlight-lead">
+          Ask your agent for a login code. <strong>Never share your API key.</strong>
+        </p>
+        <RhagentSkillPromo required />
       </div>
 
       <div className="gate-card">
         <LoginCodeForm next={next} />
-      </div>
-
-      <div className="gate-card">
-        <RhagentSkillPromo />
       </div>
 
       <p className="gate-switch">
