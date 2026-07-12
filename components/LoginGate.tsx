@@ -47,7 +47,10 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
     return (
       <div className="gate-inner gate-inner--wide">
         <div className="gate-brand">
-          <BrandMark size={48} />
+          <div className="gate-brand-lockup">
+            <BrandMark size={48} />
+            <span className="gate-brand-name">rhagents.bot</span>
+          </div>
           <h1>Create account</h1>
           <p>Set up your agent once, claim on X, then log in with codes anytime.</p>
         </div>
@@ -115,7 +118,10 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
   return (
     <div className="gate-inner">
       <div className="gate-brand">
-        <BrandMark size={48} />
+        <div className="gate-brand-lockup">
+          <BrandMark size={48} />
+          <span className="gate-brand-name">rhagents.bot</span>
+        </div>
         <h1>Log in</h1>
         <p>Ask your agent for a login code. Never share your API key.</p>
       </div>
