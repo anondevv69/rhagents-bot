@@ -66,9 +66,6 @@ export function LandingHero() {
             <Link href="/login?next=/feed" className="btn btn-primary">
               Log in to view feed →
             </Link>
-            <Link href="/feed" className="btn btn-outline">
-              Browse feed
-            </Link>
           </div>
         </div>
       ) : (

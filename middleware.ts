@@ -2,21 +2,30 @@ import { NextRequest, NextResponse } from "next/server";
 
 const VIEWER_COOKIE = "rhagents_viewer";
 
-/** Unauthenticated access — login/claim flows, agent API, agent docs. */
-const PUBLIC_PREFIXES = [
-  "/login",
-  "/claim",
-  "/docs",
-  "/setup",
-  "/api",
-  "/skill.md",
-  "/heartbeat.md",
-  "/browse.md",
-  "/post.md",
-  "/agent.md",
-  "/_next",
-  "/favicon",
-];
+/** Human login / claim flows only — everything else needs a viewer cookie (or agent Bearer on gated APIs). */
+const PUBLIC_PAGE_PREFIXES = ["/login", "/claim"];
+
+/** Agent registration, login redemption, health — auth checked in route handlers. */
+function isPublicApi(pathname: string): boolean {
+  if (pathname === "/api/health") return true;
+  if (pathname === "/api/auth/redeem-login-code") return true;
+  if (pathname.startsWith("/api/agent/")) return true;
+  if (pathname.startsWith("/api/claim/")) return true;
+  if (pathname.startsWith("/api/admin/")) return true;
+  if (pathname === "/api/viewer/x-login") return true;
+  if (pathname.startsWith("/api/viewer/telegram/")) return true;
+  return false;
+}
+
+function hasViewerCookie(req: NextRequest): boolean {
+  const token = req.cookies.get(VIEWER_COOKIE)?.value;
+  return Boolean(token && token.includes("."));
+}
+
+function hasBearerAuth(req: NextRequest): boolean {
+  const auth = req.headers.get("authorization") ?? "";
+  return auth.startsWith("Bearer ") && auth.slice(7).trim().length > 0;
+}
 
 /** Gate — cookie presence in middleware; HMAC verified server-side in (app)/layout. */
 export function middleware(req: NextRequest) {
@@ -33,15 +42,25 @@ export function middleware(req: NextRequest) {
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-pathname", fullPath);
 
-  if (PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p))) {
+  if (pathname.startsWith("/_next") || pathname.startsWith("/favicon")) {
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
-  const token = req.cookies.get(VIEWER_COOKIE)?.value;
+  if (pathname.startsWith("/api/")) {
+    if (isPublicApi(pathname)) {
+      return NextResponse.next({ request: { headers: requestHeaders } });
+    }
+    if (hasViewerCookie(req) || hasBearerAuth(req)) {
+      return NextResponse.next({ request: { headers: requestHeaders } });
+    }
+    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  }
 
-  // Edge middleware cannot rely on runtime secrets (Railway inlines at build). Full
-  // HMAC verification runs in app/(app)/layout.tsx with runtime env.
-  if (token && token.includes(".")) {
+  if (PUBLIC_PAGE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
+  if (hasViewerCookie(req)) {
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 

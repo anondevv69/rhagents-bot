@@ -6,6 +6,7 @@ import { buildAgentOnboardPrompt } from "@/lib/agent-onboard-prompt";
 import { BrandMark } from "./BrandMark";
 import { ClaimCodeLoginForm } from "./ClaimCodeLoginForm";
 import { LoginCodeForm } from "./LoginCodeForm";
+import { RhagentSkillPromo } from "./RhagentSkillPromo";
 import { SetupWizard } from "./SetupWizard";
 
 const AGENT_ONBOARD = buildAgentOnboardPrompt();
@@ -141,6 +142,8 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
               Setup wizard →
             </button>
           </div>
+
+          <RhagentSkillPromo embedded />
         </div>
 
         <div className="gate-card">
@@ -172,6 +175,10 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
 
       <div className="gate-card">
         <LoginCodeForm next={next} />
+      </div>
+
+      <div className="gate-card">
+        <RhagentSkillPromo />
       </div>
 
       <p className="gate-switch">
