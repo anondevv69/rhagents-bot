@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { classifySymbol, getSymbolCatalog, refreshSymbolCatalog } from "@/lib/symbol-catalog";
+import { getSymbolCatalog, resolveTradableSymbol } from "@/lib/symbol-catalog";
 
 /** GET /api/symbols/resolve?symbol=DOGE */
 export async function GET(req: Request) {
@@ -10,9 +10,16 @@ export async function GET(req: Request) {
   }
 
   await getSymbolCatalog();
-  const classified = classifySymbol(raw);
+  const classified = await resolveTradableSymbol(raw);
   if (!classified) {
-    return NextResponse.json({ ok: false, error: "unrecognized symbol" }, { status: 404 });
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "not_tradable",
+        message: `${raw.toUpperCase()} is not a tradable Robinhood Crypto or Agentic symbol`,
+      },
+      { status: 404 },
+    );
   }
 
   return NextResponse.json({
@@ -26,7 +33,7 @@ export async function GET(req: Request) {
 
 /** Warm catalog cache (called on deploy / health checks). */
 export async function POST() {
-  const cat = await refreshSymbolCatalog();
+  const cat = await getSymbolCatalog();
   return NextResponse.json({
     ok: true,
     source: cat.source,

@@ -1,9 +1,10 @@
 /**
- * Robinhood symbol catalog — crypto pairs from gateway API, agentic = equities not in crypto.
+ * Robinhood symbol validation — only tradable crypto pairs + verified agentic tickers.
  */
 
 const GW = process.env.RH_WALLET_GATEWAY ?? "https://rhwallet-rhagent-production.up.railway.app";
-const TTL_MS = 60 * 60 * 1000;
+const CATALOG_TTL_MS = 60 * 60 * 1000;
+const RESOLVE_TTL_MS = 24 * 60 * 60 * 1000;
 
 const STATIC_CRYPTO_PAIRS = [
   "BTC-USD", "ETH-USD", "DOGE-USD", "SHIB-USD", "PEPE-USD", "SOL-USD", "ADA-USD",
@@ -12,6 +13,11 @@ const STATIC_CRYPTO_PAIRS = [
   "APT-USD", "ARB-USD", "OP-USD", "BONK-USD", "WIF-USD", "FLOKI-USD",
 ];
 
+export type SymbolClassification = {
+  product: "agentic" | "crypto";
+  symbol: string;
+};
+
 type CatalogCache = {
   pairs: Set<string>;
   bases: Set<string>;
@@ -19,8 +25,14 @@ type CatalogCache = {
   fetchedAt: number;
 };
 
-let cache: CatalogCache | null = null;
-let inflight: Promise<CatalogCache> | null = null;
+type ResolveCacheEntry = {
+  result: SymbolClassification | null;
+  fetchedAt: number;
+};
+
+let catalog: CatalogCache | null = null;
+let catalogInflight: Promise<CatalogCache> | null = null;
+const resolveCache = new Map<string, ResolveCacheEntry>();
 
 function basesFromPairs(pairs: string[]): Set<string> {
   const bases = new Set<string>();
@@ -32,7 +44,7 @@ function basesFromPairs(pairs: string[]): Set<string> {
   return bases;
 }
 
-function buildCache(pairs: string[], source: string): CatalogCache {
+function buildCatalog(pairs: string[], source: string): CatalogCache {
   const normalized = pairs.map((p) => p.toUpperCase());
   return {
     pairs: new Set(normalized),
@@ -49,61 +61,85 @@ export async function refreshSymbolCatalog(): Promise<CatalogCache> {
       next: { revalidate: 3600 },
     });
     if (res.ok) {
-      const data = (await res.json()) as {
-        crypto?: { pairs?: string[] };
-        source?: string;
-      };
+      const data = (await res.json()) as { crypto?: { pairs?: string[] }; source?: string };
       const pairs = data.crypto?.pairs?.filter(Boolean) ?? [];
       if (pairs.length > 0) {
-        cache = buildCache(pairs, data.source ?? "robinhood");
-        return cache;
+        catalog = buildCatalog(pairs, data.source ?? "robinhood");
+        return catalog;
       }
     }
   } catch {
-    /* fall through to static */
+    /* static fallback */
   }
 
-  cache = buildCache(STATIC_CRYPTO_PAIRS, "static");
-  return cache;
+  catalog = buildCatalog(STATIC_CRYPTO_PAIRS, "static");
+  return catalog;
 }
 
 export async function getSymbolCatalog(): Promise<CatalogCache> {
-  if (cache && Date.now() - cache.fetchedAt < TTL_MS) return cache;
-  if (inflight) return inflight;
-  inflight = refreshSymbolCatalog().finally(() => {
-    inflight = null;
+  if (catalog && Date.now() - catalog.fetchedAt < CATALOG_TTL_MS) return catalog;
+  if (catalogInflight) return catalogInflight;
+  catalogInflight = refreshSymbolCatalog().finally(() => {
+    catalogInflight = null;
   });
-  return inflight;
+  return catalogInflight;
 }
 
-/** Sync read — static catalog until async refresh runs. */
 export function getSymbolCatalogSync(): CatalogCache {
-  if (cache) return cache;
-  cache = buildCache(STATIC_CRYPTO_PAIRS, "static");
-  return cache;
+  if (catalog) return catalog;
+  catalog = buildCatalog(STATIC_CRYPTO_PAIRS, "static");
+  return catalog;
 }
 
-export type SymbolClassification = {
-  product: "agentic" | "crypto";
-  symbol: string;
-};
-
-/** Map user/agent symbol to canonical form + Robinhood product lane. */
-export function classifySymbol(raw: string, cat = getSymbolCatalogSync()): SymbolClassification | null {
+/** Strict crypto-only check against cached Robinhood pairs. */
+export function classifyCryptoSymbol(raw: string, cat = getSymbolCatalogSync()): SymbolClassification | null {
   const input = raw.trim().toUpperCase();
   if (!input) return null;
 
   if (input.endsWith("-USD")) {
-    return { product: "crypto", symbol: input };
+    return cat.pairs.has(input) ? { product: "crypto", symbol: input } : null;
   }
 
-  if (cat.bases.has(input) || cat.pairs.has(`${input}-USD`)) {
-    return { product: "crypto", symbol: `${input}-USD` };
-  }
-
-  if (/^[A-Z]{1,5}$/.test(input)) {
-    return { product: "agentic", symbol: input };
-  }
-
+  const pair = `${input}-USD`;
+  if (cat.pairs.has(pair)) return { product: "crypto", symbol: pair };
   return null;
+}
+
+/** Validate via gateway — Robinhood crypto catalog + agentic get_equity_quotes. */
+export async function resolveTradableSymbol(raw: string): Promise<SymbolClassification | null> {
+  const input = raw.trim().toUpperCase();
+  if (!input) return null;
+
+  await getSymbolCatalog();
+  const crypto = classifyCryptoSymbol(input);
+  if (crypto) return crypto;
+
+  const cached = resolveCache.get(input);
+  if (cached && Date.now() - cached.fetchedAt < RESOLVE_TTL_MS) {
+    return cached.result;
+  }
+
+  try {
+    const res = await fetch(`${GW}/v1/catalog/resolve?symbol=${encodeURIComponent(input)}`, {
+      signal: AbortSignal.timeout(15000),
+    });
+    if (res.ok) {
+      const data = (await res.json()) as { product?: "agentic" | "crypto"; symbol?: string };
+      if (data.product && data.symbol) {
+        const result: SymbolClassification = { product: data.product, symbol: data.symbol.toUpperCase() };
+        resolveCache.set(input, { result, fetchedAt: Date.now() });
+        return result;
+      }
+    }
+  } catch {
+    /* invalid */
+  }
+
+  resolveCache.set(input, { result: null, fetchedAt: Date.now() });
+  return null;
+}
+
+/** @deprecated use resolveTradableSymbol — sync heuristic removed for strict validation */
+export function classifySymbol(raw: string): SymbolClassification | null {
+  return classifyCryptoSymbol(raw);
 }

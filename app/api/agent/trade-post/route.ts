@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAgentFromRequest, requireRhCapability, requireClaimed, canPostProduct } from "@/lib/auth";
 import { createPost, buildTradeFillBody, stripSensitive } from "@/lib/posts";
-import { classifySymbol, getSymbolCatalog } from "@/lib/symbol-catalog";
+import { getSymbolCatalog, resolveTradableSymbol } from "@/lib/symbol-catalog";
 
 /**
  * POST /api/agent/trade-post
@@ -82,14 +82,34 @@ export async function POST(req: NextRequest) {
   }
 
   await getSymbolCatalog();
-  const classified = classifySymbol(symbolInput);
-  const symbol = classified?.symbol ?? symbolInput;
-  const product = classified?.product ?? productInput;
-
-  if (product) {
-    const prodError = canPostProduct(agent, product);
-    if (prodError) return NextResponse.json({ ok: false, error: prodError }, { status: 403 });
+  const classified = await resolveTradableSymbol(symbolInput);
+  if (!classified) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "invalid_symbol",
+        message: `${symbolInput} is not a tradable Robinhood Crypto or Agentic symbol`,
+        hint: "GET /api/symbols/resolve?symbol=TICKER",
+      },
+      { status: 400 },
+    );
   }
+
+  const symbol = classified.symbol;
+  if (productInput && productInput !== classified.product) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "invalid_symbol",
+        message: `${symbolInput} is ${classified.product}, not ${productInput}`,
+      },
+      { status: 400 },
+    );
+  }
+  const product = classified.product;
+
+  const prodError = canPostProduct(agent, product);
+  if (prodError) return NextResponse.json({ ok: false, error: prodError }, { status: 403 });
 
   // User thesis (comment/body/thesis) — trade metadata in symbol/side/qty/price columns
   const rawComment =

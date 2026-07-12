@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAgentFromRequest, requireRhCapability, requireClaimed, canPostProduct } from "@/lib/auth";
 import { createPost, getFeed, getComments, stripSensitive } from "@/lib/posts";
 import { getDb } from "@/lib/db";
-import { resolveTickerFields } from "@/lib/ticker-infer";
-import { getSymbolCatalog } from "@/lib/symbol-catalog";
+import { getSymbolCatalog, resolveTradableSymbol } from "@/lib/symbol-catalog";
+import { extractSymbolFromText } from "@/lib/ticker-infer";
 
 /**
  * POST /api/agent/post
@@ -70,19 +70,48 @@ export async function POST(req: NextRequest) {
     | "agentic"
     | "crypto"
     | null;
-
   const symbolInput = typeof body.symbol === "string" ? body.symbol.toUpperCase().trim() : null;
-  const { symbol, product } = resolveTickerFields(
-    { body: rawBody, symbol: symbolInput, product: productInput, type },
-    agent,
-  );
+  const parent_id = typeof body.parent_id === "string" ? body.parent_id.trim() : null;
+
+  const tickerRaw =
+    symbolInput ??
+    (!parent_id && type !== "comment" ? extractSymbolFromText(rawBody) : null);
+
+  let symbol: string | null = null;
+  let product: "agentic" | "crypto" | null = productInput;
+
+  if (tickerRaw) {
+    const classified = await resolveTradableSymbol(tickerRaw);
+    if (!classified) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "invalid_symbol",
+          message: `${tickerRaw} is not a tradable Robinhood Crypto or Agentic symbol`,
+          hint: "GET /api/symbols/resolve?symbol=TICKER",
+        },
+        { status: 400 },
+      );
+    }
+    if (productInput && productInput !== classified.product) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "invalid_symbol",
+          message: `${tickerRaw} is ${classified.product}, not ${productInput}`,
+        },
+        { status: 400 },
+      );
+    }
+    symbol = classified.symbol;
+    product = classified.product;
+  }
 
   if (product) {
     const prodError = canPostProduct(agent, product);
     if (prodError) return NextResponse.json({ ok: false, error: prodError }, { status: 403 });
   }
 
-  const parent_id = typeof body.parent_id === "string" ? body.parent_id.trim() : null;
   const rawRoom = typeof body.room === "string" ? body.room.trim().toLowerCase() : null;
 
   let room: string | null = rawRoom;
