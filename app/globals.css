@@ -25,6 +25,17 @@
 
   --sidebar-width: 220px;
   --header-height: 56px;
+
+  /* Motion (emil-design-eng) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --duration-fast: 140ms;
+  --duration-ui: 180ms;
+
+  /* Elevation — soft shadow over hard borders */
+  --shadow-surface: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 8px 24px rgba(0, 0, 0, 0.24);
+  --shadow-elevated: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 16px 40px rgba(0, 0, 0, 0.32);
+  --border-soft: rgba(255, 255, 255, 0.06);
 }
 
 /* Dark theme (default) */
@@ -97,6 +108,11 @@ body {
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", sans-serif;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -120,8 +136,9 @@ a { color: inherit; text-decoration: none; }
 
 .card {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-soft);
   border-radius: 12px;
+  box-shadow: var(--shadow-surface);
 }
 
 .btn {
@@ -134,20 +151,42 @@ a { color: inherit; text-decoration: none; }
   font-weight: 600;
   cursor: pointer;
   border: none;
-  transition: background 0.15s, opacity 0.15s;
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    background var(--duration-ui) var(--ease-out),
+    border-color var(--duration-ui) var(--ease-out),
+    color var(--duration-ui) var(--ease-out);
 }
-.btn:hover { opacity: 0.92; }
+
+.btn:active {
+  transform: scale(0.97);
+}
+
 .btn-primary { background: var(--accent); color: var(--accent-fg); }
-.btn-primary:hover { background: var(--accent-hover); }
 .btn-ghost   { background: rgba(255,255,255,0.06); color: var(--text); }
-.btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.btn-outline {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-soft);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.09); }
+  .btn-outline:hover {
+    border-color: var(--border-light);
+    background: rgba(255, 255, 255, 0.03);
+  }
+}
 
 .post-card {
   padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
-  transition: background 0.1s;
+  border-bottom: 1px solid var(--border-soft);
 }
-.post-card:hover { background: rgba(255,255,255,0.02); }
+
+@media (hover: hover) and (pointer: fine) {
+  .post-card:hover { background: rgba(255,255,255,0.02); }
+}
 
 .text-link { color: var(--link); }
 .text-link:hover { color: var(--link-hover); }
@@ -266,12 +305,23 @@ a { color: inherit; text-decoration: none; }
   font-size: 13px;
   font-weight: 500;
   color: var(--muted);
-  transition: background 0.12s, color 0.12s;
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    background var(--duration-ui) var(--ease-out),
+    color var(--duration-ui) var(--ease-out);
 }
-.sidebar-link:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+
+.sidebar-link:active {
+  transform: scale(0.98);
+}
+
 .sidebar-link.active {
   background: rgba(204, 255, 0, 0.1);
   color: var(--accent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sidebar-link:hover { background: rgba(255,255,255,0.05); color: var(--text); }
 }
 
 .sidebar-section {
@@ -427,10 +477,11 @@ a { color: inherit; text-decoration: none; }
 
 .gate-card {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-soft);
   border-radius: 14px;
   padding: 20px;
   margin-bottom: 12px;
+  box-shadow: var(--shadow-surface);
 }
 
 .gate-card h2 {
@@ -514,7 +565,14 @@ a { color: inherit; text-decoration: none; }
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: color 0.15s, background 0.15s;
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    color var(--duration-ui) var(--ease-out),
+    background var(--duration-ui) var(--ease-out);
+}
+
+.landing-toggle-btn:active {
+  transform: scale(0.97);
 }
 
 .landing-toggle-btn--active {
@@ -858,20 +916,29 @@ a { color: inherit; text-decoration: none; }
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-soft);
   background: transparent;
   color: var(--text);
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    background var(--duration-ui) var(--ease-out),
+    border-color var(--duration-ui) var(--ease-out);
 }
 
-.btn-follow:hover {
-  background: rgba(255, 255, 255, 0.06);
+.btn-follow:active {
+  transform: scale(0.97);
 }
 
 .btn-follow--active {
   background: rgba(204, 255, 0, 0.1);
   border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
   color: var(--accent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-follow:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
 }
 
 .btn-like {
@@ -883,21 +950,31 @@ a { color: inherit; text-decoration: none; }
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-soft);
   background: transparent;
   color: var(--muted);
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    background var(--duration-ui) var(--ease-out),
+    color var(--duration-ui) var(--ease-out),
+    border-color var(--duration-ui) var(--ease-out);
 }
 
-.btn-like:hover {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.04);
+.btn-like:active {
+  transform: scale(0.97);
 }
 
 .btn-like--active {
   color: var(--down);
   border-color: color-mix(in srgb, var(--down) 35%, var(--border));
   background: rgba(255, 107, 91, 0.08);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-like:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.04);
+  }
 }
 
 .profile-header {
@@ -988,9 +1065,10 @@ a { color: inherit; text-decoration: none; }
 
 .panel {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-soft);
   border-radius: 14px;
   padding: 18px 20px;
+  box-shadow: var(--shadow-surface);
 }
 
 .panel--flush {
@@ -1315,11 +1393,14 @@ a { color: inherit; text-decoration: none; }
   color: var(--link);
   font-weight: 600;
   text-decoration: none;
+  transition: color var(--duration-ui) var(--ease-out);
 }
 
-.post-channel-link:hover {
-  color: var(--link-hover);
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .post-channel-link:hover {
+    color: var(--link-hover);
+    text-decoration: underline;
+  }
 }
 
 .post-channel-sep,
@@ -1380,15 +1461,24 @@ a { color: inherit; text-decoration: none; }
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-soft);
   background: rgba(255, 255, 255, 0.04);
   color: var(--text);
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    background var(--duration-ui) var(--ease-out),
+    border-color var(--duration-ui) var(--ease-out);
 }
 
-.btn-copy:hover {
-  background: rgba(204, 255, 0, 0.08);
-  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+.btn-copy:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-copy:hover {
+    background: rgba(204, 255, 0, 0.08);
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  }
 }
 
 .post-card-footer {
@@ -1423,19 +1513,28 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   gap: 8px;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-soft);
   border-radius: 8px;
   padding: 6px 12px;
   margin-bottom: 10px;
   font-size: 13px;
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.12s, background 0.12s;
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    border-color var(--duration-ui) var(--ease-out),
+    background var(--duration-ui) var(--ease-out);
 }
 
-.trade-pill:hover {
-  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
-  background: rgba(204, 255, 0, 0.06);
+.trade-pill:active {
+  transform: scale(0.98);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .trade-pill:hover {
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+    background: rgba(204, 255, 0, 0.06);
+  }
 }
 
 .trade-pill-symbol {
@@ -1507,5 +1606,26 @@ a { color: inherit; text-decoration: none; }
 
   .profile-header-main {
     padding-top: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .btn:active,
+  .btn-copy:active,
+  .btn-like:active,
+  .btn-follow:active,
+  .sidebar-link:active,
+  .trade-pill:active,
+  .landing-toggle-btn:active {
+    transform: none;
   }
 }
