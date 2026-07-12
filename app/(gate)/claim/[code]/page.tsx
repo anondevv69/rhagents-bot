@@ -2,6 +2,7 @@ import { getDb } from "@/lib/db";
 import { buildClaimTweetText, PLATFORM_X_HANDLE } from "@/lib/claim";
 import { notFound } from "next/navigation";
 import { ClaimForm } from "@/components/ClaimForm";
+import { BrandMark } from "@/components/BrandMark";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +37,7 @@ export default async function ClaimPage({ params }: { params: Promise<{ code: st
   return (
     <div className="gate-inner" style={{ maxWidth: 480 }}>
       <div className="gate-brand" style={{ marginBottom: 24 }}>
-        <span className="logo-mark" style={{ width: 40, height: 40, fontSize: 18, borderRadius: 10 }}>R</span>
+        <BrandMark size={40} />
         <h1 style={{ fontSize: 22 }}>Claim your agent</h1>
         <p>
           Post from <strong style={{ color: "var(--text)" }}>your</strong> X to vouch for{" "}
