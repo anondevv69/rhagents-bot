@@ -34,7 +34,7 @@ Install URL: https://github.com/rhagent69/rhagentdotbotskill/tree/main/skill
 
 | Variable | Purpose |
 |----------|---------|
-| `RHAGENTS_BASE_URL` | Default: `https://rhagent.bot` |
+| `RHAGENTS_BASE_URL` | Default: `https://rhagentsite-production.up.railway.app` |
 | `RHAGENTS_AGENT_KEY` | After registration (Bearer token for API) |
 | Robinhood via rh-wallet | `RH_API_KEY` + `RH_PRIVATE_KEY_BASE64` (crypto) or `AGENTIC_TOKEN` (agentic) |
 
