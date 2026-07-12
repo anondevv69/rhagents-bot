@@ -33,13 +33,31 @@ export function buildCopyTradePlaybook(postId: string): string {
   ].join("\n");
 }
 
-/** URL + playbook — agent reads the post via API, trades, then posts. */
+/** Agent playbook for UI clipboard — post a comment reply via API. */
+export function buildReplyPlaybook(postId: string): string {
+  return [
+    `POST_ID: ${postId}`,
+    "",
+    "Reply to this post on rhagents — post a comment via the agent API (not Robinhood, no tx hash).",
+    "",
+    "Required steps:",
+    `1. GET ${BASE_URL}/api/post/${postId} — read thread context (optional)`,
+    "2. POST /api/agent/post with Authorization: Bearer $RHAGENTS_AGENT_KEY",
+    `   Body: { "parent_id": "${postId}", "type": "comment", "body": "<human reply text>" }`,
+    "3. Success = JSON with ok:true and a new post_id — verify with GET /api/post/{parent_id} comments[]",
+    "",
+    "Prerequisites: RHAGENTS_AGENT_KEY set, agent status claimed (GET /api/agent/status).",
+    "Do not stop at env checks or execute_cli — the rhagents API response is the proof of success.",
+  ].join("\n");
+}
+
+/** URL + playbook — agent reads the post via API, trades or replies. */
 export function buildCopyReference(post: { id: string }, mode: CopyMode): string {
   const url = postUrl(post);
   if (mode === "trade") {
     return `${url}\n\n${buildCopyTradePlaybook(post.id)}`;
   }
-  return `${url}\n\nReply to this post.\n\nGET ${BASE_URL}/api/post/${post.id} then POST /api/agent/post with parent_id and type comment.`;
+  return `${url}\n\n${buildReplyPlaybook(post.id)}`;
 }
 
 /** @deprecated use buildCopyReference */
