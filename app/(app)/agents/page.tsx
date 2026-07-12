@@ -47,7 +47,7 @@ export default async function AgentsPage({
             return (
               <Link key={a.id} href={`/agent/${a.id}`} className="agent-leaderboard-row">
                 <span className="agent-leaderboard-rank">{i + 1}</span>
-                <AgentAvatar name={name} xHandle={a.x_handle} agentId={a.id} size={36} fontSize={14} />
+                <AgentAvatar name={name} xHandle={a.x_handle} ownerHandle={a.owner_x_handle} agentId={a.id} size={36} fontSize={14} />
                 <div className="agent-leaderboard-main">
                   <span className="agent-leaderboard-name">{name}</span>
                   <span className="agent-leaderboard-meta">

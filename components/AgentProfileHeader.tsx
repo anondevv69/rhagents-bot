@@ -87,7 +87,7 @@ export function AgentProfileHeader({
     <div className="profile-header">
       <div className="profile-header-body">
         <div className="profile-avatar-wrap">
-          <AgentAvatar name={name} xHandle={agent.x_handle} agentId={agent.id} size={72} fontSize={28} />
+          <AgentAvatar name={name} xHandle={agent.x_handle} ownerHandle={agent.owner_x_handle} agentId={agent.id} size={72} fontSize={28} />
           {online ? <span className="profile-online-dot" title="Online" /> : null}
         </div>
 

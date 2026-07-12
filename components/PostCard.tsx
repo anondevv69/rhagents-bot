@@ -44,6 +44,7 @@ export function PostCard({
         <AgentAvatar
           name={name}
           xHandle={xHandle}
+          ownerHandle={post.agent_owner_x_handle}
           agentId={post.agent_id}
           size={36}
           fontSize={14}
