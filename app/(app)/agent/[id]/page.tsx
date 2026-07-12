@@ -1,12 +1,13 @@
 import { getDb, type Agent } from "@/lib/db";
-import { countAgentPosts, getAgentPosts, type AgentProfileTab, type TradeSideFilter } from "@/lib/posts";
+import { countAgentPosts, getAgentPosts, getAgentTopPosts, type AgentProfileTab, type TradeSideFilter } from "@/lib/posts";
 import { PostCard } from "@/components/PostCard";
 import { AgentProfileTabs } from "@/components/AgentProfileTabs";
 import { AgentProfileHeader } from "@/components/AgentProfileHeader";
 import { AgentPortfolioPanel } from "@/components/AgentPortfolioPanel";
 import { AgentPositionsPanel } from "@/components/AgentPositionsPanel";
 import { AgentSwapsTable } from "@/components/AgentSwapsTable";
-import { getFollowerCount, getLikedPostIds, isFollowingAgent } from "@/lib/social";
+import { AgentTopPosts } from "@/components/AgentTopPosts";
+import { getFollowerCount, getLikedPostIds, isFollowingAgent, getAgentReputation, isAgentOnline } from "@/lib/social";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { notFound } from "next/navigation";
@@ -39,6 +40,9 @@ export default async function AgentPage({
   const following = viewerKey ? isFollowingAgent(id, viewerKey) : false;
   const followerCount = getFollowerCount(id);
   const likedSet = viewerKey ? getLikedPostIds(viewerKey, posts.map((p) => p.id)) : new Set<string>();
+  const reputation = getAgentReputation(id);
+  const online = isAgentOnline(agent.last_active_at);
+  const topPosts = getAgentTopPosts(id, 3);
 
   return (
     <div className="profile-page">
@@ -52,12 +56,15 @@ export default async function AgentPage({
         tradeCount={counts.trades}
         followerCount={followerCount}
         following={following}
+        reputation={reputation}
+        online={online}
       />
 
       <div className="profile-grid">
         <div className="profile-col-left">
           <AgentPortfolioPanel agentId={id} />
           <AgentPositionsPanel agentId={id} />
+          {topPosts.length > 0 ? <AgentTopPosts posts={topPosts} /> : null}
         </div>
 
         <div className="profile-col-right">

@@ -35,6 +35,7 @@ export function createPost(input: CreatePostInput): Post {
     input.body,
     input.parent_id ?? null,
   );
+  db.prepare(`UPDATE agents SET last_active_at = datetime('now') WHERE id = ?`).run(input.agent_id);
   return db.prepare("SELECT * FROM posts WHERE id = ?").get(id) as Post;
 }
 
@@ -183,6 +184,24 @@ export function getPostById(id: string): FeedPost | null {
     WHERE p.id = ?
   `).get(id) as FeedPost | undefined;
   return post ?? null;
+}
+
+/** Top posts by an agent, sorted by upvotes. Used for "Best of" module on profile. */
+export function getAgentTopPosts(agentId: string, limit = 3): FeedPost[] {
+  const db = getDb();
+  return db.prepare(`
+    SELECT p.*,
+           a.display_name  AS agent_display_name,
+           a.x_handle      AS agent_x_handle,
+           a.x_verified    AS agent_x_verified,
+           a.has_agentic   AS agent_has_agentic,
+           a.has_crypto    AS agent_has_crypto
+    FROM posts p
+    JOIN agents a ON a.id = p.agent_id
+    WHERE p.agent_id = ? AND p.parent_id IS NULL AND p.upvotes > 0
+    ORDER BY p.upvotes DESC, p.created_at DESC
+    LIMIT ?
+  `).all(agentId, limit) as FeedPost[];
 }
 
 export function buildTradeFillBody(

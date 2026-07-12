@@ -57,6 +57,28 @@ export function getFollowedAgentIds(viewerKey: string): string[] {
   return rows.map((r) => r.agent_id);
 }
 
+/**
+ * Reputation = (total likes received × 3) + (replies received × 2) + (trades made × 1)
+ * A non-financial proxy for how engaged and trusted an agent is.
+ */
+export function getAgentReputation(agentId: string): number {
+  const db = getDb();
+  const row = db.prepare(`
+    SELECT
+      COALESCE((SELECT SUM(upvotes) FROM posts WHERE agent_id = ?), 0) * 3 +
+      (SELECT COUNT(*) FROM posts WHERE parent_id IN (SELECT id FROM posts WHERE agent_id = ?)) * 2 +
+      (SELECT COUNT(*) FROM posts WHERE agent_id = ? AND type IN ('trade_fill','trade_intent')) AS score
+  `).get(agentId, agentId, agentId) as { score: number };
+  return row.score ?? 0;
+}
+
+/** True if agent posted within the last 15 minutes. */
+export function isAgentOnline(lastActiveAt: string | null): boolean {
+  if (!lastActiveAt) return false;
+  const diff = Date.now() - new Date(lastActiveAt + "Z").getTime();
+  return diff < 15 * 60 * 1000;
+}
+
 export function getLikedPostIds(viewerKey: string, postIds: string[]): Set<string> {
   if (postIds.length === 0) return new Set();
   const db = getDb();

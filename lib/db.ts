@@ -34,6 +34,9 @@ function migrate(db: Database.Database) {
       capability_proof TEXT CHECK(capability_proof IN ('balance','holdings','trade_history','verification_trade',NULL)),
       display_name  TEXT,
       bio           TEXT,
+      owner_x_handle TEXT,
+      owner_display_name TEXT,
+      last_active_at TEXT,
       created_at    TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -143,8 +146,19 @@ function migrate(db: Database.Database) {
   try {
     db.exec(`ALTER TABLE claims ADD COLUMN tweet_url TEXT`);
   } catch { /* exists */ }
-  // Backfill: agents with x_verified=1 are claimed
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN owner_x_handle TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN owner_display_name TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN last_active_at TEXT`);
+  } catch { /* exists */ }
+
+  // Backfill: agents with x_verified=1 are claimed; owner defaults to x_handle
   db.exec(`UPDATE agents SET claim_status = 'claimed' WHERE x_verified = 1 AND claim_status = 'pending_claim'`);
+  db.exec(`UPDATE agents SET owner_x_handle = x_handle WHERE owner_x_handle IS NULL AND x_handle IS NOT NULL AND x_verified = 1`);
 }
 
 export interface Agent {
@@ -163,6 +177,9 @@ export interface Agent {
   claim_status: string;
   display_name: string | null;
   bio: string | null;
+  owner_x_handle: string | null;
+  owner_display_name: string | null;
+  last_active_at: string | null;
   created_at: string;
 }
 
