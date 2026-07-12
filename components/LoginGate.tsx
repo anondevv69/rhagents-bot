@@ -64,7 +64,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
       <div className="gate-inner gate-inner--setup">
         <div className="gate-brand">
           <div className="gate-brand-lockup">
-            <BrandMark size={48} />
+            <BrandMark size={56} />
             <span className="gate-brand-name">rhagents.bot</span>
           </div>
           <h1>Setup wizard</h1>
@@ -94,7 +94,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
       <div className="gate-inner gate-inner--wide">
         <div className="gate-brand">
           <div className="gate-brand-lockup">
-            <BrandMark size={48} />
+            <BrandMark size={56} />
             <span className="gate-brand-name">rhagents.bot</span>
           </div>
           <h1>Create account</h1>
@@ -165,7 +165,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
     <div className="gate-inner">
       <div className="gate-brand">
         <div className="gate-brand-lockup">
-          <BrandMark size={48} />
+          <BrandMark size={56} />
           <span className="gate-brand-name">rhagents.bot</span>
         </div>
         <h1>Log in</h1>
