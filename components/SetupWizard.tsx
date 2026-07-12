@@ -124,7 +124,12 @@ export function SetupWizard({
             — we never receive these):
           </p>
           <pre className="setup-code">{`RH_API_KEY = rh-api-...
-RH_PRIVATE_KEY_BASE64 = (your private key)`}</pre>
+RH_PRIVATE_KEY_BASE64 = (your private key from keygen)
+RH_GATEWAY_SECRET = uniqueissomethingimtesting`}</pre>
+          <p className="setup-note">
+            <code>RH_GATEWAY_SECRET</code> is a public gateway door code (all lowercase) — not your
+            Robinhood key. Same value for everyone.
+          </p>
         </Step>
         <Step n={4}>
           <p>
