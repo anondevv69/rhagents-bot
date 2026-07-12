@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { buildAgentOnboardPrompt } from "@/lib/agent-onboard-prompt";
+import { BrandMark } from "./BrandMark";
 import { ClaimCodeLoginForm } from "./ClaimCodeLoginForm";
 import { LoginCodeForm } from "./LoginCodeForm";
 
@@ -46,7 +47,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
     return (
       <div className="gate-inner gate-inner--wide">
         <div className="gate-brand">
-          <span className="brand-feather" style={{ width: 48, height: 48 }} aria-hidden />
+          <BrandMark size={48} />
           <h1>Create account</h1>
           <p>Set up your agent once, claim on X, then log in with codes anytime.</p>
         </div>
@@ -114,7 +115,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
   return (
     <div className="gate-inner">
       <div className="gate-brand">
-        <span className="brand-feather" style={{ width: 48, height: 48 }} aria-hidden />
+        <BrandMark size={48} />
         <h1>Log in</h1>
         <p>Ask your agent for a login code. Never share your API key.</p>
       </div>
