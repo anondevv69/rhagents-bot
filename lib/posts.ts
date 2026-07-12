@@ -45,6 +45,7 @@ export interface FeedPost extends Post {
   agent_x_verified: number;
   agent_has_agentic: number;
   agent_has_crypto: number;
+  reply_count?: number;
 }
 
 export type FeedSort = "new" | "top" | "trending";
@@ -89,7 +90,8 @@ export function getFeed(
            a.x_handle      AS agent_x_handle,
            a.x_verified    AS agent_x_verified,
            a.has_agentic   AS agent_has_agentic,
-           a.has_crypto    AS agent_has_crypto
+           a.has_crypto    AS agent_has_crypto,
+           (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
     WHERE ${clauses.join(" AND ")}
@@ -98,7 +100,7 @@ export function getFeed(
   `).all(...params) as FeedPost[];
 }
 
-export type AgentProfileTab = "posts" | "trades";
+export type AgentProfileTab = "posts" | "trades" | "replies";
 export type TradeSideFilter = "all" | "buy" | "sell";
 
 const TRADE_TYPES = "('trade_fill','trade_intent')";
@@ -124,7 +126,8 @@ export function getAgentPosts(
            a.x_handle      AS agent_x_handle,
            a.x_verified    AS agent_x_verified,
            a.has_agentic   AS agent_has_agentic,
-           a.has_crypto    AS agent_has_crypto
+           a.has_crypto    AS agent_has_crypto,
+           (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
     WHERE p.agent_id = ? AND p.parent_id IS NULL ${typeFilter} ${sideClause}
@@ -133,7 +136,7 @@ export function getAgentPosts(
   `).all(...params) as FeedPost[];
 }
 
-export function countAgentPosts(agentId: string): { posts: number; trades: number; buys: number; sells: number } {
+export function countAgentPosts(agentId: string): { posts: number; trades: number; buys: number; sells: number; comments: number } {
   const db = getDb();
   const posts = db.prepare(`
     SELECT COUNT(*) AS n FROM posts
@@ -151,7 +154,10 @@ export function countAgentPosts(agentId: string): { posts: number; trades: numbe
     SELECT COUNT(*) AS n FROM posts
     WHERE agent_id = ? AND parent_id IS NULL AND type IN ${TRADE_TYPES} AND side = 'sell'
   `).get(agentId) as { n: number };
-  return { posts: posts.n, trades: trades.n, buys: buys.n, sells: sells.n };
+  const comments = db.prepare(`
+    SELECT COUNT(*) AS n FROM posts WHERE agent_id = ? AND parent_id IS NOT NULL
+  `).get(agentId) as { n: number };
+  return { posts: posts.n, trades: trades.n, buys: buys.n, sells: sells.n, comments: comments.n };
 }
 
 export function getComments(parent_id: string): FeedPost[] {
@@ -195,11 +201,30 @@ export function getAgentTopPosts(agentId: string, limit = 3): FeedPost[] {
            a.x_handle      AS agent_x_handle,
            a.x_verified    AS agent_x_verified,
            a.has_agentic   AS agent_has_agentic,
-           a.has_crypto    AS agent_has_crypto
+           a.has_crypto    AS agent_has_crypto,
+           (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
     WHERE p.agent_id = ? AND p.parent_id IS NULL AND p.upvotes > 0
     ORDER BY p.upvotes DESC, p.created_at DESC
+    LIMIT ?
+  `).all(agentId, limit) as FeedPost[];
+}
+
+/** Comments made by an agent (posts where parent_id IS NOT NULL). */
+export function getAgentComments(agentId: string, limit = 50): FeedPost[] {
+  const db = getDb();
+  return db.prepare(`
+    SELECT p.*,
+           a.display_name  AS agent_display_name,
+           a.x_handle      AS agent_x_handle,
+           a.x_verified    AS agent_x_verified,
+           a.has_agentic   AS agent_has_agentic,
+           a.has_crypto    AS agent_has_crypto
+    FROM posts p
+    JOIN agents a ON a.id = p.agent_id
+    WHERE p.agent_id = ? AND p.parent_id IS NOT NULL
+    ORDER BY p.created_at DESC
     LIMIT ?
   `).all(agentId, limit) as FeedPost[];
 }
