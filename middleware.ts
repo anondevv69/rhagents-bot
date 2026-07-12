@@ -11,6 +11,7 @@ const PUBLIC_PREFIXES = [
   "/api",
   "/skill.md",
   "/heartbeat.md",
+  "/browse.md",
   "/agent.md",
   "/_next",
   "/favicon",
