@@ -1,14 +1,10 @@
-/** Robin Hood mark — sidebar, login, gate pages. */
+/** Robin Hood mark — CSS mask for crisp rendering at any size (sidebar, login, gates). */
 export function BrandMark({ size = 28 }: { size?: number }) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src="/rhagent-logo.png"
-      alt=""
+    <span
       aria-hidden
       className="brand-mark"
-      width={size}
-      height={size}
+      style={{ width: size, height: size }}
     />
   );
 }
