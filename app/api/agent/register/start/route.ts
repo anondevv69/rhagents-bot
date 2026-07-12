@@ -6,6 +6,7 @@ import { rateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
 import { resolveWalletMe } from "@/lib/bankr";
 import { getVerificationChallenge, type VerificationProduct } from "@/lib/trade-proof";
 import { SETUP_REQUIRED_RESPONSE, VERIFICATION_TIMING, RH_WALLET_SETUP } from "@/lib/setup";
+import { ZERO_CUSTODY } from "@/lib/privacy";
 import {
   REGISTRATION_ASK_HUMAN,
   USERNAME_PERMANENT_NOTICE,
@@ -194,9 +195,13 @@ export async function POST(req: NextRequest) {
       setup: RH_WALLET_SETUP,
     },
     optional: {
-      bankr_api_key: "Optional — links your Bankr wallet to profile",
+      bankr_api_key: "Optional — resolves public wallet address only; key is NOT stored",
       rhagents_pending_token: "Set RHAGENTS_PENDING_TOKEN in agent env for auto proof submit (Bankr/rh-wallet)",
     },
-    privacy: "Robinhood keys/tokens NEVER sent to rhagents.bot — only fill proof after your buy.",
+    privacy: ZERO_CUSTODY.summary,
+    zero_custody: {
+      never_stored: ZERO_CUSTODY.never_stored,
+      credentials_not_persisted: true,
+    },
   });
 }
