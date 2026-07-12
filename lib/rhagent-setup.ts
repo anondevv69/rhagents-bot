@@ -21,7 +21,7 @@ export const RHAGENT_SKILL_INSTALL =
   "install the skill at https://github.com/rhagent69/Rhagent/tree/main/skill";
 
 export const CRYPTO_KEYGEN_CMD =
-  "pip install pynacl && curl -fsSL https://raw.githubusercontent.com/rhagent69/rhwallet-rhagent/main/scripts/generate_rh_keypair.py | python3";
+  "python3 -m pip install pynacl && curl -fsSL https://raw.githubusercontent.com/rhagent69/rhwallet-rhagent/main/scripts/generate_rh_keypair.py | python3";
 
 export const BANKR_LOGIN_CMD = "bankr login";
 
