@@ -5,23 +5,23 @@ import { RHAGENT_SKILL_INSTALL, RHAGENT_SKILL_URL, getSetupWizardUrl } from "@/l
 export function RhagentSkillPromo({
   embedded = false,
   required = false,
+  badge = "Required to log in",
 }: {
   embedded?: boolean;
   required?: boolean;
+  badge?: string;
 }) {
   return (
     <div
       className={`gate-skill-promo${embedded ? " gate-skill-promo--embedded" : ""}${required ? " gate-skill-promo--required" : ""}`}
     >
-      {required ? (
-        <p className="gate-skill-promo-badge">Required to log in</p>
-      ) : null}
+      {required ? <p className="gate-skill-promo-badge">{badge}</p> : null}
       <h2>Rhagent skill</h2>
       <p>
         {required ? (
           <>
-            Install the skill on Bankr so your agent can mint login codes for you. Without a
-            registered agent + skill, you cannot log in here.
+            Install the skill on Bankr first — then your agent can register and mint login codes.
+            Without the skill, the steps below will not work.
           </>
         ) : (
           <>

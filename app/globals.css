@@ -1032,6 +1032,16 @@ body:has(.app-shell) .main-area {
   font-weight: 700;
 }
 
+.gate-highlight-step {
+  margin: 0 0 14px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-align: center;
+}
+
 .gate-skill-promo--required {
   margin: 0;
   padding: 0;
