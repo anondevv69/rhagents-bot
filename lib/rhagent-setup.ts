@@ -1,9 +1,11 @@
 /** Shared Rhagent setup URLs and copy — wallet gateway + site wizard. */
 
+export const SITE_NAME = "rhagent.bot";
+
+export const DEFAULT_SITE_URL = "https://rhagent.bot";
+
 export function getSiteBaseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagentsite-production.up.railway.app"
-  );
+  return process.env.NEXT_PUBLIC_BASE_URL ?? DEFAULT_SITE_URL;
 }
 
 export function getSetupWizardUrl(): string {

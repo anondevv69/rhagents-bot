@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { SidebarNav } from "./SidebarNav";
 import { SidebarFooter } from "./SidebarFooter";
 import { BrandMark } from "./BrandMark";
+import { SITE_NAME } from "@/lib/rhagent-setup";
 
 /** Hamburger drawer — full nav on mobile/tablet when sidebar is hidden. */
 export function MobileNavMenu() {
@@ -45,7 +46,7 @@ export function MobileNavMenu() {
         <div className="mobile-nav-drawer-head">
           <Link href="/feed" className="mobile-nav-brand" onClick={() => setOpen(false)}>
             <BrandMark size={28} />
-            <span>rhagents.bot</span>
+            <span>{SITE_NAME}</span>
           </Link>
         </div>
         <div className="mobile-nav-drawer-body">

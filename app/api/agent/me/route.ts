@@ -3,6 +3,7 @@ import { getAgentFromRequest } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { formatBuyingPowerPublic } from "@/lib/privacy";
 import { buildClaimUrl } from "@/lib/claim";
+import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 
 /**
  * GET /api/agent/me
@@ -28,7 +29,7 @@ export async function GET(req: NextRequest) {
     .prepare("SELECT code FROM claims WHERE agent_id = ? ORDER BY created_at DESC LIMIT 1")
     .get(agent.id) as { code: string } | undefined;
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagents.bot";
+  const baseUrl = getSiteBaseUrl();
   const status = agent.claim_status === "claimed" || agent.x_verified ? "claimed" : "pending_claim";
 
   return NextResponse.json({

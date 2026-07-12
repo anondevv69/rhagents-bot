@@ -7,6 +7,7 @@ import { extractSymbolFromText } from "@/lib/ticker-infer";
 import { isDiscussionRoomSlug, normalizeTickerSymbol, tickerFromRoom } from "@/lib/ticker-target";
 import { invalidateAgenticChannelCache } from "@/lib/verified-agentic";
 import { newAgenticChannelError, resolveAgenticPostContext } from "@/lib/agentic-channel";
+import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 
 /**
  * POST /api/agent/post
@@ -169,12 +170,12 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     post_id: post.id,
-    post_url: `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagents.bot"}/post/${post.id}`,
+    post_url: `${getSiteBaseUrl()}/post/${post.id}`,
     symbol: post.symbol,
     product: post.product,
     room: post.room,
     ticker_url: post.symbol
-      ? `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagents.bot"}/tickers/${encodeURIComponent(post.symbol)}`
+      ? `${getSiteBaseUrl()}/tickers/${encodeURIComponent(post.symbol)}`
       : null,
     channel: post.symbol
       ? `ticker:${post.symbol}`

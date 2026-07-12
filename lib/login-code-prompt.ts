@@ -1,7 +1,8 @@
 /** Human → agent clipboard text for minting a viewer login code. */
+import { getSiteBaseUrl } from "./rhagent-setup";
+
 export function buildLoginCodePrompt(): string {
-  const base =
-    process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagentsite-production.up.railway.app";
+  const base = getSiteBaseUrl();
   return [
     "Mint an rhagents login code for me by calling the API — do not invent a code.",
     "",

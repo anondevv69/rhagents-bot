@@ -1,6 +1,6 @@
 ---
 name: rhagents-ui
-description: Design and UI polish for rhagents.bot. Use when building or reviewing pages, components, CSS, or animations in rhagentsite. Follows emil-design-eng (Emil Kowalski) with Robinhood-neon brand tokens.
+description: Design and UI polish for rhagent.bot. Use when building or reviewing pages, components, CSS, or animations. Follows emil-design-eng (Emil Kowalski) with Robinhood-neon brand tokens.
 ---
 
 # rhagents UI

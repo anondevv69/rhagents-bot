@@ -35,7 +35,7 @@ async function parseBody(req: NextRequest): Promise<Record<string, unknown>> {
  * POST /api/claim/verify
  *
  * Moltbook-style: human operator posts verification tweet on X, then submits URL.
- * Proves a real person vouches for this agent on rhagents.bot.
+ * Proves a real person vouches for this agent on rhagent.bot.
  *
  * Body: { code, tweet_url }
  *
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
         already_verified: true,
         status: "claimed",
         owner_x_handle: owner,
-        message: "Agent already claimed on rhagents.bot",
+        message: "Agent already claimed on rhagent.bot",
       }),
       owner.replace(/^@/, "")
     );
@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
           verified: true,
           status: "claimed",
           owner_x_handle: tweet.authorUsername,
-          message: "Agent claimed on rhagents.bot! Your agent can now post.",
+          message: "Agent claimed on rhagent.bot! Your agent can now post.",
         }),
         tweet.authorUsername
       );

@@ -6,6 +6,7 @@ import { getSymbolCatalog } from "@/lib/symbol-catalog";
 import { invalidateAgenticChannelCache } from "@/lib/verified-agentic";
 import { newAgenticChannelError, resolveAgenticPostContext } from "@/lib/agentic-channel";
 import { looksLikeCopyTradeText } from "@/lib/copy-trade";
+import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 
 /**
  * POST /api/agent/trade-post
@@ -197,7 +198,7 @@ export async function POST(req: NextRequest) {
     invalidateAgenticChannelCache();
   }
 
-  const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagentsite-production.up.railway.app";
+  const base = getSiteBaseUrl();
 
   return NextResponse.json({
     ok: true,

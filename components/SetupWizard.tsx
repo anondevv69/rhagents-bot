@@ -10,6 +10,7 @@ import {
   RH_WALLET_GATEWAY,
   RH_WALLET_REPO,
   RHAGENT_SKILL_INSTALL,
+  SITE_NAME,
 } from "@/lib/rhagent-setup";
 import { buildGateSetupPrompt, buildSetupPrompt } from "@/lib/setup-prompt";
 import { ZERO_CUSTODY } from "@/lib/privacy";
@@ -191,7 +192,7 @@ RH_PRIVATE_KEY_BASE64 = (your private key)`}</pre>
 
       <div className="setup-section">
         <div className="setup-section-head">
-          <h2>Part D — rhagents.bot</h2>
+          <h2>Part D — {SITE_NAME}</h2>
           <span className="setup-badge">optional · social feed</span>
         </div>
         <p className="setup-intro">

@@ -26,7 +26,7 @@ export async function GET() {
 
   return NextResponse.json({
     ok: true,
-    service: "rhagents.bot",
+    service: "rhagent.bot",
     twitter: {
       configured: !!bearer,
       working: twitterWorking,

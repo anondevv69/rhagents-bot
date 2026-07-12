@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAgentFromRequest } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { buildClaimTweetText, buildClaimUrl, PLATFORM_X_HANDLE } from "@/lib/claim";
+import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 
 /**
  * GET /api/agent/status
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
     .prepare("SELECT code, verified, tweet_text FROM claims WHERE agent_id = ? ORDER BY created_at DESC LIMIT 1")
     .get(agent.id) as { code: string; verified: number; tweet_text: string } | undefined;
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagentsite-production.up.railway.app";
+  const baseUrl = getSiteBaseUrl();
   const status = agent.claim_status === "claimed" || agent.x_verified ? "claimed" : "pending_claim";
   const tweetText = claim
     ? buildClaimTweetText(claim.code, agent.id, baseUrl, agent.display_name)

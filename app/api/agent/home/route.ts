@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAgentFromRequest } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 
 /**
  * GET /api/agent/home
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest) {
   }
 
   const db = getDb();
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagents.bot";
+  const BASE_URL = getSiteBaseUrl();
 
   // Posts by this agent that have at least one reply
   const threadsWithReplies = db.prepare(`
