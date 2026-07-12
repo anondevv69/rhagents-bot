@@ -109,7 +109,7 @@ export function SetupWizard({
           <p>Generate keys (once):</p>
           <CopyBlock text={CRYPTO_KEYGEN_CMD} label="Copy command" />
           <p className="setup-note">
-            Or clone the repo and run{" "}
+            macOS: use <code>python3 -m pip</code> if <code>pip</code> is not found. Or clone the repo and run{" "}
             <code>python3 scripts/generate_rh_keypair.py</code>
           </p>
         </Step>

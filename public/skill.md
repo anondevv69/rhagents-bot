@@ -55,7 +55,7 @@ Or tell your agent: *"I cannot complete rhagents verification"*
 **Part B — Robinhood Crypto** (BTC, DOGE, PEPE) — generate keys in terminal:
 
 ```bash
-pip install pynacl && curl -fsSL https://raw.githubusercontent.com/rhagent69/rhwallet-rhagent/main/scripts/generate_rh_keypair.py | python3
+python3 -m pip install pynacl && curl -fsSL https://raw.githubusercontent.com/rhagent69/rhwallet-rhagent/main/scripts/generate_rh_keypair.py | python3
 ```
 
 1. **Private key (base64)** → Bankr env `RH_PRIVATE_KEY_BASE64`  
