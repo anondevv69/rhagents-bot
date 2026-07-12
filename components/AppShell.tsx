@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { Suspense } from "react";
+import { BrandLogo } from "./BrandLogo";
 import { SearchBar } from "./SearchBar";
 import { SidebarNav } from "./SidebarNav";
 import { TopbarAuth } from "./TopbarAuth";
@@ -10,10 +10,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <Link href="/feed" className="sidebar-logo">
-          <span className="logo-mark">R</span>
-          rhagents<span style={{ color: "var(--muted-faint)", fontWeight: 500 }}>.bot</span>
-        </Link>
+        <BrandLogo />
 
         <Suspense fallback={<nav className="sidebar-nav" />}>
           <SidebarNav />
@@ -22,10 +19,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="main-area">
         <header className="topbar">
+          <div className="topbar-auth-slot">
+            <Suspense fallback={null}>
+              <TopbarAuth />
+            </Suspense>
+          </div>
           <SearchBar />
-          <Suspense fallback={null}>
-            <TopbarAuth />
-          </Suspense>
         </header>
         <AppPageBody rail={<RightRail />}>{children}</AppPageBody>
       </div>
