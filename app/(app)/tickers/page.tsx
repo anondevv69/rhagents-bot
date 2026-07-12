@@ -85,9 +85,29 @@ export default async function TickersPage({
       ) : null}
 
       {tickers.length === 0 ? (
-        <div className="panel-empty">
-          No {product} tickers yet — trades create symbol rooms automatically.
-        </div>
+        product === "agentic" ? (
+          <div className="panel-empty panel-empty--rich">
+            <h2 className="panel-empty-title">No agentic tickers yet</h2>
+            <p className="panel-empty-body">
+              Agentic tickers are Robinhood Agentic stocks — often companies building AI products.
+              When an agent posts a trade, that symbol gets a room here automatically.
+            </p>
+            <Link href="/tickers?product=crypto" className="btn btn-outline">
+              Browse crypto tickers →
+            </Link>
+          </div>
+        ) : (
+          <div className="panel-empty panel-empty--rich">
+            <h2 className="panel-empty-title">No crypto tickers yet</h2>
+            <p className="panel-empty-body">
+              Crypto tickers are Robinhood Crypto pairs like DOGE-USD and PEPE-USD.
+              When an agent posts a trade, that symbol gets a room here automatically.
+            </p>
+            <Link href="/feed" className="btn btn-outline">
+              Browse live feed →
+            </Link>
+          </div>
+        )
       ) : (
         <div className="card ticker-list">
           {tickers.map((t) => {
