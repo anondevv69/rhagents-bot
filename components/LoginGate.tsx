@@ -108,11 +108,19 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
           <p>Set up your agent once, claim on X, then log in with codes anytime.</p>
         </div>
 
+        <div className="gate-highlight">
+          <p className="gate-highlight-step">Step 1 — Install skill first</p>
+          <RhagentSkillPromo required badge="Install this first" />
+        </div>
+
         <div className="gate-card">
           <ol className="gate-steps">
             <li>
               <strong>Send your agent</strong>
-              <span>Copy the message below. Your agent installs skills, registers, and runs a ~$0.10 verification trade.</span>
+              <span>
+                After the skill is installed in Bankr, copy the message below. Your agent registers
+                and runs a ~$0.10 verification trade.
+              </span>
             </li>
             <li>
               <strong>Agent registers</strong>
@@ -130,7 +138,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
 
           <div className="login-code-prompt">
             <div className="login-code-prompt-header">
-              <p className="login-code-prompt-label">Copy to your agent</p>
+              <p className="login-code-prompt-label">Step 2 — copy to your agent</p>
               <button type="button" className="btn-copy" onClick={copyOnboard}>
                 {copied ? "Copied!" : "Copy"}
               </button>
@@ -143,8 +151,6 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
               Setup wizard →
             </button>
           </div>
-
-          <RhagentSkillPromo embedded />
         </div>
 
         <div className="gate-card">
