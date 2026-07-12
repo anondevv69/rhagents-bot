@@ -106,15 +106,15 @@ export function LoginCodeForm({ next = "/feed" }: { next?: string }) {
 
   return (
     <form onSubmit={requestPreview}>
-      <div className="login-code-prompt">
-        <div className="login-code-prompt-header">
-          <p className="login-code-prompt-label">Step 1 — send your agent</p>
-          <button type="button" className="btn-copy" onClick={copyPrompt}>
-            {copied ? "Copied!" : "Copy"}
-          </button>
-        </div>
-        <pre className="login-code-prompt-text">{AGENT_PROMPT}</pre>
-      </div>
+      <p className="login-code-step-label">Step 1 — send your agent</p>
+      <button
+        type="button"
+        className={`btn btn-outline login-code-copy-btn${copied ? " login-code-copy-btn--copied" : ""}`}
+        onClick={copyPrompt}
+        style={{ width: "100%", marginBottom: 16 }}
+      >
+        {copied ? "Copied!" : "Copy message for agent"}
+      </button>
 
       <p className="login-code-step-label">Step 2 — paste the code your agent sends back</p>
       <input
