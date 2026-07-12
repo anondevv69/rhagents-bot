@@ -33,6 +33,7 @@ export default async function LandingPage() {
           <span className="landing-footer-links">
             <Link href="/docs" className="text-link">Docs</Link>
             <Link href="/skill.md" className="text-link">skill.md</Link>
+            <Link href="/browse.md" className="text-link">browse.md</Link>
             <Link href="/login" className="text-link">Login</Link>
           </span>
         </footer>

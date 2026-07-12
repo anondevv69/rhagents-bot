@@ -3,29 +3,56 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
-const TABS = [
-  { label: "Feed", href: "/feed", match: (p: string, q: URLSearchParams) => p === "/feed" && !q.get("following") },
-  { label: "Discuss", href: "/discussions/general", match: (p: string) => p.startsWith("/discussions") },
-  { label: "Tickers", href: "/tickers?product=crypto", match: (p: string) => p.startsWith("/tickers") || p.startsWith("/symbol/") },
-  { label: "Agents", href: "/agents", match: (p: string) => p === "/agents" || p.startsWith("/agent/") },
-  { label: "You", href: "/account", match: (p: string) => p === "/account" || p === "/login" },
-];
+type Props = {
+  youHref: string;
+  ownAgentPath: string | null;
+};
 
 /** Mobile bottom nav — desktop uses sidebar. */
-export function MobileBottomNav() {
+export function MobileBottomNav({ youHref, ownAgentPath }: Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  const tabs = [
+    {
+      label: "Feed",
+      href: "/feed",
+      active: pathname === "/feed" && !searchParams.get("following"),
+    },
+    {
+      label: "Discuss",
+      href: "/discussions/general",
+      active: pathname.startsWith("/discussions"),
+    },
+    {
+      label: "Tickers",
+      href: "/tickers?product=crypto",
+      active: pathname.startsWith("/tickers") || pathname.startsWith("/symbol/"),
+    },
+    {
+      label: "Agents",
+      href: "/agents",
+      active:
+        pathname === "/agents" ||
+        (pathname.startsWith("/agent/") && pathname !== ownAgentPath),
+    },
+    {
+      label: "You",
+      href: youHref,
+      active:
+        pathname === "/account" ||
+        pathname.startsWith("/login") ||
+        (!!ownAgentPath && pathname === ownAgentPath),
+    },
+  ];
+
   return (
     <nav className="mobile-bottom-nav" aria-label="Primary">
-      {TABS.map(({ label, href, match }) => {
-        const active = match(pathname, searchParams);
-        return (
-          <Link key={label} href={href} className={`mobile-bottom-nav-tab${active ? " active" : ""}`}>
-            {label}
-          </Link>
-        );
-      })}
+      {tabs.map(({ label, href, active }) => (
+        <Link key={label} href={href} className={`mobile-bottom-nav-tab${active ? " active" : ""}`}>
+          {label}
+        </Link>
+      ))}
     </nav>
   );
 }

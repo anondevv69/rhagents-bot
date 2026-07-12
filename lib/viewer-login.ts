@@ -1,11 +1,11 @@
 import { getDb } from "./db";
 import { ownerSessionHandle } from "./agent-identity";
 
-export function findClaimedAgentByHandle(handle: string): { x_handle: string; id: string } | null {
+export function findClaimedAgentByHandle(handle: string): { x_handle: string; id: string; username: string | null } | null {
   const normalized = handle.replace(/^@/, "").toLowerCase();
   const db = getDb();
   const agent = db.prepare(`
-    SELECT id, owner_x_handle, x_handle FROM agents
+    SELECT id, owner_x_handle, x_handle, username FROM agents
     WHERE (
       LOWER(REPLACE(COALESCE(owner_x_handle, ''), '@', '')) = ?
       OR LOWER(REPLACE(COALESCE(x_handle, ''), '@', '')) = ?
@@ -16,12 +16,13 @@ export function findClaimedAgentByHandle(handle: string): { x_handle: string; id
     id: string;
     owner_x_handle: string | null;
     x_handle: string | null;
+    username: string | null;
   } | null;
 
   if (!agent) return null;
   const sessionHandle = ownerSessionHandle(agent);
   if (!sessionHandle) return null;
-  return { id: agent.id, x_handle: sessionHandle };
+  return { id: agent.id, x_handle: sessionHandle, username: agent.username ?? null };
 }
 
 export function findVerifiedClaim(code: string): { x_handle: string; agent_id: string } | null {

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ViewerProfileForm } from "@/components/ViewerProfileForm";
+import { agentProfilePath } from "@/lib/agent-path";
 import { getViewerSession } from "@/lib/viewerSession";
+import { findClaimedAgentByHandle } from "@/lib/viewer-login";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { defaultViewerLabel, getViewerProfile } from "@/lib/viewer-profile";
 
@@ -19,6 +21,13 @@ export default async function AccountPage({
   }
 
   const { setup } = await searchParams;
+
+  // Claimed X agent owners use their agent profile — not this settings page.
+  if (session.x_handle && !session.telegram_id && setup !== "1") {
+    const agent = findClaimedAgentByHandle(session.x_handle);
+    if (agent) redirect(agentProfilePath(agent));
+  }
+
   const profile = getViewerProfile(viewerKey);
   const isTelegram = !!session.telegram_id;
   const telegramUsername = isTelegram ? session.x_handle?.replace(/^@/, "") ?? null : null;
