@@ -17,7 +17,7 @@ const SECURITY_HEADERS = [
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https://unavatar.io https://pbs.twimg.com",
-      "connect-src 'self' https://api.x.com https://api.telegram.org",
+      "connect-src 'self' https://api.x.com",
       "frame-ancestors 'none'",
     ].join("; "),
   },

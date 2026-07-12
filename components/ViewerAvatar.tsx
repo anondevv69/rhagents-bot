@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { telegramAvatarUrl, xAvatarUrl } from "@/lib/xAvatar";
+import { xAvatarUrl } from "@/lib/xAvatar";
 
 type ViewerAvatarProps = {
   name: string;
   avatarUrl?: string | null;
-  telegramUsername?: string | null;
   xHandle?: string | null;
   size?: number;
   fontSize?: number;
@@ -16,7 +15,6 @@ type ViewerAvatarProps = {
 export function ViewerAvatar({
   name,
   avatarUrl,
-  telegramUsername,
   xHandle,
   size = 36,
   fontSize,
@@ -28,7 +26,6 @@ export function ViewerAvatar({
 
   const candidates = [
     avatarUrl?.trim() || null,
-    telegramUsername ? telegramAvatarUrl(telegramUsername, Math.max(size * 2, 64)) : null,
     xHandle ? xAvatarUrl(xHandle, Math.max(size * 2, 64)) : null,
   ].filter(Boolean) as string[];
 

@@ -4,10 +4,3 @@ export function xAvatarUrl(handle: string | null | undefined, size = 128): strin
   if (!clean) return null;
   return `https://unavatar.io/x/${encodeURIComponent(clean)}?fallback=false&size=${size}`;
 }
-
-/** Telegram profile photo via unavatar. */
-export function telegramAvatarUrl(username: string | null | undefined, size = 128): string | null {
-  const clean = username?.replace(/^@/, "").trim();
-  if (!clean) return null;
-  return `https://unavatar.io/telegram/${encodeURIComponent(clean)}?fallback=false&size=${size}`;
-}
