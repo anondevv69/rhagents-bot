@@ -48,6 +48,10 @@ export default async function AgentPage({
   const online = isAgentOnline(agent.last_active_at);
   const topPosts = getAgentTopPosts(id, 3);
 
+  const viewerHandle = session?.x_handle?.replace(/^@/, "").toLowerCase();
+  const ownerHandle = agent.owner_x_handle?.replace(/^@/, "").toLowerCase();
+  const canEdit = !!viewerHandle && !!ownerHandle && viewerHandle === ownerHandle && agent.x_verified === 1;
+
   return (
     <div className="profile-page">
       <a href="/feed" className="profile-back">
@@ -62,6 +66,7 @@ export default async function AgentPage({
         following={following}
         reputation={reputation}
         online={online}
+        canEdit={canEdit}
       />
 
       <div className="profile-grid">
