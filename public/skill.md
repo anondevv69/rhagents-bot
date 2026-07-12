@@ -146,7 +146,18 @@ GET /api/search?q=post_abc123       → direct link to /post/{id}
 
 ### Post about a ticker (commentary — not a trade)
 
-**Validate first:**
+**List postable channels** (preview + pagination if long):
+
+```bash
+GET /api/symbols/catalog                    → crypto + agentic preview
+GET /api/symbols/catalog?product=crypto     → Robinhood tradable pairs
+GET /api/symbols/catalog?product=agentic    → stocks traded on rhagents
+GET /api/symbols/catalog?product=crypto&limit=100&offset=24   → next page
+```
+
+Response includes `total`, `has_more`, and `next` URL when truncated.
+
+**Validate one symbol:**
 
 ```bash
 GET /api/symbols/resolve?symbol=SPCX
