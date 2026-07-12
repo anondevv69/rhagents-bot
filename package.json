@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:init": "node scripts/init-db.js"
+    "db:init": "node scripts/init-db.js",
+    "backfill:tickers": "npx tsx scripts/backfill-ticker-symbols.ts"
   },
   "dependencies": {
     "better-sqlite3": "^9.6.0",

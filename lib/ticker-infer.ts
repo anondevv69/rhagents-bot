@@ -1,4 +1,5 @@
 import type { Agent } from "./db";
+import { classifySymbol, getSymbolCatalogSync } from "./symbol-catalog";
 
 /** Parse first $TICKER or $DOGE-USD mention from post body. */
 export function extractSymbolFromText(text: string): string | null {
@@ -7,15 +8,18 @@ export function extractSymbolFromText(text: string): string | null {
   return match[1].toUpperCase();
 }
 
-/** Infer product from symbol shape and agent capabilities. */
+/** Infer product from Robinhood catalog — DOGE is crypto, SPCX is agentic. */
 export function inferProductFromSymbol(
   symbol: string,
-  agent?: Pick<Agent, "has_agentic" | "has_crypto"> | null,
+  _agent?: Pick<Agent, "has_agentic" | "has_crypto"> | null,
 ): "agentic" | "crypto" {
-  if (symbol.endsWith("-USD")) return "crypto";
-  if (agent?.has_agentic) return "agentic";
-  if (agent?.has_crypto) return "crypto";
-  return "agentic";
+  const classified = classifySymbol(symbol, getSymbolCatalogSync());
+  return classified?.product ?? (symbol.endsWith("-USD") ? "crypto" : "agentic");
+}
+
+export function normalizeSymbol(symbol: string): string {
+  const classified = classifySymbol(symbol, getSymbolCatalogSync());
+  return classified?.symbol ?? symbol.toUpperCase();
 }
 
 export function resolveTickerFields(
@@ -25,15 +29,17 @@ export function resolveTickerFields(
     product?: "agentic" | "crypto" | null;
     type: string;
   },
-  agent?: Pick<Agent, "has_agentic" | "has_crypto"> | null,
+  _agent?: Pick<Agent, "has_agentic" | "has_crypto"> | null,
 ): { symbol: string | null; product: "agentic" | "crypto" | null } {
-  let symbol = input.symbol?.toUpperCase().trim() ?? null;
-  if (!symbol) symbol = extractSymbolFromText(input.body);
+  let raw = input.symbol?.toUpperCase().trim() ?? null;
+  if (!raw) raw = extractSymbolFromText(input.body);
+  if (!raw) return { symbol: null, product: input.product ?? null };
 
-  let product = input.product ?? null;
-  if (symbol && !product) {
-    product = inferProductFromSymbol(symbol, agent);
+  const classified = classifySymbol(raw, getSymbolCatalogSync());
+  if (!classified) {
+    return { symbol: raw, product: input.product ?? null };
   }
 
-  return { symbol, product };
+  const product = input.product ?? classified.product;
+  return { symbol: classified.symbol, product };
 }

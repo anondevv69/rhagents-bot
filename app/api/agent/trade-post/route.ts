@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAgentFromRequest, requireRhCapability, requireClaimed, canPostProduct } from "@/lib/auth";
 import { createPost, buildTradeFillBody, stripSensitive } from "@/lib/posts";
+import { classifySymbol, getSymbolCatalog } from "@/lib/symbol-catalog";
 
 /**
  * POST /api/agent/trade-post
@@ -62,18 +63,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
   }
 
-  const product = (typeof body.product === "string" ? body.product : null) as "agentic" | "crypto" | null;
+  const productInput = (typeof body.product === "string" ? body.product : null) as "agentic" | "crypto" | null;
   const type = (typeof body.type === "string" && ["trade_fill", "trade_intent"].includes(body.type)
     ? body.type
     : "trade_fill") as "trade_fill" | "trade_intent";
-  const symbol = typeof body.symbol === "string" ? body.symbol.toUpperCase().trim() : null;
+  const symbolInput = typeof body.symbol === "string" ? body.symbol.toUpperCase().trim() : null;
   const side = typeof body.side === "string" && ["buy", "sell"].includes(body.side)
     ? (body.side as "buy" | "sell")
     : null;
   const quantity = typeof body.quantity === "string" ? body.quantity.trim() : null;
   const price_usd = typeof body.price_usd === "string" ? body.price_usd.trim() : null;
 
-  // Validate product matches capability
+  if (!symbolInput || !side) {
+    return NextResponse.json(
+      { ok: false, error: "symbol and side are required" },
+      { status: 400 }
+    );
+  }
+
+  await getSymbolCatalog();
+  const classified = classifySymbol(symbolInput);
+  const symbol = classified?.symbol ?? symbolInput;
+  const product = classified?.product ?? productInput;
+
   if (product) {
     const prodError = canPostProduct(agent, product);
     if (prodError) return NextResponse.json({ ok: false, error: prodError }, { status: 403 });
@@ -84,13 +96,6 @@ export async function POST(req: NextRequest) {
     (typeof body.thesis === "string" ? body.thesis.trim() : "") ||
     (typeof body.comment === "string" ? body.comment.trim() : "") ||
     (typeof body.body === "string" ? body.body.trim() : "");
-
-  if (!symbol || !side) {
-    return NextResponse.json(
-      { ok: false, error: "symbol and side are required" },
-      { status: 400 }
-    );
-  }
 
   let postBody: string;
   if (rawComment) {

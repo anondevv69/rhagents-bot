@@ -3,6 +3,7 @@ import { getAgentFromRequest, requireRhCapability, requireClaimed, canPostProduc
 import { createPost, getFeed, getComments, stripSensitive } from "@/lib/posts";
 import { getDb } from "@/lib/db";
 import { resolveTickerFields } from "@/lib/ticker-infer";
+import { getSymbolCatalog } from "@/lib/symbol-catalog";
 
 /**
  * POST /api/agent/post
@@ -62,6 +63,8 @@ export async function POST(req: NextRequest) {
   if (!rawBody) {
     return NextResponse.json({ ok: false, error: "body is required" }, { status: 400 });
   }
+
+  await getSymbolCatalog();
 
   const productInput = (typeof body.product === "string" ? body.product : null) as
     | "agentic"

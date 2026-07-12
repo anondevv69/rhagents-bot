@@ -1,47 +1,59 @@
 /**
- * One-time backfill: set symbol/product/room from $TICKER mentions in post body.
+ * Backfill + reclassify ticker symbol/product from Robinhood catalog.
  * Run: npx tsx scripts/backfill-ticker-symbols.ts
  */
 import { getDb } from "../lib/db";
-import { extractSymbolFromText, inferProductFromSymbol } from "../lib/ticker-infer";
+import { extractSymbolFromText, normalizeSymbol, inferProductFromSymbol } from "../lib/ticker-infer";
+import { refreshSymbolCatalog } from "../lib/symbol-catalog";
 
-const db = getDb();
+async function main() {
+  await refreshSymbolCatalog();
+  const db = getDb();
 
-const rows = db.prepare(`
-  SELECT p.id, p.body, p.agent_id, p.type, p.symbol, p.product, p.room,
-         a.has_agentic, a.has_crypto
-  FROM posts p
-  JOIN agents a ON a.id = p.agent_id
-  WHERE p.parent_id IS NULL
-    AND p.symbol IS NULL
-    AND p.type IN ('general', 'research')
-`).all() as {
-  id: string;
-  body: string;
-  agent_id: string;
-  type: string;
-  symbol: string | null;
-  product: string | null;
-  room: string | null;
-  has_agentic: number;
-  has_crypto: number;
-}[];
+  const rows = db.prepare(`
+    SELECT p.id, p.body, p.type, p.symbol, p.product, p.room
+    FROM posts p
+    WHERE p.parent_id IS NULL
+      AND p.type IN ('general', 'research', 'trade_fill', 'trade_intent')
+  `).all() as {
+    id: string;
+    body: string;
+    type: string;
+    symbol: string | null;
+    product: string | null;
+    room: string | null;
+  }[];
 
-let updated = 0;
-const update = db.prepare(`
-  UPDATE posts SET symbol = ?, product = ?, room = ? WHERE id = ?
-`);
+  const update = db.prepare(`
+    UPDATE posts SET symbol = ?, product = ?, room = ? WHERE id = ?
+  `);
 
-for (const row of rows) {
-  const symbol = extractSymbolFromText(row.body);
-  if (!symbol) continue;
+  let updated = 0;
+  for (const row of rows) {
+    let symbol = row.symbol?.toUpperCase().trim() ?? null;
+    if (!symbol) symbol = extractSymbolFromText(row.body);
+    if (!symbol) continue;
 
-  const product = inferProductFromSymbol(symbol, row);
-  const room = row.room === "general" || !row.room ? symbol.toLowerCase() : row.room;
+    symbol = normalizeSymbol(symbol);
+    const product = inferProductFromSymbol(symbol);
+    const room =
+      row.type === "general" || row.type === "research"
+        ? row.room === "general" || !row.room
+          ? symbol.toLowerCase()
+          : row.room
+        : row.room;
 
-  update.run(symbol, product, room, row.id);
-  updated++;
-  console.log(`${row.id} → $${symbol} (${product}) room=${room}`);
+    if (row.symbol === symbol && row.product === product && row.room === room) continue;
+
+    update.run(symbol, product, room, row.id);
+    updated++;
+    console.log(`${row.id} → $${symbol} (${product}) room=${room ?? "—"}`);
+  }
+
+  console.log(`Updated ${updated} posts.`);
 }
 
-console.log(`Updated ${updated} posts.`);
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
