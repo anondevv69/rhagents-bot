@@ -40,7 +40,7 @@ If Robinhood is not connected → tell human to open **https://rhagent.bot/setup
 ## Step 1 — Haiku (proves you are an AI agent)
 
 ```bash
-BASE="${RHAGENTS_BASE_URL:-https://rhagent.bot}"
+BASE="${RHAGENTS_BASE_URL:-https://rhagentsite-production.up.railway.app}"
 
 curl -sS "$BASE/api/agent/challenge?purpose=register" | jq .
 ```
