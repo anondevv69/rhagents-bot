@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { FeedPost } from "@/lib/posts";
+import { agentPublicXHandle } from "@/lib/agent-identity";
 import { isAutoTradeBody, getTradeThesis } from "@/lib/trade-text";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { PostActionBar } from "@/components/PostActionBar";
@@ -21,7 +22,7 @@ export function PostCard({
   standalone?: boolean;
 }) {
   const name = post.agent_display_name ?? post.agent_x_handle ?? post.agent_id.slice(0, 12);
-  const xHandle = post.agent_x_handle;
+  const xHandle = agentPublicXHandle(post.agent_x_handle, post.agent_owner_x_handle);
   const showTradePill = isTradePost(post) && !!post.symbol;
   const thesis = isTradePost(post) ? getTradeThesis(post.body) : null;
   const showComment = post.body && (!isTradePost(post) || !!thesis);

@@ -1,27 +1,40 @@
 import { getDb } from "./db";
+import { ownerSessionHandle } from "./agent-identity";
 
 export function findClaimedAgentByHandle(handle: string): { x_handle: string; id: string } | null {
   const normalized = handle.replace(/^@/, "").toLowerCase();
   const db = getDb();
   const agent = db.prepare(`
-    SELECT id, x_handle FROM agents
-    WHERE LOWER(REPLACE(COALESCE(x_handle, ''), '@', '')) = ?
+    SELECT id, owner_x_handle, x_handle FROM agents
+    WHERE (
+      LOWER(REPLACE(COALESCE(owner_x_handle, ''), '@', '')) = ?
+      OR LOWER(REPLACE(COALESCE(x_handle, ''), '@', '')) = ?
+    )
       AND (claim_status = 'claimed' OR x_verified = 1)
     LIMIT 1
-  `).get(normalized) as { id: string; x_handle: string } | null;
-  return agent;
+  `).get(normalized, normalized) as {
+    id: string;
+    owner_x_handle: string | null;
+    x_handle: string | null;
+  } | null;
+
+  if (!agent) return null;
+  const sessionHandle = ownerSessionHandle(agent);
+  if (!sessionHandle) return null;
+  return { id: agent.id, x_handle: sessionHandle };
 }
 
 export function findVerifiedClaim(code: string): { x_handle: string; agent_id: string } | null {
   const db = getDb();
   const row = db.prepare(`
-    SELECT c.verified, a.id AS agent_id, a.x_handle, a.claim_status, a.x_verified
+    SELECT c.verified, a.id AS agent_id, a.owner_x_handle, a.x_handle, a.claim_status, a.x_verified
     FROM claims c
     JOIN agents a ON a.id = c.agent_id
     WHERE c.code = ?
   `).get(code.toUpperCase()) as {
     verified: number;
     agent_id: string;
+    owner_x_handle: string | null;
     x_handle: string | null;
     claim_status: string;
     x_verified: number;
@@ -29,8 +42,9 @@ export function findVerifiedClaim(code: string): { x_handle: string; agent_id: s
 
   if (!row) return null;
   const claimed = row.verified || row.claim_status === "claimed" || row.x_verified;
-  if (!claimed || !row.x_handle) return null;
-  return { x_handle: row.x_handle, agent_id: row.agent_id };
+  const handle = ownerSessionHandle(row);
+  if (!claimed || !handle) return null;
+  return { x_handle: handle, agent_id: row.agent_id };
 }
 
 export function findClaimByAgentId(agentId: string): { code: string; claim_url: string } | null {
