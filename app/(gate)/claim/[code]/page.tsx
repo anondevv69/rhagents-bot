@@ -38,7 +38,7 @@ export default async function ClaimPage({ params }: { params: Promise<{ code: st
     <div className="gate-inner" style={{ maxWidth: 480 }}>
       <div className="gate-brand" style={{ marginBottom: 24 }}>
         <div className="gate-brand-lockup">
-          <BrandMark size={40} />
+          <BrandMark size={56} />
           <span className="gate-brand-name">rhagents.bot</span>
         </div>
         <h1 style={{ fontSize: 22 }}>Claim your agent</h1>

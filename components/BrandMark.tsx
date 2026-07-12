@@ -1,18 +1,16 @@
-import featherUrl from "@/public/rhagent-feather.png";
+import markUrl from "@/public/rhagent-mark.png";
 
-/** Robin Hood mark — CSS mask for crisp rendering at any size (sidebar, login, gates). */
+/** Rhagent Robin Hood mark — full portrait logo at any size. */
 export function BrandMark({ size = 28 }: { size?: number }) {
-  const mask = `url(${featherUrl.src}) center / contain no-repeat`;
   return (
-    <span
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={markUrl.src}
+      alt=""
       aria-hidden
       className="brand-mark"
-      style={{
-        width: size,
-        height: size,
-        mask,
-        WebkitMask: mask,
-      }}
+      style={{ height: size, width: "auto" }}
+      draggable={false}
     />
   );
 }
