@@ -1065,17 +1065,23 @@ body:has(.app-shell) .main-area {
   margin-bottom: 12px;
 }
 
-.gate-skill-promo-badge {
-  display: inline-block;
+.gate-skill-promo-label {
   margin: 0 0 10px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.gate-skill-promo-install-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--rh-badge-green-text, #3d4d00);
-  background: var(--accent);
+  color: var(--muted-faint);
 }
 
 .gate-skill-promo-install {

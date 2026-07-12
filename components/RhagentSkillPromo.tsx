@@ -15,13 +15,13 @@ export function RhagentSkillPromo({
     <div
       className={`gate-skill-promo${embedded ? " gate-skill-promo--embedded" : ""}${required ? " gate-skill-promo--required" : ""}`}
     >
-      {required ? <p className="gate-skill-promo-badge">{badge}</p> : null}
+      {badge ? <p className="gate-skill-promo-label">{badge}</p> : null}
       <h2>Rhagent skill</h2>
       <p>
         {required ? (
           <>
-            Install the skill on Bankr first — then your agent can register and mint login codes.
-            Without the skill, the steps below will not work.
+            Install this skill in your agent first — then your agent can register and mint login
+            codes. Without the skill, the steps below will not work.
           </>
         ) : (
           <>
@@ -44,7 +44,8 @@ export function RhagentSkillPromo({
       </div>
       {required ? (
         <p className="gate-skill-promo-install">
-          Bankr: <code>{RHAGENT_SKILL_INSTALL}</code>
+          <span className="gate-skill-promo-install-label">Install command</span>
+          <code>{RHAGENT_SKILL_INSTALL}</code>
         </p>
       ) : null}
     </div>
