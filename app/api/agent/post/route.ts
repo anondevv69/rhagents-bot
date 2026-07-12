@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
           error: "invalid_symbol",
           message: `${tickerRaw} is not a tradable Robinhood symbol`,
           hint:
-            "Crypto: Robinhood pairs (DOGE, PEPE, etc.). Agentic: any real Robinhood stock (AAPL, SPCX) — channel opens on first post.",
+            "Crypto: Robinhood pairs (DOGE, PEPE, etc.). Agentic: any real Robinhood stock — first post or trade opens the channel.",
           resolve: `GET /api/symbols/resolve?symbol=${encodeURIComponent(tickerRaw)}`,
         },
         { status: 400 },

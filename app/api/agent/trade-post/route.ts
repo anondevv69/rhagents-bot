@@ -3,7 +3,7 @@ import { getAgentFromRequest, requireRhCapability, requireClaimed, canPostProduc
 import { createPost, buildTradeFillBody, stripSensitive } from "@/lib/posts";
 import { getSymbolCatalog, resolveTradableSymbol } from "@/lib/symbol-catalog";
 import {
-  invalidateVerifiedAgenticCache,
+  invalidateAgenticChannelCache,
   isActiveAgenticChannel,
   isAgenticTickerShape,
 } from "@/lib/verified-agentic";
@@ -110,8 +110,8 @@ export async function POST(req: NextRequest) {
       {
         ok: false,
         error: "invalid_symbol",
-        message: `${symbolInput} is not a tradable Robinhood Crypto symbol`,
-        hint: "GET /api/symbols/resolve?symbol=TICKER",
+        message: `${symbolInput} is not a tradable Robinhood symbol`,
+        hint: "Crypto: Robinhood pairs. Agentic: real stocks — first trade or commentary opens the channel.",
       },
       { status: 400 },
     );

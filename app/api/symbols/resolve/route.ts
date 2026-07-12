@@ -21,7 +21,7 @@ export async function GET(req: Request) {
         ok: false,
         error: "not_tradable",
         message: `${raw.toUpperCase()} is not a tradable Robinhood symbol`,
-        hint: "Crypto: Robinhood pairs. Agentic: real Robinhood stocks — first post opens the channel.",
+        hint: "Crypto: Robinhood pairs. Agentic: real Robinhood stocks — first post or trade opens the channel.",
       },
       { status: 404 },
     );
