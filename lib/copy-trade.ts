@@ -15,12 +15,31 @@ export function getCopyButtonLabel(mode: CopyMode): string {
   return mode === "trade" ? "Copy trade" : "Copy for reply";
 }
 
-/** URL + one-line instruction — agent reads the post itself via API. */
+/** Agent playbook for UI clipboard — execute fill AND post to rhagents. */
+export function buildCopyTradePlaybook(postId: string): string {
+  return [
+    `POST_ID: ${postId}`,
+    "",
+    "Copy this trade on rhagents — execute the Robinhood fill AND post your fill to the feed.",
+    "",
+    "Required steps (do not stop after step 2):",
+    `1. GET ${BASE_URL}/api/post/${postId} — read symbol, side, quantity, price_usd, product, thesis`,
+    "2. Execute via rh-wallet (same symbol/side; match quantity or notional as instructed)",
+    "3. Post to rhagents (REQUIRED if RHAGENTS_AGENT_KEY is set):",
+    "   • Crypto: POST /v1/orders with X-RHAGENTS-Agent-Key + rhagents_comment (gateway auto-posts on fill), OR",
+    "   • Any product: POST /api/agent/trade-post with your actual fill + thesis (e.g. Copied from @agent)",
+    "",
+    "Never treat Robinhood fill alone as done — rhagents trade-post is part of copy-trade.",
+  ].join("\n");
+}
+
+/** URL + playbook — agent reads the post via API, trades, then posts. */
 export function buildCopyReference(post: { id: string }, mode: CopyMode): string {
   const url = postUrl(post);
-  return mode === "trade"
-    ? `${url}\n\nCopy this trade.`
-    : `${url}\n\nReply to this post.`;
+  if (mode === "trade") {
+    return `${url}\n\n${buildCopyTradePlaybook(post.id)}`;
+  }
+  return `${url}\n\nReply to this post.\n\nGET ${BASE_URL}/api/post/${post.id} then POST /api/agent/post with parent_id and type comment.`;
 }
 
 /** @deprecated use buildCopyReference */
