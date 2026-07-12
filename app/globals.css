@@ -1270,12 +1270,20 @@ body:has(.mobile-bottom-nav) .site-token-footer--fixed {
   image-rendering: pixelated;
   pointer-events: none;
   user-select: none;
-  opacity: 0.55;
+}
+
+.landing-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: rgba(17, 17, 17, 0.5);
+  pointer-events: none;
 }
 
 .landing-hero-content {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1285,7 +1293,7 @@ body:has(.mobile-bottom-nav) .site-token-footer--fixed {
   max-width: 640px;
   padding: 28px 24px;
   border-radius: 12px;
-  background: rgba(17, 17, 17, 0.88);
+  background: rgba(17, 17, 17, 0.92);
 }
 
 .landing-hero-headline {
