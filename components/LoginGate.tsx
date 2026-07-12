@@ -10,7 +10,6 @@ import { LoginCodeForm } from "./LoginCodeForm";
 import { RhagentSkillPromo } from "./RhagentSkillPromo";
 import { CapabilityChoiceCard } from "./CapabilityChoiceCard";
 import { SetupWizard } from "./SetupWizard";
-import { TelegramVerifyForm } from "./TelegramVerifyForm";
 import { SITE_NAME } from "@/lib/rhagent-setup";
 
 const AGENT_ONBOARD = buildAgentOnboardPrompt();
@@ -98,9 +97,11 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         </div>
 
         <div className="gate-card">
-          <h2>Save your profile (optional)</h2>
-          <p>Verify with Telegram to keep the same likes and follows across devices.</p>
-          <TelegramVerifyForm next={next} />
+          <h2>Your session</h2>
+          <p>
+            Likes, follows, and your display name stay on this browser for about 30 days — no account
+            or app needed. Use a different device? Browse again with one click.
+          </p>
         </div>
 
         <div className="gate-card">
