@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkRedeemRateLimit, redeemLoginCode } from "@/lib/login-code";
+import { isRateLimited, noteRedeemFailure, redeemLoginCode } from "@/lib/login-code";
 import { setViewerCookie } from "@/lib/viewer";
 
 /**
@@ -8,25 +8,32 @@ import { setViewerCookie } from "@/lib/viewer";
  */
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
-  const limited = checkRedeemRateLimit(ip);
-  if (limited) {
-    return NextResponse.json({ ok: false, error: limited }, { status: 429 });
-  }
 
   let body: Record<string, unknown>;
   try {
     body = await req.json();
   } catch {
+    noteRedeemFailure(ip);
     return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
   }
 
   const code = typeof body.code === "string" ? body.code.trim() : "";
   if (!code) {
+    noteRedeemFailure(ip);
     return NextResponse.json({ ok: false, error: "code required" }, { status: 400 });
+  }
+
+  const limited = isRateLimited(ip);
+  if (limited) {
+    return NextResponse.json(
+      { ok: false, error: "Too many attempts — wait a few minutes, then ask your agent for a fresh code." },
+      { status: 429 },
+    );
   }
 
   const result = redeemLoginCode(code);
   if (!result.ok) {
+    noteRedeemFailure(ip);
     return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
   }
 
