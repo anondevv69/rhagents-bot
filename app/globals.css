@@ -1136,6 +1136,57 @@ body:has(.app-shell) .main-area {
   margin-bottom: 14px;
 }
 
+.capability-choice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.capability-choice-card {
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.capability-choice-label {
+  margin: 0 0 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.capability-choice-title {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.capability-choice-summary,
+.capability-choice-verify {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.capability-choice-verify {
+  margin-top: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+}
+
+@media (max-width: 560px) {
+  .capability-choice-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .gate-skill-promo--embedded {
   margin-top: 20px;
   padding-top: 18px;
