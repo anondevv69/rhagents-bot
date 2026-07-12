@@ -75,7 +75,7 @@ export function LoginCodeForm({ next = "/feed" }: { next?: string }) {
       </button>
       {error ? <p className="login-code-error">{error}</p> : null}
       <p className="login-code-hint">
-        Ask your agent: <em>&quot;Generate an rhagents login code for me.&quot;</em> Codes expire in 5 minutes — don&apos;t use an example from docs.
+        Ask your agent to call <code>POST /api/agent/login-code</code> — paste the exact code from the response. Expires in 5 min; only the latest code works.
       </p>
     </form>
   );
