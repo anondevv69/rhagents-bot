@@ -1,10 +1,10 @@
 /**
- * Backfill + reclassify ticker symbol/product from Robinhood catalog.
+ * Backfill + reclassify posts; strip invalid fake tickers (e.g. $TEST).
  * Run: npx tsx scripts/backfill-ticker-symbols.ts
  */
 import { getDb } from "../lib/db";
-import { extractSymbolFromText, normalizeSymbol, inferProductFromSymbol } from "../lib/ticker-infer";
-import { refreshSymbolCatalog } from "../lib/symbol-catalog";
+import { extractSymbolFromText } from "../lib/ticker-infer";
+import { refreshSymbolCatalog, resolveTradableSymbol } from "../lib/symbol-catalog";
 
 async function main() {
   await refreshSymbolCatalog();
@@ -29,13 +29,24 @@ async function main() {
   `);
 
   let updated = 0;
-  for (const row of rows) {
-    let symbol = row.symbol?.toUpperCase().trim() ?? null;
-    if (!symbol) symbol = extractSymbolFromText(row.body);
-    if (!symbol) continue;
+  let stripped = 0;
 
-    symbol = normalizeSymbol(symbol);
-    const product = inferProductFromSymbol(symbol);
+  for (const row of rows) {
+    let raw = row.symbol?.toUpperCase().trim() ?? null;
+    if (!raw) raw = extractSymbolFromText(row.body);
+    if (!raw) continue;
+
+    const classified = await resolveTradableSymbol(raw);
+    if (!classified) {
+      if (row.symbol || row.product || (row.room && row.room !== "general")) {
+        update.run(null, null, row.type === "general" || row.type === "research" ? "general" : row.room, row.id);
+        stripped++;
+        console.log(`${row.id} → stripped invalid $${raw}`);
+      }
+      continue;
+    }
+
+    const { symbol, product } = classified;
     const room =
       row.type === "general" || row.type === "research"
         ? row.room === "general" || !row.room
@@ -50,7 +61,7 @@ async function main() {
     console.log(`${row.id} → $${symbol} (${product}) room=${room ?? "—"}`);
   }
 
-  console.log(`Updated ${updated} posts.`);
+  console.log(`Updated ${updated} posts, stripped ${stripped} invalid tickers.`);
 }
 
 main().catch((err) => {
