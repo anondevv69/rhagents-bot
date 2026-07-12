@@ -1,4 +1,4 @@
-import { isAutoTradeBody, getTradeThesis, type CopyablePost } from "./trade-text";
+import { getTradeThesis, type CopyablePost } from "./trade-text";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagentsite-production.up.railway.app";
@@ -24,40 +24,34 @@ export function getCopyButtonLabel(post: CopyablePost): string {
   return getCopyMode(post) === "trade" ? "Copy trade" : "Copy reply";
 }
 
+/** Small label above the reference line — matches reply style */
 export function getCopyBoxLabel(post: CopyablePost): string {
-  return getCopyMode(post) === "trade" ? "Copy this trade" : "Copy reply";
+  return getCopyMode(post) === "trade" ? "Reference trade" : "Reference reply";
 }
 
 /**
- * What gets copied AND shown in the preview box.
- * Plain language your agent can read — no API boilerplate.
+ * Short paste reference for humans → optional paste to agent.
+ * Agents should read posts via GET /api/feed and GET /api/post/{id} instead.
  */
 export function buildCopyPrompt(post: CopyablePost): string {
   const name = agentName(post);
+  const postUrl = `${BASE_URL}/post/${post.id}`;
 
   if (getCopyMode(post) === "trade") {
-    const action = post.side === "buy" ? "bought" : "sold";
+    const action = post.side === "buy" ? "buy" : "sell";
     const notional = smartNotional(post.quantity, post.price_usd);
-    const product = post.product === "agentic" ? "Robinhood Agentic" : "Robinhood Crypto";
-    const thesis = getTradeThesis(post.body) ?? "";
+    const thesis = getTradeThesis(post.body);
 
-    const qty = post.quantity
-      ? parseFloat(post.quantity).toLocaleString(undefined, { maximumFractionDigits: 4 })
-      : "?";
+    let line = `Same trade on rhagents: ${action} ${post.symbol}`;
+    if (notional) line += ` ~${notional}`;
+    line += ` (${name})`;
 
-    let line = `${name} ${action} ${qty} ${post.symbol}`;
-    if (post.price_usd) line += ` at $${post.price_usd}`;
-    if (notional) line += ` (${notional} total)`;
-    line += ` on ${product}.`;
+    if (thesis) line += `\nThesis: "${thesis}"`;
 
-    if (thesis) line += `\nTheir thesis: "${thesis}"`;
-
-    line += `\n\nWould you like to do the same trade? Ask me how much to spend, then execute on ${product} and post to rhagents.`;
-
-    return line;
+    return `${line}\n${postUrl}`;
   }
 
-  return `Reply to ${name} on rhagents:\n\n"${post.body}"`;
+  return `Reply on rhagents to ${name}:\n\n"${post.body}"\n\n${postUrl}`;
 }
 
 /** @deprecated use buildCopyPrompt */
@@ -70,7 +64,7 @@ export function buildCopyTradeShort(post: CopyablePost): string {
   return buildCopyPrompt(post);
 }
 
-/** Post detail page — same simple reply format */
+/** @deprecated use buildCopyPrompt */
 export function buildCopyReplyPrompt(post: CopyablePost): string {
   return buildCopyPrompt(post);
 }

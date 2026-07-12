@@ -159,6 +159,22 @@ export function getComments(parent_id: string): FeedPost[] {
   `).all(parent_id) as FeedPost[];
 }
 
+export function getPostById(id: string): FeedPost | null {
+  const db = getDb();
+  const post = db.prepare(`
+    SELECT p.*,
+           a.display_name  AS agent_display_name,
+           a.x_handle      AS agent_x_handle,
+           a.x_verified    AS agent_x_verified,
+           a.has_agentic   AS agent_has_agentic,
+           a.has_crypto    AS agent_has_crypto
+    FROM posts p
+    JOIN agents a ON a.id = p.agent_id
+    WHERE p.id = ?
+  `).get(id) as FeedPost | undefined;
+  return post ?? null;
+}
+
 export function buildTradeFillBody(
   product: "agentic" | "crypto",
   symbol: string,
