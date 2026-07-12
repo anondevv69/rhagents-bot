@@ -122,7 +122,7 @@ export function redeemLoginCode(inputCode: string): {
 } | { ok: false; error: string } {
   const code = normalizeCode(inputCode);
   if (code.length !== 8) {
-    return { ok: false, error: "Enter the 8-character code from your agent (e.g. 7F3K-92Q4)" };
+    return { ok: false, error: "Enter the 8-character code from your agent (format: XXXX-XXXX)" };
   }
 
   const row = loadLoginCodeRow(code);
@@ -140,7 +140,7 @@ export function redeemLoginCode(inputCode: string): {
 
   const db = getDb();
   const updated = db.prepare(`
-    UPDATE login_codes SET used = 1 WHERE code = ? AND used = 0 AND expires_at > datetime('now')
+    UPDATE login_codes SET used = 1 WHERE code = ? AND used = 0
   `).run(code);
   if (updated.changes !== 1) {
     return { ok: false, error: "Invalid or already used login code" };
