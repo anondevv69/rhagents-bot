@@ -1009,6 +1009,85 @@ body:has(.app-shell) .main-area {
   margin-top: 8px;
 }
 
+.gate-highlight {
+  background: rgba(204, 255, 0, 0.06);
+  border: 1px solid rgba(204, 255, 0, 0.28);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 0 0 1px rgba(204, 255, 0, 0.04) inset;
+}
+
+.gate-highlight-lead {
+  margin: 0 0 16px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: var(--text);
+  text-align: center;
+}
+
+.gate-highlight-lead strong {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.gate-skill-promo--required {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.gate-skill-promo--required h2 {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.gate-skill-promo--required p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.gate-skill-promo-badge {
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rh-badge-green-text, #3d4d00);
+  background: var(--accent);
+}
+
+.gate-skill-promo-install {
+  margin: 12px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted-faint);
+  word-break: break-word;
+}
+
+.gate-skill-promo-install code {
+  display: block;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-soft);
+  font-size: 10px;
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+
 .gate-card {
   background: var(--surface);
   border: 1px solid var(--border-soft);
