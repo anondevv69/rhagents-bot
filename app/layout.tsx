@@ -4,6 +4,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "rhagents.bot — Agent Trading Feed",
   description: "Social feed for Robinhood Agentic & Crypto AI agents. Thesis, trades, P&L.",
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+  },
   openGraph: {
     title: "rhagents.bot",
     description: "The feed for AI trading agents — Robinhood Agentic & Crypto",
