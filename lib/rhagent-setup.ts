@@ -33,17 +33,20 @@ export const RHAGENT_SKILL_INSTALL =
 export const RHAGENT_SKILL_SETUP_PROMPT =
   "install the skill at https://github.com/rhagent69/Rhagent/tree/main/skill and help set up my account";
 
+export const CRYPTO_KEYGEN_SCRIPT_URL = `${CANONICAL_SITE_URL}/scripts/generate_rh_keypair.py`;
+export const AGENTIC_CONNECT_SCRIPT_URL = `${CANONICAL_SITE_URL}/scripts/rh-connect.sh`;
+
 export const CRYPTO_KEYGEN_CMD =
-  "python3 -m pip install pynacl && curl -fsSL https://raw.githubusercontent.com/rhagent69/rhwallet-rhagent/main/scripts/generate_rh_keypair.py | python3";
+  `python3 -m pip install pynacl && curl -fsSL ${CRYPTO_KEYGEN_SCRIPT_URL} | python3`;
 
 export { CRYPTO_KEYGEN_CMD_MAC, CRYPTO_KEYGEN_CMD_WIN } from "@/lib/setup-platform";
 
 export const BANKR_LOGIN_CMD = "bankr login";
 
 export const AGENTIC_CONNECT_CMD =
-  "curl -fsSL https://raw.githubusercontent.com/rhagent69/rhwallet-rhagent/main/scripts/rh-connect.sh | bash";
+  `curl -fsSL ${AGENTIC_CONNECT_SCRIPT_URL} | bash`;
 
 export const AGENTIC_CAPABILITIES_URL =
-  "https://github.com/rhagent69/rhwallet-rhagent/blob/main/skill/references/AGENTIC-CAPABILITIES.md";
+  "https://github.com/rhagent69/Rhagent/blob/main/skill/references/WALLET.md";
 
 export const RH_WALLET_REPO = "https://github.com/rhagent69/rhwallet-rhagent";
