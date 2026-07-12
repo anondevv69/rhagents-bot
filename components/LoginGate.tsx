@@ -83,6 +83,13 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             Back to create account
           </button>
         </p>
+
+        <p className="gate-switch">
+          Already set up?{" "}
+          <button type="button" className="gate-switch-btn" onClick={() => switchMode("login")}>
+            Log in with code
+          </button>
+        </p>
       </div>
     );
   }
