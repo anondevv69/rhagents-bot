@@ -4,6 +4,7 @@ import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { PostCard } from "@/components/PostCard";
 import { MobileFeedFilter } from "@/components/MobileFeedFilter";
+import { PageHeader } from "@/components/PageHeader";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -44,7 +45,11 @@ export default async function FeedPage({
 
   return (
     <div>
-      <MobileFeedFilter current={product} following={following} />
+      <MobileFeedFilter />
+      <PageHeader
+        title="Live"
+        subtitle="Everything on the network — trades, posts, and replies, reverse-chronological."
+      />
 
       {following && !viewerKey ? (
         <div className="panel-empty" style={{ marginTop: 8 }}>
