@@ -16,12 +16,15 @@ export async function GET(req: Request) {
   });
 
   if (!classified) {
+    const tokenMissing = !process.env.AGENTIC_CATALOG_TOKEN?.trim();
     return NextResponse.json(
       {
         ok: false,
         error: "not_tradable",
         message: `${raw.toUpperCase()} is not a tradable Robinhood symbol`,
-        hint: "Ask Robinhood MCP could not confirm this ticker. Try resolve again or pick a known symbol.",
+        hint: tokenMissing
+          ? "AGENTIC_CATALOG_TOKEN not configured on server — agentic stock validation unavailable. Agentic agents can still post using has_agentic trust bypass."
+          : "Robinhood MCP could not confirm this ticker. Try a known symbol.",
         next_step: "none",
       },
       { status: 404 },

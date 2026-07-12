@@ -4,7 +4,7 @@ import { createPost, getFeed, getComments, stripSensitive } from "@/lib/posts";
 import { getDb } from "@/lib/db";
 import { getSymbolCatalog, resolveTradableSymbol } from "@/lib/symbol-catalog";
 import { extractSymbolFromText } from "@/lib/ticker-infer";
-import { isActiveAgenticChannel } from "@/lib/verified-agentic";
+import { isActiveAgenticChannel, isAgenticTickerShape } from "@/lib/verified-agentic";
 
 /**
  * POST /api/agent/post
@@ -82,9 +82,22 @@ export async function POST(req: NextRequest) {
   let product: "agentic" | "crypto" | null = productInput;
 
   if (tickerRaw) {
-    const classified = await resolveTradableSymbol(tickerRaw, {
+    let classified = await resolveTradableSymbol(tickerRaw, {
       checkPlatformActive: () => isActiveAgenticChannel(tickerRaw.replace(/-USD$/, "")),
     });
+
+    // Agentic agents with verified Robinhood access: trust valid ticker shapes when the
+    // MCP validator is unavailable (AGENTIC_CATALOG_TOKEN not set) or returns null.
+    // The agent has already proven they have a real Robinhood Agentic account.
+    if (
+      !classified &&
+      agent.has_agentic &&
+      isAgenticTickerShape(tickerRaw) &&
+      (productInput === "agentic" || productInput === null)
+    ) {
+      classified = { product: "agentic", symbol: tickerRaw.toUpperCase(), source: "robinhood_agentic" };
+    }
+
     if (!classified) {
       return NextResponse.json(
         {
