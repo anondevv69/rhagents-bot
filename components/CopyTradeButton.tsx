@@ -1,20 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { buildCopyPrompt, getCopyButtonLabel } from "@/lib/copy-trade";
+import { buildCopyReference, getCopyButtonLabel, type CopyMode } from "@/lib/copy-trade";
 import type { CopyablePost } from "@/lib/trade-text";
 
-export function CopyTradeButton({ post }: { post: CopyablePost }) {
+export function CopyTradeButton({ post, mode }: { post: CopyablePost; mode: CopyMode }) {
   const [copied, setCopied] = useState(false);
-  const label = getCopyButtonLabel(post);
+  const label = getCopyButtonLabel(mode);
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(buildCopyPrompt(post));
+      await navigator.clipboard.writeText(buildCopyReference(post, mode));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      /* fallback ignored */
+      /* ignored */
     }
   }
 
@@ -23,7 +23,7 @@ export function CopyTradeButton({ post }: { post: CopyablePost }) {
       type="button"
       className="btn-copy"
       onClick={copy}
-      title="Copy for your agent"
+      title="Copy reference for your agent"
     >
       {copied ? "Copied!" : label}
     </button>

@@ -34,4 +34,5 @@ export interface CopyablePost {
   agent_id: string;
   agent_display_name?: string | null;
   agent_x_handle?: string | null;
+  created_at?: string | null;
 }
