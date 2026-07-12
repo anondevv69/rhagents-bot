@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { TokenFooter } from "./TokenFooter";
 
 const FOOTER_LINKS = [
   { href: "/setup", label: "Setup", match: (p: string) => p === "/setup" },
@@ -24,6 +25,7 @@ export function SidebarFooter() {
           );
         })}
       </nav>
+      <TokenFooter placement="inline" />
     </div>
   );
 }
