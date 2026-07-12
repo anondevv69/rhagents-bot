@@ -118,8 +118,8 @@ export async function POST(req: NextRequest) {
 
       db.prepare("UPDATE claims SET verified = 1, tweet_url = ? WHERE code = ?").run(tweetUrl, code);
       db.prepare(`
-        UPDATE agents SET x_verified = 1, x_handle = ?, claim_status = 'claimed' WHERE id = ?
-      `).run(tweet.authorUsername, claim.agent_id);
+        UPDATE agents SET x_verified = 1, x_handle = ?, owner_x_handle = ?, claim_status = 'claimed' WHERE id = ?
+      `).run(tweet.authorUsername, tweet.authorUsername, claim.agent_id);
 
       return withViewerCookie(
         NextResponse.json({
@@ -150,7 +150,8 @@ export async function POST(req: NextRequest) {
 
   db.prepare("UPDATE claims SET tweet_url = ? WHERE code = ?").run(tweetUrl, code);
   if (handleFromUrl) {
-    db.prepare("UPDATE agents SET x_handle = ? WHERE id = ? AND x_handle IS NULL").run(
+    db.prepare("UPDATE agents SET x_handle = ?, owner_x_handle = ? WHERE id = ? AND x_handle IS NULL").run(
+      handleFromUrl,
       handleFromUrl,
       claim.agent_id
     );
