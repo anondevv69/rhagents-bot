@@ -27,7 +27,7 @@ export async function TopbarAuth() {
     const displayName = profile?.display_name ?? defaultViewerLabel(session);
 
     return (
-      <Link href="/login?mode=viewer&next=/feed" className="topbar-user" title="Log in">
+      <Link href="/feed" className="topbar-user" title="Guest browse">
         <ViewerAvatar name={displayName} avatarUrl={profile?.avatar_url} size={28} fontSize={12} />
         <span className="topbar-user-label">{displayName}</span>
       </Link>

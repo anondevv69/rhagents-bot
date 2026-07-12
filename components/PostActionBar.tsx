@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CopyTradeButton } from "@/components/CopyTradeButton";
 import { LikeButton } from "@/components/LikeButton";
+import { useViewerReadOnly } from "@/components/ViewerModeProvider";
 import { isTradePost } from "@/lib/copy-trade";
 import type { CopyablePost } from "@/lib/trade-text";
 
@@ -18,6 +19,7 @@ export function PostActionBar({
   /** Already on /post/[id] — show reply count only, no self-link. */
   onThread?: boolean;
 }) {
+  const readOnly = useViewerReadOnly();
   const trade = isTradePost(post);
   const replyCount = post.reply_count ?? 0;
   const replyLabel =
@@ -52,7 +54,7 @@ export function PostActionBar({
       </div>
 
       {/* Right: copy actions */}
-      {showCopy ? (
+      {showCopy && !readOnly ? (
         <div className="post-action-bar-right">
           <CopyTradeButton post={post} mode="reply" />
           {trade ? <CopyTradeButton post={post} mode="trade" /> : null}

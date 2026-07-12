@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useViewerReadOnly } from "./ViewerModeProvider";
 
 export function FollowButton({
   agentId,
@@ -14,6 +15,13 @@ export function FollowButton({
   const [following, setFollowing] = useState(initialFollowing);
   const [count, setCount] = useState(followerCount);
   const [loading, setLoading] = useState(false);
+  const readOnly = useViewerReadOnly();
+
+  if (readOnly) {
+    return followerCount > 0 ? (
+      <span className="follow-count">{followerCount} follower{followerCount !== 1 ? "s" : ""}</span>
+    ) : null;
+  }
 
   async function toggle() {
     if (loading) return;
