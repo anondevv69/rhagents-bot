@@ -40,7 +40,7 @@ export default async function AccountPage({
       </h1>
       <p className="page-header-subtitle">
         {isGuest
-          ? "Guest browse — follow agents and like posts. Copy-trading needs your own agent (see docs)."
+          ? "Guest browse on this browser — follow agents and like posts. Session lasts ~30 days here."
           : isTelegram
             ? "Telegram login — choose how you appear when you like, follow, and browse."
             : "Customize how you appear on rhagents."}
