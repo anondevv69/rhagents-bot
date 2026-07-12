@@ -1,10 +1,16 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getTickers, type TickerSort } from "@/lib/symbols";
 import { formatVolume } from "@/lib/stats";
 import { PageHeader } from "@/components/PageHeader";
 import { PageSortTabs } from "@/components/PageSortTabs";
 
 export const dynamic = "force-dynamic";
+
+const PRODUCT_TABS = [
+  { value: "crypto", label: "Crypto" },
+  { value: "agentic", label: "Agentic" },
+] as const;
 
 const SORT_TABS: { value: TickerSort; label: string }[] = [
   { value: "trending", label: "Trending" },
@@ -15,9 +21,19 @@ const SORT_TABS: { value: TickerSort; label: string }[] = [
 export default async function TickersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string; symbol?: string }>;
+  searchParams: Promise<{ sort?: string; symbol?: string; product?: string }>;
 }) {
   const params = await searchParams;
+
+  if (!params.product) {
+    const qs = new URLSearchParams();
+    qs.set("product", "crypto");
+    if (params.sort) qs.set("sort", params.sort);
+    if (params.symbol) qs.set("symbol", params.symbol);
+    redirect(`/tickers?${qs.toString()}`);
+  }
+
+  const product = params.product === "agentic" ? "agentic" : "crypto";
   const sort = (["trending", "volume", "agents"].includes(params.sort ?? "")
     ? params.sort
     : "trending") as TickerSort;
@@ -25,7 +41,7 @@ export default async function TickersPage({
 
   let tickers: ReturnType<typeof getTickers> = [];
   try {
-    tickers = getTickers(sort);
+    tickers = getTickers(sort, 50, product);
   } catch {
     /* db not ready */
   }
@@ -38,22 +54,37 @@ export default async function TickersPage({
     }
   }
 
-  const preserve = selected ? { symbol: selected } : undefined;
+  const preserve: Record<string, string> = { product };
+  if (sort !== "trending") preserve.sort = sort;
+  if (selected) preserve.symbol = selected;
+  const title = product === "agentic" ? "Agentic tickers" : "Crypto tickers";
 
   return (
     <div>
-      <PageHeader title="Tickers">
-        <PageSortTabs basePath="/tickers" current={sort} tabs={SORT_TABS} preserve={preserve} />
+      <PageHeader title={title}>
+        <PageSortTabs
+          basePath="/tickers"
+          current={product}
+          tabs={[...PRODUCT_TABS]}
+          param="product"
+          preserve={sort !== "trending" ? { sort } : undefined}
+        />
       </PageHeader>
+
+      <div style={{ marginBottom: 16 }}>
+        <PageSortTabs basePath="/tickers" current={sort} tabs={SORT_TABS} preserve={preserve} />
+      </div>
 
       {selected ? (
         <p className="page-context-note">
-          Showing <Link href={`/tickers/${encodeURIComponent(selected)}`} className="text-link">${selected}</Link> — selected from trending tickers.
+          Showing <Link href={`/tickers/${encodeURIComponent(selected)}`} className="text-link">${selected}</Link> — selected from {product} tickers.
         </p>
       ) : null}
 
       {tickers.length === 0 ? (
-        <div className="panel-empty">No tickers yet — trades create symbol channels automatically.</div>
+        <div className="panel-empty">
+          No {product} tickers yet — trades create symbol rooms automatically.
+        </div>
       ) : (
         <div className="card ticker-list">
           {tickers.map((t) => {

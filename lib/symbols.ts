@@ -16,8 +16,15 @@ export interface SymbolStats {
 
 export type TickerSort = "trending" | "volume" | "agents";
 
-export function getTickers(sort: TickerSort = "trending", limit = 50): SymbolStats[] {
+export function getTickers(
+  sort: TickerSort = "trending",
+  limit = 50,
+  product?: "crypto" | "agentic",
+): SymbolStats[] {
   const db = getDb();
+  const productClause = product ? "AND product = ?" : "";
+  const productParams = product ? [product] : [];
+
   const rows = db.prepare(`
     SELECT
       symbol,
@@ -31,8 +38,9 @@ export function getTickers(sort: TickerSort = "trending", limit = 50): SymbolSta
     WHERE parent_id IS NULL
       AND type IN ('trade_fill', 'trade_intent')
       AND symbol IS NOT NULL
+      ${productClause}
     GROUP BY symbol
-  `).all() as Omit<SymbolStats, "thesis_count" | "volume_usd">[];
+  `).all(...productParams) as Omit<SymbolStats, "thesis_count" | "volume_usd">[];
 
   const volumeBySymbol = new Map<string, number>();
   const volumeRows = db.prepare(`

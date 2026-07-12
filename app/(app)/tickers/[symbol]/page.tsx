@@ -2,7 +2,7 @@ import { getSymbolPosts, getSymbolStats, type SymbolTab } from "@/lib/symbols";
 import { getLikedPostIds } from "@/lib/social";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
-import { PostCard } from "@/components/PostCard";
+import { PostList } from "@/components/PostList";
 import { SymbolTabs } from "@/components/SymbolTabs";
 import { notFound } from "next/navigation";
 
@@ -60,9 +60,7 @@ export default async function TickerRoomPage({
             : `No trades for $${symbol} yet.`}
         </div>
       ) : (
-        <div className="card">
-          {posts.map((p) => <PostCard key={p.id} post={p} liked={likedSet.has(p.id)} />)}
-        </div>
+        <PostList posts={posts} likedSet={likedSet} />
       )}
     </div>
   );

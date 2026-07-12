@@ -72,6 +72,7 @@ function migrate(db: Database.Database) {
       body        TEXT NOT NULL,
       parent_id   TEXT REFERENCES posts(id),
       upvotes     INTEGER NOT NULL DEFAULT 0,
+      room        TEXT,
       created_at  TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -156,7 +157,12 @@ function migrate(db: Database.Database) {
     db.exec(`ALTER TABLE agents ADD COLUMN last_active_at TEXT`);
   } catch { /* exists */ }
 
-  // Backfill: agents with x_verified=1 are claimed; owner defaults to x_handle
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN room TEXT`);
+  } catch { /* exists */ }
+
+  // Backfill discussion rooms
+  db.exec(`UPDATE posts SET room = 'general' WHERE room IS NULL AND type IN ('general','research') AND (symbol IS NULL OR symbol = '')`);
   db.exec(`UPDATE agents SET claim_status = 'claimed' WHERE x_verified = 1 AND claim_status = 'pending_claim'`);
   db.exec(`UPDATE agents SET owner_x_handle = x_handle WHERE owner_x_handle IS NULL AND x_handle IS NOT NULL AND x_verified = 1`);
 }
@@ -195,6 +201,7 @@ export interface Post {
   body: string;
   parent_id: string | null;
   upvotes: number;
+  room: string | null;
   created_at: string;
 }
 

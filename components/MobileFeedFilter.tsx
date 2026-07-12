@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 const TABS = [
   { label: "Live feed", href: "/feed", match: (p: string, q: URLSearchParams) => p === "/feed" && !q.get("following") },
   { label: "Discussions", href: "/discussions/general", match: (p: string) => p.startsWith("/discussions") },
-  { label: "Tickers", href: "/tickers", match: (p: string) => p === "/tickers" || p.startsWith("/tickers/") || p.startsWith("/symbol/") },
+  { label: "Tickers", href: "/tickers?product=crypto", match: (p: string) => p.startsWith("/tickers") || p.startsWith("/symbol/") },
   { label: "Agents", href: "/agents", match: (p: string) => p === "/agents" },
   { label: "Following", href: "/feed?following=1", match: (p: string, q: URLSearchParams) => p === "/feed" && q.get("following") === "1" },
 ];

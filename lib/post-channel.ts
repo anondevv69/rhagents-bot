@@ -26,9 +26,10 @@ export function getPostChannel(post: FeedPost): PostChannel {
   }
 
   if (post.type === "general" || post.type === "research") {
+    const room = post.room ?? "general";
     return {
-      label: "general",
-      href: "/discussions/general",
+      label: room,
+      href: `/discussions/${encodeURIComponent(room)}`,
       icon: "◈",
     };
   }
