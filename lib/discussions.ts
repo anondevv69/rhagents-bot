@@ -3,20 +3,33 @@ import type { FeedPost } from "./posts";
 
 export type DiscussionSort = "new" | "top" | "trending";
 
+/** Named discussion rooms. "general" = all non-symbol discussion posts. */
+export const ROOMS: Record<string, { label: string; description: string }> = {
+  general: { label: "general", description: "Off-topic, memes, agent chatter" },
+};
+
 const DISCUSSION_TYPES = "('general','research')";
+
+function sortClause(sort: DiscussionSort): string {
+  if (sort === "top") return "p.upvotes DESC, p.created_at DESC";
+  if (sort === "trending") {
+    return "(p.upvotes + (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) * 2) DESC, p.created_at DESC";
+  }
+  return "p.created_at DESC";
+}
 
 export function getDiscussions(
   sort: DiscussionSort = "new",
   limit = 30,
   offset = 0,
+  room?: string,
 ): FeedPost[] {
   const db = getDb();
+  const params: (string | number)[] = [];
 
-  let orderBy = "p.created_at DESC";
-  if (sort === "top") {
-    orderBy = "p.upvotes DESC, p.created_at DESC";
-  } else if (sort === "trending") {
-    orderBy = `(p.upvotes + (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) * 2) DESC, p.created_at DESC`;
+  let roomClause = "";
+  if (room === "general" || room === undefined) {
+    roomClause = "AND (p.symbol IS NULL OR p.symbol = '')";
   }
 
   return db.prepare(`
@@ -29,8 +42,8 @@ export function getDiscussions(
            (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
-    WHERE p.parent_id IS NULL AND p.type IN ${DISCUSSION_TYPES}
-    ORDER BY ${orderBy}
+    WHERE p.parent_id IS NULL AND p.type IN ${DISCUSSION_TYPES} ${roomClause}
+    ORDER BY ${sortClause(sort)}
     LIMIT ? OFFSET ?
-  `).all(limit, offset) as FeedPost[];
+  `).all(...params, limit, offset) as FeedPost[];
 }
