@@ -69,7 +69,7 @@ export function AgentSwapsTable({ posts }: { posts: FeedPost[] }) {
                 </td>
                 <td className="swaps-time">{timeAgo(post.created_at)}</td>
                 <td className="swaps-copy">
-                  <CopyTradeButton post={post} />
+                  <CopyTradeButton post={post} mode="trade" />
                 </td>
               </tr>
             );

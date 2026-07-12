@@ -1,4 +1,4 @@
-import { getTradeThesis, type CopyablePost } from "./trade-text";
+import { formatSmartPrice, getTradeThesis, type CopyablePost } from "./trade-text";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagentsite-production.up.railway.app";
@@ -9,62 +9,82 @@ function agentName(post: CopyablePost): string {
   return post.agent_display_name ?? post.agent_x_handle ?? post.agent_id.slice(0, 12);
 }
 
+function postUrl(post: CopyablePost): string {
+  return `${BASE_URL}/post/${post.id}`;
+}
+
+function timeAgoLabel(dateStr: string | null | undefined): string {
+  if (!dateStr) return "recently";
+  const diff = Date.now() - new Date(dateStr + "Z").getTime();
+  const s = Math.floor(diff / 1000);
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
 function smartNotional(quantity: string | null | undefined, price: string | null | undefined): string | null {
   if (!quantity || !price) return null;
   const n = parseFloat(quantity) * parseFloat(price);
   return Number.isFinite(n) && n > 0 ? `$${n.toFixed(2)}` : null;
 }
 
-export function getCopyMode(post: CopyablePost): CopyMode {
-  const isTrade = post.type === "trade_fill" || post.type === "trade_intent";
-  return isTrade && post.symbol && post.side ? "trade" : "reply";
+function formatQuantity(q: string): string {
+  const n = parseFloat(q);
+  if (!Number.isFinite(n)) return q;
+  if (Number.isInteger(n) && n >= 1000) return n.toLocaleString();
+  return q;
 }
 
-export function getCopyButtonLabel(post: CopyablePost): string {
-  return getCopyMode(post) === "trade" ? "Copy trade" : "Copy reply";
+function productLabel(product: string | null | undefined): string {
+  if (product === "crypto") return "Robinhood Crypto";
+  if (product === "agentic") return "Robinhood Agentic";
+  return "Robinhood";
 }
 
-/** Small label above the reference line — matches reply style */
-export function getCopyBoxLabel(post: CopyablePost): string {
-  return getCopyMode(post) === "trade" ? "Reference trade" : "Reference reply";
+export function isTradePost(post: CopyablePost): boolean {
+  return (post.type === "trade_fill" || post.type === "trade_intent") && !!post.symbol && !!post.side;
 }
 
-/**
- * Short paste reference for humans → optional paste to agent.
- * Agents should read posts via GET /api/feed and GET /api/post/{id} instead.
- */
-export function buildCopyPrompt(post: CopyablePost): string {
+export function getCopyButtonLabel(mode: CopyMode): string {
+  return mode === "trade" ? "Copy trade" : "Copy for reply";
+}
+
+function formatTradeReference(post: CopyablePost): string {
   const name = agentName(post);
-  const postUrl = `${BASE_URL}/post/${post.id}`;
+  const action = post.side === "sell" ? "sold" : "bought";
+  const qty = post.quantity ? formatQuantity(post.quantity) : "";
+  const symbol = post.symbol ?? "";
+  const price = post.price_usd ? formatSmartPrice(parseFloat(post.price_usd)) : null;
+  const notional = smartNotional(post.quantity, post.price_usd);
+  const when = timeAgoLabel(post.created_at);
 
-  if (getCopyMode(post) === "trade") {
-    const action = post.side === "buy" ? "buy" : "sell";
-    const notional = smartNotional(post.quantity, post.price_usd);
-    const thesis = getTradeThesis(post.body);
+  let line = `${name} ${action} ${qty} ${symbol}`.replace(/\s+/g, " ").trim();
+  if (price) line += ` at ${price}`;
+  if (notional) line += ` (${notional})`;
+  line += ` on ${productLabel(post.product)} – rhagents, ${when}`;
 
-    let line = `Same trade on rhagents: ${action} ${post.symbol}`;
-    if (notional) line += ` ~${notional}`;
-    line += ` (${name})`;
+  const thesis = getTradeThesis(post.body);
+  if (thesis) line += `\nThesis: "${thesis}"`;
 
-    if (thesis) line += `\nThesis: "${thesis}"`;
-
-    return `${line}\n${postUrl}`;
-  }
-
-  return `Reply on rhagents to ${name}:\n\n"${post.body}"\n\n${postUrl}`;
+  return `${line}\n${postUrl(post)}\n\nCopy this trade.`;
 }
 
-/** @deprecated use buildCopyPrompt */
-export function buildCopyTradePrompt(post: CopyablePost): string {
-  return buildCopyPrompt(post);
+function formatReplyReference(post: CopyablePost): string {
+  const name = agentName(post);
+  const when = timeAgoLabel(post.created_at);
+  const excerpt = post.body.trim().slice(0, 280);
+
+  return `${name}: "${excerpt}" – rhagents, ${when}\n${postUrl(post)}\n\nReply to this post.`;
 }
 
-/** @deprecated use buildCopyPrompt */
-export function buildCopyTradeShort(post: CopyablePost): string {
-  return buildCopyPrompt(post);
+/** Short clipboard blob: post reference + one-line instruction for the agent. */
+export function buildCopyReference(post: CopyablePost, mode: CopyMode): string {
+  if (mode === "trade" && isTradePost(post)) return formatTradeReference(post);
+  return formatReplyReference(post);
 }
 
-/** @deprecated use buildCopyPrompt */
-export function buildCopyReplyPrompt(post: CopyablePost): string {
-  return buildCopyPrompt(post);
+/** @deprecated use buildCopyReference */
+export function buildCopyPrompt(post: CopyablePost): string {
+  return buildCopyReference(post, isTradePost(post) ? "trade" : "reply");
 }
