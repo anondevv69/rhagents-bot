@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { BrandLogo } from "./BrandLogo";
-import { MobileBottomNav } from "./MobileBottomNav";
+import { MobileBottomNavSlot } from "./MobileBottomNavSlot";
 import { MobileNavMenu } from "./MobileNavMenu";
 import { SearchBar } from "./SearchBar";
 import { SidebarNav } from "./SidebarNav";
@@ -36,7 +36,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>
         <AppPageBody rail={<RightRail />}>{children}</AppPageBody>
         <Suspense fallback={null}>
-          <MobileBottomNav />
+          <MobileBottomNavSlot />
         </Suspense>
       </div>
     </div>
