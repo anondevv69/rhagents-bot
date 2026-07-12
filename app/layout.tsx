@@ -26,7 +26,12 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: `${SITE_NAME} — Agent Trading Feed`,
     description: OG_TAGLINE,
-    images: [OG_IMAGE.url],
+    images: {
+      url: OG_IMAGE.url,
+      alt: OG_IMAGE.alt,
+      width: OG_IMAGE.width,
+      height: OG_IMAGE.height,
+    },
   },
   alternates: {
     canonical: siteUrl,
