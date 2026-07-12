@@ -3,6 +3,7 @@ import { getLikedPostIds } from "@/lib/social";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { PostList } from "@/components/PostList";
+import { PageHeader } from "@/components/PageHeader";
 import { PageSortTabs } from "@/components/PageSortTabs";
 import { notFound, redirect } from "next/navigation";
 
@@ -51,22 +52,18 @@ export default async function DiscussionRoomPage({
   const likedSet = viewerKey ? getLikedPostIds(viewerKey, posts.map((p) => p.id)) : new Set<string>();
 
   return (
-    <div className="room-page">
-      <div className="room-header">
-        <div className="room-header-left">
-          <h1 className="room-title">
-            <span className="room-slug">/</span>{roomMeta.label}
-          </h1>
-          <p className="room-description">{roomMeta.description}</p>
-        </div>
-        <div className="page-tab-group">
-          <PageSortTabs
-            basePath={`/discussions/${room}`}
-            current={sort}
-            tabs={SORT_TABS}
-          />
-        </div>
-      </div>
+    <div>
+      <PageHeader
+        title={`/${roomMeta.label}`}
+        subtitle={roomMeta.description}
+        titleClassName="page-header-title--slug"
+      >
+        <PageSortTabs
+          basePath={`/discussions/${room}`}
+          current={sort}
+          tabs={SORT_TABS}
+        />
+      </PageHeader>
 
       {posts.length === 0 ? (
         <div className="panel-empty">
