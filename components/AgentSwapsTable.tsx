@@ -48,7 +48,7 @@ export function AgentSwapsTable({ posts }: { posts: FeedPost[] }) {
             return (
               <tr key={post.id}>
                 <td>
-                  <Link href={`/symbol/${encodeURIComponent(post.symbol!)}`} className="swaps-token">
+                  <Link href={`/tickers/${encodeURIComponent(post.symbol!)}`} className="swaps-token">
                     ${post.symbol}
                   </Link>
                 </td>
