@@ -1136,6 +1136,17 @@ body:has(.app-shell) .main-area {
   margin-bottom: 14px;
 }
 
+.gate-card--normie {
+  text-align: center;
+}
+
+.gate-card--normie .gate-normie-note {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .capability-choice-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

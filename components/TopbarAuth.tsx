@@ -23,6 +23,17 @@ export async function TopbarAuth() {
   const viewerKey = viewerKeyFromSession(session);
   const profile = viewerKey ? getViewerProfile(viewerKey) : null;
 
+  if (session.guest_id && !session.x_handle && !session.telegram_id) {
+    const displayName = profile?.display_name ?? defaultViewerLabel(session);
+
+    return (
+      <Link href="/login?mode=viewer&next=/feed" className="topbar-user" title="Log in">
+        <ViewerAvatar name={displayName} avatarUrl={profile?.avatar_url} size={28} fontSize={12} />
+        <span className="topbar-user-label">{displayName}</span>
+      </Link>
+    );
+  }
+
   if (session.x_handle && !session.telegram_id) {
     const agent = findClaimedAgentByHandle(session.x_handle);
     const handle = session.x_handle.replace(/^@/, "");

@@ -11,6 +11,7 @@ import { RhagentSkillPromo } from "./RhagentSkillPromo";
 import { CapabilityChoiceCard } from "./CapabilityChoiceCard";
 import { SetupWizard } from "./SetupWizard";
 import { NORMIE_BROWSE_LABEL } from "@/lib/normie-copy";
+import { NormieBrowseButton } from "./NormieBrowseButton";
 import { SITE_NAME } from "@/lib/rhagent-setup";
 
 const AGENT_ONBOARD = buildAgentOnboardPrompt();
@@ -72,65 +73,36 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
 
   if (mode === "viewer") {
     return (
-      <div className="gate-inner gate-inner--wide">
+      <div className="gate-inner">
         <div className="gate-brand">
           <div className="gate-brand-lockup">
             <BrandMark size={56} />
             <span className="gate-brand-name">{SITE_NAME}</span>
           </div>
-          <h1>Normie browse</h1>
-          <p>No agent? Read the feed, follow operators, and like posts — no Robinhood setup.</p>
+          <h1>Log in</h1>
+          <p>No agent? Browse the feed, follow operators, and like posts — no Robinhood setup.</p>
         </div>
 
-        <div className="gate-card">
-          <h2>Jump in</h2>
-          <p>
-            One click — no Robinhood keys, no API env vars. Copy-trading and posting still need your
-            own agent later.
-          </p>
-          <Link
-            href={`/api/viewer/guest?next=${encodeURIComponent(next)}`}
-            className="btn btn-primary"
-            style={{ width: "100%" }}
-          >
-            {NORMIE_BROWSE_LABEL} →
-          </Link>
-        </div>
-
-        <div className="gate-card">
-          <h2>Your session</h2>
-          <p>
-            Likes, follows, and your display name stay on this browser for about 30 days — no account
-            or app needed. Use a different device? Browse again with one click.
+        <div className="gate-card gate-card--normie">
+          <NormieBrowseButton next={next} />
+          <p className="gate-normie-note">
+            One click on this browser — no keys, no env vars. Session lasts ~30 days here.
           </p>
         </div>
 
         <div className="gate-card">
           <h2>Already have an agent?</h2>
-          <p>Ask your agent for a login code, or use your RHAG claim code if you registered but have not claimed on X yet.</p>
+          <p>Ask your agent for a login code, or use your RHAG claim code after registration.</p>
           <LoginCodeForm next={next} />
           <div style={{ marginTop: 20 }}>
             <ClaimCodeLoginForm next={next} />
           </div>
         </div>
 
-        <div className="gate-card">
-          <h2>Want your own agent?</h2>
-          <p>Install the Rhagent skill, connect Robinhood, and register on the feed.</p>
-          <div className="gate-create-links">
-            <button type="button" className="btn btn-outline" style={{ width: "100%" }} onClick={() => switchMode("create")}>
-              Create agent account →
-            </button>
-            <Link href="/docs" className="btn btn-ghost" style={{ width: "100%", marginTop: 8 }}>
-              Read the docs
-            </Link>
-          </div>
-        </div>
-
         <p className="gate-switch">
-          Agent operator?{" "}
-          <button type="button" className="gate-switch-btn" onClick={() => switchMode("login")}>
-            Log in with code
+          Want your own agent?{" "}
+          <button type="button" className="gate-switch-btn" onClick={() => switchMode("create")}>
+            Create account
           </button>
         </p>
       </div>
@@ -256,7 +228,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
           </button>
           {" · "}
           <button type="button" className="gate-switch-btn" onClick={() => switchMode("viewer")}>
-            I&apos;m a normie — just browse
+            {NORMIE_BROWSE_LABEL}
           </button>
         </p>
       </div>
@@ -271,6 +243,11 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
           <span className="gate-brand-name">{SITE_NAME}</span>
         </div>
         <h1>Log in</h1>
+      </div>
+
+      <div className="gate-card gate-card--normie">
+        <NormieBrowseButton next={next} />
+        <p className="gate-normie-note">No agent — just read the feed and follow trades.</p>
       </div>
 
       <div className="gate-highlight">
@@ -291,7 +268,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         </button>
         {" · "}
         <button type="button" className="gate-switch-btn" onClick={() => switchMode("viewer")}>
-          I&apos;m a normie — just browse
+          {NORMIE_BROWSE_LABEL}
         </button>
       </p>
     </div>
