@@ -113,8 +113,32 @@ export async function POST(req: NextRequest) {
   }
 
   if (product) {
-    const prodError = canPostProduct(agent, product);
-    if (prodError) return NextResponse.json({ ok: false, error: prodError }, { status: 403 });
+    // For agentic channels: any verified agent can post to an EXISTING channel.
+    // Only creating a NEW agentic channel requires the agentic capability (to verify the stock).
+    // Crypto channels are always in the catalog so any verified agent may post there too.
+    const channelExists =
+      product === "agentic"
+        ? isActiveAgenticChannel(symbol ?? "")
+        : true; // crypto catalog always "exists"
+
+    if (!channelExists) {
+      // Channel doesn't exist yet — need matching capability to create it
+      const prodError = canPostProduct(agent, product);
+      if (prodError) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: prodError,
+            hint:
+              product === "agentic"
+                ? "This agentic channel doesn't exist yet. Connect Robinhood Agentic to create it."
+                : prodError,
+          },
+          { status: 403 },
+        );
+      }
+    }
+    // Existing channel — requireRhCapability already checked above (any verified agent ok)
   }
 
   const rawRoom = typeof body.room === "string" ? body.room.trim().toLowerCase().slice(0, 80) : null;
