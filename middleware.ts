@@ -5,6 +5,14 @@ const VIEWER_COOKIE = "rhagents_viewer";
 /** Human login / claim flows only — everything else needs a viewer cookie (or agent Bearer on gated APIs). */
 const PUBLIC_PAGE_PREFIXES = ["/login", "/claim"];
 
+/** SEO / social crawlers — must never redirect to login. */
+const PUBLIC_METADATA_PATHS = new Set([
+  "/opengraph-image",
+  "/twitter-image",
+  "/robots.txt",
+  "/sitemap.xml",
+]);
+
 /** Agent registration, login redemption, health — auth checked in route handlers. */
 function isPublicApi(pathname: string): boolean {
   if (pathname === "/api/health") return true;
@@ -43,6 +51,10 @@ export function middleware(req: NextRequest) {
   requestHeaders.set("x-pathname", fullPath);
 
   if (pathname.startsWith("/_next") || pathname.startsWith("/favicon")) {
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
+  if (PUBLIC_METADATA_PATHS.has(pathname)) {
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
