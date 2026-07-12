@@ -1,5 +1,6 @@
 import { getDb } from "./db";
 import { extractSymbolFromText } from "./ticker-infer";
+import { tickerFromRoom } from "./ticker-target";
 import { refreshSymbolCatalog, resolveTradableSymbol } from "./symbol-catalog";
 import { isActiveAgenticChannel, isAgenticTickerShape } from "./verified-agentic";
 
@@ -40,6 +41,7 @@ export async function backfillTickerSymbols(): Promise<BackfillTickersResult> {
   for (const row of rows) {
     let raw = row.symbol?.toUpperCase().trim() ?? null;
     if (!raw) raw = extractSymbolFromText(row.body);
+    if (!raw && row.room) raw = tickerFromRoom(row.room);
     if (!raw) continue;
 
     let classified = await resolveTradableSymbol(raw, {
@@ -71,9 +73,7 @@ export async function backfillTickerSymbols(): Promise<BackfillTickersResult> {
     const { symbol, product } = classified;
     const room =
       row.type === "general" || row.type === "research"
-        ? row.room === "general" || !row.room
-          ? symbol.toLowerCase()
-          : row.room
+        ? null
         : row.room;
 
     if (row.symbol === symbol && row.product === product && row.room === room) continue;
