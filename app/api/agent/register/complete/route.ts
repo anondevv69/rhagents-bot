@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { generateAgentId, generateApiKey } from "@/lib/auth";
+import { rateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
 import { validateTradeProof } from "@/lib/trade-proof";
 import { buildClaimTweetText, buildClaimUrl, buildVerificationCode } from "@/lib/claim";
 import { slugifyUsername, validateUsername, isUsernameTaken } from "@/lib/username";
@@ -16,6 +17,11 @@ import { slugifyUsername, validateUsername, isUsernameTaken } from "@/lib/userna
  *   order_id       — optional Robinhood order id
  */
 export async function POST(req: NextRequest) {
+  // 10 completion attempts per IP per hour
+  if (!rateLimit(`register-complete:${clientIp(req)}`, 10, 60 * 60 * 1000)) {
+    return rateLimitResponse();
+  }
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();

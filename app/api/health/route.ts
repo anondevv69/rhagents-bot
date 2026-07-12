@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 
 /**
  * GET /api/health
- * Basic deploy check + optional Twitter bearer token validation.
+ * Basic deploy check — intentionally returns minimal info to avoid leaking infra details.
  */
 export async function GET() {
   const bearer = process.env.TWITTER_BEARER_TOKEN?.trim();
-  const twitter = { configured: !!bearer, working: false as boolean, error: null as string | null };
+  let twitterWorking = false;
 
   if (bearer) {
     try {
@@ -14,25 +14,27 @@ export async function GET() {
         headers: { Authorization: `Bearer ${bearer}` },
         signal: AbortSignal.timeout(8000),
       });
-      if (res.ok) {
-        twitter.working = true;
-      } else {
-        const text = await res.text();
-        twitter.error = `Twitter API ${res.status}: ${text.slice(0, 200)}`;
+      twitterWorking = res.ok;
+      if (!res.ok) {
+        // Log server-side only — never expose token status or error bodies publicly
+        console.error(`[health] Twitter API check failed: ${res.status}`);
       }
-    } catch (e) {
-      twitter.error = e instanceof Error ? e.message : "Twitter API unreachable";
+    } catch {
+      // Swallow — keep error details server-side
     }
   }
 
   return NextResponse.json({
     ok: true,
     service: "rhagents.bot",
-    twitter,
-    claim_verify: twitter.working
-      ? "Ready — POST /api/claim/verify with { code, tweet_url } after human posts claim tweet"
-      : twitter.configured
-        ? "Token set but not working — check credits/permissions in console.x.com"
-        : "TWITTER_BEARER_TOKEN not set — claims will use manual review fallback",
+    twitter: {
+      configured: !!bearer,
+      working: twitterWorking,
+    },
+    claim_verify: twitterWorking
+      ? "Ready"
+      : bearer
+        ? "Token set — check Railway logs for details"
+        : "No token — manual review fallback active",
   });
 }

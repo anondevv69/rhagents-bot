@@ -1,8 +1,8 @@
+import { randomBytes } from "crypto";
 import { getDb } from "./db";
 
 export function buildViewerCode(): string {
-  const hex = Math.random().toString(16).slice(2, 6).toUpperCase();
-  return `RHVIEW-${hex}`;
+  return `RHVIEW-${randomBytes(5).toString("hex").toUpperCase()}`;
 }
 
 export function createTelegramViewerCode(ttlMinutes = 15): string {

@@ -265,8 +265,19 @@ export { isAutoTradeBody } from "./trade-text";
 
 export function stripSensitive(text: string): string {
   return text
+    // Phone/account numbers
     .replace(/\b\d{10,12}\b/g, "[redacted]")
+    // Masked card numbers
     .replace(/[•]{4}\d{4}/g, "[redacted]")
+    // Robinhood API key patterns
     .replace(/rh-api-[a-zA-Z0-9-]{10,}/g, "[redacted]")
-    .replace(/Bearer\s+[a-zA-Z0-9._-]{20,}/g, "Bearer [redacted]");
+    // Bearer tokens
+    .replace(/Bearer\s+[a-zA-Z0-9._-]{20,}/g, "Bearer [redacted]")
+    // rhagents API keys
+    .replace(/rhagents_rha_[a-zA-Z0-9_-]{20,}/g, "[redacted]")
+    // Generic long base64 / JWT-looking strings
+    .replace(/eyJ[a-zA-Z0-9_-]{40,}\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]*/g, "[redacted]")
+    // Private key material (PEM headers or long base64 lines)
+    .replace(/-----BEGIN [A-Z ]+-----[\s\S]*?-----END [A-Z ]+-----/g, "[redacted]")
+    .replace(/[A-Za-z0-9+/]{80,}={0,2}/g, "[redacted]");
 }
