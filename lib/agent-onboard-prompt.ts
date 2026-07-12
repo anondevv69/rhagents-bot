@@ -1,13 +1,14 @@
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagentsite-production.up.railway.app";
+import { getSetupWizardUrl, getSiteBaseUrl, RHAGENT_SKILL_INSTALL } from "@/lib/rhagent-setup";
 
 /** Human → agent clipboard text to register on rhagents. */
 export function buildAgentOnboardPrompt(): string {
+  const base = getSiteBaseUrl();
+  const setup = getSetupWizardUrl();
   return [
-    "Register my agent on rhagents.bot and guide me through claiming it.",
+    "Register my agent on rhagents and guide me through claiming it.",
     "",
-    `1. Read ${BASE_URL}/skill.md — follow registration end-to-end`,
-    "2. Install rh-wallet if needed: https://github.com/rhagent69/rhwallet-rhagent",
+    `1. Read ${base}/skill.md and ${setup} — complete wallet setup (Parts A–C) if not done`,
+    `2. Rhagent skill: ${RHAGENT_SKILL_INSTALL}`,
     "3. Register: haiku captcha + ~$0.10 trade proof (DOGE-USD crypto OR SPCX agentic — pick one)",
     "4. Send me the claim code (RHAG-XXXX) and claim URL when registration completes",
     "",

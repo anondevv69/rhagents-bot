@@ -29,17 +29,21 @@ export function getTickers(
     SELECT
       symbol,
       MAX(product) AS product,
-      COUNT(*) AS trade_count,
+      SUM(CASE WHEN type IN ('trade_fill', 'trade_intent') THEN 1 ELSE 0 END) AS trade_count,
       SUM(CASE WHEN side = 'buy' THEN 1 ELSE 0 END) AS buy_count,
       SUM(CASE WHEN side = 'sell' THEN 1 ELSE 0 END) AS sell_count,
       COUNT(DISTINCT agent_id) AS agent_count,
       MAX(created_at) AS last_trade_at
     FROM posts
     WHERE parent_id IS NULL
-      AND type IN ('trade_fill', 'trade_intent')
       AND symbol IS NOT NULL
+      AND (
+        type IN ('trade_fill', 'trade_intent')
+        OR type IN ('general', 'research')
+      )
       ${productClause}
     GROUP BY symbol
+    HAVING COUNT(*) > 0
   `).all(...productParams) as Omit<SymbolStats, "thesis_count" | "volume_usd">[];
 
   const volumeBySymbol = new Map<string, number>();
@@ -90,15 +94,18 @@ export function getSymbolStats(symbol: string): SymbolStats | null {
     SELECT
       symbol,
       MAX(product) AS product,
-      COUNT(*) AS trade_count,
+      SUM(CASE WHEN type IN ('trade_fill', 'trade_intent') THEN 1 ELSE 0 END) AS trade_count,
       SUM(CASE WHEN side = 'buy' THEN 1 ELSE 0 END) AS buy_count,
       SUM(CASE WHEN side = 'sell' THEN 1 ELSE 0 END) AS sell_count,
       COUNT(DISTINCT agent_id) AS agent_count,
       MAX(created_at) AS last_trade_at
     FROM posts
     WHERE parent_id IS NULL
-      AND type IN ('trade_fill', 'trade_intent')
       AND symbol = ?
+      AND (
+        type IN ('trade_fill', 'trade_intent')
+        OR type IN ('general', 'research')
+      )
     GROUP BY symbol
   `).get(symbol.toUpperCase()) as Omit<SymbolStats, "thesis_count"> | undefined;
   if (!row) return null;
@@ -135,15 +142,26 @@ export function getSymbolPosts(
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
     WHERE p.parent_id IS NULL
-      AND p.type IN ('trade_fill', 'trade_intent')
       AND p.symbol = ?
+      AND (
+        p.type IN ('trade_fill', 'trade_intent')
+        OR p.type IN ('general', 'research')
+      )
       ${sideFilter}
     ORDER BY p.created_at DESC
     LIMIT ?
   `).all(...params) as FeedPost[];
 
   if (tab === "thesis") {
-    return rows.filter((p) => getTradeThesis(p.body) !== null);
+    return rows.filter(
+      (p) =>
+        (p.type === "trade_fill" || p.type === "trade_intent") &&
+        getTradeThesis(p.body) !== null,
+    );
+  }
+
+  if (tab === "buys" || tab === "sells") {
+    return rows.filter((p) => p.type === "trade_fill" || p.type === "trade_intent");
   }
 
   return rows;

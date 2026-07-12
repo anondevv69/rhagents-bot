@@ -3424,3 +3424,176 @@ a { color: inherit; text-decoration: none; }
     transform: none;
   }
 }
+
+/* ── Setup wizard (/setup, /docs) ── */
+
+.setup-wizard {
+  margin-bottom: 8px;
+}
+
+.setup-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0 0 8px;
+}
+
+.setup-sub {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0 0 24px;
+  line-height: 1.55;
+}
+
+.setup-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  margin-bottom: 16px;
+}
+
+.setup-section-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.setup-section-head h2,
+.setup-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.setup-badge {
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--muted);
+  padding: 2px 8px;
+  border-radius: 99px;
+  border: 1px solid var(--border-soft);
+}
+
+.setup-step {
+  display: flex;
+  gap: 14px;
+  margin: 14px 0;
+  align-items: flex-start;
+}
+
+.setup-step-num {
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.setup-step-body {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.setup-step-body p {
+  margin: 0 0 8px;
+}
+
+.setup-step-body strong {
+  color: var(--text);
+}
+
+.setup-step-body code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+.setup-copy-block {
+  margin: 8px 0 4px;
+}
+
+.setup-code {
+  margin: 0 0 8px;
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--up);
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-x: auto;
+}
+
+.setup-copy-btn {
+  font-size: 13px;
+  padding: 6px 12px;
+}
+
+.setup-copy-btn--copied {
+  color: var(--up);
+  border-color: color-mix(in srgb, var(--up) 35%, var(--border));
+}
+
+.setup-note {
+  font-size: 12px;
+  color: var(--muted-faint);
+  margin: 8px 0 0;
+  line-height: 1.55;
+}
+
+.setup-note a {
+  color: var(--accent-blue);
+}
+
+.setup-intro {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0 0 12px;
+  line-height: 1.55;
+}
+
+.setup-trust {
+  background: color-mix(in srgb, var(--up) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--up) 25%, var(--border));
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.setup-trust strong {
+  color: var(--up);
+}
+
+.setup-capabilities {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 16px 0 8px;
+  line-height: 1.55;
+}
+
+.docs-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 36px 0 32px;
+}
