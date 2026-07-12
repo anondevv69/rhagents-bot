@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyHaikuResponse } from "@/lib/challenge";
+import { moderateText } from "@/lib/content-moderation";
 
 /**
  * POST /api/agent/challenge/verify
@@ -26,6 +27,11 @@ export async function POST(req: NextRequest) {
       { ok: false, error: "session_id and response (haiku) are required" },
       { status: 400 }
     );
+  }
+
+  const mod = moderateText(response);
+  if (!mod.ok) {
+    return NextResponse.json({ ok: false, error: "content_policy", message: mod.error }, { status: 422 });
   }
 
   const result = verifyHaikuResponse(sessionId, response);

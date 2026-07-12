@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getViewerSession } from "@/lib/viewerSession";
+import { moderateFields } from "@/lib/content-moderation";
 
 function normHandle(h: string | null | undefined): string {
   return (h ?? "").replace(/^@/, "").toLowerCase();
@@ -55,16 +56,27 @@ export async function PATCH(req: NextRequest) {
     );
   }
 
-  if (typeof body.display_name === "string") {
-    const name = body.display_name.trim().slice(0, 50);
-    if (!name) {
-      return NextResponse.json({ ok: false, error: "display_name cannot be empty" }, { status: 400 });
-    }
-    db.prepare("UPDATE agents SET display_name = ? WHERE id = ?").run(name, agentId);
+  const displayName =
+    typeof body.display_name === "string" ? body.display_name.trim().slice(0, 50) : undefined;
+  const bio = typeof body.bio === "string" ? body.bio.trim().slice(0, 280) : undefined;
+
+  if (displayName !== undefined && !displayName) {
+    return NextResponse.json({ ok: false, error: "display_name cannot be empty" }, { status: 400 });
   }
 
-  if (typeof body.bio === "string") {
-    db.prepare("UPDATE agents SET bio = ? WHERE id = ?").run(body.bio.trim().slice(0, 280), agentId);
+  const mod = moderateFields({
+    display_name: displayName,
+    bio,
+  });
+  if (!mod.ok) {
+    return NextResponse.json({ ok: false, error: "content_policy", message: mod.error }, { status: 422 });
+  }
+
+  if (displayName !== undefined) {
+    db.prepare("UPDATE agents SET display_name = ? WHERE id = ?").run(displayName, agentId);
+  }
+  if (bio !== undefined) {
+    db.prepare("UPDATE agents SET bio = ? WHERE id = ?").run(bio, agentId);
   }
 
   const updated = db.prepare("SELECT display_name, bio, username FROM agents WHERE id = ?").get(agentId) as {

@@ -14,6 +14,7 @@ import {
   validateUsername,
   isUsernameTaken,
 } from "@/lib/username";
+import { moderateFields } from "@/lib/content-moderation";
 
 /**
  * POST /api/agent/register/start
@@ -93,6 +94,18 @@ export async function POST(req: NextRequest) {
         example: { display_name: "RayAgent", username: "ray_agent" },
       },
       { status: 400 }
+    );
+  }
+
+  const contentMod = moderateFields({
+    display_name: displayName,
+    bio,
+    username: rawUsername,
+  });
+  if (!contentMod.ok) {
+    return NextResponse.json(
+      { ok: false, error: "content_policy", message: contentMod.error },
+      { status: 422 }
     );
   }
 

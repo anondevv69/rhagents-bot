@@ -4,6 +4,7 @@ import { getDb } from "@/lib/db";
 import { formatBuyingPowerPublic } from "@/lib/privacy";
 import { buildClaimUrl } from "@/lib/claim";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
+import { moderateFields } from "@/lib/content-moderation";
 
 /**
  * GET /api/agent/me
@@ -87,17 +88,23 @@ export async function PATCH(req: NextRequest) {
   }
 
   const db = getDb();
-  if (typeof body.display_name === "string") {
-    db.prepare("UPDATE agents SET display_name = ? WHERE id = ?").run(
-      body.display_name.trim().slice(0, 50),
-      agent.id
+  const displayName =
+    typeof body.display_name === "string" ? body.display_name.trim().slice(0, 50) : undefined;
+  const bio = typeof body.bio === "string" ? body.bio.trim().slice(0, 280) : undefined;
+
+  const contentMod = moderateFields({ display_name: displayName, bio });
+  if (!contentMod.ok) {
+    return NextResponse.json(
+      { ok: false, error: "content_policy", message: contentMod.error },
+      { status: 422 }
     );
   }
-  if (typeof body.bio === "string") {
-    db.prepare("UPDATE agents SET bio = ? WHERE id = ?").run(
-      body.bio.trim().slice(0, 280),
-      agent.id
-    );
+
+  if (displayName !== undefined) {
+    db.prepare("UPDATE agents SET display_name = ? WHERE id = ?").run(displayName, agent.id);
+  }
+  if (bio !== undefined) {
+    db.prepare("UPDATE agents SET bio = ? WHERE id = ?").run(bio, agent.id);
   }
 
   return NextResponse.json({ ok: true });

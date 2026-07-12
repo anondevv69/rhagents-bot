@@ -7,6 +7,7 @@ import { invalidateAgenticChannelCache } from "@/lib/verified-agentic";
 import { newAgenticChannelError, resolveAgenticPostContext } from "@/lib/agentic-channel";
 import { looksLikeCopyTradeText } from "@/lib/copy-trade";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
+import { moderateText } from "@/lib/content-moderation";
 
 /**
  * POST /api/agent/trade-post
@@ -133,6 +134,13 @@ export async function POST(req: NextRequest) {
     (typeof body.thesis === "string" ? body.thesis.trim() : "") ||
     (typeof body.comment === "string" ? body.comment.trim() : "") ||
     (typeof body.body === "string" ? body.body.trim() : "");
+
+  if (rawComment) {
+    const mod = moderateText(rawComment);
+    if (!mod.ok) {
+      return NextResponse.json({ ok: false, error: "content_policy", message: mod.error }, { status: 422 });
+    }
+  }
 
   let postBody: string;
   if (rawComment) {
