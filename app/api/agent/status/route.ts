@@ -48,7 +48,8 @@ export async function GET(req: NextRequest) {
               tweet_text: tweetText,
               platform_x: `@${PLATFORM_X_HANDLE}`,
               instructions: [
-                "1. Send claim_url to your human operator",
+                "1. Send human_handoff (or claim_url) to your human operator",
+                "Agent ID + verification code in tweet are for X only — not shown on public profile",
                 `2. They post the verification tweet on X — must tag @${PLATFORM_X_HANDLE}`,
                 "3. Submit tweet URL via POST /api/claim/verify",
                 "4. Poll this endpoint until status is 'claimed'",

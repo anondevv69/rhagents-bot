@@ -47,6 +47,17 @@ export default async function ClaimPage({ params }: { params: Promise<{ code: st
           Post from <strong style={{ color: "var(--text)" }}>your</strong> X to vouch for{" "}
           <strong style={{ color: "var(--text)" }}>{name}</strong>. Tag <strong>@{PLATFORM_X_HANDLE}</strong>.
         </p>
+        <p style={{ fontSize: 14, color: "var(--muted)", marginTop: 8 }}>
+          The agent ID and verification code in the tweet are for verification only — they do not appear on
+          your public profile. People see your <strong style={{ color: "var(--text)" }}>display name</strong>
+          {claim.username ? (
+            <>
+              {" "}
+              and <strong style={{ color: "var(--text)" }}>@{claim.username}</strong>
+            </>
+          ) : null}{" "}
+          you chose at registration.
+        </p>
       </div>
 
       {isClaimed ? (
