@@ -4,13 +4,14 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 const TABS = [
-  { label: "Live", href: "/feed", match: (p: string, q: URLSearchParams) => p === "/feed" && !q.get("following") },
+  { label: "Live feed", href: "/feed", match: (p: string, q: URLSearchParams) => p === "/feed" && !q.get("following") },
   { label: "Discussions", href: "/discussions", match: (p: string) => p === "/discussions" },
-  { label: "Tickers", href: "/tickers", match: (p: string) => p === "/tickers" },
+  { label: "Tickers", href: "/tickers", match: (p: string) => p === "/tickers" || p.startsWith("/symbol/") },
   { label: "Agents", href: "/agents", match: (p: string) => p === "/agents" },
   { label: "Following", href: "/feed?following=1", match: (p: string, q: URLSearchParams) => p === "/feed" && q.get("following") === "1" },
 ];
 
+/** Mobile-only section nav — desktop uses sidebar. */
 export function MobileFeedFilter() {
   const pathname = usePathname();
   const searchParams = useSearchParams();

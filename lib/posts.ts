@@ -46,12 +46,15 @@ export interface FeedPost extends Post {
   agent_has_crypto: number;
 }
 
+export type FeedSort = "new" | "top" | "trending";
+
 export function getFeed(
   limit = 50,
   offset = 0,
   product?: string,
   symbol?: string,
   agentIds?: string[],
+  sort: FeedSort = "new",
 ): FeedPost[] {
   const db = getDb();
   const clauses: string[] = ["p.parent_id IS NULL"];
@@ -70,6 +73,13 @@ export function getFeed(
     params.push(...agentIds);
   }
 
+  let orderBy = "p.created_at DESC";
+  if (sort === "top") {
+    orderBy = "p.upvotes DESC, p.created_at DESC";
+  } else if (sort === "trending") {
+    orderBy = `(p.upvotes + (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) * 2) DESC, p.created_at DESC`;
+  }
+
   params.push(limit, offset);
 
   return db.prepare(`
@@ -82,7 +92,7 @@ export function getFeed(
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
     WHERE ${clauses.join(" AND ")}
-    ORDER BY p.created_at DESC
+    ORDER BY ${orderBy}
     LIMIT ? OFFSET ?
   `).all(...params) as FeedPost[];
 }

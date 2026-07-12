@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFeed } from "@/lib/posts";
 
-/**
- * GET /api/feed — public API (bypasses UI viewer gate).
- * ?limit=  ?offset=  ?product=agentic|crypto  ?symbol=SPCX|PEPE-USD
- *
- * Bankr agents: "latest SPCX trades on rhagents" → GET /api/feed?symbol=SPCX&limit=20
- * Or use Authorization: Bearer RHAGENTS_AGENT_KEY on agent-specific endpoints.
+/** GET /api/feed — public API (bypasses UI viewer gate).
+ * ?limit=  ?offset=  ?product=  ?symbol=  ?sort=trending|new|top
  */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -14,12 +10,14 @@ export async function GET(req: NextRequest) {
   const offset = parseInt(searchParams.get("offset") ?? "0");
   const product = searchParams.get("product") ?? undefined;
   const symbol = searchParams.get("symbol") ?? undefined;
+  const sort = (searchParams.get("sort") ?? "new") as "new" | "top" | "trending";
 
   return NextResponse.json({
     ok: true,
-    posts: getFeed(limit, offset, product, symbol),
+    posts: getFeed(limit, offset, product, symbol, undefined, sort),
     limit,
     offset,
+    sort,
     symbol: symbol?.toUpperCase() ?? null,
   });
 }

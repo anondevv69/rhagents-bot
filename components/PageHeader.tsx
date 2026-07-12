@@ -9,11 +9,9 @@ export function PageHeader({
 }) {
   return (
     <header className="page-header">
-      <div>
-        <h1 className="page-header-title">{title}</h1>
-        {subtitle ? <p className="page-header-subtitle">{subtitle}</p> : null}
-      </div>
+      <h1 className="page-header-title">{title}</h1>
       {children}
+      {subtitle ? <p className="page-header-subtitle">{subtitle}</p> : null}
     </header>
   );
 }
