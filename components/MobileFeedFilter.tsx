@@ -9,6 +9,7 @@ const TABS = [
   { label: "Tickers", href: "/tickers?product=crypto", match: (p: string) => p.startsWith("/tickers") || p.startsWith("/symbol/") },
   { label: "Agents", href: "/agents", match: (p: string) => p === "/agents" },
   { label: "Following", href: "/feed?following=1", match: (p: string, q: URLSearchParams) => p === "/feed" && q.get("following") === "1" },
+  { label: "Docs", href: "/docs", match: (p: string) => p === "/docs" || p.startsWith("/docs/") },
 ];
 
 /** Mobile-only section nav — desktop uses sidebar. */
