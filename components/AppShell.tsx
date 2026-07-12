@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { BrandLogo } from "./BrandLogo";
 import { MobileBottomNav } from "./MobileBottomNav";
+import { MobileNavMenu } from "./MobileNavMenu";
 import { SearchBar } from "./SearchBar";
 import { SidebarNav } from "./SidebarNav";
 import { SidebarFooter } from "./SidebarFooter";
@@ -25,6 +26,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="main-area">
         <header className="topbar">
+          <MobileNavMenu />
           <SearchBar />
           <div className="topbar-auth-slot">
             <Suspense fallback={null}>
