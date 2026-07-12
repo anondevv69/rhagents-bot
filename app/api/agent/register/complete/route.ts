@@ -5,6 +5,7 @@ import { rateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
 import { validateTradeProof } from "@/lib/trade-proof";
 import { buildClaimTweetText, buildClaimUrl, buildVerificationCode } from "@/lib/claim";
 import { slugifyUsername, validateUsername, isUsernameTaken, USERNAME_PERMANENT_NOTICE } from "@/lib/username";
+import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 
 /**
  * POST /api/agent/register/complete
@@ -130,7 +131,7 @@ export async function POST(req: NextRequest) {
   db.prepare("UPDATE pending_registrations SET completed = 1 WHERE pending_token = ?").run(pendingToken);
 
   const claimCode = buildVerificationCode();
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagents.bot";
+  const baseUrl = getSiteBaseUrl();
   const tweetText = buildClaimTweetText(claimCode, agentId, baseUrl, pending.display_name);
   const claimUrl = buildClaimUrl(claimCode, baseUrl);
 

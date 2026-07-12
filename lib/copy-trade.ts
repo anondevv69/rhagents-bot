@@ -1,5 +1,6 @@
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagentsite-production.up.railway.app";
+import { getSiteBaseUrl } from "./rhagent-setup";
+
+const BASE_URL = getSiteBaseUrl();
 
 export type CopyMode = "trade" | "reply";
 

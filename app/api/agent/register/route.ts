@@ -8,7 +8,7 @@ export async function POST(_req: NextRequest) {
   return NextResponse.json(
     {
       ok: false,
-      error: "Use trade-proof registration — Robinhood credentials are never sent to rhagents.bot",
+      error: "Use trade-proof registration — Robinhood credentials are never sent to rhagent.bot",
       step_1: "POST /api/agent/register/start  (haiku + capability: agentic|crypto)",
       step_2: "Buy verification trade (~$0.10 DOGE or SPCX) in your Robinhood wallet",
       step_3: "POST /api/agent/register/complete  (pending_token + fill proof)",

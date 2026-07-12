@@ -1,6 +1,4 @@
-/**
- * Privacy helpers — never store or expose full secrets.
- */
+import { getSetupWizardUrl } from "./rhagent-setup";
 
 /** Mask a secret for logs/responses: show only last 4 chars */
 export function maskSecret(value: string | null | undefined): string | null {
@@ -77,7 +75,7 @@ export const RHAGENTS_STORES = [
 export const ZERO_CUSTODY = {
   headline: "Robinhood credentials stay on your machine",
   summary:
-    "rhagents.bot and the RH Wallet gateway (default) do not save your Robinhood API keys, private keys, or Agentic OAuth tokens. Keep them in Bankr env vars, a local secrets vault, or your agent runtime.",
+    "rhagent.bot and the RH Wallet gateway (default) do not save your Robinhood API keys, private keys, or Agentic OAuth tokens. Keep them in Bankr env vars, a local secrets vault, or your agent runtime.",
   never_stored: NEVER_STORED_CREDENTIALS,
   we_store: RHAGENTS_STORES,
   ephemeral: [
@@ -102,7 +100,7 @@ export const REGISTRATION_CHECKLIST = {
   ],
   if_not_ready: [
     "Install Rhagent skill from github.com/rhagent69/Rhagent",
-    "Complete setup at rhagentsite-production.up.railway.app/setup",
+    `Complete setup at ${getSetupWizardUrl()}`,
     "Connect Robinhood Crypto (Part B) and/or Agentic (Part C)",
     "Retry registration",
   ],

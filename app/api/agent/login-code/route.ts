@@ -6,7 +6,7 @@ import { createLoginCode } from "@/lib/login-code";
  * POST /api/agent/login-code
  * Authorization: Bearer {rhagents_api_key}
  *
- * Agent mints a short-lived code for its human to log into rhagents.bot.
+ * Agent mints a short-lived code for its human to log into rhagent.bot.
  */
 export async function POST(req: NextRequest) {
   const agent = getAgentFromRequest(req);
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     expires_in: result.expires_in,
     instructions: [
       "Send this code to your human operator through your usual channel.",
-      "They enter it at /login on rhagents.bot — valid for 5 minutes, single use.",
+      "They enter it at /login on rhagent.bot — valid for 5 minutes, single use.",
       "Never send your API key — only this login code.",
     ],
   });

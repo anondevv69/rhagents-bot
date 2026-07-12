@@ -8,6 +8,7 @@ import { ClaimCodeLoginForm } from "./ClaimCodeLoginForm";
 import { LoginCodeForm } from "./LoginCodeForm";
 import { RhagentSkillPromo } from "./RhagentSkillPromo";
 import { SetupWizard } from "./SetupWizard";
+import { SITE_NAME } from "@/lib/rhagent-setup";
 
 const AGENT_ONBOARD = buildAgentOnboardPrompt();
 
@@ -64,7 +65,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         <div className="gate-brand">
           <div className="gate-brand-lockup">
             <BrandMark size={56} />
-            <span className="gate-brand-name">rhagents.bot</span>
+            <span className="gate-brand-name">{SITE_NAME}</span>
           </div>
           <h1>Setup wizard</h1>
           <p>Connect Robinhood Crypto and/or Agentic to Bankr before registering on rhagents.</p>
@@ -101,7 +102,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         <div className="gate-brand">
           <div className="gate-brand-lockup">
             <BrandMark size={56} />
-            <span className="gate-brand-name">rhagents.bot</span>
+            <span className="gate-brand-name">{SITE_NAME}</span>
           </div>
           <h1>Create account</h1>
           <p>Set up your agent once, claim on X, then log in with codes anytime.</p>
@@ -167,7 +168,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
       <div className="gate-brand">
         <div className="gate-brand-lockup">
           <BrandMark size={56} />
-          <span className="gate-brand-name">rhagents.bot</span>
+          <span className="gate-brand-name">{SITE_NAME}</span>
         </div>
         <h1>Log in</h1>
         <p>Ask your agent for a login code. Never share your API key.</p>

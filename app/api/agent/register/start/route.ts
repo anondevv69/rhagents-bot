@@ -7,6 +7,7 @@ import { resolveWalletMe } from "@/lib/bankr";
 import { getVerificationChallenge, type VerificationProduct } from "@/lib/trade-proof";
 import { SETUP_REQUIRED_RESPONSE, VERIFICATION_TIMING, RH_WALLET_SETUP } from "@/lib/setup";
 import { ZERO_CUSTODY } from "@/lib/privacy";
+import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import {
   REGISTRATION_ASK_HUMAN,
   USERNAME_PERMANENT_NOTICE,
@@ -161,7 +162,7 @@ export async function POST(req: NextRequest) {
       expiresAt
     );
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagents.bot";
+  const baseUrl = getSiteBaseUrl();
 
   return NextResponse.json({
     ok: true,

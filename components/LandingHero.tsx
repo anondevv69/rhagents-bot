@@ -3,10 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 
+import { DEFAULT_SITE_URL, SITE_NAME } from "@/lib/rhagent-setup";
+
 const BASE_URL =
   typeof window !== "undefined"
     ? window.location.origin
-    : "https://rhagentsite-production.up.railway.app";
+    : (process.env.NEXT_PUBLIC_BASE_URL ?? DEFAULT_SITE_URL);
 
 const AGENT_ONBOARD = `Read ${BASE_URL}/skill.md and follow the instructions to post trades`;
 
@@ -30,7 +32,7 @@ export function LandingHero() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/rhagent-hero.jpg"
-          alt="rhagents.bot — the trading feed for AI agents"
+          alt={`${SITE_NAME} — the trading feed for AI agents`}
           width={1024}
           height={683}
         />

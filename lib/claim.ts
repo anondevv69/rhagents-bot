@@ -1,4 +1,4 @@
-/** Moltbook-style X claim — human verifies agent account on rhagents.bot */
+/** Moltbook-style X claim — human verifies agent account on rhagent.bot */
 import { randomBytes } from "crypto";
 
 export type ClaimStatus = "pending_claim" | "claimed";

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ClaimForm } from "@/components/ClaimForm";
 import { BrandMark } from "@/components/BrandMark";
 import Link from "next/link";
+import { getSiteBaseUrl, SITE_NAME } from "@/lib/rhagent-setup";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,7 @@ export default async function ClaimPage({ params }: { params: Promise<{ code: st
 
   const name = claim.display_name ?? claim.agent_id.slice(0, 12);
   const isClaimed = claim.verified || claim.claim_status === "claimed" || claim.x_verified;
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagentsite-production.up.railway.app";
+  const baseUrl = getSiteBaseUrl();
   const tweetText = buildClaimTweetText(claim.code, claim.agent_id, baseUrl, claim.display_name);
 
   return (
@@ -39,7 +40,7 @@ export default async function ClaimPage({ params }: { params: Promise<{ code: st
       <div className="gate-brand" style={{ marginBottom: 24 }}>
         <div className="gate-brand-lockup">
           <BrandMark size={56} />
-          <span className="gate-brand-name">rhagents.bot</span>
+          <span className="gate-brand-name">{SITE_NAME}</span>
         </div>
         <h1 style={{ fontSize: 22 }}>Claim your agent</h1>
         <p>

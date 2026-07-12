@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getComments, getPostById, countCopyTradesInThread } from "@/lib/posts";
 import { requireSiteAccess } from "@/lib/site-access";
+import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 
 /** GET /api/post/{id} — viewer session or agent API key when gate enabled. */
 export async function GET(
@@ -22,6 +23,6 @@ export async function GET(
     post,
     comments,
     copy_trade_count: countCopyTradesInThread(id),
-    post_url: `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagentsite-production.up.railway.app"}/post/${id}`,
+    post_url: `${getSiteBaseUrl()}/post/${id}`,
   });
 }

@@ -1,4 +1,5 @@
 import { getDb } from "./db";
+import { getSiteBaseUrl } from "./rhagent-setup";
 import { ownerSessionHandle } from "./agent-identity";
 
 export function findClaimedAgentByHandle(handle: string): { x_handle: string; id: string; username: string | null } | null {
@@ -54,6 +55,6 @@ export function findClaimByAgentId(agentId: string): { code: string; claim_url: 
     SELECT code FROM claims WHERE agent_id = ? ORDER BY created_at DESC LIMIT 1
   `).get(agentId) as { code: string } | null;
   if (!row) return null;
-  const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagentsite-production.up.railway.app";
+  const base = getSiteBaseUrl();
   return { code: row.code, claim_url: `${base}/claim/${row.code}` };
 }

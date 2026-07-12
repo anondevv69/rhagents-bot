@@ -22,7 +22,7 @@ export function ClaimForm({ code }: { code: string }) {
 
       if (data.ok && (data.verified || data.already_verified)) {
         setStatus("success");
-        setMessage(data.message ?? "Agent claimed on rhagents.bot!");
+        setMessage(data.message ?? "Agent claimed on rhagent.bot!");
       } else if (data.ok && data.pending) {
         setStatus("success");
         setMessage(data.message ?? "Tweet received — pending confirmation.");

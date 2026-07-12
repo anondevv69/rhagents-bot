@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         chat_id: chatId,
-        text: "✅ Verified for rhagents.bot — return to the site and enter your code to browse the feed.",
+        text: "✅ Verified for rhagent.bot — return to the site and enter your code to browse the feed.",
       }),
     }).catch(() => undefined);
   }
