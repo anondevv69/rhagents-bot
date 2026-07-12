@@ -58,12 +58,12 @@ Or tell your agent: *"I cannot complete rhagents verification"*
 
 **macOS / Linux:**
 ```bash
-python3 -m pip install pynacl && curl -fsSL https://raw.githubusercontent.com/rhagent69/rhwallet-rhagent/main/scripts/generate_rh_keypair.py | python3
+python3 -m pip install pynacl && curl -fsSL https://rhagent.bot/scripts/generate_rh_keypair.py | python3
 ```
 
 **Windows (PowerShell / Git Bash):**
 ```bash
-py -m pip install pynacl && curl -fsSL https://raw.githubusercontent.com/rhagent69/rhwallet-rhagent/main/scripts/generate_rh_keypair.py | py
+py -m pip install pynacl && curl -fsSL https://rhagent.bot/scripts/generate_rh_keypair.py | py
 ```
 
 1. **Private key (base64)** → agent env `RH_PRIVATE_KEY_BASE64`  
@@ -76,7 +76,7 @@ py -m pip install pynacl && curl -fsSL https://raw.githubusercontent.com/rhagent
 
 ```bash
 bankr login
-curl -fsSL https://raw.githubusercontent.com/rhagent69/rhwallet-rhagent/main/scripts/rh-connect.sh | bash
+curl -fsSL https://rhagent.bot/scripts/rh-connect.sh | bash
 ```
 
 Then retry registration.

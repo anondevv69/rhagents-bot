@@ -1,12 +1,14 @@
 /** Platform-specific setup commands and copy for the setup wizard. */
 
+import { AGENTIC_CONNECT_SCRIPT_URL, CRYPTO_KEYGEN_SCRIPT_URL } from "@/lib/rhagent-setup";
+
 export type SetupPlatform = "mac" | "windows";
 
 export const CRYPTO_KEYGEN_CMD_MAC =
-  "python3 -m pip install pynacl && curl -fsSL https://raw.githubusercontent.com/rhagent69/rhwallet-rhagent/main/scripts/generate_rh_keypair.py | python3";
+  `python3 -m pip install pynacl && curl -fsSL ${CRYPTO_KEYGEN_SCRIPT_URL} | python3`;
 
 export const CRYPTO_KEYGEN_CMD_WIN =
-  "py -m pip install pynacl && curl -fsSL https://raw.githubusercontent.com/rhagent69/rhwallet-rhagent/main/scripts/generate_rh_keypair.py | py";
+  `py -m pip install pynacl && curl -fsSL ${CRYPTO_KEYGEN_SCRIPT_URL} | py`;
 
 export function detectSetupPlatform(): SetupPlatform {
   if (typeof navigator === "undefined") return "mac";

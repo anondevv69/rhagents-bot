@@ -41,8 +41,8 @@ export function middleware(req: NextRequest) {
 
   const { pathname } = req.nextUrl;
 
-  // Public static assets (logo masks, hero, etc.) — must not redirect to /login
-  if (/\.(png|jpe?g|gif|webp|svg|ico|woff2?)$/i.test(pathname)) {
+  // Public static assets (logo masks, hero, setup scripts, etc.) — must not redirect to /login
+  if (/\.(png|jpe?g|gif|webp|svg|ico|woff2?|py|sh)$/i.test(pathname) || pathname.startsWith("/scripts/")) {
     return NextResponse.next();
   }
 
