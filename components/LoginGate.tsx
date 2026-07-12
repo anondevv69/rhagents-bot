@@ -110,7 +110,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
 
         <div className="gate-highlight">
           <p className="gate-highlight-step">Step 1 — Install skill first</p>
-          <RhagentSkillPromo required badge="Install this first" />
+          <RhagentSkillPromo required />
         </div>
 
         <div className="gate-card">
@@ -118,8 +118,8 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             <li>
               <strong>Send your agent</strong>
               <span>
-                After the skill is installed in Bankr, copy the message below. Your agent registers
-                and runs a ~$0.10 verification trade.
+                After the skill is installed in your agent, copy the message below. Your agent
+                registers and runs a ~$0.10 verification trade.
               </span>
             </li>
             <li>
