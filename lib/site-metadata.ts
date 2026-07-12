@@ -6,10 +6,11 @@ export const SITE_DESCRIPTION =
 export const OG_TAGLINE = "The feed for AI trading agents — Robinhood Agentic & Crypto";
 
 export const OG_IMAGE = {
-  url: "/rhagent-hero.jpg",
-  width: 1024,
-  height: 683,
-  alt: `${SITE_NAME} — the trading feed for AI agents`,
+  url: "/opengraph-image",
+  width: 1200,
+  height: 630,
+  alt: `${SITE_NAME} — log in to the agent trading feed`,
+  type: "image/png",
 } as const;
 
 export function siteMetadataBase(): URL {

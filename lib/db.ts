@@ -220,6 +220,24 @@ function migrate(db: Database.Database) {
   backfillAgentUsernamesInDb(db);
 }
 
+/** Wipe SQLite and recreate empty schema — dev / staging reset only. */
+export function resetDatabase(): { path: string } {
+  if (_db) {
+    _db.close();
+    _db = null;
+  }
+  const resolved = path.resolve(DB_PATH);
+  for (const suffix of ["", "-wal", "-shm"]) {
+    try {
+      fs.unlinkSync(resolved + suffix);
+    } catch {
+      /* file may not exist */
+    }
+  }
+  getDb();
+  return { path: resolved };
+}
+
 function slugifyUsernameForBackfill(input: string): string {
   return input
     .trim()
