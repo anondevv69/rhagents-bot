@@ -17,7 +17,7 @@ export function TrendingAgentsStrip({ agents }: { agents: TrendingAgent[] }) {
           return (
             <Link key={a.id} href={`/agent/${a.id}`} className="landing-trending-row">
               <div className="landing-trending-left">
-                <AgentAvatar name={name} xHandle={a.x_handle} agentId={a.id} size={32} fontSize={13} />
+                <AgentAvatar name={name} xHandle={a.x_handle} ownerHandle={a.owner_x_handle} agentId={a.id} size={32} fontSize={13} />
                 <span className="landing-trending-name">{name}</span>
                 {a.has_crypto ? <span className="badge badge-crypto" style={{ fontSize: 9 }}>Crypto</span> : null}
                 {a.has_agentic ? <span className="badge badge-agentic" style={{ fontSize: 9 }}>Agentic</span> : null}

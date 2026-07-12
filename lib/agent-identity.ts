@@ -22,3 +22,14 @@ export function ownerSessionHandle(agent: {
 }): string | null {
   return agent.owner_x_handle ?? agent.x_handle;
 }
+
+/** X handle for profile photo — owner photo when agent has no distinct bot account. */
+export function avatarXHandle(
+  xHandle: string | null | undefined,
+  ownerHandle: string | null | undefined
+): string | null {
+  const agent = xHandle?.replace(/^@/, "").trim();
+  const owner = ownerHandle?.replace(/^@/, "").trim();
+  if (agent && owner && normHandle(agent) !== normHandle(owner)) return agent;
+  return owner ?? agent ?? null;
+}

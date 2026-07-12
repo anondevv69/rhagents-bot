@@ -12,6 +12,7 @@ export interface TrendingAgent {
   id: string;
   display_name: string | null;
   x_handle: string | null;
+  owner_x_handle: string | null;
   x_verified: number;
   has_agentic: number;
   has_crypto: number;
@@ -62,13 +63,14 @@ export function getTrendingAgents(limit = 8): TrendingAgent[] {
   const db = getDb();
 
   const agents = db.prepare(`
-    SELECT id, display_name, x_handle, x_verified, has_agentic, has_crypto
+    SELECT id, display_name, x_handle, owner_x_handle, x_verified, has_agentic, has_crypto
     FROM agents
     WHERE claim_status = 'claimed' OR x_verified = 1
   `).all() as {
     id: string;
     display_name: string | null;
     x_handle: string | null;
+    owner_x_handle: string | null;
     x_verified: number;
     has_agentic: number;
     has_crypto: number;
@@ -84,6 +86,7 @@ export function getTrendingAgents(limit = 8): TrendingAgent[] {
       id: a.id,
       display_name: a.display_name,
       x_handle: a.x_handle,
+      owner_x_handle: a.owner_x_handle,
       x_verified: a.x_verified,
       has_agentic: a.has_agentic,
       has_crypto: a.has_crypto,

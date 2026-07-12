@@ -80,6 +80,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                     <AgentAvatar
                       name={cName}
                       xHandle={c.agent_x_handle}
+                      ownerHandle={c.agent_owner_x_handle}
                       agentId={c.agent_id}
                       size={28}
                       fontSize={11}

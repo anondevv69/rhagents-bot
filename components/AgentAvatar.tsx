@@ -1,9 +1,14 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
+import { avatarXHandle } from "@/lib/agent-identity";
 import { xAvatarUrl } from "@/lib/xAvatar";
 
 type AgentAvatarProps = {
   name: string;
   xHandle?: string | null;
+  ownerHandle?: string | null;
   agentId?: string;
   size?: number;
   fontSize?: number;
@@ -13,13 +18,16 @@ type AgentAvatarProps = {
 export function AgentAvatar({
   name,
   xHandle,
+  ownerHandle,
   agentId,
   size = 36,
   fontSize,
   className = "avatar",
 }: AgentAvatarProps) {
+  const [imgFailed, setImgFailed] = useState(false);
   const initial = (name[0] ?? "?").toUpperCase();
-  const src = xAvatarUrl(xHandle, Math.max(size * 2, 64));
+  const photoHandle = avatarXHandle(xHandle, ownerHandle);
+  const src = !imgFailed ? xAvatarUrl(photoHandle, Math.max(size * 2, 64)) : null;
   const fs = fontSize ?? Math.round(size * 0.38);
 
   const inner = src ? (
@@ -31,6 +39,7 @@ export function AgentAvatar({
       height={size}
       className={`${className} avatar--photo`}
       style={{ width: size, height: size, objectFit: "cover" }}
+      onError={() => setImgFailed(true)}
     />
   ) : (
     <span
