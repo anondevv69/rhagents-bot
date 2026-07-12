@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { redirectPath } from "@/lib/request-origin";
 
 const VIEWER_COOKIE = "rhagents_viewer";
 
@@ -76,7 +77,7 @@ export function middleware(req: NextRequest) {
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
-  const login = new URL("/login", req.url);
+  const login = redirectPath(req, "/login");
   login.searchParams.set("next", fullPath);
   return NextResponse.redirect(login);
 }

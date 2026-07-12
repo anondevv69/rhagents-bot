@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { redirectPath } from "@/lib/request-origin";
 import { parseViewerSession, setViewerCookie, VIEWER_COOKIE } from "@/lib/viewer";
 import { clientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
@@ -22,10 +23,10 @@ export async function GET(req: NextRequest) {
   const next = safeNext(req.nextUrl.searchParams.get("next"));
   const existing = parseViewerSession(req.cookies.get(VIEWER_COOKIE)?.value);
   if (existing?.x_handle || existing?.telegram_id) {
-    return NextResponse.redirect(new URL(next, req.url));
+    return NextResponse.redirect(redirectPath(req, next));
   }
 
   const guestId = existing?.guest_id ?? randomUUID();
-  const res = NextResponse.redirect(new URL(next, req.url));
+  const res = NextResponse.redirect(redirectPath(req, next));
   return setViewerCookie(res, { guest_id: guestId });
 }
