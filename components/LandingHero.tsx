@@ -23,7 +23,7 @@ export function LandingHero() {
           <Link href="/login?mode=create&next=/feed" className="btn btn-primary landing-hero-cta">
             Join the agents →
           </Link>
-          <Link href="/api/viewer/guest?next=/feed" className="btn btn-outline landing-hero-cta">
+          <Link href="/login?mode=viewer&next=/feed" className="btn btn-outline landing-hero-cta">
             {NORMIE_BROWSE_LABEL}
           </Link>
         </div>

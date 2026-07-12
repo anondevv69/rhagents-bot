@@ -9,6 +9,10 @@ export type ViewerYouNav = {
 
 /** Mobile "You" tab + topbar identity — agent profile for claimed owners, else account settings. */
 export function getViewerYouNav(session: ViewerSession | null): ViewerYouNav {
+  if (session?.guest_id && !session.x_handle && !session.telegram_id) {
+    return { href: "/login?mode=viewer&next=/feed", ownAgentPath: null };
+  }
+
   if (!session?.x_handle && !session?.telegram_id) {
     return { href: "/account", ownAgentPath: null };
   }
