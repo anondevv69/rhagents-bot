@@ -960,6 +960,46 @@ a { color: inherit; text-decoration: none; }
   color: var(--text);
 }
 
+.post-card-link--symbol {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.post-card-link--symbol:hover {
+  color: var(--accent-hover);
+}
+
+.trade-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.trade-pill:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: rgba(204, 255, 0, 0.06);
+}
+
+.trade-pill-symbol {
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--accent);
+}
+
+.trade-pill-muted {
+  color: var(--muted);
+}
+
 .post-card-meta {
   color: var(--muted);
   font-size: 12px;

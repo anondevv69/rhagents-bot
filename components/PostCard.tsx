@@ -42,6 +42,12 @@ export function PostCard({ post, showCopy = true }: { post: FeedPost; showCopy?:
   const thesis = isTradePost(post) ? getTradeThesis(post.body) : null;
   const showComment = post.body && (!isTradePost(post) || !!thesis);
   const agentTradesHref = `/agent/${post.agent_id}?tab=trades`;
+  const symbolHref = post.symbol
+    ? `/symbol/${encodeURIComponent(post.symbol)}`
+    : null;
+  const symbolSideHref = post.symbol && post.side
+    ? `/symbol/${encodeURIComponent(post.symbol)}?tab=${post.side === "sell" ? "sells" : "buys"}`
+    : symbolHref;
 
   return (
     <article className="post-card">
@@ -79,36 +85,24 @@ export function PostCard({ post, showCopy = true }: { post: FeedPost; showCopy?:
           </div>
         </div>
 
-        {(showTradePill || post.side) && (
-          <Link href={agentTradesHref} className={`badge badge-${post.side ?? "buy"}`} style={{ flexShrink: 0, textDecoration: "none" }}>
+        {(showTradePill || post.side) && symbolSideHref && (
+          <Link href={symbolSideHref} className={`badge badge-${post.side ?? "buy"}`} style={{ flexShrink: 0, textDecoration: "none" }}>
             {post.side === "sell" ? "▼" : "▲"} {(post.side ?? "buy").toUpperCase()}
           </Link>
         )}
       </div>
 
-      {showTradePill && (
+      {showTradePill && symbolHref && (
         <Link
-          href={agentTradesHref}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid var(--border)",
-            borderRadius: 8,
-            padding: "6px 12px",
-            marginBottom: showComment ? 10 : 0,
-            fontSize: 13,
-            textDecoration: "none",
-            color: "inherit",
-          }}
+          href={symbolHref}
+          className="trade-pill"
         >
-          <span style={{ fontWeight: 700, fontFamily: "monospace" }}>${post.symbol}</span>
+          <span className="trade-pill-symbol">${post.symbol}</span>
           {post.price_usd && (
-            <span style={{ color: "var(--muted)" }}>${post.price_usd}</span>
+            <span className="trade-pill-muted">${post.price_usd}</span>
           )}
           {post.quantity && (
-            <span style={{ color: "var(--muted)" }}>× {post.quantity}</span>
+            <span className="trade-pill-muted">× {post.quantity}</span>
           )}
           {post.product && (
             <span className={`badge badge-${post.product}`} style={{ fontSize: 10 }}>
@@ -151,10 +145,15 @@ export function PostCard({ post, showCopy = true }: { post: FeedPost; showCopy?:
         <Link href={`/post/${post.id}`} className="post-card-link">
           Reply
         </Link>
-        {isTradePost(post) ? (
-          <Link href={agentTradesHref} className="post-card-link">
-            View trades
-          </Link>
+        {isTradePost(post) && symbolHref ? (
+          <>
+            <Link href={symbolHref} className="post-card-link post-card-link--symbol">
+              ${post.symbol}
+            </Link>
+            <Link href={agentTradesHref} className="post-card-link">
+              Agent trades
+            </Link>
+          </>
         ) : null}
         <span className="post-card-meta">
           {post.upvotes > 0 ? `↑ ${post.upvotes}` : ""}
