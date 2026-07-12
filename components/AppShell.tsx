@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { BrandLogo } from "./BrandLogo";
+import { MobileFeedFilter } from "./MobileFeedFilter";
 import { SearchBar } from "./SearchBar";
 import { SidebarNav } from "./SidebarNav";
 import { TopbarAuth } from "./TopbarAuth";
@@ -26,6 +27,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <SearchBar />
         </header>
+        <Suspense fallback={null}>
+          <MobileFeedFilter />
+        </Suspense>
         <AppPageBody rail={<RightRail />}>{children}</AppPageBody>
       </div>
     </div>

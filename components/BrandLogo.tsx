@@ -4,7 +4,7 @@ export function BrandLogo() {
   return (
     <Link href="/feed" className="sidebar-logo">
       <span className="brand-feather" aria-hidden />
-      <span className="brand-name">RHagent</span>
+      <span className="brand-name">Rhagent</span>
     </Link>
   );
 }

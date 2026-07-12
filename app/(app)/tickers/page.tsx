@@ -61,18 +61,21 @@ export default async function TickersPage({
 
   return (
     <div>
-      <PageHeader title={title}>
-        <PageSortTabs
-          basePath="/tickers"
-          current={product}
-          tabs={[...PRODUCT_TABS]}
-          param="product"
-          preserve={sort !== "trending" ? { sort } : undefined}
-        />
-      </PageHeader>
+      <PageHeader title={title} />
 
-      <div style={{ marginBottom: 16 }}>
-        <PageSortTabs basePath="/tickers" current={sort} tabs={SORT_TABS} preserve={preserve} />
+      <div className="page-tab-groups">
+        <div className="page-tab-group">
+          <PageSortTabs
+            basePath="/tickers"
+            current={product}
+            tabs={[...PRODUCT_TABS]}
+            param="product"
+            preserve={sort !== "trending" ? { sort } : undefined}
+          />
+        </div>
+        <div className="page-tab-group page-tab-group--secondary">
+          <PageSortTabs basePath="/tickers" current={sort} tabs={SORT_TABS} preserve={preserve} />
+        </div>
       </div>
 
       {selected ? (

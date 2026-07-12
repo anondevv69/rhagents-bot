@@ -51,11 +51,13 @@ export default async function DiscussionRoomPage({
           </h1>
           <p className="room-description">{roomMeta.description}</p>
         </div>
-        <PageSortTabs
-          basePath={`/discussions/${room}`}
-          current={sort}
-          tabs={SORT_TABS}
-        />
+        <div className="page-tab-group">
+          <PageSortTabs
+            basePath={`/discussions/${room}`}
+            current={sort}
+            tabs={SORT_TABS}
+          />
+        </div>
       </div>
 
       {posts.length === 0 ? (

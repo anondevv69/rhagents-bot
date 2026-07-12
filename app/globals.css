@@ -272,8 +272,8 @@ a { color: inherit; text-decoration: none; }
 }
 
 .brand-feather {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
   background-color: var(--rh-brand-green);
   mask: url("/rhagent-feather.png") center / contain no-repeat;
@@ -284,7 +284,8 @@ a { color: inherit; text-decoration: none; }
   color: var(--rh-brand-green);
   font-weight: 800;
   font-size: 17px;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  line-height: 1;
 }
 
 /* App shell */
@@ -310,13 +311,14 @@ a { color: inherit; text-decoration: none; }
 .sidebar-logo {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px 20px;
+  gap: 5px;
+  padding: 8px 8px 20px;
   letter-spacing: -0.02em;
 }
 
 .topbar-auth-slot {
   flex-shrink: 0;
+  margin-right: 4px;
 }
 
 .sidebar-nav {
@@ -393,8 +395,8 @@ a { color: inherit; text-decoration: none; }
   backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
-  padding: 0 20px;
-  gap: 16px;
+  padding: 0 20px 0 8px;
+  gap: 12px;
   position: sticky;
   top: 0;
   z-index: 40;
@@ -1198,33 +1200,136 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 768px) {
   .sidebar { display: none; }
   .main-area { margin-left: 0; }
-  .page-body { padding: 16px; }
+  .page-body { padding: 12px 14px; max-width: none; }
+  .content-area { max-width: none; width: 100%; }
+  .page-body--focus { max-width: none; }
+  .page-body--focus:has(.profile-page) { max-width: none; }
+
+  .topbar {
+    padding: 0 12px 0 8px;
+    gap: 8px;
+  }
+
+  .search-bar-wrap {
+    flex: 1;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .search-input {
+    font-size: 14px;
+    padding: 8px 12px 8px 34px;
+  }
+
+  .topbar-user-label {
+    max-width: 96px;
+    font-size: 11px;
+  }
+
   .mobile-feed-filter {
     display: flex;
-    gap: 4px;
-    margin-bottom: 16px;
+    gap: 6px;
+    margin: 0;
+    padding: 10px 14px;
     border-bottom: 1px solid var(--border);
-    padding-bottom: 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
+
+  .mobile-feed-filter::-webkit-scrollbar {
+    display: none;
+  }
+
   .mobile-feed-filter-tab {
-    padding: 6px 14px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 400;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
     color: var(--muted);
     text-decoration: none;
-    border: 1px solid transparent;
+    border: 1px solid var(--border-soft);
+    white-space: nowrap;
+    flex-shrink: 0;
   }
+
   .mobile-feed-filter-tab.active {
     font-weight: 600;
     color: var(--text);
     background: rgba(255, 255, 255, 0.07);
     border-color: var(--border);
   }
+
+  .page-tab-groups {
+    margin: 12px 0 16px;
+  }
+
+  .page-sort-tabs {
+    gap: 16px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  .page-sort-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .page-sort-tab {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .room-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .room-page {
+    max-width: none;
+  }
+
+  .ticker-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 14px;
+  }
+
+  .ticker-row-stats {
+    justify-content: flex-start;
+    gap: 10px;
+  }
+
+  .agent-leaderboard-row {
+    flex-wrap: wrap;
+    padding: 12px 14px;
+  }
+
+  .agent-leaderboard-right {
+    width: 100%;
+    display: flex;
+    gap: 12px;
+    padding-left: 32px;
+  }
+
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .swaps-table th,
+  .swaps-table td {
+    padding: 10px 12px;
+  }
 }
 
 @media (min-width: 769px) {
-  .mobile-feed-filter { display: none; }
+  .mobile-feed-filter {
+    display: none;
+  }
 }
 
 /* ── Agent profile (hood.markets / fomo layout) ── */
@@ -1917,7 +2022,8 @@ a { color: inherit; text-decoration: none; }
 
 .profile-tabs-main {
   display: flex;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .profile-tab {
@@ -1946,8 +2052,11 @@ a { color: inherit; text-decoration: none; }
 
 .profile-tabs-sub {
   display: flex;
-  gap: 12px;
-  padding: 10px 0 12px;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 6px;
+  padding: 12px 0 12px;
+  border-top: 1px solid var(--border-soft);
 }
 
 .profile-subtab {
@@ -2428,7 +2537,7 @@ a { color: inherit; text-decoration: none; }
 
 /* ── Section pages (Live / Discussions / Tickers / Agents) ── */
 .page-header {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .page-header-title {
@@ -2436,7 +2545,7 @@ a { color: inherit; text-decoration: none; }
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--muted);
-  margin-bottom: 10px;
+  margin-bottom: 0;
 }
 
 .page-header-subtitle {
@@ -2453,10 +2562,23 @@ a { color: inherit; text-decoration: none; }
   margin: -8px 0 16px;
 }
 
+.page-tab-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 14px 0 20px;
+}
+
+.page-tab-group + .page-tab-group {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-soft);
+}
+
 .page-sort-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 20px;
 }
 
 .page-sort-tab {

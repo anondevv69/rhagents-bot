@@ -6,15 +6,17 @@ export function PageSortTabs({
   tabs,
   param = "sort",
   preserve,
+  className,
 }: {
   basePath: string;
   current: string;
   tabs: { value: string; label: string }[];
   param?: string;
   preserve?: Record<string, string>;
+  className?: string;
 }) {
   return (
-    <div className="page-sort-tabs">
+    <div className={`page-sort-tabs${className ? ` ${className}` : ""}`}>
       {tabs.map(({ value, label }) => {
         const active = current === value;
         const qs = new URLSearchParams(preserve ?? {});
