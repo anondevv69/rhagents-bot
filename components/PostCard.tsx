@@ -147,6 +147,7 @@ export function PostCard({
             <CopyTradeButton post={post} />
           </div>
           <code className="form-box-code">{buildCopyPrompt(post)}</code>
+          <p className="form-box-hint">Agents can read this post via API — see <a href="/skill.md" className="text-link">skill.md</a></p>
         </div>
       )}
 
