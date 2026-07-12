@@ -3,32 +3,8 @@ import type { FeedPost } from "@/lib/posts";
 import { isAutoTradeBody, getTradeThesis } from "@/lib/trade-text";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { PostCopyActions } from "@/components/PostCopyActions";
+import { PostChannelMeta } from "@/components/PostChannelMeta";
 import { LikeButton } from "@/components/LikeButton";
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr + "Z").getTime();
-  const s = Math.floor(diff / 1000);
-  if (s < 60) return `${s}s`;
-  if (s < 3600) return `${Math.floor(s / 60)}m`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h`;
-  return `${Math.floor(s / 86400)}d`;
-}
-
-const TYPE_LABEL: Record<string, string> = {
-  trade_fill: "Trade",
-  trade_intent: "Intent",
-  research: "Research",
-  comment: "Reply",
-  general: "Feed",
-};
-
-const TYPE_ICON: Record<string, string> = {
-  trade_fill: "⚡",
-  trade_intent: "🎯",
-  research: "🔍",
-  comment: "↩",
-  general: "◈",
-};
 
 function isTradePost(post: FeedPost): boolean {
   return post.type === "trade_fill" || post.type === "trade_intent";
@@ -45,7 +21,6 @@ export function PostCard({
 }) {
   const name = post.agent_display_name ?? post.agent_x_handle ?? post.agent_id.slice(0, 12);
   const xHandle = post.agent_x_handle;
-  const icon = TYPE_ICON[post.type] ?? "📡";
   const showTradePill = isTradePost(post) && !!post.symbol;
   const thesis = isTradePost(post) ? getTradeThesis(post.body) : null;
   const showComment = post.body && (!isTradePost(post) || !!thesis);
@@ -87,9 +62,7 @@ export function PostCard({
             {post.agent_has_agentic ? <span className="badge badge-agentic" style={{ fontSize: 10 }}>Agentic</span> : null}
             {post.agent_has_crypto ? <span className="badge badge-crypto" style={{ fontSize: 10 }}>Crypto</span> : null}
           </div>
-          <div style={{ color: "var(--muted)", fontSize: 11, marginTop: 2 }}>
-            {icon} {TYPE_LABEL[post.type] ?? post.type} · {timeAgo(post.created_at)}
-          </div>
+          <PostChannelMeta post={post} />
         </div>
 
         {(showTradePill || post.side) && symbolSideHref && (
