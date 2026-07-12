@@ -1,5 +1,5 @@
 /**
- * Robinhood symbol validation — only tradable crypto pairs + verified agentic tickers.
+ * Robinhood symbol validation — crypto from RH API; agentic from platform trade proof.
  */
 
 const GW = process.env.RH_WALLET_GATEWAY ?? "https://rhwallet-rhagent-production.up.railway.app";
@@ -16,6 +16,7 @@ const STATIC_CRYPTO_PAIRS = [
 export type SymbolClassification = {
   product: "agentic" | "crypto";
   symbol: string;
+  source?: "robinhood_crypto" | "platform_verified" | "gateway_mcp";
 };
 
 type CatalogCache = {
@@ -97,16 +98,50 @@ export function classifyCryptoSymbol(raw: string, cat = getSymbolCatalogSync()):
   if (!input) return null;
 
   if (input.endsWith("-USD")) {
-    return cat.pairs.has(input) ? { product: "crypto", symbol: input } : null;
+    return cat.pairs.has(input) ? { product: "crypto", symbol: input, source: "robinhood_crypto" } : null;
   }
 
   const pair = `${input}-USD`;
-  if (cat.pairs.has(pair)) return { product: "crypto", symbol: pair };
+  if (cat.pairs.has(pair)) {
+    return { product: "crypto", symbol: pair, source: "robinhood_crypto" };
+  }
   return null;
 }
 
-/** Validate via gateway — Robinhood crypto catalog + agentic get_equity_quotes. */
-export async function resolveTradableSymbol(raw: string): Promise<SymbolClassification | null> {
+async function resolveViaGatewayMcp(input: string): Promise<SymbolClassification | null> {
+  try {
+    const res = await fetch(`${GW}/v1/catalog/resolve?symbol=${encodeURIComponent(input)}`, {
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { product?: "agentic" | "crypto"; symbol?: string };
+    if (data.product === "agentic" && data.symbol) {
+      return { product: "agentic", symbol: data.symbol.toUpperCase(), source: "gateway_mcp" };
+    }
+  } catch {
+    /* optional fallback */
+  }
+  return null;
+}
+
+export type ResolveOptions = {
+  /** Commentary/research — must be platform-verified or gateway MCP. */
+  allowGatewayMcp?: boolean;
+  /** Check rhagents DB for prior agentic trade posts (instant, no token). */
+  checkPlatformVerified?: () => boolean;
+};
+
+/**
+ * Resolve tradable symbol:
+ * 1. Crypto → Robinhood trading_pairs catalog
+ * 2. Agentic → already traded on rhagents (instant)
+ * 3. Agentic → optional gateway MCP if AGENTIC_CATALOG_TOKEN set
+ */
+export async function resolveTradableSymbol(
+  raw: string,
+  options: ResolveOptions = {},
+): Promise<SymbolClassification | null> {
+  const { allowGatewayMcp = true, checkPlatformVerified } = options;
   const input = raw.trim().toUpperCase();
   if (!input) return null;
 
@@ -114,32 +149,36 @@ export async function resolveTradableSymbol(raw: string): Promise<SymbolClassifi
   const crypto = classifyCryptoSymbol(input);
   if (crypto) return crypto;
 
-  const cached = resolveCache.get(input);
+  if (!/^[A-Z]{1,5}$/.test(input.replace(/-USD$/, ""))) {
+    return null;
+  }
+  const ticker = input.replace(/-USD$/, "");
+
+  const cached = resolveCache.get(ticker);
   if (cached && Date.now() - cached.fetchedAt < RESOLVE_TTL_MS) {
     return cached.result;
   }
 
-  try {
-    const res = await fetch(`${GW}/v1/catalog/resolve?symbol=${encodeURIComponent(input)}`, {
-      signal: AbortSignal.timeout(15000),
-    });
-    if (res.ok) {
-      const data = (await res.json()) as { product?: "agentic" | "crypto"; symbol?: string };
-      if (data.product && data.symbol) {
-        const result: SymbolClassification = { product: data.product, symbol: data.symbol.toUpperCase() };
-        resolveCache.set(input, { result, fetchedAt: Date.now() });
-        return result;
-      }
-    }
-  } catch {
-    /* invalid */
+  if (checkPlatformVerified?.()) {
+    const result: SymbolClassification = {
+      product: "agentic",
+      symbol: ticker,
+      source: "platform_verified",
+    };
+    resolveCache.set(ticker, { result, fetchedAt: Date.now() });
+    return result;
   }
 
-  resolveCache.set(input, { result: null, fetchedAt: Date.now() });
-  return null;
+  let result: SymbolClassification | null = null;
+  if (allowGatewayMcp) {
+    result = await resolveViaGatewayMcp(ticker);
+  }
+
+  resolveCache.set(ticker, { result, fetchedAt: Date.now() });
+  return result;
 }
 
-/** @deprecated use resolveTradableSymbol — sync heuristic removed for strict validation */
+/** @deprecated use resolveTradableSymbol */
 export function classifySymbol(raw: string): SymbolClassification | null {
   return classifyCryptoSymbol(raw);
 }

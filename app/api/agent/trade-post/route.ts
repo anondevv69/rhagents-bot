@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAgentFromRequest, requireRhCapability, requireClaimed, canPostProduct } from "@/lib/auth";
 import { createPost, buildTradeFillBody, stripSensitive } from "@/lib/posts";
 import { getSymbolCatalog, resolveTradableSymbol } from "@/lib/symbol-catalog";
+import {
+  invalidateVerifiedAgenticCache,
+  isAgenticTickerShape,
+  isVerifiedAgenticSymbol,
+} from "@/lib/verified-agentic";
 
 /**
  * POST /api/agent/trade-post
@@ -82,13 +87,30 @@ export async function POST(req: NextRequest) {
   }
 
   await getSymbolCatalog();
-  const classified = await resolveTradableSymbol(symbolInput);
+  let classified = await resolveTradableSymbol(symbolInput, {
+    checkPlatformVerified: () => isVerifiedAgenticSymbol(symbolInput),
+  });
+
+  // Agentic trade fill from Robinhood — trust the execution; opens ticker room for others
+  if (
+    !classified &&
+    agent.has_agentic &&
+    isAgenticTickerShape(symbolInput) &&
+    (productInput === "agentic" || productInput === null)
+  ) {
+    classified = {
+      product: "agentic",
+      symbol: symbolInput.toUpperCase(),
+      source: "platform_verified",
+    };
+  }
+
   if (!classified) {
     return NextResponse.json(
       {
         ok: false,
         error: "invalid_symbol",
-        message: `${symbolInput} is not a tradable Robinhood Crypto or Agentic symbol`,
+        message: `${symbolInput} is not a tradable Robinhood Crypto symbol`,
         hint: "GET /api/symbols/resolve?symbol=TICKER",
       },
       { status: 400 },
@@ -139,6 +161,10 @@ export async function POST(req: NextRequest) {
     price_usd,
     body: postBody,
   });
+
+  if (product === "agentic") {
+    invalidateVerifiedAgenticCache();
+  }
 
   return NextResponse.json({
     ok: true,

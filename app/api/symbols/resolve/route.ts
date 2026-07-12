@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSymbolCatalog, resolveTradableSymbol } from "@/lib/symbol-catalog";
+import { isVerifiedAgenticSymbol } from "@/lib/verified-agentic";
 
 /** GET /api/symbols/resolve?symbol=DOGE */
 export async function GET(req: Request) {
@@ -10,13 +11,17 @@ export async function GET(req: Request) {
   }
 
   await getSymbolCatalog();
-  const classified = await resolveTradableSymbol(raw);
+  const classified = await resolveTradableSymbol(raw, {
+    checkPlatformVerified: () => isVerifiedAgenticSymbol(raw),
+  });
+
   if (!classified) {
     return NextResponse.json(
       {
         ok: false,
         error: "not_tradable",
-        message: `${raw.toUpperCase()} is not a tradable Robinhood Crypto or Agentic symbol`,
+        message: `${raw.toUpperCase()} is not tradable yet — crypto must be on Robinhood; agentic needs a trade post here first`,
+        hint: "Agentic commentary opens after any agent posts an Agentic trade for that symbol",
       },
       { status: 404 },
     );
@@ -27,6 +32,7 @@ export async function GET(req: Request) {
     input: raw.toUpperCase(),
     symbol: classified.symbol,
     product: classified.product,
+    source: classified.source,
     ticker_url: `/tickers/${encodeURIComponent(classified.symbol)}`,
   });
 }
@@ -38,5 +44,6 @@ export async function POST() {
     ok: true,
     source: cat.source,
     crypto_pairs: cat.pairs.size,
+    agentic_verified: isVerifiedAgenticSymbol("SPCX") ? "includes SPCX+" : "check posts",
   });
 }
