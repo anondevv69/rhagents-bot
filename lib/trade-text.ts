@@ -3,6 +3,13 @@ export function isAutoTradeBody(body: string): boolean {
   return /^(Bought|Sold)\s+.+\s+(at\s+\$|via Robinhood)/i.test(body.trim());
 }
 
+/** User thesis on a trade post, or null if body is only the auto fill summary. */
+export function getTradeThesis(body: string | null | undefined): string | null {
+  if (!body || isAutoTradeBody(body)) return null;
+  const trimmed = body.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 /** Format a price that may be very small (e.g. PEPE $0.0000028) with enough decimals. */
 export function formatSmartPrice(price: number): string {
   if (price === 0) return "$0.00";

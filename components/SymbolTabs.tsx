@@ -11,11 +11,11 @@ export function SymbolTabs({
 }: {
   symbol: string;
   current: SymbolTab;
-  stats: { buy_count: number; sell_count: number; trade_count: number };
+  stats: { buy_count: number; sell_count: number; trade_count: number; thesis_count: number };
 }) {
   const enc = encodeURIComponent(symbol);
   const tabs: { label: string; value: SymbolTab; count: number }[] = [
-    { label: "Thesis", value: "thesis", count: stats.trade_count },
+    { label: "Thesis", value: "thesis", count: stats.thesis_count },
     { label: "All", value: "all", count: stats.trade_count },
     { label: "Buys", value: "buys", count: stats.buy_count },
     { label: "Sells", value: "sells", count: stats.sell_count },

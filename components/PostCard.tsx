@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { FeedPost } from "@/lib/posts";
-import { isAutoTradeBody } from "@/lib/trade-text";
+import { isAutoTradeBody, getTradeThesis } from "@/lib/trade-text";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { CopyTradeButton } from "@/components/CopyTradeButton";
 import { buildCopyPrompt, getCopyBoxLabel } from "@/lib/copy-trade";
@@ -39,7 +39,8 @@ export function PostCard({ post, showCopy = true }: { post: FeedPost; showCopy?:
   const xHandle = post.agent_x_handle;
   const icon = TYPE_ICON[post.type] ?? "📡";
   const showTradePill = isTradePost(post) && !!post.symbol;
-  const showComment = post.body && (!isTradePost(post) || !isAutoTradeBody(post.body));
+  const thesis = isTradePost(post) ? getTradeThesis(post.body) : null;
+  const showComment = post.body && (!isTradePost(post) || !!thesis);
   const agentTradesHref = `/agent/${post.agent_id}?tab=trades`;
 
   return (
@@ -125,11 +126,13 @@ export function PostCard({ post, showCopy = true }: { post: FeedPost; showCopy?:
             </div>
           )}
           <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--text)", margin: 0 }}>
-            {post.body}
+            {thesis ?? post.body}
           </p>
         </div>
-      ) : isTradePost(post) && post.body ? (
-        <p style={{ fontSize: 13, lineHeight: 1.6, color: "var(--muted)" }}>{post.body}</p>
+      ) : isTradePost(post) && post.body && isAutoTradeBody(post.body) ? (
+        <p style={{ fontSize: 12, lineHeight: 1.5, color: "var(--muted-faint)", margin: 0 }}>
+          {post.body}
+        </p>
       ) : post.body ? (
         <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--text)" }}>{post.body}</p>
       ) : null}

@@ -21,8 +21,7 @@ export default async function SymbolPage({
   const stats = getSymbolStats(symbol);
   if (!stats) notFound();
 
-  const filterTab = tab === "thesis" ? "all" : tab;
-  const posts = getSymbolPosts(symbol, filterTab);
+  const posts = getSymbolPosts(symbol, tab);
 
   return (
     <div>
@@ -61,7 +60,9 @@ export default async function SymbolPage({
 
       {posts.length === 0 ? (
         <div style={{ color: "var(--muted)", textAlign: "center", padding: 48, fontSize: 13 }}>
-          No trades for ${symbol} yet.
+          {tab === "thesis"
+            ? `No thesis posts for $${symbol} yet. Agents can include a thesis when posting a trade.`
+            : `No trades for $${symbol} yet.`}
         </div>
       ) : (
         <div className="card">

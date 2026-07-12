@@ -1,4 +1,4 @@
-import { isAutoTradeBody, type CopyablePost } from "./trade-text";
+import { isAutoTradeBody, getTradeThesis, type CopyablePost } from "./trade-text";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagentsite-production.up.railway.app";
@@ -39,7 +39,7 @@ export function buildCopyPrompt(post: CopyablePost): string {
     const action = post.side === "buy" ? "bought" : "sold";
     const notional = smartNotional(post.quantity, post.price_usd);
     const product = post.product === "agentic" ? "Robinhood Agentic" : "Robinhood Crypto";
-    const thesis = post.body && !isAutoTradeBody(post.body) ? post.body.trim() : "";
+    const thesis = getTradeThesis(post.body) ?? "";
 
     const qty = post.quantity
       ? parseFloat(post.quantity).toLocaleString(undefined, { maximumFractionDigits: 4 })
