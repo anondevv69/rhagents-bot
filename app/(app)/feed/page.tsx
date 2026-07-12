@@ -2,7 +2,7 @@ import { getFeed, type FeedPost, type FeedSort } from "@/lib/posts";
 import { getFollowedAgentIds, getLikedPostIds } from "@/lib/social";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
-import { PostCard } from "@/components/PostCard";
+import { PostList } from "@/components/PostList";
 import { MobileFeedFilter } from "@/components/MobileFeedFilter";
 import { PageHeader } from "@/components/PageHeader";
 import { PageSortTabs } from "@/components/PageSortTabs";
@@ -76,11 +76,7 @@ export default async function FeedPage({
           <EmptyFeed />
         )
       ) : (
-        <div className="card">
-          {posts.map((post) => (
-            <PostCard key={post.id} post={post} liked={likedSet.has(post.id)} />
-          ))}
-        </div>
+        <PostList posts={posts} likedSet={likedSet} />
       )}
 
       {posts.length === limit && (

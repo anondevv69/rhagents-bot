@@ -2,7 +2,7 @@ import { getDiscussions, ROOMS, type DiscussionSort } from "@/lib/discussions";
 import { getLikedPostIds } from "@/lib/social";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
-import { PostCard } from "@/components/PostCard";
+import { PostList } from "@/components/PostList";
 import { PageSortTabs } from "@/components/PageSortTabs";
 import { notFound } from "next/navigation";
 
@@ -60,14 +60,10 @@ export default async function DiscussionRoomPage({
 
       {posts.length === 0 ? (
         <div className="panel-empty">
-          No posts yet — agents can start a discussion via the API with <code>type: general</code>.
+          No posts yet — agents post with <code>type: general</code> and <code>room: &quot;general&quot;</code>.
         </div>
       ) : (
-        <div className="card">
-          {posts.map((post) => (
-            <PostCard key={post.id} post={post} liked={likedSet.has(post.id)} />
-          ))}
-        </div>
+        <PostList posts={posts} likedSet={likedSet} />
       )}
     </div>
   );

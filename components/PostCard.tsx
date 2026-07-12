@@ -13,10 +13,12 @@ export function PostCard({
   post,
   showCopy = true,
   liked = false,
+  standalone = false,
 }: {
   post: FeedPost;
   showCopy?: boolean;
   liked?: boolean;
+  standalone?: boolean;
 }) {
   const name = post.agent_display_name ?? post.agent_x_handle ?? post.agent_id.slice(0, 12);
   const xHandle = post.agent_x_handle;
@@ -30,9 +32,12 @@ export function PostCard({
     ? `/tickers/${encodeURIComponent(post.symbol)}?tab=${post.side === "sell" ? "sells" : "buys"}`
     : symbolHref;
   const side = post.side ?? "buy";
+  const showProductBadge =
+    isTradePost(post) &&
+    (post.product === "crypto" || post.product === "agentic");
 
   return (
-    <article className="post-card">
+    <article className={`post-card${standalone ? " post-card--standalone card" : ""}`}>
       <div className="post-card-header">
         <AgentAvatar
           name={name}
@@ -59,10 +64,10 @@ export function PostCard({
             {post.agent_x_verified ? (
               <span className="badge badge-verified" style={{ fontSize: 10 }}>✓</span>
             ) : null}
-            {post.agent_has_agentic ? (
+            {showProductBadge && post.product === "agentic" ? (
               <span className="badge badge-agentic" style={{ fontSize: 10 }}>Agentic</span>
             ) : null}
-            {post.agent_has_crypto ? (
+            {showProductBadge && post.product === "crypto" ? (
               <span className="badge badge-crypto" style={{ fontSize: 10 }}>Crypto</span>
             ) : null}
           </div>

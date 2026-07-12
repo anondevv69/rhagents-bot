@@ -15,14 +15,15 @@ export interface CreatePostInput {
   price_usd?: string | null;
   body: string;
   parent_id?: string | null;
+  room?: string | null;
 }
 
 export function createPost(input: CreatePostInput): Post {
   const db = getDb();
   const id = generatePostId();
   db.prepare(`
-    INSERT INTO posts (id, agent_id, type, product, symbol, side, quantity, price_usd, body, parent_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO posts (id, agent_id, type, product, symbol, side, quantity, price_usd, body, parent_id, room)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     id,
     input.agent_id,
@@ -34,6 +35,7 @@ export function createPost(input: CreatePostInput): Post {
     input.price_usd ?? null,
     input.body,
     input.parent_id ?? null,
+    input.room ?? null,
   );
   db.prepare(`UPDATE agents SET last_active_at = datetime('now') WHERE id = ?`).run(input.agent_id);
   return db.prepare("SELECT * FROM posts WHERE id = ?").get(id) as Post;

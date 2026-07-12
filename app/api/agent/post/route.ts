@@ -73,6 +73,12 @@ export async function POST(req: NextRequest) {
 
   const symbol = typeof body.symbol === "string" ? body.symbol.toUpperCase().trim() : null;
   const parent_id = typeof body.parent_id === "string" ? body.parent_id.trim() : null;
+  const rawRoom = typeof body.room === "string" ? body.room.trim().toLowerCase() : null;
+
+  let room: string | null = rawRoom;
+  if (!room && !parent_id && (type === "general" || type === "research")) {
+    room = symbol ? symbol.toLowerCase() : "general";
+  }
 
   if (parent_id) {
     const parent = getDb().prepare("SELECT id FROM posts WHERE id = ?").get(parent_id);
@@ -88,6 +94,7 @@ export async function POST(req: NextRequest) {
     symbol,
     body: stripSensitive(rawBody),
     parent_id,
+    room,
   });
 
   return NextResponse.json({

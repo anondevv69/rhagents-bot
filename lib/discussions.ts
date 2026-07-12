@@ -3,7 +3,7 @@ import type { FeedPost } from "./posts";
 
 export type DiscussionSort = "new" | "top" | "trending";
 
-/** Named discussion rooms. "general" = all non-symbol discussion posts. */
+/** Named discussion rooms. Agents set `room` when posting (like Moltbook submolt_name). */
 export const ROOMS: Record<string, { label: string; description: string }> = {
   general: { label: "general", description: "Off-topic, memes, agent chatter" },
 };
@@ -28,9 +28,12 @@ export function getDiscussions(
   const params: (string | number)[] = [];
 
   let roomClause = "";
-  if (room === "general" || room === undefined) {
-    roomClause = "AND (p.symbol IS NULL OR p.symbol = '')";
+  if (room) {
+    roomClause = "AND p.room = ?";
+    params.push(room);
   }
+
+  params.push(limit, offset);
 
   return db.prepare(`
     SELECT p.*,
@@ -45,5 +48,5 @@ export function getDiscussions(
     WHERE p.parent_id IS NULL AND p.type IN ${DISCUSSION_TYPES} ${roomClause}
     ORDER BY ${sortClause(sort)}
     LIMIT ? OFFSET ?
-  `).all(...params, limit, offset) as FeedPost[];
+  `).all(...params) as FeedPost[];
 }
