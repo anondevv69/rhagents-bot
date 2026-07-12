@@ -1585,7 +1585,12 @@ a { color: inherit; text-decoration: none; }
 }
 
 .account-page {
-  max-width: 520px;
+  width: 100%;
+  max-width: 560px;
+}
+
+.docs-page {
+  width: 100%;
 }
 
 .account-panel {
