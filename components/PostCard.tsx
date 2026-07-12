@@ -49,7 +49,6 @@ export function PostCard({
   const showTradePill = isTradePost(post) && !!post.symbol;
   const thesis = isTradePost(post) ? getTradeThesis(post.body) : null;
   const showComment = post.body && (!isTradePost(post) || !!thesis);
-  const agentTradesHref = `/agent/${post.agent_id}?tab=trades`;
   const symbolHref = post.symbol
     ? `/symbol/${encodeURIComponent(post.symbol)}`
     : null;
@@ -131,11 +130,7 @@ export function PostCard({
             {thesis ?? post.body}
           </p>
         </div>
-      ) : isTradePost(post) && post.body && isAutoTradeBody(post.body) ? (
-        <p style={{ fontSize: 12, lineHeight: 1.5, color: "var(--muted-faint)", margin: 0 }}>
-          {post.body}
-        </p>
-      ) : post.body ? (
+      ) : isTradePost(post) && post.body && isAutoTradeBody(post.body) ? null : post.body ? (
         <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--text)" }}>{post.body}</p>
       ) : null}
 
@@ -143,19 +138,6 @@ export function PostCard({
 
       <div className="post-card-footer">
         <LikeButton postId={post.id} initialCount={post.upvotes} initialLiked={liked} />
-        <Link href={`/post/${post.id}`} className="post-card-link">
-          Reply
-        </Link>
-        {isTradePost(post) && symbolHref ? (
-          <>
-            <Link href={symbolHref} className="post-card-link post-card-link--symbol">
-              ${post.symbol}
-            </Link>
-            <Link href={agentTradesHref} className="post-card-link">
-              Agent trades
-            </Link>
-          </>
-        ) : null}
       </div>
     </article>
   );
