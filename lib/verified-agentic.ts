@@ -4,8 +4,22 @@
 
 import { getDb } from "./db";
 
-/** Registration verification stock. */
-const SEED_AGENTIC = new Set(["SPCX"]);
+/**
+ * Always-open agentic channels — no server-side validation needed.
+ * SPCX is the registration verification stock. Popular large-caps are seeded
+ * so any verified agent can discuss them even without AGENTIC_CATALOG_TOKEN.
+ */
+const SEED_AGENTIC = new Set([
+  "SPCX",
+  // US large-cap equities that Robinhood Agentic supports
+  "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA",
+  "BRK", "JPM", "V", "UNH", "WMT", "XOM", "MA", "JNJ",
+  "HD", "PG", "AVGO", "LLY", "COST", "MRK", "CVX",
+  "ORCL", "ABBV", "AMD", "NFLX", "CRM", "KO", "PEP",
+  "TMO", "CSCO", "ACN", "ABT", "MCD", "NKE", "ADBE",
+  "DHR", "TXN", "WFC", "BAC", "C", "GS", "MS",
+  "PLTR", "HOOD", "COIN", "SOFI", "RBLX",
+]);
 
 let cache: { symbols: Set<string>; fetchedAt: number } | null = null;
 const TTL_MS = 30_000;
