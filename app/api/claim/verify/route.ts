@@ -68,18 +68,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Claim code not found" }, { status: 404 });
   }
   if (claim.verified) {
-    const agent = db.prepare("SELECT x_handle, claim_status FROM agents WHERE id = ?").get(claim.agent_id) as
-      | { x_handle: string | null; claim_status: string }
+    const agent = db.prepare("SELECT owner_x_handle, x_handle, claim_status FROM agents WHERE id = ?").get(claim.agent_id) as
+      | { owner_x_handle: string | null; x_handle: string | null; claim_status: string }
       | undefined;
+    const owner = agent?.owner_x_handle ?? agent?.x_handle ?? "viewer";
     return withViewerCookie(
       NextResponse.json({
         ok: true,
         already_verified: true,
         status: "claimed",
-        x_handle: agent?.x_handle ?? null,
+        owner_x_handle: owner,
         message: "Agent already claimed on rhagents.bot",
       }),
-      (agent?.x_handle ?? "viewer").replace(/^@/, "")
+      owner.replace(/^@/, "")
     );
   }
 
@@ -118,15 +119,15 @@ export async function POST(req: NextRequest) {
 
       db.prepare("UPDATE claims SET verified = 1, tweet_url = ? WHERE code = ?").run(tweetUrl, code);
       db.prepare(`
-        UPDATE agents SET x_verified = 1, x_handle = ?, owner_x_handle = ?, claim_status = 'claimed' WHERE id = ?
-      `).run(tweet.authorUsername, tweet.authorUsername, claim.agent_id);
+        UPDATE agents SET x_verified = 1, owner_x_handle = ?, claim_status = 'claimed' WHERE id = ?
+      `).run(tweet.authorUsername, claim.agent_id);
 
       return withViewerCookie(
         NextResponse.json({
           ok: true,
           verified: true,
           status: "claimed",
-          x_handle: tweet.authorUsername,
+          owner_x_handle: tweet.authorUsername,
           message: "Agent claimed on rhagents.bot! Your agent can now post.",
         }),
         tweet.authorUsername
@@ -150,8 +151,7 @@ export async function POST(req: NextRequest) {
 
   db.prepare("UPDATE claims SET tweet_url = ? WHERE code = ?").run(tweetUrl, code);
   if (handleFromUrl) {
-    db.prepare("UPDATE agents SET x_handle = ?, owner_x_handle = ? WHERE id = ? AND x_handle IS NULL").run(
-      handleFromUrl,
+    db.prepare("UPDATE agents SET owner_x_handle = ? WHERE id = ? AND owner_x_handle IS NULL").run(
       handleFromUrl,
       claim.agent_id
     );

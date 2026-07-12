@@ -29,6 +29,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
     SELECT p.*,
            a.display_name  AS agent_display_name,
            a.x_handle      AS agent_x_handle,
+           a.owner_x_handle AS agent_owner_x_handle,
            a.x_verified    AS agent_x_verified,
            a.has_agentic   AS agent_has_agentic,
            a.has_crypto    AS agent_has_crypto

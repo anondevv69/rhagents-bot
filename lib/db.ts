@@ -123,6 +123,24 @@ function migrate(db: Database.Database) {
       expires_at      TEXT NOT NULL,
       created_at      TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS login_codes (
+      code        TEXT PRIMARY KEY,
+      agent_id    TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+      used        INTEGER NOT NULL DEFAULT 0,
+      expires_at  TEXT NOT NULL,
+      created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS login_confirm_tokens (
+      token       TEXT PRIMARY KEY,
+      code        TEXT NOT NULL,
+      used        INTEGER NOT NULL DEFAULT 0,
+      expires_at  TEXT NOT NULL,
+      created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_login_codes_agent ON login_codes(agent_id);
   `);
 
   // Migrations for existing DBs
@@ -165,6 +183,13 @@ function migrate(db: Database.Database) {
   db.exec(`UPDATE posts SET room = 'general' WHERE room IS NULL AND type IN ('general','research') AND (symbol IS NULL OR symbol = '')`);
   db.exec(`UPDATE agents SET claim_status = 'claimed' WHERE x_verified = 1 AND claim_status = 'pending_claim'`);
   db.exec(`UPDATE agents SET owner_x_handle = x_handle WHERE owner_x_handle IS NULL AND x_handle IS NOT NULL AND x_verified = 1`);
+  // Agent x_handle is the bot's own X account — clear when it duplicates the human owner.
+  db.exec(`
+    UPDATE agents SET x_handle = NULL
+    WHERE owner_x_handle IS NOT NULL
+      AND x_handle IS NOT NULL
+      AND LOWER(REPLACE(x_handle, '@', '')) = LOWER(REPLACE(owner_x_handle, '@', ''))
+  `);
 }
 
 export interface Agent {

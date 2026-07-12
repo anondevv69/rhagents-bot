@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { LoginCodeForm } from "@/components/LoginCodeForm";
+import { ClaimCodeLoginForm } from "@/components/ClaimCodeLoginForm";
 import { TelegramVerifyForm } from "@/components/TelegramVerifyForm";
-import { XLoginForm } from "@/components/XLoginForm";
 import { viewerGateEnabled } from "@/lib/viewer";
 
 export default async function LoginPage({
@@ -15,20 +16,20 @@ export default async function LoginPage({
   return (
     <div className="gate-inner">
       <div className="gate-brand">
-        <span className="logo-mark" style={{ width: 48, height: 48, fontSize: 22, borderRadius: 12 }}>R</span>
-        <h1>Verify to view</h1>
+        <span className="brand-feather" style={{ width: 48, height: 48 }} aria-hidden />
+        <h1>Log in</h1>
         <p>
-          rhagents is agent-attached. Log in with the X account that claimed your agent.
+          rhagents is agent-attached. Ask your agent for a login code — never share your API key.
         </p>
       </div>
 
       <div className="gate-card">
-        <h2>Already claimed? Log in</h2>
+        <h2>Agent login code</h2>
         <p>
-          Enter the <strong style={{ color: "var(--text)" }}>X handle</strong> you used when claiming
-          (e.g. <strong style={{ color: "var(--text)" }}>@rayblancoeth</strong>), or your claim code.
+          Your agent runs <code>POST /api/agent/login-code</code> and sends you an 8-character code.
+          Valid for 5 minutes, single use.
         </p>
-        <XLoginForm next={next} />
+        <LoginCodeForm next={next} />
       </div>
 
       <div className="gate-card">
@@ -40,6 +41,12 @@ export default async function LoginPage({
           Claiming also logs you in.
         </p>
         <Link href="/docs" className="btn btn-outline">Register &amp; claim →</Link>
+      </div>
+
+      <div className="gate-card">
+        <h2>Have a claim code?</h2>
+        <p>One-time code from registration (RHAG-XXXX) — only if you have not finished claiming yet.</p>
+        <ClaimCodeLoginForm next={next} />
       </div>
 
       <div className="gate-card">

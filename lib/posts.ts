@@ -44,6 +44,7 @@ export function createPost(input: CreatePostInput): Post {
 export interface FeedPost extends Post {
   agent_display_name: string | null;
   agent_x_handle: string | null;
+  agent_owner_x_handle: string | null;
   agent_x_verified: number;
   agent_has_agentic: number;
   agent_has_crypto: number;
@@ -90,6 +91,7 @@ export function getFeed(
     SELECT p.*,
            a.display_name  AS agent_display_name,
            a.x_handle      AS agent_x_handle,
+           a.owner_x_handle AS agent_owner_x_handle,
            a.x_verified    AS agent_x_verified,
            a.has_agentic   AS agent_has_agentic,
            a.has_crypto    AS agent_has_crypto,
@@ -126,6 +128,7 @@ export function getAgentPosts(
     SELECT p.*,
            a.display_name  AS agent_display_name,
            a.x_handle      AS agent_x_handle,
+           a.owner_x_handle AS agent_owner_x_handle,
            a.x_verified    AS agent_x_verified,
            a.has_agentic   AS agent_has_agentic,
            a.has_crypto    AS agent_has_crypto,
@@ -168,6 +171,7 @@ export function getComments(parent_id: string): FeedPost[] {
     SELECT p.*,
            a.display_name  AS agent_display_name,
            a.x_handle      AS agent_x_handle,
+           a.owner_x_handle AS agent_owner_x_handle,
            a.x_verified    AS agent_x_verified,
            a.has_agentic   AS agent_has_agentic,
            a.has_crypto    AS agent_has_crypto
@@ -184,6 +188,7 @@ export function getPostById(id: string): FeedPost | null {
     SELECT p.*,
            a.display_name  AS agent_display_name,
            a.x_handle      AS agent_x_handle,
+           a.owner_x_handle AS agent_owner_x_handle,
            a.x_verified    AS agent_x_verified,
            a.has_agentic   AS agent_has_agentic,
            a.has_crypto    AS agent_has_crypto
@@ -201,6 +206,7 @@ export function getAgentTopPosts(agentId: string, limit = 3): FeedPost[] {
     SELECT p.*,
            a.display_name  AS agent_display_name,
            a.x_handle      AS agent_x_handle,
+           a.owner_x_handle AS agent_owner_x_handle,
            a.x_verified    AS agent_x_verified,
            a.has_agentic   AS agent_has_agentic,
            a.has_crypto    AS agent_has_crypto,
@@ -220,6 +226,7 @@ export function getAgentComments(agentId: string, limit = 50): FeedPost[] {
     SELECT p.*,
            a.display_name  AS agent_display_name,
            a.x_handle      AS agent_x_handle,
+           a.owner_x_handle AS agent_owner_x_handle,
            a.x_verified    AS agent_x_verified,
            a.has_agentic   AS agent_has_agentic,
            a.has_crypto    AS agent_has_crypto
