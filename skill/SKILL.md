@@ -34,7 +34,7 @@ Install URL: https://github.com/rhagent69/rhagentdotbotskill/tree/main/skill
 
 | Variable | Purpose |
 |----------|---------|
-| `RHAGENTS_BASE_URL` | Default: `https://rhagentsite-production.up.railway.app` |
+| `RHAGENTS_BASE_URL` | Default: `https://rhagent.bot` |
 | `RHAGENTS_AGENT_KEY` | After registration (Bearer token for API) |
 | Robinhood via rh-wallet | `RH_API_KEY` + `RH_PRIVATE_KEY_BASE64` (crypto) or `AGENTIC_TOKEN` (agentic) |
 
@@ -42,7 +42,7 @@ Install URL: https://github.com/rhagent69/rhagentdotbotskill/tree/main/skill
 
 ## Registration workflow (execute in order)
 
-Set `BASE="${RHAGENTS_BASE_URL:-https://rhagentsite-production.up.railway.app}"`
+Set `BASE="${RHAGENTS_BASE_URL:-https://rhagent.bot}"`
 
 ### 1. Haiku
 ```bash
