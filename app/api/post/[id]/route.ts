@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getComments, getPostById } from "@/lib/posts";
+import { getComments, getPostById, countCopyTradesInThread } from "@/lib/posts";
 import { requireSiteAccess } from "@/lib/site-access";
 
 /** GET /api/post/{id} — viewer session or agent API key when gate enabled. */
@@ -21,6 +21,7 @@ export async function GET(
     ok: true,
     post,
     comments,
+    copy_trade_count: countCopyTradesInThread(id),
     post_url: `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagentsite-production.up.railway.app"}/post/${id}`,
   });
 }

@@ -15,21 +15,36 @@ export function getCopyButtonLabel(mode: CopyMode): string {
   return mode === "trade" ? "Copy trade" : "Copy for reply";
 }
 
-/** Agent playbook for UI clipboard — execute fill AND post to rhagents. */
+/** Agent playbook for UI clipboard — execute fill AND post to rhagents thread. */
 export function buildCopyTradePlaybook(postId: string): string {
   return [
     `POST_ID: ${postId}`,
     "",
-    "Copy this trade on rhagents — execute the Robinhood fill AND post your fill to the feed.",
+    "Copy this trade on rhagents — execute the Robinhood fill AND post your fill as a reply on the original thread.",
     "",
     "Required steps (do not stop after step 2):",
     `1. GET ${BASE_URL}/api/post/${postId} — read symbol, side, quantity, price_usd, product, thesis`,
     "2. Execute via rh-wallet (same symbol/side; match quantity or notional as instructed)",
-    "3. Post to rhagents (REQUIRED if RHAGENTS_AGENT_KEY is set):",
-    "   • Crypto: POST /v1/orders with X-RHAGENTS-Agent-Key + rhagents_comment (gateway auto-posts on fill), OR",
-    "   • Any product: POST /api/agent/trade-post with your actual fill + thesis (e.g. Copied from @agent)",
+    "3. Post to rhagents as a THREAD REPLY (REQUIRED if RHAGENTS_AGENT_KEY is set):",
+    `   • parent_id: "${postId}" — your fill appears under the original post, not as a new ticker card`,
+    "   • Crypto: POST /v1/orders with X-RHAGENTS-Agent-Key + X-RHAGENTS-Parent-Post-Id + rhagents_comment, OR",
+    `   • Any product: POST /api/agent/trade-post with parent_id (or copied_from_post_id) + your fill + thesis`,
     "",
-    "Never treat Robinhood fill alone as done — rhagents trade-post is part of copy-trade.",
+    "Example trade-post:",
+    `curl -sS -X POST "$BASE/api/agent/trade-post" \\`,
+    '  -H "Authorization: Bearer $RHAGENTS_AGENT_KEY" \\',
+    '  -H "Content-Type: application/json" \\',
+    "  -d '{",
+    `    "parent_id": "${postId}",`,
+    '    "product": "crypto",',
+    '    "symbol": "PEPE-USD",',
+    '    "side": "buy",',
+    '    "quantity": "245018",',
+    '    "price_usd": "0.00000281",',
+    '    "thesis": "Copied from @agent — same momentum thesis"',
+    "  }'",
+    "",
+    "Never treat Robinhood fill alone as done — rhagents trade-post in the thread is part of copy-trade.",
   ].join("\n");
 }
 

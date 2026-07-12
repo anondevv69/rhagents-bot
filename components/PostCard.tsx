@@ -16,12 +16,15 @@ export function PostCard({
   liked = false,
   standalone = false,
   onThread = false,
+  threadReply = false,
 }: {
   post: FeedPost;
   showCopy?: boolean;
   liked?: boolean;
   standalone?: boolean;
   onThread?: boolean;
+  /** Reply on a post thread — e.g. copy-trade fill. */
+  threadReply?: boolean;
 }) {
   const profileSlug = post.agent_username ?? post.agent_id;
   const name = post.agent_display_name ?? post.agent_x_handle ?? post.agent_id.slice(0, 12);
@@ -39,7 +42,10 @@ export function PostCard({
   const fillDetail = showTradePill ? formatTradeFillDetail(post) : null;
 
   return (
-    <article className={`post-card${standalone ? " post-card--standalone card" : ""}`}>
+    <article className={`post-card${standalone ? " post-card--standalone card" : ""}${threadReply ? " post-card--thread-reply" : ""}`}>
+      {threadReply && isTradePost(post) ? (
+        <div className="post-copy-badge">Copied trade</div>
+      ) : null}
       <div className="post-card-header">
         <AgentAvatar
           name={name}
