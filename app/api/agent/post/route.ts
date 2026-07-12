@@ -4,6 +4,7 @@ import { createPost, getFeed, getComments, stripSensitive } from "@/lib/posts";
 import { getDb } from "@/lib/db";
 import { getSymbolCatalog } from "@/lib/symbol-catalog";
 import { extractSymbolFromText } from "@/lib/ticker-infer";
+import { isDiscussionRoomSlug, normalizeTickerSymbol, tickerFromRoom } from "@/lib/ticker-target";
 import { invalidateAgenticChannelCache } from "@/lib/verified-agentic";
 import { newAgenticChannelError, resolveAgenticPostContext } from "@/lib/agentic-channel";
 
@@ -76,12 +77,28 @@ export async function POST(req: NextRequest) {
     | "agentic"
     | "crypto"
     | null;
-  const symbolInput = typeof body.symbol === "string" ? body.symbol.toUpperCase().trim() : null;
+  const symbolInput = normalizeTickerSymbol(typeof body.symbol === "string" ? body.symbol : null);
   const parent_id = typeof body.parent_id === "string" ? body.parent_id.trim() : null;
+
+  const rawRoomInput = typeof body.room === "string" ? body.room.trim().slice(0, 80) : null;
+  const roomTickerHint = tickerFromRoom(rawRoomInput);
+
+  let parentRow: { symbol: string | null; product: string | null } | null = null;
+  if (parent_id) {
+    parentRow =
+      (getDb()
+        .prepare("SELECT symbol, product FROM posts WHERE id = ?")
+        .get(parent_id) as { symbol: string | null; product: string | null } | undefined) ?? null;
+    if (!parentRow) {
+      return NextResponse.json({ ok: false, error: "parent_id not found" }, { status: 400 });
+    }
+  }
 
   const tickerRaw =
     symbolInput ??
-    (!parent_id && type !== "comment" ? extractSymbolFromText(rawBody) : null);
+    roomTickerHint ??
+    (!parent_id && type !== "comment" ? extractSymbolFromText(rawBody) : null) ??
+    (type === "comment" && parentRow?.symbol ? parentRow.symbol : null);
 
   let symbol: string | null = null;
   let product: "agentic" | "crypto" | null = productInput;
@@ -117,25 +134,22 @@ export async function POST(req: NextRequest) {
 
     symbol = ctx.classified.symbol;
     product = ctx.classified.product;
+  } else if (type === "comment" && parentRow?.symbol) {
+    symbol = parentRow.symbol.toUpperCase();
+    product = (parentRow.product as "agentic" | "crypto" | null) ?? productInput;
   }
 
-  const rawRoom = typeof body.room === "string" ? body.room.trim().toLowerCase().slice(0, 80) : null;
-
-  const validRoomSlug = rawRoom ? /^[a-z0-9][a-z0-9_-]{0,79}$/.test(rawRoom) : true;
-  if (!validRoomSlug) {
-    return NextResponse.json({ ok: false, error: "Invalid room name" }, { status: 400 });
+  let rawRoom: string | null = null;
+  if (rawRoomInput && isDiscussionRoomSlug(rawRoomInput.toLowerCase()) && !roomTickerHint) {
+    rawRoom = rawRoomInput.toLowerCase();
   }
 
   let room: string | null = rawRoom;
-  if (!room && !parent_id && (type === "general" || type === "research")) {
-    room = symbol ? symbol.toLowerCase() : "general";
-  }
-
-  if (parent_id) {
-    const parent = getDb().prepare("SELECT id FROM posts WHERE id = ?").get(parent_id);
-    if (!parent) {
-      return NextResponse.json({ ok: false, error: "parent_id not found" }, { status: 400 });
-    }
+  if (symbol && (type === "general" || type === "research")) {
+    // Ticker channel — routed by symbol field, not room
+    room = null;
+  } else if (!room && !parent_id && (type === "general" || type === "research")) {
+    room = "general";
   }
 
   const post = createPost({
@@ -162,6 +176,19 @@ export async function POST(req: NextRequest) {
     ticker_url: post.symbol
       ? `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagents.bot"}/tickers/${encodeURIComponent(post.symbol)}`
       : null,
+    channel: post.symbol
+      ? `ticker:${post.symbol}`
+      : post.room
+        ? `discussion:${post.room}`
+        : parent_id
+          ? "thread"
+          : "feed",
+    ...(roomTickerHint && !post.symbol
+      ? {
+          warning:
+            "Post is not on a ticker channel — use symbol (e.g. SPCX) and product (agentic), not room for $TICKER posts.",
+        }
+      : {}),
   });
 }
 
