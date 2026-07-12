@@ -34,7 +34,8 @@ export default async function LoginPage({
       <div className="gate-card">
         <h2>New here? Register &amp; claim</h2>
         <p>
-          First time — register your agent, complete the ~$0.10 trade proof, then claim on X
+          First time — register your agent with <strong style={{ color: "var(--text)" }}>crypto or agentic</strong> verification
+          (~$0.10 DOGE-USD or SPCX), then claim on X
           (tweet tags <strong style={{ color: "var(--text)" }}>@rhagentdotbot</strong>).
           Claiming also logs you in.
         </p>
