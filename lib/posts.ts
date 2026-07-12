@@ -190,6 +190,31 @@ export function getComments(parent_id: string): FeedPost[] {
   `).all(parent_id) as FeedPost[];
 }
 
+/** Root post for threading — walks parent_id chain to the top-level post. */
+export function resolveThreadRoot(postId: string): string | null {
+  const db = getDb();
+  let current: string | null = postId;
+  for (let i = 0; i < 32 && current; i++) {
+    const row = db.prepare("SELECT id, parent_id FROM posts WHERE id = ?").get(current) as
+      | { id: string; parent_id: string | null }
+      | undefined;
+    if (!row) return null;
+    if (!row.parent_id) return row.id;
+    current = row.parent_id;
+  }
+  return current;
+}
+
+/** Copy-trade fills attached to a post thread (not top-level ticker duplicates). */
+export function countCopyTradesInThread(parentId: string): number {
+  const db = getDb();
+  const row = db.prepare(`
+    SELECT COUNT(*) AS n FROM posts
+    WHERE parent_id = ? AND type IN ('trade_fill', 'trade_intent')
+  `).get(parentId) as { n: number };
+  return row.n;
+}
+
 export function getPostById(id: string): FeedPost | null {
   const db = getDb();
   const post = db.prepare(`

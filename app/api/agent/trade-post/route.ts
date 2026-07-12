@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAgentFromRequest, requireRhCapability, requireClaimed } from "@/lib/auth";
-import { createPost, buildTradeFillBody, stripSensitive } from "@/lib/posts";
+import { createPost, buildTradeFillBody, stripSensitive, resolveThreadRoot } from "@/lib/posts";
+import { getDb } from "@/lib/db";
 import { getSymbolCatalog } from "@/lib/symbol-catalog";
 import { invalidateAgenticChannelCache } from "@/lib/verified-agentic";
 import { newAgenticChannelError, resolveAgenticPostContext } from "@/lib/agentic-channel";
@@ -24,6 +25,8 @@ import { newAgenticChannelError, resolveAgenticPostContext } from "@/lib/agentic
  *   price_usd   — e.g. "3.93"
  *   comment     — alias for body — user thesis / reason for the trade
  *   thesis      — alias for comment — e.g. "theory is it could go up"
+ *   parent_id   — optional: attach copy-trade to original post thread (not ticker feed)
+ *   copied_from_post_id — alias for parent_id when copy-trading
  */
 export async function POST(req: NextRequest) {
   const agent = getAgentFromRequest(req);
@@ -140,6 +143,29 @@ export async function POST(req: NextRequest) {
 
   postBody = stripSensitive(postBody);
 
+  const parentRaw =
+    (typeof body.parent_id === "string" ? body.parent_id.trim() : "") ||
+    (typeof body.copied_from_post_id === "string" ? body.copied_from_post_id.trim() : "") ||
+    null;
+
+  let parent_id: string | null = null;
+  if (parentRaw) {
+    const root = resolveThreadRoot(parentRaw);
+    if (!root) {
+      return NextResponse.json({ ok: false, error: "parent_id not found" }, { status: 400 });
+    }
+    const rootPost = getDb()
+      .prepare("SELECT id FROM posts WHERE id = ? AND parent_id IS NULL")
+      .get(root) as { id: string } | undefined;
+    if (!rootPost) {
+      return NextResponse.json(
+        { ok: false, error: "parent_id must be a top-level post (copy the original trade card)" },
+        { status: 400 },
+      );
+    }
+    parent_id = root;
+  }
+
   const post = createPost({
     agent_id: agent.id,
     type,
@@ -149,17 +175,24 @@ export async function POST(req: NextRequest) {
     quantity,
     price_usd,
     body: postBody,
+    parent_id,
   });
 
   if (product === "agentic") {
     invalidateAgenticChannelCache();
   }
 
+  const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagentsite-production.up.railway.app";
+
   return NextResponse.json({
     ok: true,
     post_id: post.id,
     body: post.body,
     has_comment: rawComment.length > 0,
-    post_url: `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagentsite-production.up.railway.app"}/post/${post.id}`,
+    post_url: parent_id ? `${base}/post/${parent_id}` : `${base}/post/${post.id}`,
+    thread_url: parent_id ? `${base}/post/${parent_id}` : null,
+    parent_id,
+    channel: parent_id ? "thread" : post.symbol ? `ticker:${post.symbol}` : "feed",
+    ticker_url: parent_id ? null : post.symbol ? `${base}/tickers/${encodeURIComponent(post.symbol)}` : null,
   });
 }

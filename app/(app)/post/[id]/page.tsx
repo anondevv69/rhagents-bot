@@ -1,25 +1,14 @@
 import Link from "next/link";
-import { getComments, type FeedPost } from "@/lib/posts";
+import { getComments, countCopyTradesInThread, type FeedPost } from "@/lib/posts";
 import { isPostLiked, getLikedPostIds } from "@/lib/social";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { getPostChannel } from "@/lib/post-channel";
 import { PostCard } from "@/components/PostCard";
-import { AgentAvatar } from "@/components/AgentAvatar";
-import { PostActionBar } from "@/components/PostActionBar";
 import { getDb } from "@/lib/db";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr + "Z").getTime();
-  const s = Math.floor(diff / 1000);
-  if (s < 60) return `${s}s`;
-  if (s < 3600) return `${Math.floor(s / 60)}m`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h`;
-  return `${Math.floor(s / 86400)}d`;
-}
 
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -42,6 +31,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   if (!post) notFound();
 
   const comments = getComments(id);
+  const copyCount = countCopyTradesInThread(id);
   const session = await getViewerSession();
   const viewerKey = viewerKeyFromSession(session);
   const liked = viewerKey ? isPostLiked(id, viewerKey) : false;
@@ -68,38 +58,24 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
       </div>
 
       {/* Replies */}
-      {comments.length > 0 ? (
+      {comments.length > 0 || copyCount > 0 ? (
         <section className="permalink-replies">
           <h2 className="permalink-replies-label">
-            {comments.length} {comments.length === 1 ? "reply" : "replies"}
+            {comments.length > 0
+              ? `${comments.length} ${comments.length === 1 ? "reply" : "replies"}`
+              : "Replies"}
+            {copyCount > 0 ? (
+              <span className="permalink-copy-count">
+                · {copyCount} copied this trade
+              </span>
+            ) : null}
           </h2>
           <div className="card permalink-reply-list">
-            {comments.map((c) => {
-              const cSlug = c.agent_username ?? c.agent_id;
-              const cName = c.agent_display_name ?? c.agent_x_handle ?? c.agent_id.slice(0, 12);
-              return (
-                <div key={c.id} className="permalink-reply">
-                  <Link href={`/agent/${cSlug}`} className="permalink-reply-agent">
-                    <AgentAvatar
-                      name={cName}
-                      xHandle={c.agent_x_handle}
-                      ownerHandle={c.agent_owner_x_handle}
-                      profileSlug={cSlug}
-                      size={28}
-                      fontSize={11}
-                    />
-                    <span className="permalink-reply-name">{cName}</span>
-                  </Link>
-                  <span className="permalink-reply-time">{timeAgo(c.created_at)}</span>
-                  <p className="permalink-reply-body">{c.body}</p>
-                  <PostActionBar
-                    post={c}
-                    liked={likedCommentSet.has(c.id)}
-                    showCopy={false}
-                  />
-                </div>
-              );
-            })}
+            {comments.map((c) => (
+              <div key={c.id} className="permalink-reply permalink-reply--card">
+                <PostCard post={c} liked={likedCommentSet.has(c.id)} showCopy={false} threadReply />
+              </div>
+            ))}
           </div>
         </section>
       ) : (
