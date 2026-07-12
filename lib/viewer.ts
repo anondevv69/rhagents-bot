@@ -9,7 +9,7 @@ export interface ViewerSession {
   exp: number;
 }
 
-function secret(): string {
+function signingSecret(): string {
   const s = process.env.VIEWER_SESSION_SECRET ?? process.env.API_KEY_SECRET;
   if (!s && process.env.NODE_ENV === "production") {
     throw new Error("FATAL: VIEWER_SESSION_SECRET (or API_KEY_SECRET) must be set in production.");
@@ -17,17 +17,22 @@ function secret(): string {
   return s ?? "dev-viewer-secret-change-me";
 }
 
-export function signViewerSession(session: ViewerSession): string {
-  const payload = Buffer.from(JSON.stringify(session)).toString("base64url");
-  const sig = createHmac("sha256", secret()).update(payload).digest("base64url");
-  return `${payload}.${sig}`;
+/** All secrets that may have signed older viewer cookies. */
+function verifySecrets(): string[] {
+  const out: string[] = [];
+  for (const s of [process.env.VIEWER_SESSION_SECRET, process.env.API_KEY_SECRET, "dev-viewer-secret-change-me"]) {
+    if (s && !out.includes(s)) out.push(s);
+  }
+  return out;
 }
 
-export function parseViewerSession(token: string | undefined): ViewerSession | null {
-  if (!token) return null;
-  const [payload, sig] = token.split(".");
+function verifyPayload(token: string, secretKey: string): ViewerSession | null {
+  const dot = token.lastIndexOf(".");
+  if (dot < 1) return null;
+  const payload = token.slice(0, dot);
+  const sig = token.slice(dot + 1);
   if (!payload || !sig) return null;
-  const expected = createHmac("sha256", secret()).update(payload).digest("base64url");
+  const expected = createHmac("sha256", secretKey).update(payload).digest("base64url");
   try {
     if (!timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
   } catch {
@@ -40,6 +45,21 @@ export function parseViewerSession(token: string | undefined): ViewerSession | n
   } catch {
     return null;
   }
+}
+
+export function signViewerSession(session: ViewerSession): string {
+  const payload = Buffer.from(JSON.stringify(session)).toString("base64url");
+  const sig = createHmac("sha256", signingSecret()).update(payload).digest("base64url");
+  return `${payload}.${sig}`;
+}
+
+export function parseViewerSession(token: string | undefined): ViewerSession | null {
+  if (!token) return null;
+  for (const secretKey of verifySecrets()) {
+    const session = verifyPayload(token, secretKey);
+    if (session) return session;
+  }
+  return null;
 }
 
 export function createViewerSession(input: { x_handle?: string; telegram_id?: string }): string {
