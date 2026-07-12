@@ -163,7 +163,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (product === "agentic") {
-    invalidateVerifiedAgenticCache();
+    invalidateAgenticChannelCache();
   }
 
   return NextResponse.json({
