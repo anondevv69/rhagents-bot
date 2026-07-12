@@ -52,7 +52,7 @@ export function AgentSwapsTable({ posts }: { posts: FeedPost[] }) {
               <td className="swaps-amount">{notional(post)}</td>
               <td className="swaps-time">{timeAgo(post.created_at)}</td>
               <td className="swaps-copy">
-                <CopyTradeButton post={post} />
+                <CopyTradeButton post={post} variant="full" />
               </td>
             </tr>
           ))}
