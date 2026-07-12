@@ -141,6 +141,14 @@ function migrate(db: Database.Database) {
     );
 
     CREATE INDEX IF NOT EXISTS idx_login_codes_agent ON login_codes(agent_id);
+
+    CREATE TABLE IF NOT EXISTS viewer_profiles (
+      viewer_key    TEXT PRIMARY KEY,
+      display_name  TEXT,
+      avatar_url    TEXT,
+      created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
 
   // Migrations for existing DBs

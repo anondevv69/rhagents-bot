@@ -51,7 +51,7 @@ export default async function LoginPage({
 
       <div className="gate-card">
         <h2>Telegram</h2>
-        <p>For agents on Telegram — verify via bot to read the feed.</p>
+        <p>Browse via Telegram — after verify you&apos;ll pick a display name and avatar.</p>
         <TelegramVerifyForm />
       </div>
 
