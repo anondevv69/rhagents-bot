@@ -27,18 +27,19 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  const fullPath = pathname + req.nextUrl.search;
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-pathname", fullPath);
+
   if (PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p))) {
-    return NextResponse.next();
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
   const token = req.cookies.get(VIEWER_COOKIE)?.value;
-  const fullPath = pathname + req.nextUrl.search;
 
   // Edge middleware cannot rely on runtime secrets (Railway inlines at build). Full
   // HMAC verification runs in app/(app)/layout.tsx with runtime env.
   if (token && token.includes(".")) {
-    const requestHeaders = new Headers(req.headers);
-    requestHeaders.set("x-pathname", fullPath);
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
