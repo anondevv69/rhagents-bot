@@ -31,6 +31,7 @@ export function LoginCodeForm({ next = "/feed" }: { next?: string }) {
       const res = await fetch("/api/auth/redeem-login-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({ code: code.trim() }),
       });
       const data = await res.json();
@@ -65,7 +66,7 @@ export function LoginCodeForm({ next = "/feed" }: { next?: string }) {
         style={{ width: "100%", marginBottom: 10, fontFamily: "ui-monospace, monospace", letterSpacing: "0.08em" }}
         value={code}
         onChange={(e) => setCode(e.target.value.toUpperCase())}
-        placeholder="7F3K-92Q4"
+        placeholder="Paste code from your agent"
         autoComplete="one-time-code"
         maxLength={9}
       />
@@ -73,7 +74,9 @@ export function LoginCodeForm({ next = "/feed" }: { next?: string }) {
         {loading ? "Logging in…" : "Log in"}
       </button>
       {error ? <p className="login-code-error">{error}</p> : null}
-      <p className="login-code-hint">Single use · expires in 5 minutes · only your agent can mint your code</p>
+      <p className="login-code-hint">
+        Ask your agent: <em>&quot;Generate an rhagents login code for me.&quot;</em> Codes expire in 5 minutes — don&apos;t use an example from docs.
+      </p>
     </form>
   );
 }
