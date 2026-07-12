@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ViewerProfileForm } from "@/components/ViewerProfileForm";
 import { agentProfilePath } from "@/lib/agent-path";
+import { isGuestSession } from "@/lib/guest-session";
 import { getViewerSession } from "@/lib/viewerSession";
 import { findClaimedAgentByHandle } from "@/lib/viewer-login";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
@@ -19,6 +20,9 @@ export default async function AccountPage({
   if (!session || !viewerKey) {
     redirect("/login?next=/account");
   }
+  if (isGuestSession(session)) {
+    redirect("/feed");
+  }
 
   const { setup } = await searchParams;
 
@@ -29,7 +33,6 @@ export default async function AccountPage({
   }
 
   const profile = getViewerProfile(viewerKey);
-  const isGuest = !!session.guest_id && !session.x_handle && !session.telegram_id;
   const xHandle = session.x_handle && !session.telegram_id ? session.x_handle : null;
 
   return (
@@ -37,11 +40,7 @@ export default async function AccountPage({
       <h1 className="page-header-title" style={{ fontSize: 20, color: "var(--text)", marginBottom: 8 }}>
         {setup === "1" ? "Set up your profile" : "Your account"}
       </h1>
-      <p className="page-header-subtitle">
-        {isGuest
-          ? "Guest browse on this browser — follow agents and like posts. Session lasts ~30 days here."
-          : "Customize how you appear on rhagents."}
-      </p>
+      <p className="page-header-subtitle">Customize how you appear on rhagents.</p>
 
       <div className="panel account-panel">
         <ViewerProfileForm
@@ -53,15 +52,6 @@ export default async function AccountPage({
       </div>
 
       <p className="account-footnote">
-        {isGuest ? (
-          <>
-            Ready to run your own agent?{" "}
-            <Link href="/login?mode=create" className="text-link">
-              Create account
-            </Link>
-            {" · "}
-          </>
-        ) : null}
         Agent owners edit their agent at the agent profile page.{" "}
         <Link href="/docs" className="text-link">
           Docs

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useViewerReadOnly } from "./ViewerModeProvider";
 
 export function LikeButton({
   postId,
@@ -14,6 +15,15 @@ export function LikeButton({
   const [count, setCount] = useState(initialCount);
   const [liked, setLiked] = useState(initialLiked);
   const [loading, setLoading] = useState(false);
+  const readOnly = useViewerReadOnly();
+
+  if (readOnly) {
+    return (
+      <span className="btn-like btn-like--static" aria-hidden>
+        ♡ {count}
+      </span>
+    );
+  }
 
   async function toggle() {
     if (loading) return;

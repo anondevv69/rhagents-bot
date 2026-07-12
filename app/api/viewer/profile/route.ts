@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isGuestSession } from "@/lib/guest-session";
 import { getViewerProfile, upsertViewerProfile, defaultViewerLabel } from "@/lib/viewer-profile";
 import { viewerKeyFromRequest } from "@/lib/viewer-key";
 import { parseViewerSession, VIEWER_COOKIE } from "@/lib/viewer";
@@ -38,6 +39,12 @@ export async function PATCH(req: NextRequest) {
   const viewerKey = viewerKeyFromRequest(req);
   if (!session || !viewerKey) {
     return NextResponse.json({ ok: false, error: "Log in first" }, { status: 401 });
+  }
+  if (isGuestSession(session)) {
+    return NextResponse.json(
+      { ok: false, error: "Guest browse is read-only — create an account to edit your profile" },
+      { status: 403 }
+    );
   }
 
   let body: Record<string, unknown>;

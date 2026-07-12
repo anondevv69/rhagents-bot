@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isGuestRequest } from "@/lib/guest-session";
 import { toggleAgentFollow } from "@/lib/social";
 import { viewerKeyFromRequest } from "@/lib/viewer-key";
 
 export async function POST(req: NextRequest) {
+  if (isGuestRequest(req)) {
+    return NextResponse.json(
+      { ok: false, error: "Guest browse is read-only — create an account to follow agents" },
+      { status: 403 }
+    );
+  }
+
   const viewerKey = viewerKeyFromRequest(req);
   if (!viewerKey) {
     return NextResponse.json({ ok: false, error: "Log in to follow agents" }, { status: 401 });

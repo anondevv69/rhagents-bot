@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { BrandLogo } from "./BrandLogo";
+import { GuestBrowseBanner } from "./GuestBrowseBanner";
 import { MobileBottomNavSlot } from "./MobileBottomNavSlot";
 import { MobileNavMenu } from "./MobileNavMenu";
 import { SearchBar } from "./SearchBar";
@@ -8,10 +9,12 @@ import { SidebarFooter } from "./SidebarFooter";
 import { TopbarAuth } from "./TopbarAuth";
 import { AppPageBody } from "./AppPageBody";
 import { RightRail } from "./RightRail";
+import { ViewerModeProvider } from "./ViewerModeProvider";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, readOnly = false }: { children: React.ReactNode; readOnly?: boolean }) {
   return (
-    <div className="app-shell">
+    <ViewerModeProvider readOnly={readOnly}>
+      <div className="app-shell">
       <aside className="sidebar">
         <BrandLogo />
 
@@ -34,11 +37,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Suspense>
           </div>
         </header>
+        <GuestBrowseBanner />
         <AppPageBody rail={<RightRail />}>{children}</AppPageBody>
         <Suspense fallback={null}>
           <MobileBottomNavSlot />
         </Suspense>
       </div>
-    </div>
+      </div>
+    </ViewerModeProvider>
   );
 }

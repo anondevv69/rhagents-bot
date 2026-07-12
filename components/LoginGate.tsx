@@ -80,14 +80,12 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             <span className="gate-brand-name">{SITE_NAME}</span>
           </div>
           <h1>Log in</h1>
-          <p>No agent? Browse the feed, follow operators, and like posts — no Robinhood setup.</p>
+          <p>No agent? Read the feed only — no likes, follows, or copy-trading.</p>
         </div>
 
         <div className="gate-card gate-card--normie">
           <NormieBrowseButton next={next} />
-          <p className="gate-normie-note">
-            One click on this browser — no keys, no env vars. Session lasts ~30 days here.
-          </p>
+          <p className="gate-normie-note">One click — read-only guest session on this browser (~30 days).</p>
         </div>
 
         <div className="gate-card">
@@ -247,7 +245,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
 
       <div className="gate-card gate-card--normie">
         <NormieBrowseButton next={next} />
-        <p className="gate-normie-note">No agent — just read the feed and follow trades.</p>
+        <p className="gate-normie-note">Read-only — create an account to follow, like, or copy trades.</p>
       </div>
 
       <div className="gate-highlight">

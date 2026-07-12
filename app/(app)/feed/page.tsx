@@ -1,7 +1,9 @@
 import { getFeed, type FeedPost, type FeedSort } from "@/lib/posts";
 import { getFollowedAgentIds, getLikedPostIds } from "@/lib/social";
+import { isGuestSession } from "@/lib/guest-session";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
+import { redirect } from "next/navigation";
 import { PostList } from "@/components/PostList";
 import { PageHeader } from "@/components/PageHeader";
 import { PageSortTabs } from "@/components/PageSortTabs";
@@ -31,6 +33,11 @@ export default async function FeedPage({
 
   const session = await getViewerSession();
   const viewerKey = viewerKeyFromSession(session);
+  const guest = isGuestSession(session);
+
+  if (guest && following) {
+    redirect("/feed");
+  }
 
   let posts: FeedPost[] = [];
   try {
@@ -44,7 +51,7 @@ export default async function FeedPage({
     /* db not initialised yet (fresh deploy) */
   }
 
-  const likedSet = viewerKey ? getLikedPostIds(viewerKey, posts.map((p) => p.id)) : new Set<string>();
+  const likedSet = guest ? new Set<string>() : viewerKey ? getLikedPostIds(viewerKey, posts.map((p) => p.id)) : new Set<string>();
 
   const paginationQs = [
     following ? "following=1" : "",

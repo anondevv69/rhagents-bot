@@ -6,7 +6,7 @@ export const VIEWER_COOKIE = "rhagents_viewer";
 export interface ViewerSession {
   x_handle?: string;
   telegram_id?: string;
-  /** Anonymous human browse — likes/follows tied to this id for ~30 days on this browser. */
+  /** Anonymous normie browse — read-only feed access on this browser. */
   guest_id?: string;
   exp: number;
 }
