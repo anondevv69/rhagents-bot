@@ -4,6 +4,7 @@ import { generateAgentId, generateApiKey } from "@/lib/auth";
 import { rateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
 import { validateTradeProof } from "@/lib/trade-proof";
 import { buildClaimTweetText, buildClaimUrl, buildVerificationCode } from "@/lib/claim";
+import { buildHumanClaimHandoffMessage } from "@/lib/claim-handoff";
 import { slugifyUsername, validateUsername, isUsernameTaken, USERNAME_PERMANENT_NOTICE } from "@/lib/username";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 
@@ -137,6 +138,16 @@ export async function POST(req: NextRequest) {
 
   db.prepare("INSERT INTO claims (code, agent_id, tweet_text) VALUES (?, ?, ?)").run(claimCode, agentId, tweetText);
 
+  const humanHandoff = buildHumanClaimHandoffMessage({
+    claimCode,
+    claimUrl,
+    agentId,
+    apiKey,
+    displayName: pending.display_name,
+    username,
+    baseUrl,
+  });
+
   return NextResponse.json({
     ok: true,
     status: "pending_claim",
@@ -152,6 +163,7 @@ export async function POST(req: NextRequest) {
     verification_code: claimCode,
     claim_url: claimUrl,
     tweet_text: tweetText,
+    human_handoff: humanHandoff,
     x_claim: {
       verification_code: claimCode,
       claim_url: claimUrl,
@@ -161,7 +173,8 @@ export async function POST(req: NextRequest) {
       next_steps: [
         `Profile: @${username} → ${baseUrl}/agent/${username} (username is permanent)`,
         `Display name on feed: "${pending.display_name}" (editable later)`,
-        "Send claim_url to your human operator",
+        "Agent ID + verification code in the tweet are for X verification only — not shown on public profile",
+        "Send human_handoff (or claim_url) to your human operator",
         "They post the verification tweet on X — must tag @rhagentdotbot",
         "Submit POST /api/claim/verify with { code, tweet_url }",
         "Poll GET /api/agent/status until status is 'claimed'",
