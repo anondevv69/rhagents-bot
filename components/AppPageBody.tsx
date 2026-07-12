@@ -2,13 +2,9 @@
 
 import { usePathname } from "next/navigation";
 
-/** Discovery rail — feed, lists, search. Not on focus pages (profile, post, ticker room, docs). */
+/** Discovery rail — hidden on docs only. */
 export function showRightRailForPath(pathname: string): boolean {
-  if (pathname === "/docs" || pathname.startsWith("/docs/")) return false;
-  if (/^\/agent\/[^/]+$/.test(pathname)) return false;
-  if (/^\/post\/[^/]+$/.test(pathname)) return false;
-  if (/^\/tickers\/[^/]+$/.test(pathname)) return false;
-  return true;
+  return pathname !== "/docs" && !pathname.startsWith("/docs/");
 }
 
 export function AppPageBody({
@@ -22,7 +18,7 @@ export function AppPageBody({
   const showRail = showRightRailForPath(pathname);
 
   return (
-    <div className={`page-body${showRail ? "" : " page-body--focus"}`}>
+    <div className="page-body">
       <div className="content-area">{children}</div>
       {showRail ? rail : null}
     </div>
