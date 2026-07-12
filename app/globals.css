@@ -480,6 +480,7 @@ body:has(.app-shell) .main-area {
 
 .page-body {
   display: flex;
+  flex: 1;
   gap: var(--layout-gutter);
   align-items: flex-start;
   justify-content: flex-start;
@@ -1194,17 +1195,20 @@ body:has(.app-shell) .site-token-footer--fixed {
   display: none;
 }
 
+@media (max-width: 1024px) {
+  /* Mobile: sidebar hidden — show fixed strip above bottom nav */
+  body:has(.app-shell) .site-token-footer--fixed {
+    display: flex;
+    bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 .site-token-footer--inline {
   margin-top: 12px;
   padding: 10px 12px 0;
   border-top: 1px solid var(--border-soft);
   justify-content: flex-start;
   font-size: 11px;
-}
-
-body:has(.mobile-bottom-nav) .site-token-footer--fixed {
-  display: flex;
-  bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px));
 }
 
 .site-token-footer-ticker {
