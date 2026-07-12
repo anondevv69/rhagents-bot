@@ -24,10 +24,10 @@ export function PostCard({
   const thesis = isTradePost(post) ? getTradeThesis(post.body) : null;
   const showComment = post.body && (!isTradePost(post) || !!thesis);
   const symbolHref = post.symbol
-    ? `/symbol/${encodeURIComponent(post.symbol)}`
+    ? `/tickers/${encodeURIComponent(post.symbol)}`
     : null;
   const symbolSideHref = post.symbol && post.side
-    ? `/symbol/${encodeURIComponent(post.symbol)}?tab=${post.side === "sell" ? "sells" : "buys"}`
+    ? `/tickers/${encodeURIComponent(post.symbol)}?tab=${post.side === "sell" ? "sells" : "buys"}`
     : symbolHref;
   const side = post.side ?? "buy";
 

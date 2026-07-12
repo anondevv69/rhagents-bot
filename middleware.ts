@@ -10,6 +10,12 @@ const PUBLIC_PREFIXES = [
   "/skill.md",
   "/_next",
   "/favicon",
+  "/feed",
+  "/post/",
+  "/discussions/",
+  "/tickers/",
+  "/agents",
+  "/agent/",
 ];
 
 /** Paths that skip viewer gate (landing pitch + public browse). */

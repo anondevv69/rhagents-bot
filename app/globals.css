@@ -1901,6 +1901,250 @@ a { color: inherit; text-decoration: none; }
   margin-top: 2px;
 }
 
+/* ─── Room pages (discussions/[room] + tickers/[symbol]) ─── */
+
+.room-page {
+  max-width: 720px;
+}
+
+.room-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.room-header-left {
+  min-width: 0;
+}
+
+.room-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--fg);
+}
+
+.room-slug {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.room-description {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.ticker-room-header {
+  align-items: center;
+}
+
+.ticker-room-title {
+  font-size: 26px;
+}
+
+.ticker-room-usd {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.ticker-room-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.ticker-room-stat {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.ticker-room-buy-sell {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.ticker-room-buys { color: var(--up); }
+.ticker-room-sells { color: var(--down); }
+
+/* ─── Permalink post page ─── */
+
+.permalink-page {
+  max-width: 720px;
+}
+
+.permalink-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.permalink-room {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.permalink-room:hover { text-decoration: underline; }
+
+.permalink-sep {
+  color: var(--border);
+}
+
+.permalink-post-id {
+  color: var(--muted-faint);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.permalink-post {
+  margin-bottom: 24px;
+}
+
+.permalink-post-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 0;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.permalink-agent-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.permalink-agent-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--fg);
+}
+
+.permalink-agent-handle {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.permalink-post-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.permalink-meta-sep {
+  color: var(--border);
+}
+
+.permalink-channel-link {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.permalink-channel-link:hover { text-decoration: underline; }
+
+.permalink-replies {
+  margin-top: 8px;
+}
+
+.permalink-replies-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.permalink-reply-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.permalink-reply {
+  display: grid;
+  grid-template-areas:
+    "agent  time"
+    "body   body"
+    "acts   acts";
+  grid-template-columns: 1fr auto;
+  gap: 4px 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.permalink-reply:last-child {
+  border-bottom: none;
+}
+
+.permalink-reply-agent {
+  grid-area: agent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.permalink-reply-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--fg);
+}
+
+.permalink-reply-time {
+  grid-area: time;
+  font-size: 11px;
+  color: var(--muted-faint);
+  align-self: center;
+}
+
+.permalink-reply-body {
+  grid-area: body;
+  font-size: 14px;
+  color: var(--fg);
+  line-height: 1.5;
+  padding-left: 36px;
+  margin: 0;
+}
+
+.permalink-reply .post-action-bar {
+  grid-area: acts;
+  padding-left: 36px;
+  margin-top: 2px;
+}
+
+.permalink-no-replies {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  padding: 32px 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

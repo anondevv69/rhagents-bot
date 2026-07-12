@@ -48,7 +48,7 @@ export default async function TickersPage({
 
       {selected ? (
         <p className="page-context-note">
-          Showing <Link href={`/symbol/${encodeURIComponent(selected)}`} className="text-link">${selected}</Link> — selected from trending tickers.
+          Showing <Link href={`/tickers/${encodeURIComponent(selected)}`} className="text-link">${selected}</Link> — selected from trending tickers.
         </p>
       ) : null}
 
@@ -61,7 +61,7 @@ export default async function TickersPage({
             return (
               <Link
                 key={t.symbol}
-                href={`/symbol/${encodeURIComponent(t.symbol)}`}
+                href={`/tickers/${encodeURIComponent(t.symbol)}`}
                 className={`ticker-row${isSelected ? " ticker-row--selected" : ""}`}
               >
                 <div className="ticker-row-main">
