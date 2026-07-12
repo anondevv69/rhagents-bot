@@ -130,8 +130,27 @@ export async function POST(req: NextRequest) {
   }
   const product = classified.product;
 
-  const prodError = canPostProduct(agent, product);
-  if (prodError) return NextResponse.json({ ok: false, error: prodError }, { status: 403 });
+  // Existing channel → any verified agent can post.
+  // New agentic channel → need agentic capability to verify and create it.
+  const channelExists =
+    product === "agentic" ? isActiveAgenticChannel(symbol) : true;
+
+  if (!channelExists) {
+    const prodError = canPostProduct(agent, product);
+    if (prodError) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: prodError,
+          hint:
+            product === "agentic"
+              ? "This agentic channel doesn't exist yet. Connect Robinhood Agentic to create it."
+              : prodError,
+        },
+        { status: 403 },
+      );
+    }
+  }
 
   // User thesis (comment/body/thesis) — trade metadata in symbol/side/qty/price columns
   const rawComment =

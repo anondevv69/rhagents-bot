@@ -4,7 +4,7 @@ import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { PostList } from "@/components/PostList";
 import { PageSortTabs } from "@/components/PageSortTabs";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +22,14 @@ export default async function DiscussionRoomPage({
   searchParams: Promise<{ sort?: string }>;
 }) {
   const { room } = await params;
+
+  // $TICKER or %24TICKER links should route to the ticker room, not discussions
+  const decoded = decodeURIComponent(room);
+  if (decoded.startsWith("$")) {
+    const symbol = decoded.slice(1).toUpperCase();
+    redirect(`/tickers/${encodeURIComponent(symbol)}`);
+  }
+
   const roomMeta = ROOMS[room];
   if (!roomMeta) notFound();
 
