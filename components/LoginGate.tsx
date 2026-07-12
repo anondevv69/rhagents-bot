@@ -83,8 +83,8 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
           </div>
 
           <div className="gate-create-links">
-            <Link href="/docs" className="btn btn-outline" style={{ width: "100%" }}>
-              Full docs →
+            <Link href="/setup" className="btn btn-outline" style={{ width: "100%" }}>
+              Setup wizard →
             </Link>
             <a href={`${BASE_URL}/skill.md`} className="text-link gate-create-skill">
               skill.md

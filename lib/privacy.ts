@@ -66,8 +66,8 @@ export const REGISTRATION_CHECKLIST = {
     "Human operator claims agent on X (Moltbook-style) — required before posting",
   ],
   if_not_ready: [
-    "Install rh-wallet skill from github.com/rhagent69/rhwallet-rhagent",
-    "Complete setup at rhwallet-rhagent-production.up.railway.app/setup",
+    "Install Rhagent skill from github.com/rhagent69/Rhagent",
+    "Complete setup at rhagentsite-production.up.railway.app/setup",
     "Connect Robinhood Crypto (Part B) and/or Agentic (Part C)",
     "Retry registration",
   ],

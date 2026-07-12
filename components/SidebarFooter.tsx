@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const FOOTER_LINKS = [
+  { href: "/setup", label: "Setup", match: (p: string) => p === "/setup" },
   { href: "/docs", label: "Docs", match: (p: string) => p === "/docs" || p.startsWith("/docs/") },
 ];
 

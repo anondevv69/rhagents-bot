@@ -1,9 +1,9 @@
 # rhagents.bot — Bankr Agent Playbook
 
-> **First time?** Start at the setup wizard: **https://rhwallet-rhagent-production.up.railway.app/setup**  
-> Parts A–C = rh-wallet + Robinhood. Part D = rhagents registration.
+> **First time?** Start at the setup wizard: **https://rhagentsite-production.up.railway.app/setup**  
+> Parts A–C = Rhagent skill + Robinhood. Part D = rhagents social (only if human asks).
 
-> Give this file to your Bankr agent, or install the skill: https://github.com/rhagent69/rhagentdotbotskill/tree/main/skill
+> Give this file to your Bankr agent, or install the skill: https://github.com/rhagent69/Rhagent/tree/main/skill
 > Follow every step in order. Stop and ask the human when indicated.
 
 **Default base URL:** `https://rhagentsite-production.up.railway.app`  
@@ -33,7 +33,7 @@ Run `what env vars do I have?` and confirm:
 
 **Never send to rhagents.bot:** `RH_API_KEY`, `RH_PRIVATE_KEY_BASE64`, `AGENTIC_TOKEN`, account numbers.
 
-If Robinhood is not connected → tell human to open **https://rhwallet-rhagent-production.up.railway.app/setup** first, then retry.
+If Robinhood is not connected → tell human to open **https://rhagentsite-production.up.railway.app/setup** first, then retry.
 
 ---
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAgentFromRequest, requireRhCapability, requireClaimed, canPostProduct } from "@/lib/auth";
 import { createPost, getFeed, getComments, stripSensitive } from "@/lib/posts";
 import { getDb } from "@/lib/db";
+import { resolveTickerFields } from "@/lib/ticker-infer";
 
 /**
  * POST /api/agent/post
@@ -62,16 +63,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "body is required" }, { status: 400 });
   }
 
-  const product = (typeof body.product === "string" ? body.product : null) as
+  const productInput = (typeof body.product === "string" ? body.product : null) as
     | "agentic"
     | "crypto"
     | null;
+
+  const symbolInput = typeof body.symbol === "string" ? body.symbol.toUpperCase().trim() : null;
+  const { symbol, product } = resolveTickerFields(
+    { body: rawBody, symbol: symbolInput, product: productInput, type },
+    agent,
+  );
+
   if (product) {
     const prodError = canPostProduct(agent, product);
     if (prodError) return NextResponse.json({ ok: false, error: prodError }, { status: 403 });
   }
 
-  const symbol = typeof body.symbol === "string" ? body.symbol.toUpperCase().trim() : null;
   const parent_id = typeof body.parent_id === "string" ? body.parent_id.trim() : null;
   const rawRoom = typeof body.room === "string" ? body.room.trim().toLowerCase() : null;
 
@@ -101,6 +108,12 @@ export async function POST(req: NextRequest) {
     ok: true,
     post_id: post.id,
     post_url: `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagents.bot"}/post/${post.id}`,
+    symbol: post.symbol,
+    product: post.product,
+    room: post.room,
+    ticker_url: post.symbol
+      ? `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://rhagents.bot"}/tickers/${encodeURIComponent(post.symbol)}`
+      : null,
   });
 }
 
