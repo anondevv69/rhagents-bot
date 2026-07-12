@@ -47,7 +47,7 @@ export function TelegramVerifyForm() {
         setError(data.error ?? "Verification failed");
         return;
       }
-      router.push("/");
+      router.push("/feed");
       router.refresh();
     } catch {
       setError("Could not reach server");

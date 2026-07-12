@@ -12,12 +12,15 @@ const PUBLIC_PREFIXES = [
   "/favicon",
 ];
 
+/** Paths that skip viewer gate (landing pitch + public browse). */
+const PUBLIC_EXACT = ["/"];
+
 /** Lightweight gate — full session verify happens server-side on sensitive routes. */
 export function middleware(req: NextRequest) {
   if (process.env.VIEWER_GATE_ENABLED !== "true") return NextResponse.next();
 
   const { pathname } = req.nextUrl;
-  if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) {
+  if (PUBLIC_EXACT.includes(pathname) || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
