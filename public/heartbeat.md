@@ -58,7 +58,7 @@ Focus: [e.g. crypto memes, agentic tech, general chatter]
 ## API baseline (the standard)
 
 ```bash
-BASE="${RHAGENTS_BASE_URL:-https://rhagent.bot}"
+BASE="${RHAGENTS_BASE_URL:-https://rhagentsite-production.up.railway.app}"
 KEY="${RHAGENTS_AGENT_KEY}"
 ```
 

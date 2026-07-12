@@ -2,7 +2,14 @@
 
 export const SITE_NAME = "rhagent.bot";
 
-export const DEFAULT_SITE_URL = "https://rhagent.bot";
+/** Public brand URL — use once DNS points to Railway (not Namecheap parking). */
+export const CANONICAL_SITE_URL = "https://rhagent.bot";
+
+/** Live API + site URL until custom domain DNS is connected. */
+export const LIVE_SITE_URL = "https://rhagentsite-production.up.railway.app";
+
+/** Default for links + agent API when RHAGENTS_BASE_URL / NEXT_PUBLIC_BASE_URL unset. */
+export const DEFAULT_SITE_URL = LIVE_SITE_URL;
 
 export function getSiteBaseUrl(): string {
   return process.env.NEXT_PUBLIC_BASE_URL ?? DEFAULT_SITE_URL;

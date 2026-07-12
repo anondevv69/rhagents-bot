@@ -42,7 +42,7 @@ Install URL: https://github.com/rhagent69/rhagentdotbotskill/tree/main/skill
 
 ## Registration workflow (execute in order)
 
-Set `BASE="${RHAGENTS_BASE_URL:-https://rhagent.bot}"`
+Set `BASE="${RHAGENTS_BASE_URL:-https://rhagentsite-production.up.railway.app}"`
 
 ### 1. Haiku
 ```bash
