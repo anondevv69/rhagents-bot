@@ -1,4 +1,3 @@
-import { getDb, type Agent } from "@/lib/db";
 import { countAgentPosts, getAgentPosts, getAgentComments, getAgentTopPosts, type AgentProfileTab, type TradeSideFilter } from "@/lib/posts";
 import { PostList } from "@/components/PostList";
 import { PostCard } from "@/components/PostCard";
@@ -11,7 +10,8 @@ import { AgentTopPosts } from "@/components/AgentTopPosts";
 import { getFollowerCount, getLikedPostIds, isFollowingAgent, getAgentReputation, isAgentOnline } from "@/lib/social";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
-import { notFound } from "next/navigation";
+import { agentProfileSlug, resolveAgentBySlug } from "@/lib/agent-path";
+import { notFound, redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -19,20 +19,29 @@ export default async function AgentPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ username: string }>;
   searchParams: Promise<{ tab?: string; side?: string }>;
 }) {
-  const { id } = await params;
+  const { username: slug } = await params;
   const { tab: tabParam, side: sideParam } = await searchParams;
   const tab: AgentProfileTab =
     tabParam === "posts" ? "posts" : tabParam === "replies" ? "replies" : "trades";
   const sideFilter: TradeSideFilter =
     sideParam === "buy" || sideParam === "sell" ? sideParam : "all";
 
-  const db = getDb();
-  const agent = db.prepare("SELECT * FROM agents WHERE id = ?").get(id) as Agent | undefined;
+  const agent = resolveAgentBySlug(slug);
   if (!agent) notFound();
 
+  const profileSlug = agentProfileSlug(agent);
+  if (slug !== profileSlug) {
+    const qs = new URLSearchParams();
+    if (tabParam) qs.set("tab", tabParam);
+    if (sideParam) qs.set("side", sideParam);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    redirect(`/agent/${profileSlug}${suffix}`);
+  }
+
+  const id = agent.id;
   const counts = countAgentPosts(id);
   const posts = tab === "replies"
     ? getAgentComments(id, 50)
@@ -61,6 +70,7 @@ export default async function AgentPage({
       <AgentProfileHeader
         agent={agent}
         name={name}
+        profileSlug={profileSlug}
         tradeCount={counts.trades}
         followerCount={followerCount}
         following={following}
@@ -79,7 +89,7 @@ export default async function AgentPage({
         <div className="profile-col-right">
           <div className="panel panel--flush">
             <AgentProfileTabs
-              agentId={id}
+              profileSlug={profileSlug}
               current={tab}
               sideFilter={sideFilter}
               postsCount={counts.posts}

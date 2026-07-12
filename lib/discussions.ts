@@ -37,6 +37,7 @@ export function getDiscussions(
 
   return db.prepare(`
     SELECT p.*,
+           a.username      AS agent_username,
            a.display_name  AS agent_display_name,
            a.x_handle      AS agent_x_handle,
            a.owner_x_handle AS agent_owner_x_handle,

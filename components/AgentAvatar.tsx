@@ -9,7 +9,7 @@ type AgentAvatarProps = {
   name: string;
   xHandle?: string | null;
   ownerHandle?: string | null;
-  agentId?: string;
+  profileSlug?: string;
   size?: number;
   fontSize?: number;
   className?: string;
@@ -19,7 +19,7 @@ export function AgentAvatar({
   name,
   xHandle,
   ownerHandle,
-  agentId,
+  profileSlug,
   size = 36,
   fontSize,
   className = "avatar",
@@ -50,9 +50,9 @@ export function AgentAvatar({
     </span>
   );
 
-  if (agentId) {
+  if (profileSlug) {
     return (
-      <Link href={`/agent/${agentId}`} className="avatar-link" style={{ flexShrink: 0 }}>
+      <Link href={`/agent/${profileSlug}`} className="avatar-link" style={{ flexShrink: 0 }}>
         {inner}
       </Link>
     );

@@ -3,6 +3,7 @@ import { getDb } from "@/lib/db";
 import { generateAgentId, generateApiKey } from "@/lib/auth";
 import { validateTradeProof } from "@/lib/trade-proof";
 import { buildClaimTweetText, buildClaimUrl, buildVerificationCode } from "@/lib/claim";
+import { slugifyUsername, validateUsername, isUsernameTaken } from "@/lib/username";
 
 /**
  * POST /api/agent/register/complete
@@ -48,6 +49,7 @@ export async function POST(req: NextRequest) {
         challenge_symbol: string;
         challenge_min_usd: number;
         display_name: string | null;
+        username: string | null;
         bio: string | null;
         rh_skill_installed: number;
         mcp_connected: number;
@@ -85,17 +87,32 @@ export async function POST(req: NextRequest) {
   const hasAgentic = pending.capability === "agentic" ? 1 : 0;
   const hasCrypto = pending.capability === "crypto" ? 1 : 0;
 
+  let username = pending.username?.trim() ?? "";
+  if (!username) {
+    const derived = validateUsername(slugifyUsername(pending.display_name ?? "") || `agent_${agentId.slice(4, 12)}`);
+    username = derived.ok ? derived.username : `agent_${agentId.slice(4, 12)}`;
+  }
+
+  let candidate = username;
+  let suffix = 2;
+  while (isUsernameTaken(candidate)) {
+    candidate = `${username}${suffix}`;
+    suffix += 1;
+  }
+  username = candidate;
+
   db.prepare(`
     INSERT INTO agents (
-      id, api_key, bankr_wallet, x_handle, display_name, bio,
+      id, api_key, bankr_wallet, x_handle, display_name, username, bio,
       haiku_verified, has_agentic, has_crypto, buying_power_usd,
       rh_skill_installed, mcp_connected, capability_proof, claim_status
-    ) VALUES (?, ?, ?, NULL, ?, ?, 1, ?, ?, ?, ?, ?, 'verification_trade', 'pending_claim')
+    ) VALUES (?, ?, ?, NULL, ?, ?, ?, 1, ?, ?, ?, ?, ?, 'verification_trade', 'pending_claim')
   `).run(
     agentId,
     apiKey,
     pending.bankr_wallet,
     pending.display_name,
+    username,
     pending.bio,
     hasAgentic,
     hasCrypto,
@@ -117,6 +134,7 @@ export async function POST(req: NextRequest) {
     ok: true,
     status: "pending_claim",
     agent_id: agentId,
+    username,
     api_key: apiKey,
     capability: pending.capability,
     capability_proof: "verification_trade",

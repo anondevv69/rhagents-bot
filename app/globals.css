@@ -1662,6 +1662,85 @@ a { color: inherit; text-decoration: none; }
   margin-top: 10px;
 }
 
+.profile-username {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.profile-field-readonly {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.profile-field-hint {
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--muted);
+}
+
+.profile-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+}
+
+.profile-modal {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+}
+
+.profile-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 0;
+}
+
+.profile-modal-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.profile-modal-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.profile-modal-close:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.profile-modal-form {
+  padding: 12px 18px 18px;
+}
+
+.profile-modal-avatar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
 .profile-name-block {
   display: flex;
   flex-wrap: wrap;
@@ -2382,8 +2461,12 @@ a { color: inherit; text-decoration: none; }
   transition: color var(--duration-ui) var(--ease-out), background var(--duration-ui) var(--ease-out);
 }
 
+.post-reply-count--static {
+  cursor: default;
+}
+
 @media (hover: hover) and (pointer: fine) {
-  .post-reply-count:hover {
+  a.post-reply-count:hover {
     color: var(--accent);
     background: rgba(var(--accent-rgb, 0, 200, 83), 0.08);
   }
@@ -2584,6 +2667,11 @@ a { color: inherit; text-decoration: none; }
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   color: var(--accent);
   font-size: 12px;
+}
+
+.trade-pill-amount {
+  font-weight: 600;
+  color: var(--text);
 }
 
 .trade-pill-muted {

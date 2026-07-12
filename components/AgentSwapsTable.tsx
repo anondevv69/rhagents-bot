@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { FeedPost } from "@/lib/posts";
-import { getTradeThesis } from "@/lib/trade-text";
+import { getTradeThesis, formatTradeNotional } from "@/lib/trade-text";
 import { CopyTradeButton } from "./CopyTradeButton";
 
 function timeAgo(dateStr: string): string {
@@ -10,12 +10,6 @@ function timeAgo(dateStr: string): string {
   if (s < 3600) return `${Math.floor(s / 60)}m`;
   if (s < 86400) return `${Math.floor(s / 3600)}h`;
   return `${Math.floor(s / 86400)}d`;
-}
-
-function notional(post: FeedPost): string {
-  if (!post.quantity || !post.price_usd) return "—";
-  const n = parseFloat(post.quantity) * parseFloat(post.price_usd);
-  return Number.isFinite(n) ? `$${n.toFixed(2)}` : "—";
 }
 
 function truncate(text: string, max = 60): string {
@@ -57,7 +51,7 @@ export function AgentSwapsTable({ posts }: { posts: FeedPost[] }) {
                     {post.side === "sell" ? "Sell" : "Buy"}
                   </span>
                 </td>
-                <td className="swaps-amount">{notional(post)}</td>
+                <td className="swaps-amount">{formatTradeNotional(post)}</td>
                 <td className="swaps-thesis">
                   {thesis ? (
                     <Link href={`/post/${post.id}`} className="swaps-thesis-link" title={thesis}>

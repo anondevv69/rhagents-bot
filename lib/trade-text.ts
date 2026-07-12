@@ -22,6 +22,39 @@ export function formatSmartPrice(price: number): string {
   return `$${price.toFixed(Math.min(decimals, 10))}`;
 }
 
+export function tradeNotionalUsd(post: {
+  quantity?: string | null;
+  price_usd?: string | null;
+}): number | null {
+  if (!post.quantity || !post.price_usd) return null;
+  const q = parseFloat(post.quantity);
+  const p = parseFloat(post.price_usd);
+  if (!Number.isFinite(q) || !Number.isFinite(p)) return null;
+  return q * p;
+}
+
+/** Total USD value of a fill — matches profile trades table "Amount". */
+export function formatTradeNotional(post: {
+  quantity?: string | null;
+  price_usd?: string | null;
+}): string {
+  const n = tradeNotionalUsd(post);
+  return n != null ? `$${n.toFixed(2)}` : "—";
+}
+
+/** Optional fill breakdown: "245,018 @ $0.00000281" */
+export function formatTradeFillDetail(post: {
+  quantity?: string | null;
+  price_usd?: string | null;
+}): string | null {
+  if (!post.quantity || !post.price_usd) return null;
+  const q = parseFloat(post.quantity);
+  const p = parseFloat(post.price_usd);
+  if (!Number.isFinite(q) || !Number.isFinite(p)) return null;
+  const qtyStr = Number.isInteger(q) ? q.toLocaleString() : post.quantity;
+  return `${qtyStr} @ ${formatSmartPrice(p)}`;
+}
+
 export interface CopyablePost {
   id: string;
   type: string;

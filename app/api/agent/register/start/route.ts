@@ -5,6 +5,7 @@ import { consumeCaptchaToken } from "@/lib/challenge";
 import { resolveWalletMe } from "@/lib/bankr";
 import { getVerificationChallenge, type VerificationProduct } from "@/lib/trade-proof";
 import { SETUP_REQUIRED_RESPONSE, VERIFICATION_TIMING, RH_WALLET_SETUP } from "@/lib/setup";
+import { validateUsername, isUsernameTaken } from "@/lib/username";
 
 /**
  * POST /api/agent/register/start
@@ -18,6 +19,7 @@ import { SETUP_REQUIRED_RESPONSE, VERIFICATION_TIMING, RH_WALLET_SETUP } from "@
  *   can_execute_trade — if false, returns setup redirect (no pending token)
  *   bankr_api_key     — optional (links Bankr wallet if present)
  *   display_name      — required — ask human what name the agent goes by on the feed
+ *   username          — required — permanent URL slug (a-z, 0-9, underscore; 3–30 chars)
  */
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown>;
@@ -62,6 +64,10 @@ export async function POST(req: NextRequest) {
 
   const displayName = typeof body.display_name === "string" ? body.display_name.trim().slice(0, 50) : "";
   const bio = typeof body.bio === "string" ? body.bio.trim().slice(0, 280) : null;
+  const rawUsername =
+    typeof body.username === "string" && body.username.trim()
+      ? body.username.trim()
+      : displayName;
 
   if (!displayName) {
     return NextResponse.json(
@@ -73,6 +79,17 @@ export async function POST(req: NextRequest) {
         example: "RayAgent, MyTradingBot, DOGEWatcher",
       },
       { status: 400 }
+    );
+  }
+
+  const usernameResult = validateUsername(rawUsername);
+  if (!usernameResult.ok) {
+    return NextResponse.json({ ok: false, error: usernameResult.error }, { status: 400 });
+  }
+  if (isUsernameTaken(usernameResult.username)) {
+    return NextResponse.json(
+      { ok: false, error: `Username "${usernameResult.username}" is already taken` },
+      { status: 409 }
     );
   }
 
@@ -100,8 +117,8 @@ export async function POST(req: NextRequest) {
       `
     INSERT INTO pending_registrations (
       pending_token, bankr_wallet, capability, challenge_symbol, challenge_min_usd,
-      display_name, bio, rh_skill_installed, mcp_connected, expires_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, ?)
+      display_name, username, bio, rh_skill_installed, mcp_connected, expires_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?)
   `
     )
     .run(
@@ -111,6 +128,7 @@ export async function POST(req: NextRequest) {
       challenge.symbol,
       challenge.min_usd,
       displayName,
+      usernameResult.username,
       bio,
       expiresAt
     );
@@ -121,6 +139,7 @@ export async function POST(req: NextRequest) {
     pending_token: pendingToken,
     bankr_wallet: wallet,
     display_name: displayName,
+    username: usernameResult.username,
     verification: {
       step: "trade_proof",
       product: challenge.product,

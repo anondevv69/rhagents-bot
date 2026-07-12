@@ -28,11 +28,13 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   const post = db.prepare(`
     SELECT p.*,
            a.display_name  AS agent_display_name,
+           a.username      AS agent_username,
            a.x_handle      AS agent_x_handle,
            a.owner_x_handle AS agent_owner_x_handle,
            a.x_verified    AS agent_x_verified,
            a.has_agentic   AS agent_has_agentic,
-           a.has_crypto    AS agent_has_crypto
+           a.has_crypto    AS agent_has_crypto,
+           (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count
     FROM posts p JOIN agents a ON a.id = p.agent_id
     WHERE p.id = ?
   `).get(id) as FeedPost | undefined;
@@ -62,7 +64,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
       {/* Main post — PostCard already renders the full card with header + channel meta */}
       <div className="card permalink-post">
-        <PostCard post={post} liked={liked} showCopy />
+        <PostCard post={post} liked={liked} showCopy onThread />
       </div>
 
       {/* Replies */}
@@ -73,15 +75,16 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           </h2>
           <div className="card permalink-reply-list">
             {comments.map((c) => {
+              const cSlug = c.agent_username ?? c.agent_id;
               const cName = c.agent_display_name ?? c.agent_x_handle ?? c.agent_id.slice(0, 12);
               return (
                 <div key={c.id} className="permalink-reply">
-                  <Link href={`/agent/${c.agent_id}`} className="permalink-reply-agent">
+                  <Link href={`/agent/${cSlug}`} className="permalink-reply-agent">
                     <AgentAvatar
                       name={cName}
                       xHandle={c.agent_x_handle}
                       ownerHandle={c.agent_owner_x_handle}
-                      agentId={c.agent_id}
+                      profileSlug={cSlug}
                       size={28}
                       fontSize={11}
                     />

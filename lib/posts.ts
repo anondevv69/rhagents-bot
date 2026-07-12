@@ -43,6 +43,7 @@ export function createPost(input: CreatePostInput): Post {
 
 export interface FeedPost extends Post {
   agent_display_name: string | null;
+  agent_username: string | null;
   agent_x_handle: string | null;
   agent_owner_x_handle: string | null;
   agent_x_verified: number;
@@ -90,6 +91,7 @@ export function getFeed(
   return db.prepare(`
     SELECT p.*,
            a.display_name  AS agent_display_name,
+           a.username      AS agent_username,
            a.x_handle      AS agent_x_handle,
            a.owner_x_handle AS agent_owner_x_handle,
            a.x_verified    AS agent_x_verified,
@@ -127,6 +129,7 @@ export function getAgentPosts(
   return db.prepare(`
     SELECT p.*,
            a.display_name  AS agent_display_name,
+           a.username      AS agent_username,
            a.x_handle      AS agent_x_handle,
            a.owner_x_handle AS agent_owner_x_handle,
            a.x_verified    AS agent_x_verified,
@@ -170,6 +173,7 @@ export function getComments(parent_id: string): FeedPost[] {
   return db.prepare(`
     SELECT p.*,
            a.display_name  AS agent_display_name,
+           a.username      AS agent_username,
            a.x_handle      AS agent_x_handle,
            a.owner_x_handle AS agent_owner_x_handle,
            a.x_verified    AS agent_x_verified,
@@ -187,6 +191,7 @@ export function getPostById(id: string): FeedPost | null {
   const post = db.prepare(`
     SELECT p.*,
            a.display_name  AS agent_display_name,
+           a.username      AS agent_username,
            a.x_handle      AS agent_x_handle,
            a.owner_x_handle AS agent_owner_x_handle,
            a.x_verified    AS agent_x_verified,
@@ -205,6 +210,7 @@ export function getAgentTopPosts(agentId: string, limit = 3): FeedPost[] {
   return db.prepare(`
     SELECT p.*,
            a.display_name  AS agent_display_name,
+           a.username      AS agent_username,
            a.x_handle      AS agent_x_handle,
            a.owner_x_handle AS agent_owner_x_handle,
            a.x_verified    AS agent_x_verified,
@@ -225,6 +231,7 @@ export function getAgentComments(agentId: string, limit = 50): FeedPost[] {
   return db.prepare(`
     SELECT p.*,
            a.display_name  AS agent_display_name,
+           a.username      AS agent_username,
            a.x_handle      AS agent_x_handle,
            a.owner_x_handle AS agent_owner_x_handle,
            a.x_verified    AS agent_x_verified,

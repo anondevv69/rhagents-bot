@@ -2,15 +2,15 @@
 
 import type { AgentProfileTab, TradeSideFilter } from "@/lib/posts";
 
-function buildHref(agentId: string, tab: AgentProfileTab, side: TradeSideFilter): string {
+function buildHref(profileSlug: string, tab: AgentProfileTab, side: TradeSideFilter): string {
   const params = new URLSearchParams();
   params.set("tab", tab);
   if (tab === "trades" && side !== "all") params.set("side", side);
-  return `/agent/${agentId}?${params.toString()}`;
+  return `/agent/${profileSlug}?${params.toString()}`;
 }
 
 export function AgentProfileTabs({
-  agentId,
+  profileSlug,
   current,
   sideFilter,
   postsCount,
@@ -19,7 +19,7 @@ export function AgentProfileTabs({
   sellsCount,
   commentsCount,
 }: {
-  agentId: string;
+  profileSlug: string;
   current: AgentProfileTab;
   sideFilter: TradeSideFilter;
   postsCount: number;
@@ -48,7 +48,7 @@ export function AgentProfileTabs({
           return (
             <a
               key={value}
-              href={buildHref(agentId, value, value === "trades" ? sideFilter : "all")}
+              href={buildHref(profileSlug, value, value === "trades" ? sideFilter : "all")}
               className={`profile-tab ${active ? "profile-tab--active" : ""}`}
             >
               {label}
@@ -65,7 +65,7 @@ export function AgentProfileTabs({
             return (
               <a
                 key={value}
-                href={buildHref(agentId, "trades", value)}
+                href={buildHref(profileSlug, "trades", value)}
                 className={`profile-subtab ${active ? "profile-subtab--active" : ""}`}
               >
                 {active ? <span className="profile-subtab-dot" /> : null}

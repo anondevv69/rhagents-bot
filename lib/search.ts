@@ -1,7 +1,9 @@
 import { getDb } from "./db";
+import { agentProfilePath } from "./agent-path";
 
 export interface SearchAgent {
   id: string;
+  username: string | null;
   display_name: string | null;
   x_handle: string | null;
   owner_x_handle: string | null;
@@ -24,6 +26,7 @@ export interface SearchPost {
   product: string | null;
   created_at: string;
   agent_id: string;
+  agent_username: string | null;
   agent_display_name: string | null;
   agent_x_handle: string | null;
 }
@@ -64,7 +67,11 @@ function getPostById(id: string): SearchPost | null {
   const db = getDb();
   return db.prepare(`
     SELECT p.id, p.type, p.body, p.symbol, p.side, p.product, p.created_at, p.agent_id,
-           a.display_name AS agent_display_name, a.x_handle AS agent_x_handle
+           a.username AS agent_username,
+           a.username AS agent_username,
+           a.display_name AS agent_display_name,
+           a.x_handle AS agent_x_handle,
+           a.owner_x_handle AS agent_owner_x_handle
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
     WHERE p.id = ?
@@ -94,19 +101,39 @@ export function searchAll(query: string, limit = 8): SearchResults {
 
   let agents: SearchAgent[] = [];
   if (parsed.mode === "all" || parsed.mode === "agents") {
+    if (parsed.mode === "agents") {
+      const exact = db.prepare(`
+        SELECT id, username, display_name, x_handle, owner_x_handle, has_agentic, has_crypto
+        FROM agents
+        WHERE (claim_status = 'claimed' OR x_verified = 1)
+          AND username = ? COLLATE NOCASE
+        LIMIT 1
+      `).get(term.toLowerCase()) as SearchAgent | undefined;
+      if (exact) {
+        return {
+          agents: [exact],
+          symbols: [],
+          posts: [],
+          direct_href: agentProfilePath(exact),
+          mode: "agents",
+        };
+      }
+    }
+
     agents = db.prepare(`
-      SELECT id, display_name, x_handle, owner_x_handle, has_agentic, has_crypto
+      SELECT id, username, display_name, x_handle, owner_x_handle, has_agentic, has_crypto
       FROM agents
       WHERE (claim_status = 'claimed' OR x_verified = 1)
       AND (
-        display_name LIKE ? COLLATE NOCASE
+        username LIKE ? COLLATE NOCASE
+        OR display_name LIKE ? COLLATE NOCASE
         OR x_handle LIKE ? COLLATE NOCASE
         OR owner_x_handle LIKE ? COLLATE NOCASE
         OR id LIKE ? COLLATE NOCASE
       )
       ORDER BY created_at DESC
       LIMIT ?
-    `).all(like, like, like, like, limit) as SearchAgent[];
+    `).all(like, like, like, like, like, limit) as SearchAgent[];
   }
 
   let symbols: SearchSymbol[] = [];
@@ -125,7 +152,11 @@ export function searchAll(query: string, limit = 8): SearchResults {
 
     posts = db.prepare(`
       SELECT p.id, p.type, p.body, p.symbol, p.side, p.product, p.created_at, p.agent_id,
-             a.display_name AS agent_display_name, a.x_handle AS agent_x_handle
+             a.username AS agent_username,
+             a.username AS agent_username,
+           a.display_name AS agent_display_name,
+           a.x_handle AS agent_x_handle,
+           a.owner_x_handle AS agent_owner_x_handle
       FROM posts p
       JOIN agents a ON a.id = p.agent_id
       WHERE p.parent_id IS NULL

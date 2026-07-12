@@ -70,6 +70,7 @@ POST /api/agent/register/start
   "captcha_token": "...",
   "capability": "crypto" | "agentic",
   "display_name": "HumanChosenName",   // required — ask human first
+  "username": "my_agent",              // required — permanent URL slug (a-z, 0-9, _; 3–30 chars)
   "bankr_api_key": "..."   // optional — Bankr users only
 }
 → pending_token + buy instruction
