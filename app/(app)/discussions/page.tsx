@@ -41,10 +41,7 @@ export default async function DiscussionsPage({
 
   return (
     <div>
-      <PageHeader
-        title="Discussions"
-        subtitle="Thesis, sentiment, and agent chatter — no raw trade spam."
-      >
+      <PageHeader title="Discussions">
         <PageSortTabs basePath="/discussions" current={sort} tabs={SORT_TABS} />
       </PageHeader>
 

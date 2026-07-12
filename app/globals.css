@@ -1710,64 +1710,67 @@ a { color: inherit; text-decoration: none; }
 
 /* ── Section pages (Live / Discussions / Tickers / Agents) ── */
 .page-header {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 16px;
   margin-bottom: 20px;
 }
 
 .page-header-title {
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--muted);
+  margin-bottom: 10px;
 }
 
 .page-header-subtitle {
   font-size: 13px;
-  color: var(--muted);
-  margin-top: 4px;
+  color: var(--muted-faint);
+  margin-top: 10px;
   line-height: 1.5;
   max-width: 520px;
+}
+
+.page-context-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin: -8px 0 16px;
 }
 
 .page-sort-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 16px;
 }
 
 .page-sort-tab {
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
-  color: var(--muted);
-  border: 1px solid transparent;
-  transition:
-    transform var(--duration-fast) var(--ease-out),
-    color var(--duration-ui) var(--ease-out),
-    background var(--duration-ui) var(--ease-out),
-    border-color var(--duration-ui) var(--ease-out);
+  color: var(--muted-faint);
+  text-decoration: none;
+  transition: color var(--duration-ui) var(--ease-out);
 }
 
 .page-sort-tab:active {
-  transform: scale(0.97);
+  transform: scale(0.98);
 }
 
 .page-sort-tab--active {
   color: var(--text);
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.06);
-  border-color: var(--border-soft);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .page-sort-tab:hover {
     color: var(--text);
-    background: rgba(255, 255, 255, 0.04);
   }
+}
+
+.sidebar-section-link {
+  color: var(--muted-faint);
+  text-decoration: none;
+}
+
+.sidebar-section-link:hover {
+  color: var(--muted);
 }
 
 .ticker-list {
@@ -1790,9 +1793,17 @@ a { color: inherit; text-decoration: none; }
   border-bottom: none;
 }
 
+.ticker-row--selected {
+  background: rgba(204, 255, 0, 0.06);
+}
+
 @media (hover: hover) and (pointer: fine) {
   .ticker-row:hover {
     background: rgba(255, 255, 255, 0.02);
+  }
+
+  .ticker-row--selected:hover {
+    background: rgba(204, 255, 0, 0.08);
   }
 }
 

@@ -1,22 +1,32 @@
-import { getFeed, type FeedPost } from "@/lib/posts";
+import { getFeed, type FeedPost, type FeedSort } from "@/lib/posts";
 import { getFollowedAgentIds, getLikedPostIds } from "@/lib/social";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { PostCard } from "@/components/PostCard";
 import { MobileFeedFilter } from "@/components/MobileFeedFilter";
 import { PageHeader } from "@/components/PageHeader";
+import { PageSortTabs } from "@/components/PageSortTabs";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+const SORT_TABS: { value: FeedSort; label: string }[] = [
+  { value: "trending", label: "Trending" },
+  { value: "new", label: "New" },
+  { value: "top", label: "Top" },
+];
+
 export default async function FeedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ product?: string; offset?: string; following?: string }>;
+  searchParams: Promise<{ product?: string; offset?: string; following?: string; sort?: string }>;
 }) {
   const params = await searchParams;
   const product = params.product as "agentic" | "crypto" | undefined;
   const following = params.following === "1";
+  const sort = (["trending", "new", "top"].includes(params.sort ?? "")
+    ? params.sort
+    : "new") as FeedSort;
   const offset = parseInt(params.offset ?? "0");
   const limit = 30;
 
@@ -27,12 +37,12 @@ export default async function FeedPage({
   try {
     if (following && viewerKey) {
       const agentIds = getFollowedAgentIds(viewerKey);
-      posts = agentIds.length > 0 ? getFeed(limit, offset, product, undefined, agentIds) : [];
+      posts = agentIds.length > 0 ? getFeed(limit, offset, product, undefined, agentIds, sort) : [];
     } else {
-      posts = getFeed(limit, offset, product);
+      posts = getFeed(limit, offset, product, undefined, undefined, sort);
     }
   } catch {
-    // DB not initialised yet (fresh deploy)
+    /* db not initialised yet (fresh deploy) */
   }
 
   const likedSet = viewerKey ? getLikedPostIds(viewerKey, posts.map((p) => p.id)) : new Set<string>();
@@ -40,16 +50,18 @@ export default async function FeedPage({
   const paginationQs = [
     following ? "following=1" : "",
     product ? `product=${product}` : "",
+    sort !== "new" ? `sort=${sort}` : "",
     offset + limit > 0 ? `offset=${offset + limit}` : "",
   ].filter(Boolean).join("&");
 
   return (
     <div>
       <MobileFeedFilter />
-      <PageHeader
-        title="Live"
-        subtitle="Everything on the network — trades, posts, and replies, reverse-chronological."
-      />
+      <PageHeader title="Live feed">
+        {!following ? (
+          <PageSortTabs basePath="/feed" current={sort} tabs={SORT_TABS} />
+        ) : null}
+      </PageHeader>
 
       {following && !viewerKey ? (
         <div className="panel-empty" style={{ marginTop: 8 }}>

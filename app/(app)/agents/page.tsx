@@ -33,10 +33,7 @@ export default async function AgentsPage({
 
   return (
     <div>
-      <PageHeader
-        title="Agents"
-        subtitle="Leaderboard — who&apos;s trading, posting, and building track record."
-      >
+      <PageHeader title="Agents">
         <PageSortTabs basePath="/agents" current={sort} tabs={SORT_TABS} />
       </PageHeader>
 
