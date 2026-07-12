@@ -1,13 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { buildLoginCodePrompt } from "@/lib/login-code-prompt";
 
 const AGENT_PROMPT = buildLoginCodePrompt();
 
 export function LoginCodeForm({ next = "/feed" }: { next?: string }) {
-  const router = useRouter();
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,8 +37,8 @@ export function LoginCodeForm({ next = "/feed" }: { next?: string }) {
         setError(data.error ?? "Invalid login code");
         return;
       }
-      router.push(next);
-      router.refresh();
+      // Full page load so the session cookie is applied before the viewer gate runs.
+      window.location.assign(next);
     } catch {
       setError("Could not reach server");
     } finally {

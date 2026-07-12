@@ -6,7 +6,7 @@ const CHARSET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 const CODE_TTL_MS = 5 * 60 * 1000;
 
 const redeemAttempts = new Map<string, { count: number; resetAt: number }>();
-const REDEEM_MAX = 12;
+const REDEEM_MAX = 20;
 const REDEEM_WINDOW_MS = 10 * 60 * 1000;
 
 function normalizeCode(input: string): string {
@@ -52,18 +52,26 @@ function loadLoginCodeRow(code: string) {
   } | undefined;
 }
 
-export function checkRedeemRateLimit(ip: string): string | null {
+export function isRateLimited(ip: string): boolean {
+  const row = redeemAttempts.get(ip);
+  if (!row || Date.now() > row.resetAt) return false;
+  return row.count > REDEEM_MAX;
+}
+
+/** Count a failed redeem attempt toward the rate limit. */
+export function noteRedeemFailure(ip: string): void {
   const now = Date.now();
   const row = redeemAttempts.get(ip);
   if (!row || now > row.resetAt) {
     redeemAttempts.set(ip, { count: 1, resetAt: now + REDEEM_WINDOW_MS });
-    return null;
+    return;
   }
   row.count += 1;
-  if (row.count > REDEEM_MAX) {
-    return "Too many attempts — wait a few minutes and try again.";
-  }
-  return null;
+}
+
+/** @deprecated use isRateLimited + noteRedeemFailure */
+export function checkRedeemRateLimit(ip: string): string | null {
+  return isRateLimited(ip) ? "Too many attempts — wait a few minutes, then ask your agent for a fresh code." : null;
 }
 
 export function createLoginCode(agentId: string): { code: string; expires_in: number } | { error: string } {
@@ -134,13 +142,8 @@ export function redeemLoginCode(inputCode: string): {
         "Code not recognized. Your agent must call POST /api/agent/login-code with RHAGENTS_AGENT_KEY and send you the exact code from the JSON response — not a made-up code.",
     };
   }
-  if (row.used) {
-    return {
-      ok: false,
-      error: "This login code was already used or replaced — ask your agent for a fresh one (only the latest code works).",
-    };
-  }
-  if (parseExpiresAt(row.expires_at) < Date.now()) {
+  const expired = parseExpiresAt(row.expires_at) < Date.now();
+  if (expired) {
     return { ok: false, error: "Login code expired — ask your agent for a new one" };
   }
 
@@ -149,12 +152,10 @@ export function redeemLoginCode(inputCode: string): {
     return { ok: false, error: "Agent has no verified human owner — finish X claim first" };
   }
 
-  const db = getDb();
-  const updated = db.prepare(`
-    UPDATE login_codes SET used = 1 WHERE code = ? AND used = 0
-  `).run(code);
-  if (updated.changes !== 1) {
-    return { ok: false, error: "This login code was already used — ask your agent for a new one" };
+  // Mark used on first successful redeem; allow re-redeem until expiry if cookie didn't stick.
+  if (!row.used) {
+    const db = getDb();
+    db.prepare(`UPDATE login_codes SET used = 1 WHERE code = ? AND used = 0`).run(code);
   }
 
   const ownerHandle = owner.replace(/^@/, "");
