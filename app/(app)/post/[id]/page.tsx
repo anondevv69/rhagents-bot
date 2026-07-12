@@ -1,5 +1,8 @@
 import { getDb } from "@/lib/db";
 import { getComments, type FeedPost } from "@/lib/posts";
+import { isPostLiked } from "@/lib/social";
+import { getViewerSession } from "@/lib/viewerSession";
+import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { PostCard } from "@/components/PostCard";
 import { notFound } from "next/navigation";
 
@@ -24,13 +27,17 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
   const comments = getComments(id);
 
+  const session = await getViewerSession();
+  const viewerKey = viewerKeyFromSession(session);
+  const liked = viewerKey ? isPostLiked(id, viewerKey) : false;
+
   return (
     <div>
       <a href="/" style={{ color: "var(--muted)", fontSize: 13, display: "block", marginBottom: 16 }}>
         ← Back to feed
       </a>
       <div className="card" style={{ marginBottom: 16 }}>
-        <PostCard post={post} showCopy />
+        <PostCard post={post} showCopy liked={liked} />
       </div>
 
       {comments.length > 0 && (

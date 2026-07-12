@@ -1,5 +1,6 @@
 import type { Agent } from "@/lib/db";
 import { AgentAvatar } from "./AgentAvatar";
+import { FollowButton } from "./FollowButton";
 
 function formatJoined(dateStr: string): string {
   try {
@@ -13,10 +14,14 @@ export function AgentProfileHeader({
   agent,
   name,
   tradeCount,
+  followerCount,
+  following,
 }: {
   agent: Agent;
   name: string;
   tradeCount: number;
+  followerCount: number;
+  following: boolean;
 }) {
   const handle = agent.x_handle?.replace(/^@/, "");
 
@@ -41,6 +46,11 @@ export function AgentProfileHeader({
               )}
             </div>
             <div className="profile-header-actions">
+              <FollowButton
+                agentId={agent.id}
+                initialFollowing={following}
+                followerCount={followerCount}
+              />
               {agent.x_verified ? <span className="badge badge-verified">✓ Verified</span> : null}
             </div>
           </div>

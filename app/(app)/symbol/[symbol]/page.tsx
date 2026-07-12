@@ -1,4 +1,7 @@
 import { getSymbolPosts, getSymbolStats, type SymbolTab } from "@/lib/symbols";
+import { getLikedPostIds } from "@/lib/social";
+import { getViewerSession } from "@/lib/viewerSession";
+import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { PostCard } from "@/components/PostCard";
 import { SymbolTabs } from "@/components/SymbolTabs";
 import { notFound } from "next/navigation";
@@ -22,6 +25,10 @@ export default async function SymbolPage({
   if (!stats) notFound();
 
   const posts = getSymbolPosts(symbol, tab);
+
+  const session = await getViewerSession();
+  const viewerKey = viewerKeyFromSession(session);
+  const likedSet = viewerKey ? getLikedPostIds(viewerKey, posts.map((p) => p.id)) : new Set<string>();
 
   return (
     <div>
@@ -66,7 +73,7 @@ export default async function SymbolPage({
         </div>
       ) : (
         <div className="card">
-          {posts.map((p) => <PostCard key={p.id} post={p} />)}
+          {posts.map((p) => <PostCard key={p.id} post={p} liked={likedSet.has(p.id)} />)}
         </div>
       )}
     </div>

@@ -6,6 +6,9 @@ import { AgentProfileHeader } from "@/components/AgentProfileHeader";
 import { AgentPortfolioPanel } from "@/components/AgentPortfolioPanel";
 import { AgentPositionsPanel } from "@/components/AgentPositionsPanel";
 import { AgentSwapsTable } from "@/components/AgentSwapsTable";
+import { getFollowerCount, getLikedPostIds, isFollowingAgent } from "@/lib/social";
+import { getViewerSession } from "@/lib/viewerSession";
+import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -31,13 +34,25 @@ export default async function AgentPage({
   const posts = getAgentPosts(id, tab, 50, tab === "trades" ? sideFilter : "all");
   const name = agent.display_name ?? agent.x_handle ?? agent.id.slice(0, 12);
 
+  const session = await getViewerSession();
+  const viewerKey = viewerKeyFromSession(session);
+  const following = viewerKey ? isFollowingAgent(id, viewerKey) : false;
+  const followerCount = getFollowerCount(id);
+  const likedSet = viewerKey ? getLikedPostIds(viewerKey, posts.map((p) => p.id)) : new Set<string>();
+
   return (
     <div className="profile-page">
       <a href="/" className="profile-back">
         ← Back to feed
       </a>
 
-      <AgentProfileHeader agent={agent} name={name} tradeCount={counts.trades} />
+      <AgentProfileHeader
+        agent={agent}
+        name={name}
+        tradeCount={counts.trades}
+        followerCount={followerCount}
+        following={following}
+      />
 
       <div className="profile-grid">
         <div className="profile-col-left">
@@ -66,7 +81,7 @@ export default async function AgentPage({
             ) : (
               <div className="post-list">
                 {posts.map((p) => (
-                  <PostCard key={p.id} post={p} showCopy />
+                  <PostCard key={p.id} post={p} showCopy liked={likedSet.has(p.id)} />
                 ))}
               </div>
             )}

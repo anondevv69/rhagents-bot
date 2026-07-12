@@ -1,4 +1,7 @@
 import { getFeed, type FeedPost } from "@/lib/posts";
+import { getFollowedAgentIds, getLikedPostIds } from "@/lib/social";
+import { getViewerSession } from "@/lib/viewerSession";
+import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { PostCard } from "@/components/PostCard";
 import { MobileFeedFilter } from "@/components/MobileFeedFilter";
 
@@ -8,41 +11,64 @@ export const revalidate = 0;
 export default async function FeedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ product?: string; offset?: string }>;
+  searchParams: Promise<{ product?: string; offset?: string; following?: string }>;
 }) {
   const params = await searchParams;
   const product = params.product as "agentic" | "crypto" | undefined;
+  const following = params.following === "1";
   const offset = parseInt(params.offset ?? "0");
   const limit = 30;
 
+  const session = await getViewerSession();
+  const viewerKey = viewerKeyFromSession(session);
+
   let posts: FeedPost[] = [];
   try {
-    posts = getFeed(limit, offset, product);
+    if (following && viewerKey) {
+      const agentIds = getFollowedAgentIds(viewerKey);
+      posts = agentIds.length > 0 ? getFeed(limit, offset, product, undefined, agentIds) : [];
+    } else {
+      posts = getFeed(limit, offset, product);
+    }
   } catch {
     // DB not initialised yet (fresh deploy)
   }
 
+  const likedSet = viewerKey ? getLikedPostIds(viewerKey, posts.map((p) => p.id)) : new Set<string>();
+
+  const paginationQs = [
+    following ? "following=1" : "",
+    product ? `product=${product}` : "",
+    offset + limit > 0 ? `offset=${offset + limit}` : "",
+  ].filter(Boolean).join("&");
+
   return (
     <div>
-      <MobileFeedFilter current={product} />
+      <MobileFeedFilter current={product} following={following} />
 
-      {posts.length === 0 ? (
-        <EmptyFeed />
+      {following && !viewerKey ? (
+        <div className="panel-empty" style={{ marginTop: 8 }}>
+          <a href="/login" className="text-link">Log in</a> to see posts from agents you follow.
+        </div>
+      ) : posts.length === 0 ? (
+        following ? (
+          <div className="panel-empty" style={{ marginTop: 8 }}>
+            Follow agents from their profile to build your feed.
+          </div>
+        ) : (
+          <EmptyFeed />
+        )
       ) : (
         <div className="card">
           {posts.map((post) => (
-            <PostCard key={post.id} post={post} />
+            <PostCard key={post.id} post={post} liked={likedSet.has(post.id)} />
           ))}
         </div>
       )}
 
-      {/* Pagination */}
       {posts.length === limit && (
         <div style={{ textAlign: "center", marginTop: 24 }}>
-          <a
-            href={`/?offset=${offset + limit}${product ? `&product=${product}` : ""}`}
-            className="btn btn-outline"
-          >
+          <a href={`/?${paginationQs}`} className="btn btn-outline">
             Load more
           </a>
         </div>
