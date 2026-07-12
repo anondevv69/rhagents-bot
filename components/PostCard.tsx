@@ -2,9 +2,8 @@ import Link from "next/link";
 import type { FeedPost } from "@/lib/posts";
 import { isAutoTradeBody, getTradeThesis } from "@/lib/trade-text";
 import { AgentAvatar } from "@/components/AgentAvatar";
-import { PostCopyActions } from "@/components/PostCopyActions";
+import { PostActionBar } from "@/components/PostActionBar";
 import { PostChannelMeta } from "@/components/PostChannelMeta";
-import { LikeButton } from "@/components/LikeButton";
 
 function isTradePost(post: FeedPost): boolean {
   return post.type === "trade_fill" || post.type === "trade_intent";
@@ -30,10 +29,11 @@ export function PostCard({
   const symbolSideHref = post.symbol && post.side
     ? `/symbol/${encodeURIComponent(post.symbol)}?tab=${post.side === "sell" ? "sells" : "buys"}`
     : symbolHref;
+  const side = post.side ?? "buy";
 
   return (
     <article className="post-card">
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+      <div className="post-card-header">
         <AgentAvatar
           name={name}
           xHandle={xHandle}
@@ -41,77 +41,63 @@ export function PostCard({
           size={36}
           fontSize={14}
         />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-            <Link href={`/agent/${post.agent_id}`} style={{ fontWeight: 600, fontSize: 14 }}>
+        <div className="post-card-header-main">
+          <div className="post-card-identity">
+            <Link href={`/agent/${post.agent_id}`} className="post-card-name">
               {name}
             </Link>
-            {xHandle && (
+            {xHandle ? (
               <a
                 href={`https://x.com/${xHandle.replace(/^@/, "")}`}
                 target="_blank"
                 rel="noreferrer"
-                style={{ color: "var(--muted)", fontSize: 12 }}
+                className="post-card-handle"
               >
                 @{xHandle.replace(/^@/, "")}
               </a>
-            )}
+            ) : null}
             {post.agent_x_verified ? (
               <span className="badge badge-verified" style={{ fontSize: 10 }}>✓</span>
             ) : null}
-            {post.agent_has_agentic ? <span className="badge badge-agentic" style={{ fontSize: 10 }}>Agentic</span> : null}
-            {post.agent_has_crypto ? <span className="badge badge-crypto" style={{ fontSize: 10 }}>Crypto</span> : null}
+            {post.agent_has_agentic ? (
+              <span className="badge badge-agentic" style={{ fontSize: 10 }}>Agentic</span>
+            ) : null}
+            {post.agent_has_crypto ? (
+              <span className="badge badge-crypto" style={{ fontSize: 10 }}>Crypto</span>
+            ) : null}
           </div>
           <PostChannelMeta post={post} />
         </div>
 
-        {(showTradePill || post.side) && symbolSideHref && (
-          <Link href={symbolSideHref} className={`badge badge-${post.side ?? "buy"}`} style={{ flexShrink: 0, textDecoration: "none" }}>
-            {post.side === "sell" ? "▼" : "▲"} {(post.side ?? "buy").toUpperCase()}
+        {(showTradePill || post.side) && symbolSideHref ? (
+          <Link href={symbolSideHref} className={`post-side-badge badge badge-${side}`}>
+            {side}
           </Link>
-        )}
+        ) : null}
       </div>
 
-      {showTradePill && symbolHref && (
-        <Link
-          href={symbolHref}
-          className="trade-pill"
-        >
+      {showTradePill && symbolHref ? (
+        <Link href={symbolHref} className="trade-pill trade-pill--compact">
           <span className="trade-pill-symbol">${post.symbol}</span>
-          {post.price_usd && (
+          {post.price_usd ? (
             <span className="trade-pill-muted">${post.price_usd}</span>
-          )}
-          {post.quantity && (
+          ) : null}
+          {post.quantity ? (
             <span className="trade-pill-muted">× {post.quantity}</span>
-          )}
-          {post.product && (
-            <span className={`badge badge-${post.product}`} style={{ fontSize: 10 }}>
-              {post.product}
-            </span>
-          )}
+          ) : null}
         </Link>
-      )}
-
-      {showComment ? (
-        <div style={{ marginTop: showTradePill ? 0 : undefined }}>
-          {showTradePill && (
-            <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4, fontWeight: 600 }}>
-              Thesis
-            </div>
-          )}
-          <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--text)", margin: 0 }}>
-            {thesis ?? post.body}
-          </p>
-        </div>
-      ) : isTradePost(post) && post.body && isAutoTradeBody(post.body) ? null : post.body ? (
-        <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--text)" }}>{post.body}</p>
       ) : null}
 
-      {showCopy && <PostCopyActions post={post} />}
+      {showComment ? (
+        <div className={showTradePill ? "post-card-body post-card-body--thesis" : "post-card-body"}>
+          {showTradePill ? <div className="post-thesis-label">Thesis</div> : null}
+          <p className="post-card-text">{thesis ?? post.body}</p>
+        </div>
+      ) : isTradePost(post) && post.body && isAutoTradeBody(post.body) ? null : post.body ? (
+        <p className="post-card-text">{post.body}</p>
+      ) : null}
 
-      <div className="post-card-footer">
-        <LikeButton postId={post.id} initialCount={post.upvotes} initialLiked={liked} />
-      </div>
+      <PostActionBar post={post} liked={liked} showCopy={showCopy} />
     </article>
   );
 }
