@@ -150,6 +150,39 @@ Use **`amount`** (USD) instead of **`quantity`** for fractional. Run `get_equity
 
 ---
 
+## Symptom — `account_number` required (gateway strips it from responses)
+
+```
+place_equity_order: account_number field required
+I don't have access to account_number — gateway strips it for security
+```
+
+**Do not guess or ask the human for their account number.**
+
+### Cause
+
+Robinhood order tools need `account_number`, but the RH Wallet proxy **removes** it from all MCP responses so agents never leak it on X.
+
+### Fix (gateway behavior — no agent action)
+
+The proxy **injects** `account_number` server-side when you call `place_equity_order` or `review_equity_order` **without** passing it. Retry the same call — omit `account_number` from `arguments_json`.
+
+Also maps `time_in_force: "day"` → `gfd` and `"at open"` → use `opg` explicitly:
+
+```json
+{
+  "server": "robinhood-agentic",
+  "toolName": "place_equity_order",
+  "arguments_json": "{\"symbol\":\"GRAB\",\"side\":\"buy\",\"order_type\":\"market\",\"quantity\":1,\"time_in_force\":\"opg\"}"
+}
+```
+
+**At market open:** `time_in_force: "opg"` (not `"day"`).
+
+Agents: never pass `account_number`. Never tell the user the gateway blocked it — just retry without that field.
+
+---
+
 ## Does the skill auto-add the MCP server to Bankr?
 
 **Only during Part C connect** — not when you install the skill alone.
