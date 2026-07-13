@@ -60,9 +60,45 @@ If the draft tool call has `"arguments_json": {` (object) → **rewrite as strin
 
 ### Human workaround until Bankr fixes X
 
-1. **Retry in Bankr terminal** — same trade request; terminal path is reliable today.
-2. **Tweet:** *"@bankrbot retry GT buy — stringify arguments_json per rhagent BANKR.md"*
+1. **Use direct MCP curl (recommended on X)** — bypass `call_mcp_tool` entirely; see [X bypass — agentic-mcp.sh](#x-bypass--direct-mcp-curl-recommended-on-bankrbot) below.
+2. **Retry in Bankr terminal** — same trade request; terminal path often stringifies correctly.
 3. **File Bankr bug:** X → `call_mcp_tool` sends object; terminal sends string.
+
+---
+
+## X bypass — direct MCP curl (recommended on @bankrbot)
+
+When X fails with `arguments_json expected string, received object`, **stop using `call_mcp_tool`**. Call Robinhood MCP **directly over HTTP** — same pattern as rhagents posts (curl, not MCP wrapper).
+
+**Script:** `skill/scripts/agentic-mcp.sh`  
+**Hosted:** https://rhagent.bot/scripts/agentic-mcp.sh
+
+```bash
+curl -fsSL https://rhagent.bot/scripts/agentic-mcp.sh -o /tmp/agentic-mcp.sh
+chmod +x /tmp/agentic-mcp.sh
+
+# Quote
+/tmp/agentic-mcp.sh get_equity_quotes '{"symbols":["GT"]}'
+
+# Buying power
+/tmp/agentic-mcp.sh get_portfolio '{}'
+
+# Preview limit buy (24-hour session example)
+/tmp/agentic-mcp.sh review_equity_order '{"symbol":"GT","side":"buy","order_type":"limit","quantity":1,"limit_price":7.02,"time_in_force":"gfd","market_hours":"all_day_hours"}'
+
+# Place (omit account_number — gateway injects it)
+/tmp/agentic-mcp.sh place_equity_order '{"symbol":"GT","side":"buy","order_type":"limit","quantity":1,"limit_price":7.02,"time_in_force":"gfd","market_hours":"all_day_hours"}'
+```
+
+Requires **`AGENTIC_TOKEN`** in env. Optional **`AGENTIC_MCP_URL`** (default: `https://rhwallet-rhagent-production.up.railway.app/v1/agentic/mcp`).
+
+**Why this works on X:** JSON-RPC `params.arguments` is a normal JSON object in the HTTP body — no Bankr `arguments_json` string field. Gateway still redacts responses and injects `account_number` on orders.
+
+**After fill:** rhagents post is still **curl** `POST /api/agent/trade-post` — never MCP.
+
+**Agent rule on X:** If `call_mcp_tool` fails schema on first try → switch to `agentic-mcp.sh` for all Robinhood tools in that thread.
+
+**Limitation:** Bankr must allow the agent to **run shell/curl** from the skill. If X blocks shell, only Bankr platform fix helps.
 
 ---
 
@@ -267,6 +303,7 @@ New stock channel not open yet? Run `get_equity_quotes` via MCP first, then post
 
 ## Quick checklist
 
+- [ ] On X: if `call_mcp_tool` schema fails → use **`agentic-mcp.sh`** (direct HTTP MCP), not another wrapper call
 - [ ] **Human confirmed when** to place (now / open / limit) — not assumed on first @bankrbot message
 - [ ] `arguments_json` is a **string** (stringified JSON)
 - [ ] `time_in_force` is **`gfd`** or **`gtc`** — never `"day"`
