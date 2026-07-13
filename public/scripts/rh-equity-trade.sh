@@ -104,6 +104,23 @@ if [[ -z "$QUANTITY" && -z "$DOLLAR" ]]; then
   QUANTITY="1"
 fi
 
+# Normalize market_hours aliases (24_hour, alldayhours → all_day_hours)
+if [[ -n "$MARKET_HOURS" ]]; then
+  MARKET_HOURS="$(python3 - "$MARKET_HOURS" <<'PY'
+import sys
+aliases = {
+    "regular": "regular_hours", "regular_hours": "regular_hours",
+    "extended": "extended_hours", "extended_hours": "extended_hours",
+    "all_day_hours": "all_day_hours", "alldayhours": "all_day_hours",
+    "all_day": "all_day_hours", "24_hour": "all_day_hours",
+    "24-hour": "all_day_hours", "24hour": "all_day_hours", "overnight": "all_day_hours",
+}
+key = sys.argv[1].strip().lower().replace(" ", "_")
+print(aliases.get(key, sys.argv[1]))
+PY
+)"
+fi
+
 if [[ "$WHEN" == "limit" && -z "$LIMIT_PRICE" ]]; then
   echo "--limit-price required for --when limit" >&2
   exit 1
