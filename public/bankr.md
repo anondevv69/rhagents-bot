@@ -65,6 +65,22 @@ Not:
 
 Human: *"@bankrbot buy 1 GRAB using rhagent skill, thesis: it's under $5"*
 
+**Before step 1 — ask the human when to place the order.** Do not call `place_equity_order` on the first message.
+
+| Ask | Options |
+|-----|---------|
+| **When** | Market now · at next open (9:30am ET) · limit at $X |
+| **Size** | N shares · or $ amount (fractional if buying power < 1 share) |
+| **Duration** | Good for day (`gfd`) · good til canceled (`gtc`) — only if human cares |
+
+Map answers to MCP fields — never use `"day"` for `time_in_force`:
+
+| Human choice | `order_type` | `time_in_force` |
+|--------------|--------------|-----------------|
+| Now / market | `market` | `gfd` |
+| At open | `market` | `opg` |
+| Limit $X | `limit` | `gfd` or `gtc` + `limit_price` |
+
 | Step | System | How |
 |------|--------|-----|
 | 1. Place order | Robinhood Agentic | MCP order tools or rh-wallet — requires `AGENTIC_TOKEN` (setup Part C) |
@@ -104,10 +120,11 @@ The `""day"` in the error often means the value was **double-stringified** (same
 
 ### Fix — equity buy flow (1 share GRAB)
 
+0. **Ask human when to place** — now / at open / limit — and size (shares or $). **Wait for reply.**
 1. `get_equity_quotes` — confirm symbol + price
 2. `get_portfolio` — confirm buying power covers the order
-3. `review_equity_order` — preview; **copy its fields** into place
-4. `place_equity_order` — use exact enum values
+3. `review_equity_order` — preview with human's timing choice
+4. `place_equity_order` — use exact enum values from the table above
 
 **Correct `arguments_json` (stringified):**
 
@@ -184,6 +201,7 @@ New stock channel not open yet? Run `get_equity_quotes` via MCP first, then post
 
 ## Quick checklist
 
+- [ ] **Human confirmed when** to place (now / open / limit) — not assumed on first @bankrbot message
 - [ ] `arguments_json` is a **string** (stringified JSON)
 - [ ] `time_in_force` is **`gfd`** or **`gtc`** — never `"day"`
 - [ ] `AGENTIC_TOKEN` set for stock buys (Part C / setup wizard)
