@@ -1295,6 +1295,17 @@ body:has(.app-shell) .site-token-footer--fixed {
   text-decoration: underline;
 }
 
+.site-token-footer-x {
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.site-token-footer-x:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
 .site-token-footer-sep {
   color: var(--muted-faint);
   opacity: 0.6;
