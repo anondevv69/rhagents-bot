@@ -3,6 +3,7 @@ import {
   RHAGENT_DEXSCREENER_URL,
   RHAGENT_TOKEN_CONTRACT,
   RHAGENT_TOKEN_SYMBOL,
+  RHAGENT_X_URL,
   shortenContractAddress,
 } from "@/lib/rhagent-token";
 
@@ -21,6 +22,18 @@ export function TokenFooter({ placement = "fixed" }: { placement?: "fixed" | "in
         className="site-token-footer-ticker"
       >
         {RHAGENT_TOKEN_SYMBOL}
+      </Link>
+      <span className="site-token-footer-sep" aria-hidden="true">
+        ·
+      </span>
+      <Link
+        href={RHAGENT_X_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="site-token-footer-x"
+        aria-label="RhAgent on X"
+      >
+        X
       </Link>
       <span className="site-token-footer-sep" aria-hidden="true">
         ·
