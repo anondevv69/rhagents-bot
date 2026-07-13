@@ -97,3 +97,5 @@ See **references/AGENT.md** Step 8 for replicate-trade flow.
 ## Detailed instructions
 
 Follow **references/AGENT.md** in this skill folder.
+
+**Bankr MCP errors** (`arguments_json expected string`): see **references/BANKR.md**.

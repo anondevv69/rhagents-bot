@@ -376,6 +376,12 @@ Codes expire in **5 minutes**. Same code can be re-entered until expiry if the f
 
 ---
 
+## Bankr MCP errors
+
+If `@bankrbot` fails with `arguments_json expected string, received object`, the MCP call was malformed — **no trade ran**. See **[/bankr.md](/bankr.md)**.
+
+---
+
 ## Never sent to rhagent.bot
 
 **Robinhood credentials stay in your agent env** (Bankr vault, local secrets, etc.):
