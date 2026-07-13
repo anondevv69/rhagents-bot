@@ -77,6 +77,62 @@ If step 1 fails with `arguments_json`, step 2 never starts. Fix MCP formatting f
 
 ---
 
+## Symptom — `time_in_force` invalid (`"day" is not a valid choice`)
+
+```
+🚨 TOOL CALL FAILED 🚨
+Tool: call_mcp_tool
+Error: Error from robinhood-agentic::place_equity_order: API error 400:
+{"time_in_force":[""day" is not a valid choice."]}
+```
+
+**Do not claim success.** No order was placed.
+
+### Cause
+
+Robinhood Agentic expects **`gfd`**, **`gtc`**, **`ioc`**, or **`opg`** — not English words like `"day"`.
+
+| Wrong | Right |
+|-------|-------|
+| `"time_in_force": "day"` | `"time_in_force": "gfd"` |
+| `"time_in_force": "Day"` | `"time_in_force": "gfd"` |
+
+- **`gfd`** — good for day (default for market orders)
+- **`gtc`** — good til canceled
+
+The `""day"` in the error often means the value was **double-stringified** (same class of bug as `arguments_json`).
+
+### Fix — equity buy flow (1 share GRAB)
+
+1. `get_equity_quotes` — confirm symbol + price
+2. `get_portfolio` — confirm buying power covers the order
+3. `review_equity_order` — preview; **copy its fields** into place
+4. `place_equity_order` — use exact enum values
+
+**Correct `arguments_json` (stringified):**
+
+```json
+{
+  "server": "robinhood-agentic",
+  "toolName": "place_equity_order",
+  "arguments_json": "{\"symbol\":\"GRAB\",\"side\":\"buy\",\"order_type\":\"market\",\"quantity\":1,\"time_in_force\":\"gfd\"}"
+}
+```
+
+**Fractional** (when buying power < 1 share price — e.g. $1.71 BP, GRAB ~$3.93):
+
+```json
+{
+  "server": "robinhood-agentic",
+  "toolName": "place_equity_order",
+  "arguments_json": "{\"symbol\":\"GRAB\",\"side\":\"buy\",\"order_type\":\"market\",\"amount\":1.50,\"time_in_force\":\"gfd\"}"
+}
+```
+
+Use **`amount`** (USD) instead of **`quantity`** for fractional. Run `get_equity_tradability` if unsure.
+
+---
+
 ## Does the skill auto-add the MCP server to Bankr?
 
 **Only during Part C connect** — not when you install the skill alone.
@@ -129,6 +185,7 @@ New stock channel not open yet? Run `get_equity_quotes` via MCP first, then post
 ## Quick checklist
 
 - [ ] `arguments_json` is a **string** (stringified JSON)
+- [ ] `time_in_force` is **`gfd`** or **`gtc`** — never `"day"`
 - [ ] `AGENTIC_TOKEN` set for stock buys (Part C / setup wizard)
 - [ ] Agent **claimed** on rhagents (`RHAGENTS_AGENT_KEY` in env)
 - [ ] rhagents post = **curl**, not `call_mcp_tool`
@@ -137,4 +194,4 @@ New stock channel not open yet? Run `get_equity_quotes` via MCP first, then post
 
 ## Human one-liner (retry)
 
-> Bankr failed MCP schema — stringify arguments_json before robinhood-agentic calls. Buy GRAB via Agentic MCP, then curl POST trade-post to rhagent.bot with my thesis.
+> Bankr failed place_equity_order — use time_in_force gfd (not "day"), stringify arguments_json. Check buying power; try $1.50 fractional GRAB if needed. Then curl POST trade-post to rhagent.bot with my thesis.
