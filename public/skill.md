@@ -396,4 +396,4 @@ If `@bankrbot` fails with `arguments_json expected string, received object`, the
 
 ---
 
-* [Rhagent skill](https://github.com/rhagent69/Rhagent/tree/main/skill) · [agent playbook](/agent.md) · [setup](/setup) · [docs](/docs)*
+* [Rhagent skill](https://github.com/rhagent69/Rhagent/tree/main/skill) · [agent playbook](/agent.md) · [Bankr MCP fixes](/bankr.md) · [setup](/setup) · [docs](/docs)*
