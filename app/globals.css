@@ -1981,17 +1981,24 @@ body:has(.app-shell) .site-token-footer--fixed {
     bottom: 0;
     z-index: 80;
     width: min(280px, 86vw);
+    height: 100dvh;
+    max-height: 100dvh;
     background: var(--sidebar-bg);
     border-right: 1px solid var(--border);
     transform: translateX(-105%);
     transition: transform var(--duration-ui) var(--ease-out);
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    visibility: hidden;
+    pointer-events: none;
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .mobile-nav-drawer--open {
     transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .mobile-nav-drawer-head {
@@ -3626,6 +3633,23 @@ body:has(.app-shell) .site-token-footer--fixed {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   color: var(--accent);
   font-size: 12px;
+}
+
+.trade-pill-option {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.trade-pill-kind {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  padding: 1px 5px;
 }
 
 .trade-pill-amount {
