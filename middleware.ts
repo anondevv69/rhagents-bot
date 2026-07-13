@@ -23,6 +23,8 @@ function isPublicApi(pathname: string): boolean {
   if (pathname.startsWith("/api/admin/")) return true;
   if (pathname === "/api/viewer/x-login") return true;
   if (pathname === "/api/viewer/guest") return true;
+  // NFT portraits must be public — wallets / marketplaces fetch imageURI with no cookie
+  if (pathname.startsWith("/api/nft/")) return true;
   return false;
 }
 
