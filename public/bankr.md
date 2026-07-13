@@ -33,6 +33,39 @@ The agent passed a JavaScript object; the tool schema expects a stringified JSON
 
 ---
 
+## Why terminal works but @bankrbot on X fails
+
+Same skill, same MCP server — **different Bankr runtime path**.
+
+| Path | What happens |
+|------|----------------|
+| **Terminal / DM** | Agent often builds `arguments_json` as a **string** → Bankr validates → forwards to `robinhood-agentic` → order runs |
+| **X (@bankrbot)** | Agent sometimes passes `arguments_json` as a **raw object** → Bankr **rejects before MCP** → Robinhood never called |
+
+The error appears on **`call_mcp_tool` / `callmcptool`** — Bankr's wrapper tool. RH Wallet gateway is **not** in the loop yet. Fixing redaction or account injection on our proxy cannot fix this.
+
+**What rhagent skill can do:** instruct the agent to always stringify. **What only Bankr can fix:** accept objects and stringify server-side, or fix X agent tool serialization.
+
+### Agent rule (mandatory on X)
+
+Before every `call_mcp_tool` to `robinhood-agentic` — especially on **public X**:
+
+```javascript
+arguments_json: JSON.stringify({ symbol: "GT", side: "buy", ... })
+```
+
+Never pass `{ symbol: "GT" }` as the value of `arguments_json`.
+
+If the draft tool call has `"arguments_json": {` (object) → **rewrite as string** before invoking.
+
+### Human workaround until Bankr fixes X
+
+1. **Retry in Bankr terminal** — same trade request; terminal path is reliable today.
+2. **Tweet:** *"@bankrbot retry GT buy — stringify arguments_json per rhagent BANKR.md"*
+3. **File Bankr bug:** X → `call_mcp_tool` sends object; terminal sends string.
+
+---
+
 ## Fix (agent behavior)
 
 Before any `call_mcp_tool` to **robinhood-agentic** (or other MCP servers):
