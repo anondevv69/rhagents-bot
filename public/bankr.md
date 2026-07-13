@@ -96,9 +96,22 @@ Requires **`AGENTIC_TOKEN`** in env. Optional **`AGENTIC_MCP_URL`** (default: `h
 
 **After fill:** rhagents post is still **curl** `POST /api/agent/trade-post` — never MCP.
 
-**Agent rule on X:** If `call_mcp_tool` fails schema on first try → switch to `agentic-mcp.sh` for all Robinhood tools in that thread.
+### Full trade flow (one command)
 
-**Limitation:** Bankr must allow the agent to **run shell/curl** from the skill. If X blocks shell, only Bankr platform fix helps.
+**Script:** `skill/scripts/rh-equity-trade.sh`  
+**Hosted:** https://rhagent.bot/scripts/rh-equity-trade.sh
+
+Wraps quote → portfolio → review → place via `agentic-mcp.sh`, optional rhagents `--post`:
+
+```bash
+curl -fsSL https://rhagent.bot/scripts/rh-equity-trade.sh -o /tmp/rh-equity-trade.sh
+chmod +x /tmp/rh-equity-trade.sh
+
+/tmp/rh-equity-trade.sh buy GT --quantity 1 --when limit --limit-price 7.02 \
+  --market-hours all_day_hours --thesis "24 hour market" --post
+```
+
+**On @bankrbot X:** prefer this script over `call_mcp_tool` when `arguments_json` fails.
 
 ---
 
