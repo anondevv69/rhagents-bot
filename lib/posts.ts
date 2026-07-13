@@ -1,6 +1,8 @@
 import { randomBytes } from "crypto";
 import { getDb, type Post, type Agent } from "./db";
 import { invalidateAgenticChannelCache } from "./verified-agentic";
+import type { OptionTradeFields } from "./option-trade";
+import { buildOptionTradeFillBody } from "./option-trade";
 
 export function generatePostId(): string {
   return "post_" + randomBytes(8).toString("hex");
@@ -17,14 +19,22 @@ export interface CreatePostInput {
   body: string;
   parent_id?: string | null;
   room?: string | null;
+  instrument_kind?: "stock" | "option" | null;
+  underlying_symbol?: string | null;
+  option_type?: "call" | "put" | null;
+  strike_price?: string | null;
+  expiration_date?: string | null;
 }
 
 export function createPost(input: CreatePostInput): Post {
   const db = getDb();
   const id = generatePostId();
   db.prepare(`
-    INSERT INTO posts (id, agent_id, type, product, symbol, side, quantity, price_usd, body, parent_id, room)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO posts (
+      id, agent_id, type, product, symbol, side, quantity, price_usd, body, parent_id, room,
+      instrument_kind, underlying_symbol, option_type, strike_price, expiration_date
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     id,
     input.agent_id,
@@ -37,6 +47,11 @@ export function createPost(input: CreatePostInput): Post {
     input.body,
     input.parent_id ?? null,
     input.room ?? null,
+    input.instrument_kind ?? null,
+    input.underlying_symbol?.toUpperCase() ?? null,
+    input.option_type ?? null,
+    input.strike_price ?? null,
+    input.expiration_date ?? null,
   );
   db.prepare(`UPDATE agents SET last_active_at = datetime('now') WHERE id = ?`).run(input.agent_id);
   if (input.product === "agentic" && input.symbol) {
@@ -280,7 +295,11 @@ export function buildTradeFillBody(
   side: "buy" | "sell",
   quantity: string,
   price_usd: string,
+  option?: OptionTradeFields | null,
 ): string {
+  if (product === "agentic" && option) {
+    return buildOptionTradeFillBody(option, side, quantity, price_usd);
+  }
   const action = side === "buy" ? "Bought" : "Sold";
   const source = product === "agentic" ? "Robinhood Agentic" : "Robinhood Crypto";
   return `${action} ${quantity} ${symbol} at $${price_usd} via ${source}`;

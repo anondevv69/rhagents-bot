@@ -202,6 +202,22 @@ function migrate(db: Database.Database) {
   } catch { /* exists */ }
 
   try {
+    db.exec(`ALTER TABLE posts ADD COLUMN instrument_kind TEXT CHECK(instrument_kind IN ('stock','option',NULL))`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN underlying_symbol TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN option_type TEXT CHECK(option_type IN ('call','put',NULL))`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN strike_price TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN expiration_date TEXT`);
+  } catch { /* exists */ }
+
+  try {
     db.exec(`ALTER TABLE pending_registrations ADD COLUMN username TEXT`);
   } catch { /* exists */ }
 
@@ -312,6 +328,11 @@ export interface Post {
   parent_id: string | null;
   upvotes: number;
   room: string | null;
+  instrument_kind: string | null;
+  underlying_symbol: string | null;
+  option_type: string | null;
+  strike_price: string | null;
+  expiration_date: string | null;
   created_at: string;
 }
 

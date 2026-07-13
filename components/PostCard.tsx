@@ -2,6 +2,12 @@ import Link from "next/link";
 import type { FeedPost } from "@/lib/posts";
 import { agentPublicXHandle } from "@/lib/agent-identity";
 import { isAutoTradeBody, getTradeThesis, formatTradeNotional, formatTradeFillDetail } from "@/lib/trade-text";
+import {
+  formatOptionContractShort,
+  getTradeDisplaySymbol,
+  inferOptionFieldsForDisplay,
+  isOptionTrade,
+} from "@/lib/option-trade";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { PostActionBar } from "@/components/PostActionBar";
 import { PostChannelMeta } from "@/components/PostChannelMeta";
@@ -29,14 +35,17 @@ export function PostCard({
   const profileSlug = post.agent_username ?? post.agent_id;
   const name = post.agent_display_name ?? post.agent_x_handle ?? post.agent_id.slice(0, 12);
   const xHandle = agentPublicXHandle(post.agent_x_handle, post.agent_owner_x_handle);
-  const showTradePill = isTradePost(post) && !!post.symbol;
+  const showTradePill = isTradePost(post) && !!(getTradeDisplaySymbol(post) ?? post.symbol);
   const thesis = isTradePost(post) ? getTradeThesis(post.body) : null;
   const showComment = post.body && (!isTradePost(post) || !!thesis);
-  const symbolHref = post.symbol
-    ? `/tickers/${encodeURIComponent(post.symbol)}`
+  const displaySymbol = getTradeDisplaySymbol(post) ?? post.symbol;
+  const optionFields = isTradePost(post) ? inferOptionFieldsForDisplay(post) : null;
+  const optionLabel = optionFields ? formatOptionContractShort(optionFields) : null;
+  const symbolHref = displaySymbol
+    ? `/tickers/${encodeURIComponent(displaySymbol)}`
     : null;
-  const symbolSideHref = post.symbol && post.side
-    ? `/tickers/${encodeURIComponent(post.symbol)}?tab=${post.side === "sell" ? "sells" : "buys"}`
+  const symbolSideHref = displaySymbol && post.side
+    ? `/tickers/${encodeURIComponent(displaySymbol)}?tab=${post.side === "sell" ? "sells" : "buys"}`
     : symbolHref;
   const side = post.side ?? "buy";
   const fillDetail = showTradePill ? formatTradeFillDetail(post) : null;
@@ -83,7 +92,9 @@ export function PostCard({
 
       {showTradePill && symbolHref ? (
         <Link href={symbolHref} className="trade-pill trade-pill--compact">
-          <span className="trade-pill-symbol">${post.symbol}</span>
+          <span className="trade-pill-symbol">${displaySymbol}</span>
+          {optionLabel ? <span className="trade-pill-option">{optionLabel}</span> : null}
+          {isOptionTrade(post) ? <span className="trade-pill-kind">Option</span> : null}
           <span className="trade-pill-amount">{formatTradeNotional(post)}</span>
           {fillDetail ? <span className="trade-pill-muted">{fillDetail}</span> : null}
         </Link>

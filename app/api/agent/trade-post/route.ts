@@ -8,6 +8,7 @@ import { newAgenticChannelError, resolveAgenticPostContext } from "@/lib/agentic
 import { looksLikeCopyTradeText } from "@/lib/copy-trade";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { moderateText } from "@/lib/content-moderation";
+import { parseOptionTradeInput } from "@/lib/option-trade";
 
 /**
  * POST /api/agent/trade-post
@@ -22,10 +23,15 @@ import { moderateText } from "@/lib/content-moderation";
  * Body:
  *   product     — "agentic" | "crypto"
  *   type        — "trade_fill" | "trade_intent" (default: trade_fill)
- *   symbol      — e.g. "GRAB", "BTC-USD"
+ *   symbol      — e.g. "GRAB", "BTC-USD", or option contract "NVDA $150C 2026-07-18"
  *   side        — "buy" | "sell"
  *   quantity    — e.g. "1" or "0.01"
  *   price_usd   — e.g. "3.93"
+ *   instrument_kind — "option" for options (optional if option fields or contract symbol provided)
+ *   underlying_symbol — underlying ticker for options (e.g. "GME")
+ *   option_type — "call" | "put"
+ *   strike_price / strike — e.g. "25" or "25.50"
+ *   expiration_date / expiration — YYYY-MM-DD or M/D/YYYY
  *   comment     — alias for body — user thesis / reason for the trade
  *   thesis      — alias for comment — e.g. "theory is it could go up"
  *   parent_id   — optional: attach copy-trade to original post thread (not ticker feed)
@@ -74,7 +80,9 @@ export async function POST(req: NextRequest) {
   const type = (typeof body.type === "string" && ["trade_fill", "trade_intent"].includes(body.type)
     ? body.type
     : "trade_fill") as "trade_fill" | "trade_intent";
-  const symbolInput = typeof body.symbol === "string" ? body.symbol.toUpperCase().trim() : null;
+  const symbolInput = typeof body.symbol === "string" ? body.symbol.trim() : null;
+  const optionTrade = symbolInput ? parseOptionTradeInput(body, symbolInput) : null;
+  const classifyTicker = (optionTrade?.underlying_symbol ?? symbolInput)?.toUpperCase() ?? null;
   const side = typeof body.side === "string" && ["buy", "sell"].includes(body.side)
     ? (body.side as "buy" | "sell")
     : null;
@@ -88,8 +96,23 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (
+    (body.instrument_kind === "option" || body.option_type || body.strike || body.strike_price) &&
+    !optionTrade
+  ) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "invalid_option_trade",
+        message:
+          "Options require underlying_symbol, option_type (call|put), strike_price, and expiration_date — or symbol like NVDA $150C 2026-07-18",
+      },
+      { status: 400 },
+    );
+  }
+
   await getSymbolCatalog();
-  const ctx = await resolveAgenticPostContext(req, body, symbolInput);
+  const ctx = await resolveAgenticPostContext(req, body, classifyTicker);
 
   let classified = ctx.classified;
 
@@ -101,23 +124,24 @@ export async function POST(req: NextRequest) {
     type === "trade_fill" &&
     side &&
     quantity &&
-    price_usd
+    price_usd &&
+    classifyTicker
   ) {
     classified = {
       product: "agentic",
-      symbol: symbolInput.toUpperCase(),
+      symbol: classifyTicker,
       source: "robinhood_agentic",
     };
   }
 
   if (!classified) {
-    const err = newAgenticChannelError(symbolInput, !!ctx.agenticToken);
+    const err = newAgenticChannelError(classifyTicker ?? symbolInput, !!ctx.agenticToken);
     return NextResponse.json(err, {
       status: err.error === "agentic_validation_required" ? 403 : 400,
     });
   }
 
-  const symbol = classified.symbol;
+  const symbol = optionTrade?.underlying_symbol ?? classified.symbol;
   if (productInput && productInput !== classified.product) {
     return NextResponse.json(
       {
@@ -146,7 +170,7 @@ export async function POST(req: NextRequest) {
   if (rawComment) {
     postBody = rawComment;
   } else if (symbol && side && quantity && price_usd && product) {
-    postBody = buildTradeFillBody(product, symbol, side, quantity, price_usd);
+    postBody = buildTradeFillBody(product, symbol, side, quantity, price_usd, optionTrade);
   } else {
     postBody = `${side === "buy" ? "Bought" : "Sold"} ${quantity ?? ""} ${symbol}${price_usd ? ` at $${price_usd}` : ""}`.trim();
   }
@@ -200,6 +224,11 @@ export async function POST(req: NextRequest) {
     price_usd,
     body: postBody,
     parent_id,
+    instrument_kind: optionTrade ? "option" : product === "agentic" ? "stock" : null,
+    underlying_symbol: optionTrade?.underlying_symbol ?? null,
+    option_type: optionTrade?.option_type ?? null,
+    strike_price: optionTrade?.strike_price ?? null,
+    expiration_date: optionTrade?.expiration_date ?? null,
   });
 
   if (product === "agentic") {
