@@ -1,5 +1,3 @@
-import type { Post } from "./db";
-
 export type OptionType = "call" | "put";
 
 export type OptionTradeFields = {
@@ -10,7 +8,16 @@ export type OptionTradeFields = {
   expiration_date: string;
 };
 
-export type OptionTradePost = Post & Partial<OptionTradeFields>;
+/** Loose shape for feed/db posts — avoids Post & Partial<"option"> assignability breaks. */
+export type TradePostLike = {
+  symbol?: string | null;
+  body?: string | null;
+  instrument_kind?: string | null;
+  underlying_symbol?: string | null;
+  option_type?: string | null;
+  strike_price?: string | null;
+  expiration_date?: string | null;
+};
 
 const OPTION_CONTRACT_SYMBOL_RE =
   /^([A-Z]{1,5})\s+\$?([\d.]+)\s*([CP]|CALL|PUT)(?:\s+(.+))?$/i;
@@ -160,7 +167,7 @@ export function formatOptionContractLabel(fields: {
   strike_price?: string | null;
   expiration_date?: string | null;
 }): string | null {
-  if (!isOptionTrade(fields as OptionTradePost)) return null;
+  if (!isOptionTrade(fields)) return null;
   const underlying = fields.underlying_symbol?.toUpperCase() ?? "";
   const side = fields.option_type === "put" ? "Put" : "Call";
   const strike = formatStrike(fields.strike_price!);
@@ -178,7 +185,7 @@ export function formatOptionContractShort(fields: {
   return `${formatStrike(fields.strike_price)} ${side} · ${formatExpiryLabel(fields.expiration_date)}`;
 }
 
-export function getTradeDisplaySymbol(post: OptionTradePost): string | null {
+export function getTradeDisplaySymbol(post: TradePostLike): string | null {
   if (isOptionTrade(post) && post.underlying_symbol) return post.underlying_symbol.toUpperCase();
   return post.symbol?.toUpperCase() ?? null;
 }
@@ -213,7 +220,7 @@ export function parseOptionFromTradeBody(body: string): OptionTradeFields | null
   };
 }
 
-export function inferOptionFieldsForDisplay(post: OptionTradePost): OptionTradeFields | null {
+export function inferOptionFieldsForDisplay(post: TradePostLike): OptionTradeFields | null {
   if (isOptionTrade(post) && post.underlying_symbol && post.option_type && post.strike_price && post.expiration_date) {
     return {
       instrument_kind: "option",
