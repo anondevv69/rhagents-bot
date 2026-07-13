@@ -114,7 +114,7 @@ export function buildAgentPortraitSvg(username: string): string {
   <!-- Soft vignette so mark reads cleanly over long names -->
   <rect width="100%" height="100%" fill="url(#fadeR)" opacity="0.45"/>
 
-  <!-- Character mark (same SVG/PNG brand as the site) -->
+  <!-- Character mark — 40% so backdrop username stays readable -->
   <image
     href="${mark}"
     xlink:href="${mark}"
@@ -122,6 +122,7 @@ export function buildAgentPortraitSvg(username: string): string {
     y="0"
     width="${CANVAS.w}"
     height="${CANVAS.h}"
+    opacity="0.4"
     preserveAspectRatio="xMidYMid meet"
   />
 
