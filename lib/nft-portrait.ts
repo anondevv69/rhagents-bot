@@ -36,14 +36,24 @@ export function nftBackdropLabel(username: string): string {
 }
 
 /**
- * Banner-style fit: keep glyphs TALL (font-size), stretch to nearly full width
- * via textLength — same as the hero (font-size 320 + textLength 1360 on 1600×700).
+ * Split long hood names so letters stay readable (hero is ~12 chars; fullhood is ~25+).
+ * e.g. RHAGENT.RAYBLANCOETH.HOOD → ["RHAGENT.", "RAYBLANCOETH.HOOD"]
  */
-function fitText(_label: string): { fontSize: number; textLength: number } {
-  const textLength = Math.round(CANVAS.w * 0.92);
-  // ~40% of canvas height — matches hero's 320/700
-  const fontSize = Math.round(CANVAS.h * 0.4);
-  return { fontSize, textLength };
+function hoodTextLines(label: string): string[] {
+  const parts = label.split(".");
+  if (parts.length >= 3) {
+    // rhagent.user.hood
+    return [`${parts[0]}.`, `${parts.slice(1).join(".")}`];
+  }
+  if (label.length <= 14) return [label];
+  const mid = Math.ceil(label.length / 2);
+  return [label.slice(0, mid), label.slice(mid)];
+}
+
+/** Font size so ~0.5em glyphs fill most of the width without crushing into sticks. */
+function fontSizeForLine(line: string, textLength: number): number {
+  const advance = 0.5;
+  return Math.max(48, Math.min(260, Math.floor(textLength / (Math.max(line.length, 1) * advance))));
 }
 
 /**
@@ -53,11 +63,36 @@ function fitText(_label: string): { fontSize: number; textLength: number } {
 export function buildAgentPortraitSvg(username: string): string {
   const label = nftBackdropLabel(username);
   const hood = nftHoodName(username);
-  const { fontSize, textLength } = fitText(label);
+  const lines = hoodTextLines(label);
+  const textLength = Math.round(CANVAS.w * 0.9);
   const mark = markDataUri();
+
+  const sizes = lines.map((line) => fontSizeForLine(line, textLength));
+  const lineGap = Math.round(Math.max(...sizes) * 0.12);
+  const blockHeight = sizes.reduce((a, b) => a + b, 0) + lineGap * (lines.length - 1);
+  let y = Math.round(CANVAS.h / 2 - blockHeight / 2);
 
   const esc = (s: string) =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+  const textNodes = lines
+    .map((line, i) => {
+      const fontSize = sizes[i];
+      const baseline = y + fontSize;
+      y = baseline + lineGap;
+      return `  <text
+    x="50%"
+    y="${baseline}"
+    text-anchor="middle"
+    font-family="Impact, Arial Black, Helvetica Neue, sans-serif"
+    font-weight="900"
+    font-size="${fontSize}"
+    fill="${GREEN_OLIVE}"
+    textLength="${textLength}"
+    lengthAdjust="spacingAndGlyphs"
+  >${esc(line)}</text>`;
+    })
+    .join("\n");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${CANVAS.w}" height="${CANVAS.h}" viewBox="0 0 ${CANVAS.w} ${CANVAS.h}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${esc(hood)}">
@@ -66,19 +101,8 @@ export function buildAgentPortraitSvg(username: string): string {
   <!-- 1. Canvas -->
   <rect width="${CANVAS.w}" height="${CANVAS.h}" fill="#000000"/>
 
-  <!-- 2. Hood name UNDER the mark — sized to fit full width -->
-  <text
-    x="50%"
-    y="50%"
-    text-anchor="middle"
-    dominant-baseline="middle"
-    font-family="Impact, Arial Black, Helvetica Neue, sans-serif"
-    font-weight="900"
-    font-size="${fontSize}"
-    fill="${GREEN_OLIVE}"
-    textLength="${textLength}"
-    lengthAdjust="spacingAndGlyphs"
-  >${esc(label)}</text>
+  <!-- 2. Hood name UNDER the mark (two lines so it fits) -->
+${textNodes}
 
   <!-- 3. Character ON TOP at 50% — text shows through the figure -->
   <image
