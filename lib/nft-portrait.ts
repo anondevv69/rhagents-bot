@@ -3,8 +3,6 @@ import path from "path";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 
 const CANVAS = { w: 1024, h: 683 };
-const GREEN_DIM = "#1a3d00";
-const GREEN_MID = "#2f5e00";
 const GREEN_BRIGHT = "#ccff00";
 
 let _markDataUri: string | null = null;
