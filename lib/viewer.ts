@@ -6,6 +6,7 @@ export const VIEWER_COOKIE = "rhagents_viewer";
 export interface ViewerSession {
   x_handle?: string;
   telegram_id?: string;
+  discord_id?: string;
   /** Anonymous normie browse — read-only feed access on this browser. */
   guest_id?: string;
   exp: number;
@@ -67,6 +68,7 @@ export function parseViewerSession(token: string | undefined): ViewerSession | n
 export function createViewerSession(input: {
   x_handle?: string;
   telegram_id?: string;
+  discord_id?: string;
   guest_id?: string;
 }): string {
   const session: ViewerSession = {
@@ -82,12 +84,13 @@ export function viewerGateEnabled(): boolean {
 
 export function setViewerCookie(
   res: NextResponse,
-  input: { x_handle?: string; telegram_id?: string; guest_id?: string }
+  input: { x_handle?: string; telegram_id?: string; discord_id?: string; guest_id?: string }
 ): NextResponse {
   const x = input.x_handle?.replace(/^@/, "").toLowerCase();
   const token = createViewerSession({
     x_handle: x,
     telegram_id: input.telegram_id,
+    discord_id: input.discord_id,
     guest_id: input.guest_id,
   });
   res.cookies.set(VIEWER_COOKIE, token, {
