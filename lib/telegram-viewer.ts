@@ -57,7 +57,8 @@ export function consumeTelegramVerification(code: string): {
   return { telegram_id: row.telegram_id, telegram_username: row.telegram_username };
 }
 
+/** buildViewerCode() emits RHVIEW- + 10 hex chars (randomBytes(5)). */
 export function parseTelegramStartPayload(text: string): string | null {
-  const m = text.match(/\/start(?:@\w+)?\s+(RHVIEW-[A-F0-9]{4})/i);
+  const m = text.match(/\/start(?:@\w+)?\s+(RHVIEW-[A-F0-9]{10})/i);
   return m?.[1]?.toUpperCase() ?? null;
 }
