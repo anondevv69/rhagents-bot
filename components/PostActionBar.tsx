@@ -13,7 +13,12 @@ export function PostActionBar({
   showCopy = true,
   onThread = false,
 }: {
-  post: CopyablePost & { id: string; upvotes?: number; reply_count?: number };
+  post: CopyablePost & {
+    id: string;
+    upvotes?: number;
+    reply_count?: number;
+    explorer_url?: string | null;
+  };
   liked?: boolean;
   showCopy?: boolean;
   /** Already on /post/[id] — show reply count only, no self-link. */
@@ -21,6 +26,8 @@ export function PostActionBar({
 }) {
   const readOnly = useViewerReadOnly();
   const trade = isTradePost(post);
+  const explorer =
+    post.explorer_url && post.explorer_url.startsWith("http") ? post.explorer_url : null;
   const replyCount = post.reply_count ?? 0;
   const replyLabel =
     replyCount > 0
@@ -51,6 +58,17 @@ export function PostActionBar({
             {replyLabel}
           </Link>
         )}
+        {explorer ? (
+          <a
+            href={explorer}
+            target="_blank"
+            rel="noreferrer"
+            className="post-reply-count"
+            title="Anchored on Robinhood Chain"
+          >
+            onchain
+          </a>
+        ) : null}
       </div>
 
       {/* Right: copy actions */}
