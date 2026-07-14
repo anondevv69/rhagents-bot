@@ -49,7 +49,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           {channel.label}
         </Link>
         <span className="permalink-sep">/</span>
-        <span className="permalink-post-id">{id.replace("post_", "").slice(0, 8)}…</span>
+        <span className="permalink-post-id" title="Post ID">{id}</span>
       </nav>
 
       {/* Main post — PostCard already renders the full card with header + channel meta */}
