@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     viewBox="0 0 1600 700"
+     preserveAspectRatio="xMidYMid meet">
+  <rect width="1600" height="700" fill="#000000"/>
+
+  <text x="50%" y="50%"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        font-family="Impact, 'Arial Black', 'Helvetica Neue', sans-serif"
+        font-weight="900"
+        font-size="320"
+        fill="#3a4a10"
+        textLength="1360"
+        lengthAdjust="spacingAndGlyphs">
+    RAYBLANCOETH
+  </text>
+
+  <image href="character-hero.png"
+         xlink:href="character-hero.png"
+         x="0" y="0" width="1600" height="700"
+         preserveAspectRatio="xMidYMid meet"
+         opacity="0.5"/>
+</svg>

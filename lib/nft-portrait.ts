@@ -2,19 +2,22 @@ import fs from "fs";
 import path from "path";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 
-/** Match rhagent-mark.png so the figure fills the frame. */
-const CANVAS = { w: 1024, h: 682 };
-/** Dark olive — matches the see-through hood text on the hero banner. */
+/** Exact hero banner proportions from the linked SVG. */
+const CANVAS = { w: 1600, h: 700 };
 const GREEN_OLIVE = "#3a4a10";
+/** Hero template: font-size 320 + textLength 1360 for ~12-char Impact caps. */
+const HERO_FONT = 320;
+const HERO_TEXT_LENGTH = 1360;
+const HERO_REF_CHARS = 12; // RAYBLANCOETH
 
-let _markDataUri: string | null = null;
+let _heroDataUri: string | null = null;
 
-function markDataUri(): string {
-  if (_markDataUri) return _markDataUri;
-  const filePath = path.join(process.cwd(), "public", "rhagent-mark.png");
+function heroDataUri(): string {
+  if (_heroDataUri) return _heroDataUri;
+  const filePath = path.join(process.cwd(), "public", "character-hero.png");
   const buf = fs.readFileSync(filePath);
-  _markDataUri = `data:image/png;base64,${buf.toString("base64")}`;
-  return _markDataUri;
+  _heroDataUri = `data:image/png;base64,${buf.toString("base64")}`;
+  return _heroDataUri;
 }
 
 /** Sanitize username for display + URL slug. */
@@ -30,87 +33,59 @@ export function nftHoodName(username: string): string {
   return `rhagent.${sanitizeNftUsername(username).toLowerCase()}.hood`;
 }
 
-/** Big label behind the mark — uppercase hood name. */
+/** Big backdrop label — username only (same role as RAYBLANCOETH in the hero SVG). */
 export function nftBackdropLabel(username: string): string {
-  return nftHoodName(username).toUpperCase();
+  return sanitizeNftUsername(username).toUpperCase();
+}
+
+/** Scale hero font/textLength with username length so proportions stay like the template. */
+function heroTextMetrics(label: string): { fontSize: number; textLength: number } {
+  const ratio = HERO_REF_CHARS / Math.max(label.length, 1);
+  // Prefer keeping textLength (banner fill); shrink font for longer names so glyphs stay legible
+  const fontSize = Math.max(120, Math.min(HERO_FONT, Math.round(HERO_FONT * Math.min(1, ratio * 1.15))));
+  return { fontSize, textLength: HERO_TEXT_LENGTH };
 }
 
 /**
- * Split long hood names so letters stay readable (hero is ~12 chars; fullhood is ~25+).
- * e.g. RHAGENT.RAYBLANCOETH.HOOD → ["RHAGENT.", "RAYBLANCOETH.HOOD"]
- */
-function hoodTextLines(label: string): string[] {
-  const parts = label.split(".");
-  if (parts.length >= 3) {
-    return [`${parts[0]}.`, `${parts.slice(1).join(".")}`];
-  }
-  if (label.length <= 14) return [label];
-  const mid = Math.ceil(label.length / 2);
-  return [label.slice(0, mid), label.slice(mid)];
-}
-
-/** Pick one size from the longest line so both rows match and stay readable. */
-function sharedFontSize(lines: string[]): number {
-  const longest = Math.max(...lines.map((l) => l.length), 1);
-  const usable = CANVAS.w * 0.9;
-  // Impact black caps ≈ 0.55–0.62em wide; aim to nearly fill without forcing textLength
-  return Math.max(56, Math.min(220, Math.floor(usable / (longest * 0.48))));
-}
-
-/**
- * Dynamic agent portrait SVG — same stack as the hero banner:
- * black → olive hood text → character mark at 50% opacity.
+ * Dynamic agent portrait — exact stack from the linked hero SVG:
+ * black → olive username text → character-hero.png @ 50% opacity.
  */
 export function buildAgentPortraitSvg(username: string): string {
   const label = nftBackdropLabel(username);
   const hood = nftHoodName(username);
-  const lines = hoodTextLines(label);
-  const fontSize = sharedFontSize(lines);
-  const mark = markDataUri();
-
-  const lineGap = Math.round(fontSize * 0.08);
-  const blockHeight = fontSize * lines.length + lineGap * (lines.length - 1);
-  let y = Math.round(CANVAS.h / 2 - blockHeight / 2);
+  const { fontSize, textLength } = heroTextMetrics(label);
+  const hero = heroDataUri();
 
   const esc = (s: string) =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-  const textNodes = lines
-    .map((line) => {
-      const baseline = y + fontSize;
-      y = baseline + lineGap;
-      return `  <text
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${CANVAS.w} ${CANVAS.h}" width="${CANVAS.w}" height="${CANVAS.h}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${esc(hood)}">
+  <title>${esc(hood)}</title>
+
+  <rect width="${CANVAS.w}" height="${CANVAS.h}" fill="#000000"/>
+
+  <text
     x="50%"
-    y="${baseline}"
+    y="50%"
     text-anchor="middle"
-    font-family="Impact, Arial Black, Helvetica Neue, sans-serif"
+    dominant-baseline="middle"
+    font-family="Impact, 'Arial Black', 'Helvetica Neue', sans-serif"
     font-weight="900"
     font-size="${fontSize}"
     fill="${GREEN_OLIVE}"
-    letter-spacing="-0.02em"
-  >${esc(line)}</text>`;
-    })
-    .join("\n");
+    textLength="${textLength}"
+    lengthAdjust="spacingAndGlyphs"
+  >${esc(label)}</text>
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${CANVAS.w}" height="${CANVAS.h}" viewBox="0 0 ${CANVAS.w} ${CANVAS.h}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${esc(hood)}">
-  <title>${esc(hood)}</title>
-
-  <!-- 1. Canvas -->
-  <rect width="${CANVAS.w}" height="${CANVAS.h}" fill="#000000"/>
-
-  <!-- 2. Hood name UNDER the mark (two lines, natural letter width) -->
-${textNodes}
-
-  <!-- 3. Character ON TOP at 50% — text shows through the figure -->
   <image
-    href="${mark}"
-    xlink:href="${mark}"
+    href="${hero}"
+    xlink:href="${hero}"
     x="0"
     y="0"
     width="${CANVAS.w}"
     height="${CANVAS.h}"
-    preserveAspectRatio="xMidYMid slice"
+    preserveAspectRatio="xMidYMid meet"
     opacity="0.5"
   />
 </svg>`;
