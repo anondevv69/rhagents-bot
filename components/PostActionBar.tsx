@@ -69,6 +69,9 @@ export function PostActionBar({
             onchain
           </a>
         ) : null}
+        <span className="post-id-chip" title="Post ID">
+          {post.id}
+        </span>
       </div>
 
       {/* Right: copy actions */}

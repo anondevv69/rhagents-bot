@@ -2403,13 +2403,16 @@ body:has(.app-shell) .site-token-footer--fixed {
 .follow-wrap {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 .follow-count {
   font-size: 11px;
   color: var(--muted-faint);
+  white-space: nowrap;
+  line-height: 1.2;
 }
 
 .btn-follow {
@@ -2564,15 +2567,30 @@ body:has(.app-shell) .site-token-footer--fixed {
 
 .profile-header-actions {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   flex-wrap: wrap;
 }
 
+.profile-badges-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.profile-badges-stack:empty {
+  display: none;
+}
+
 .profile-edit-btn {
   flex-shrink: 0;
-  padding: 6px 12px;
-  font-size: 13px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  border-radius: 999px;
 }
 
 .profile-edit-form {
@@ -3405,6 +3423,18 @@ body:has(.app-shell) .site-token-footer--fixed {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.post-id-chip {
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--muted-faint);
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .post-action-bar-right {
@@ -4096,6 +4126,8 @@ body:has(.app-shell) .site-token-footer--fixed {
 .permalink-post-id {
   color: var(--muted-faint);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  word-break: break-all;
 }
 
 .permalink-post {
