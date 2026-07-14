@@ -2,10 +2,11 @@
 # install phase already runs `npm ci` — build must NOT run npm ci again (EBUSY on .cache)
 
 [phases.setup]
-nixPkgs = ["nodejs_20", "python3", "gcc", "gnumake"]
+nixPkgs = ["nodejs_20", "python3", "gcc", "gnumake", "fontconfig"]
 
 [phases.build]
 cmds = ["npm run build"]
 
 [start]
-cmd = "npm start"
+# FONTCONFIG_FILE makes sharp/librsvg resolve Anton from public/fonts (no tofu on Linux).
+cmd = "FONTCONFIG_FILE=/app/fonts/fonts.conf FONTCONFIG_PATH=/app/fonts npm start"
