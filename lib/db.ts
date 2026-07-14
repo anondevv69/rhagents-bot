@@ -200,6 +200,21 @@ function migrate(db: Database.Database) {
     db.exec(`ALTER TABLE claims ADD COLUMN telegram_username TEXT`);
   } catch { /* exists */ }
   try {
+    db.exec(`ALTER TABLE agents ADD COLUMN owner_discord_id TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN owner_discord_username TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_agents_owner_discord ON agents(owner_discord_id) WHERE owner_discord_id IS NOT NULL`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE claims ADD COLUMN discord_id TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE claims ADD COLUMN discord_username TEXT`);
+  } catch { /* exists */ }
+  try {
     db.exec(`ALTER TABLE agents ADD COLUMN last_active_at TEXT`);
   } catch { /* exists */ }
 
@@ -360,6 +375,8 @@ export interface Agent {
   owner_display_name: string | null;
   owner_telegram_id: string | null;
   owner_telegram_username: string | null;
+  owner_discord_id: string | null;
+  owner_discord_username: string | null;
   last_active_at: string | null;
   created_at: string;
   nft_tx_hash: string | null;
@@ -398,8 +415,10 @@ export interface Claim {
   tweet_text: string;
   tweet_url: string | null;
   verified: number;
-  channel: "x" | "telegram";
+  channel: "x" | "telegram" | "discord";
   telegram_id: string | null;
   telegram_username: string | null;
+  discord_id: string | null;
+  discord_username: string | null;
   created_at: string;
 }

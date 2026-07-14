@@ -1,13 +1,14 @@
-/** Telegram wiring for the channel-agnostic NL router — see lib/agent-nl.ts. */
+/** Discord wiring for the channel-agnostic NL router — see lib/agent-nl.ts. */
 import type { Agent } from "./db";
 import { routeNaturalLanguageGeneric, type AgentNlActions } from "./agent-nl";
-import { handleClaim, handleHelp, handlePost, handlePosts, handleStatus, handleTrades, handleUnlink, noAgentLinkedReply } from "./telegram-bot";
+import { handleClaim, handleUnlink, noAgentLinkedReply } from "./discord-bot";
+import { handleHelp, handlePost, handlePosts, handleStatus, handleTrades } from "./telegram-bot";
 
 export async function routeNaturalLanguage(
   text: string,
   agent: Agent | null,
-  telegramId: string,
-  telegramUsername: string | null,
+  discordId: string,
+  discordUsername: string | null,
 ): Promise<string> {
   const actions: AgentNlActions = {
     hasAgent: !!agent,
@@ -15,10 +16,10 @@ export async function routeNaturalLanguage(
     listTrades: () => handleTrades(agent!).text,
     listPosts: () => handlePosts(agent!).text,
     createPost: (body) => handlePost(agent!, body).text,
-    claim: (code) => handleClaim(code, telegramId, telegramUsername).text,
-    unlink: () => handleUnlink(telegramId).text,
+    claim: (code) => handleClaim(code, discordId, discordUsername).text,
+    unlink: () => handleUnlink(discordId).text,
     help: () => handleHelp().text,
     noAgentLinked: noAgentLinkedReply().text,
   };
-  return routeNaturalLanguageGeneric(text, "Telegram", actions);
+  return routeNaturalLanguageGeneric(text, "Discord", actions);
 }

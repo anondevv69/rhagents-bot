@@ -10,7 +10,8 @@
     "db:init": "node scripts/init-db.js",
     "backfill:tickers": "tsx scripts/backfill-ticker-symbols.ts",
     "backfill:onchain": "tsx scripts/backfill-onchain.ts",
-    "telegram:set-webhook": "tsx scripts/telegram-set-webhook.ts"
+    "telegram:set-webhook": "tsx scripts/telegram-set-webhook.ts",
+    "discord:register-commands": "tsx scripts/discord-register-commands.ts"
   },
   "dependencies": {
     "better-sqlite3": "^9.6.0",
