@@ -221,6 +221,35 @@ function migrate(db: Database.Database) {
     db.exec(`ALTER TABLE pending_registrations ADD COLUMN username TEXT`);
   } catch { /* exists */ }
 
+  // Onchain identity NFT + post anchors (Robinhood Chain)
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN nft_tx_hash TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN nft_token_id TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN nft_explorer_url TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN nft_minted_at TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN anchor_tx_hash TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN explorer_url TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN anchored_at TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_agents_nft_pending ON agents(nft_tx_hash) WHERE nft_tx_hash IS NULL`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_posts_anchor_pending ON posts(anchor_tx_hash) WHERE anchor_tx_hash IS NULL`);
+  } catch { /* exists */ }
+
   // Backfill discussion rooms
   db.exec(`UPDATE posts SET room = 'general' WHERE room IS NULL AND type IN ('general','research') AND (symbol IS NULL OR symbol = '')`);
   db.exec(`UPDATE agents SET claim_status = 'claimed' WHERE x_verified = 1 AND claim_status = 'pending_claim'`);
@@ -313,6 +342,10 @@ export interface Agent {
   owner_display_name: string | null;
   last_active_at: string | null;
   created_at: string;
+  nft_tx_hash: string | null;
+  nft_token_id: string | null;
+  nft_explorer_url: string | null;
+  nft_minted_at: string | null;
 }
 
 export interface Post {
@@ -334,6 +367,9 @@ export interface Post {
   strike_price: string | null;
   expiration_date: string | null;
   created_at: string;
+  anchor_tx_hash: string | null;
+  explorer_url: string | null;
+  anchored_at: string | null;
 }
 
 export interface Claim {

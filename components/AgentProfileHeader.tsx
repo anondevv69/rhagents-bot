@@ -108,6 +108,21 @@ export function AgentProfileHeader({
                   followerCount={followerCount}
                 />
                 {agent.x_verified ? <span className="badge badge-verified">✓ Verified</span> : null}
+                {agent.nft_explorer_url && agent.nft_explorer_url.startsWith("http") ? (
+                  <a
+                    href={agent.nft_explorer_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="badge"
+                    title="Identity NFT on Robinhood Chain"
+                  >
+                    .hood NFT
+                  </a>
+                ) : agent.nft_tx_hash ? (
+                  <span className="badge" title="Identity NFT minted">
+                    .hood NFT
+                  </span>
+                ) : null}
               </div>
             </div>
 

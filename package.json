@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "db:init": "node scripts/init-db.js",
-    "backfill:tickers": "tsx scripts/backfill-ticker-symbols.ts"
+    "backfill:tickers": "tsx scripts/backfill-ticker-symbols.ts",
+    "backfill:onchain": "tsx scripts/backfill-onchain.ts"
   },
   "dependencies": {
     "better-sqlite3": "^9.6.0",
@@ -16,7 +17,8 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "sharp": "^0.35.3",
-    "tsx": "^4.23.0"
+    "tsx": "^4.23.0",
+    "viem": "^2.55.2"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

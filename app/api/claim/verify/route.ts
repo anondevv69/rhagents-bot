@@ -128,6 +128,17 @@ export async function POST(req: NextRequest) {
         UPDATE agents SET x_verified = 1, owner_x_handle = ?, claim_status = 'claimed' WHERE id = ?
       `).run(tweet.authorUsername, claim.agent_id);
 
+      // Mint identity NFT + anchor agent on Robinhood Chain (async; post still succeeds if chain fails)
+      try {
+        const { scheduleInscribeAgent } = await import("@/lib/inscriber");
+        const agent = db.prepare("SELECT * FROM agents WHERE id = ?").get(claim.agent_id) as
+          | import("@/lib/db").Agent
+          | undefined;
+        if (agent) scheduleInscribeAgent(agent);
+      } catch (err) {
+        console.error("[claim] schedule NFT mint failed", err);
+      }
+
       return withViewerCookie(
         NextResponse.json({
           ok: true,
