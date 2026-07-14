@@ -36,17 +36,13 @@ export function nftBackdropLabel(username: string): string {
 }
 
 /**
- * Fit Impact-style caps across the canvas with side padding.
- * ~0.52em average advance per condensed uppercase glyph.
+ * Banner-style fit: keep glyphs TALL (font-size), stretch to nearly full width
+ * via textLength — same as the hero (font-size 320 + textLength 1360 on 1600×700).
  */
-function fitText(label: string): { fontSize: number; textLength: number } {
-  const sidePad = Math.round(CANVAS.w * 0.04);
-  const textLength = CANVAS.w - sidePad * 2;
-  const advance = 0.52;
-  const fontSize = Math.max(
-    28,
-    Math.min(280, Math.floor(textLength / (Math.max(label.length, 1) * advance))),
-  );
+function fitText(_label: string): { fontSize: number; textLength: number } {
+  const textLength = Math.round(CANVAS.w * 0.92);
+  // ~40% of canvas height — matches hero's 320/700
+  const fontSize = Math.round(CANVAS.h * 0.4);
   return { fontSize, textLength };
 }
 
