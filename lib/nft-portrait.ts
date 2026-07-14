@@ -2,8 +2,8 @@ import fs from "fs";
 import path from "path";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 
-/** Banner proportions from the hero SVG (1600×700). */
-const CANVAS = { w: 1600, h: 700 };
+/** Match rhagent-mark.png so the figure fills the frame. */
+const CANVAS = { w: 1024, h: 682 };
 /** Dark olive — matches the see-through hood text on the hero banner. */
 const GREEN_OLIVE = "#3a4a10";
 
@@ -35,14 +35,19 @@ export function nftBackdropLabel(username: string): string {
   return nftHoodName(username).toUpperCase();
 }
 
-function fontSizeForLabel(label: string): number {
-  const len = label.length;
-  // Hero used 320 for ~12 chars (RAYBLANCOETH); scale down for longer hood names
-  if (len <= 12) return 320;
-  if (len <= 18) return 220;
-  if (len <= 24) return 170;
-  if (len <= 30) return 140;
-  return 110;
+/**
+ * Fit Impact-style caps across the canvas with side padding.
+ * ~0.52em average advance per condensed uppercase glyph.
+ */
+function fitText(label: string): { fontSize: number; textLength: number } {
+  const sidePad = Math.round(CANVAS.w * 0.04);
+  const textLength = CANVAS.w - sidePad * 2;
+  const advance = 0.52;
+  const fontSize = Math.max(
+    28,
+    Math.min(280, Math.floor(textLength / (Math.max(label.length, 1) * advance))),
+  );
+  return { fontSize, textLength };
 }
 
 /**
@@ -52,10 +57,8 @@ function fontSizeForLabel(label: string): number {
 export function buildAgentPortraitSvg(username: string): string {
   const label = nftBackdropLabel(username);
   const hood = nftHoodName(username);
-  const fontSize = fontSizeForLabel(label);
+  const { fontSize, textLength } = fitText(label);
   const mark = markDataUri();
-  // Hero used textLength 1360 on 1600-wide canvas (~85% width)
-  const textLength = Math.round(CANVAS.w * 0.85);
 
   const esc = (s: string) =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -67,7 +70,7 @@ export function buildAgentPortraitSvg(username: string): string {
   <!-- 1. Canvas -->
   <rect width="${CANVAS.w}" height="${CANVAS.h}" fill="#000000"/>
 
-  <!-- 2. Hood name UNDER the mark (hero stack) -->
+  <!-- 2. Hood name UNDER the mark — sized to fit full width -->
   <text
     x="50%"
     y="50%"
@@ -89,7 +92,7 @@ export function buildAgentPortraitSvg(username: string): string {
     y="0"
     width="${CANVAS.w}"
     height="${CANVAS.h}"
-    preserveAspectRatio="xMidYMid meet"
+    preserveAspectRatio="xMidYMid slice"
     opacity="0.5"
   />
 </svg>`;
