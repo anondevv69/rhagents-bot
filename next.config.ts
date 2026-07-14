@@ -24,7 +24,7 @@ const SECURITY_HEADERS = [
 ];
 
 const config: NextConfig = {
-  serverExternalPackages: ["better-sqlite3"],
+  serverExternalPackages: ["better-sqlite3", "opentype.js", "sharp"],
   images: {
     remotePatterns: [{ protocol: "https", hostname: "unavatar.io", pathname: "/**" }],
   },

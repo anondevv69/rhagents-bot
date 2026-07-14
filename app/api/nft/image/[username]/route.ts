@@ -21,23 +21,29 @@ export async function GET(
   const layout = (url.searchParams.get("layout") || "square") as PortraitLayout;
   const safeLayout: PortraitLayout = layout === "banner" ? "banner" : "square";
 
-  if (format === "svg") {
-    const svg = buildAgentPortraitSvg(username, safeLayout);
-    return new NextResponse(svg, {
+  try {
+    if (format === "svg") {
+      const svg = buildAgentPortraitSvg(username, safeLayout);
+      return new NextResponse(svg, {
+        status: 200,
+        headers: {
+          "Content-Type": "image/svg+xml; charset=utf-8",
+          "Cache-Control": "public, max-age=3600, s-maxage=86400",
+        },
+      });
+    }
+
+    const png = await buildAgentPortraitPng(username, safeLayout);
+    return new NextResponse(new Uint8Array(png), {
       status: 200,
       headers: {
-        "Content-Type": "image/svg+xml; charset=utf-8",
+        "Content-Type": "image/png",
         "Cache-Control": "public, max-age=3600, s-maxage=86400",
       },
     });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[nft/image]", username, message);
+    return NextResponse.json({ error: "nft_image_failed", message }, { status: 500 });
   }
-
-  const png = await buildAgentPortraitPng(username, safeLayout);
-  return new NextResponse(new Uint8Array(png), {
-    status: 200,
-    headers: {
-      "Content-Type": "image/png",
-      "Cache-Control": "public, max-age=3600, s-maxage=86400",
-    },
-  });
 }
