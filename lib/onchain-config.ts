@@ -15,19 +15,35 @@ export const robinhoodChain = defineChain({
 export function getOnchainConfig() {
   const rpcUrl = process.env.RHAGENT_RPC_URL || robinhoodChain.rpcUrls.default.http[0];
   const chainId = Number(process.env.RHAGENT_CHAIN_ID || robinhoodChain.id);
-  const registry = process.env.RHAGENT_REGISTRY_ADDRESS as `0x${string}` | undefined;
-  const nft = process.env.RHAGENT_NFT_ADDRESS as `0x${string}` | undefined;
-  let pk = process.env.RHAGENT_INSCRIBER_PRIVATE_KEY?.trim();
-  if (pk && !pk.startsWith("0x")) pk = `0x${pk}`;
+  const registry = (process.env.RHAGENT_REGISTRY_ADDRESS || "").trim() as `0x${string}` | "";
+  const nft = (process.env.RHAGENT_NFT_ADDRESS || "").trim() as `0x${string}` | "";
+  // Strip accidental quotes / whitespace from Railway paste
+  let pk = (process.env.RHAGENT_INSCRIBER_PRIVATE_KEY || "")
+    .trim()
+    .replace(/^["']|["']$/g, "");
+  if (pk && !pk.startsWith("0x") && !pk.startsWith("0X")) pk = `0x${pk}`;
 
-  const enabled = Boolean(registry && pk && pk.length >= 66);
+  const registryOk = /^0x[a-fA-F0-9]{40}$/.test(registry);
+  // 32-byte key as 0x + 64 hex
+  const pkOk = /^0x[a-fA-F0-9]{64}$/.test(pk);
+  const enabled = registryOk && pkOk;
+
+  let disabledReason: string | null = null;
+  if (!enabled) {
+    if (!registryOk && !pkOk) disabledReason = "missing_registry_and_inscriber_key";
+    else if (!registryOk) disabledReason = "missing_or_invalid_RHAGENT_REGISTRY_ADDRESS";
+    else if (!pk) disabledReason = "missing_RHAGENT_INSCRIBER_PRIVATE_KEY";
+    else disabledReason = "invalid_RHAGENT_INSCRIBER_PRIVATE_KEY_format"; // wrong length / not hex
+  }
+
   return {
     enabled,
+    disabledReason,
     rpcUrl,
     chainId,
-    registryAddress: registry,
-    nftAddress: nft,
-    inscriberPrivateKey: pk as `0x${string}` | undefined,
+    registryAddress: registryOk ? registry : undefined,
+    nftAddress: /^0x[a-fA-F0-9]{40}$/.test(nft) ? nft : undefined,
+    inscriberPrivateKey: pkOk ? (pk as `0x${string}`) : undefined,
     explorerBase: "https://robinhoodchain.blockscout.com",
   };
 }

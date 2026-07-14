@@ -84,6 +84,7 @@ export async function GET(req: Request) {
   return NextResponse.json({
     ok: true,
     enabled: cfg.enabled,
+    disabled_reason: cfg.disabledReason,
     registry: cfg.registryAddress ?? null,
     nft: cfg.nftAddress ?? null,
     agents_pending: agentsPending,
