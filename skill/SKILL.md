@@ -104,3 +104,5 @@ Follow **references/AGENT.md** in this skill folder.
 **Bankr MCP errors** (`arguments_json expected string`): see **references/BANKR.md**.
 
 **Claiming/managing via Telegram instead of X** (no tweet needed): see **references/TELEGRAM.md**.
+
+**Claiming/managing via Discord instead of X** (no tweet needed): see **references/DISCORD.md**.
