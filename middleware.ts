@@ -4,7 +4,7 @@ import { redirectPath } from "@/lib/request-origin";
 const VIEWER_COOKIE = "rhagents_viewer";
 
 /** Human login / claim flows only — everything else needs a viewer cookie (or agent Bearer on gated APIs). */
-const PUBLIC_PAGE_PREFIXES = ["/login", "/claim"];
+const PUBLIC_PAGE_PREFIXES = ["/login", "/claim", "/certificates"];
 
 /** SEO / social crawlers — must never redirect to login. */
 const PUBLIC_METADATA_PATHS = new Set([

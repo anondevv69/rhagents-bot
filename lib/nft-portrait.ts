@@ -91,6 +91,11 @@ export function buildAgentPortraitSvg(username: string): string {
 </svg>`;
 }
 
+export function agentCertificateImageUrl(username: string, chain: "rh" | "base" = "rh"): string {
+  const slug = encodeURIComponent(sanitizeNftUsername(username).toLowerCase());
+  return `${getSiteBaseUrl()}/api/nft/certificate/${slug}?chain=${chain}`;
+}
+
 export function agentPortraitImageUrl(username: string): string {
   const slug = encodeURIComponent(sanitizeNftUsername(username).toLowerCase());
   return `${getSiteBaseUrl()}/api/nft/image/${slug}`;
@@ -107,12 +112,13 @@ export function buildAgentPortraitMetadata(username: string) {
   return {
     name: hood,
     description: `Rhagent identity NFT for ${name}. Soulbound agent badge on Robinhood Chain.`,
-    image: agentPortraitImageUrl(name),
+    image: agentCertificateImageUrl(name, "rh"),
     external_url: `${getSiteBaseUrl()}/agent/${encodeURIComponent(name.toLowerCase())}`,
     attributes: [
       { trait_type: "username", value: name },
       { trait_type: "hood", value: hood },
       { trait_type: "collection", value: "Rhagent Agent NFT" },
+      { trait_type: "art", value: "guilloche" },
     ],
   };
 }
