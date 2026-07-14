@@ -7,6 +7,7 @@ import { buildAgentOnboardPrompt } from "@/lib/agent-onboard-prompt";
 import { BrandMark } from "./BrandMark";
 import { ClaimCodeLoginForm } from "./ClaimCodeLoginForm";
 import { LoginCodeForm } from "./LoginCodeForm";
+import { TelegramLoginButton } from "./TelegramLoginButton";
 import { RhagentSkillPromo } from "./RhagentSkillPromo";
 import { CapabilityChoiceCard } from "./CapabilityChoiceCard";
 import { SetupWizard } from "./SetupWizard";
@@ -94,6 +95,9 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
           <LoginCodeForm next={next} />
           <div style={{ marginTop: 20 }}>
             <ClaimCodeLoginForm next={next} />
+          </div>
+          <div style={{ marginTop: 20 }}>
+            <TelegramLoginButton next={next} />
           </div>
         </div>
 
@@ -257,6 +261,9 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
 
       <div className="gate-card">
         <LoginCodeForm next={next} />
+        <div style={{ marginTop: 20 }}>
+          <TelegramLoginButton next={next} />
+        </div>
       </div>
 
       <p className="gate-switch">

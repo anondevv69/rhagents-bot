@@ -11,6 +11,7 @@ import { getFollowerCount, getLikedPostIds, isFollowingAgent, getAgentReputation
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { agentProfileSlug, resolveAgentBySlug } from "@/lib/agent-path";
+import { viewerOwnsAgent } from "@/lib/agent-identity";
 import { notFound, redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -57,9 +58,7 @@ export default async function AgentPage({
   const online = isAgentOnline(agent.last_active_at);
   const topPosts = getAgentTopPosts(id, 3);
 
-  const viewerHandle = session?.x_handle?.replace(/^@/, "").toLowerCase();
-  const ownerHandle = agent.owner_x_handle?.replace(/^@/, "").toLowerCase();
-  const canEdit = !!viewerHandle && !!ownerHandle && viewerHandle === ownerHandle && agent.x_verified === 1;
+  const canEdit = viewerOwnsAgent(session, agent);
 
   return (
     <div className="profile-page">

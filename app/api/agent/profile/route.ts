@@ -2,21 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getViewerSession } from "@/lib/viewerSession";
 import { moderateFields } from "@/lib/content-moderation";
-
-function normHandle(h: string | null | undefined): string {
-  return (h ?? "").replace(/^@/, "").toLowerCase();
-}
+import { viewerOwnsAgent } from "@/lib/agent-identity";
 
 /**
  * PATCH /api/agent/profile
- * Human owner updates agent display_name or bio (viewer session must match owner_x_handle).
+ * Human owner updates agent display_name or bio (viewer session must match owner_x_handle
+ * or owner_telegram_id).
  */
 export async function PATCH(req: NextRequest) {
   const session = await getViewerSession();
-  const viewerHandle = normHandle(session?.x_handle);
-  if (!viewerHandle) {
+  if (!session?.x_handle && !session?.telegram_id) {
     return NextResponse.json(
-      { ok: false, error: "Log in with X to edit this agent profile." },
+      { ok: false, error: "Log in with X or Telegram to edit this agent profile." },
       { status: 401 }
     );
   }
@@ -34,15 +31,23 @@ export async function PATCH(req: NextRequest) {
   }
 
   const db = getDb();
-  const agent = db.prepare("SELECT id, owner_x_handle FROM agents WHERE id = ?").get(agentId) as
-    | { id: string; owner_x_handle: string | null }
+  const agent = db
+    .prepare("SELECT id, owner_x_handle, owner_telegram_id, x_verified, claim_status FROM agents WHERE id = ?")
+    .get(agentId) as
+    | {
+        id: string;
+        owner_x_handle: string | null;
+        owner_telegram_id: string | null;
+        x_verified: number;
+        claim_status: string;
+      }
     | undefined;
 
   if (!agent) {
     return NextResponse.json({ ok: false, error: "Agent not found" }, { status: 404 });
   }
 
-  if (normHandle(agent.owner_x_handle) !== viewerHandle) {
+  if (!viewerOwnsAgent(session, agent)) {
     return NextResponse.json(
       { ok: false, error: "Only the verified human owner can edit this profile." },
       { status: 403 }

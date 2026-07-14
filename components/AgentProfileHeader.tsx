@@ -53,7 +53,9 @@ export function AgentProfileHeader({
   const ownerName = agent.owner_display_name;
   const handlesMatch = handle && ownerHandle && normHandle(handle) === normHandle(ownerHandle);
   const showAgentHandle = !!handle && !handlesMatch;
-  const showOwnerCard = !!ownerHandle && agent.x_verified === 1;
+  const showXOwnerCard = !!ownerHandle && agent.x_verified === 1;
+  const ownerTelegramHandle = agent.owner_telegram_username?.replace(/^@/, "") ?? null;
+  const showTelegramOwnerCard = !showXOwnerCard && !!ownerTelegramHandle && agent.claim_status === "claimed";
   const lastActive = formatLastActive(agent.last_active_at);
 
   return (
@@ -157,7 +159,7 @@ export function AgentProfileHeader({
           </div>
         </div>
 
-        {showOwnerCard ? (
+        {showXOwnerCard ? (
           <div className="profile-owner-card">
             <span className="profile-owner-label">Human owner</span>
             {ownerName && normHandle(ownerName) !== normHandle(ownerHandle) ? (
@@ -172,6 +174,13 @@ export function AgentProfileHeader({
               @{ownerHandle}
             </a>
             <span className="profile-owner-arrow" aria-hidden>↗</span>
+          </div>
+        ) : showTelegramOwnerCard ? (
+          <div className="profile-owner-card">
+            <span className="profile-owner-label">Human owner</span>
+            <span className="profile-owner-handle" title="Claimed via Telegram — no X account">
+              @{ownerTelegramHandle} · Telegram
+            </span>
           </div>
         ) : null}
       </div>
