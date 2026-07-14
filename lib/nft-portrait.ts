@@ -12,8 +12,8 @@ import {
 const SQUARE = { w: 1024, h: 1024 };
 /** Wide banner (site/hero). */
 const BANNER = { w: 1600, h: 700 };
-/** Olive for centered account name. */
-const GREEN_OLIVE = "#6a8430";
+/** Olive for centered account name — bright enough to read over guilloché. */
+const GREEN_OLIVE = "#9bc03a";
 /** Soft charcoal under guilloché. */
 const BG = "#1f2123";
 export type PortraitLayout = "square" | "banner";
@@ -36,6 +36,7 @@ function heroPlacement(canvas: { w: number; h: number }, layout: PortraitLayout)
 }
 
 let _heroDataUri: string | null = null;
+let _fontCss: string | null = null;
 
 function heroDataUri(): string {
   if (_heroDataUri) return _heroDataUri;
@@ -43,6 +44,15 @@ function heroDataUri(): string {
   const buf = fs.readFileSync(filePath);
   _heroDataUri = `data:image/png;base64,${buf.toString("base64")}`;
   return _heroDataUri;
+}
+
+/** Embed Anton (OFL) so Railway/Linux renders names (no Impact/Arial Black there). */
+function displayFontCss(): string {
+  if (_fontCss) return _fontCss;
+  const filePath = path.join(process.cwd(), "public", "fonts", "Anton-Regular.ttf");
+  const b64 = fs.readFileSync(filePath).toString("base64");
+  _fontCss = `@font-face{font-family:'RhagentDisplay';src:url('data:font/ttf;base64,${b64}') format('truetype');font-weight:400;font-style:normal;}`;
+  return _fontCss;
 }
 
 /** Sanitize username for display + URL slug. */
@@ -112,6 +122,7 @@ export function buildAgentPortraitSvg(
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${canvas.w} ${canvas.h}" width="${canvas.w}" height="${canvas.h}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${esc(hood)}">
   <title>${esc(hood)}</title>
+  <defs><style type="text/css"><![CDATA[${displayFontCss()}]]></style></defs>
 
   <rect width="${canvas.w}" height="${canvas.h}" fill="${BG}"/>
   ${guilloche}
@@ -132,11 +143,10 @@ export function buildAgentPortraitSvg(
     y="50%"
     text-anchor="middle"
     dominant-baseline="middle"
-    font-family="Impact, 'Arial Black', 'Helvetica Neue', sans-serif"
-    font-weight="900"
+    font-family="RhagentDisplay, Impact, 'Arial Black', sans-serif"
     font-size="${fontSize}"
     fill="${GREEN_OLIVE}"
-    fill-opacity="0.92"
+    fill-opacity="0.95"
     textLength="${textLength}"
     lengthAdjust="spacingAndGlyphs"
   >${esc(label)}</text>
