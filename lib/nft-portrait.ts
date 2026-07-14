@@ -64,16 +64,16 @@ export function buildAgentPortraitSvg(username: string): string {
   <title>${esc(hood)}</title>
   <defs>
     <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse">
-      <rect width="4" height="2" fill="${GREEN_DIM}"/>
-      <rect y="2" width="4" height="2" fill="${GREEN_MID}"/>
+      <rect width="4" height="2" fill="${GREEN_BRIGHT}"/>
+      <rect y="2" width="4" height="2" fill="#9fcd00"/>
     </pattern>
     <linearGradient id="fadeR" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#000" stop-opacity="0"/>
-      <stop offset="55%" stop-color="#000" stop-opacity="0.35"/>
-      <stop offset="100%" stop-color="#000" stop-opacity="0.75"/>
+      <stop offset="55%" stop-color="#000" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0.55"/>
     </linearGradient>
     <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="1.2" result="b"/>
+      <feGaussianBlur stdDeviation="2" result="b"/>
       <feMerge>
         <feMergeNode in="b"/>
         <feMergeNode in="SourceGraphic"/>
@@ -84,26 +84,24 @@ export function buildAgentPortraitSvg(username: string): string {
   <!-- Canvas -->
   <rect width="100%" height="100%" fill="#000000"/>
 
-  <!-- Backdrop username (promo RHAGENT.BOT slot) -->
+  <!-- Backdrop username (promo RHAGENT.BOT slot) — bright lime for readability -->
   <g transform="translate(36, 210)">
     <text
       x="0"
       y="0"
-      fill="url(#scan)"
+      fill="${GREEN_BRIGHT}"
+      fill-opacity="0.95"
       font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'Arial Black', 'Helvetica Neue', Arial, sans-serif"
       font-weight="900"
       font-size="${fontSize}"
       letter-spacing="-0.04em"
       filter="url(#glow)"
     >${esc(label)}</text>
-    <!-- Darker outline pass for depth behind the figure -->
     <text
       x="0"
       y="0"
-      fill="none"
-      stroke="${GREEN_DIM}"
-      stroke-width="1.5"
-      stroke-opacity="0.55"
+      fill="url(#scan)"
+      fill-opacity="0.35"
       font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'Arial Black', 'Helvetica Neue', Arial, sans-serif"
       font-weight="900"
       font-size="${fontSize}"
@@ -112,7 +110,7 @@ export function buildAgentPortraitSvg(username: string): string {
   </g>
 
   <!-- Soft vignette so mark reads cleanly over long names -->
-  <rect width="100%" height="100%" fill="url(#fadeR)" opacity="0.45"/>
+  <rect width="100%" height="100%" fill="url(#fadeR)" opacity="0.3"/>
 
   <!-- Character mark — 40% so backdrop username stays readable -->
   <image
@@ -131,7 +129,7 @@ export function buildAgentPortraitSvg(username: string): string {
     x="28"
     y="658"
     fill="${GREEN_BRIGHT}"
-    fill-opacity="0.55"
+    fill-opacity="0.85"
     font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
     font-size="16"
     letter-spacing="0.04em"
