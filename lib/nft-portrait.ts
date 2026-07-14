@@ -3,7 +3,8 @@ import path from "path";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 
 const CANVAS = { w: 1024, h: 683 };
-const GREEN_BRIGHT = "#ccff00";
+/** Dark olive — matches the see-through hood text on the hero banner. */
+const GREEN_OLIVE = "#3a5200";
 
 let _markDataUri: string | null = null;
 
@@ -24,28 +25,28 @@ export function sanitizeNftUsername(raw: string): string {
     .slice(0, 30) || "agent";
 }
 
-/** Big background label — same role as RHAGENT.BOT in the promo art. */
-export function nftBackdropLabel(username: string): string {
-  return sanitizeNftUsername(username).toUpperCase();
-}
-
 export function nftHoodName(username: string): string {
   return `rhagent.${sanitizeNftUsername(username).toLowerCase()}.hood`;
 }
 
+/** Big overlay label — same string as the .hood name, uppercase like the banner. */
+export function nftBackdropLabel(username: string): string {
+  return nftHoodName(username).toUpperCase();
+}
+
 function fontSizeForLabel(label: string): number {
   const len = label.length;
-  if (len <= 8) return 148;
-  if (len <= 12) return 112;
-  if (len <= 16) return 88;
-  if (len <= 22) return 68;
-  return 52;
+  if (len <= 12) return 120;
+  if (len <= 18) return 86;
+  if (len <= 24) return 64;
+  if (len <= 30) return 52;
+  return 42;
 }
 
 /**
  * Dynamic agent portrait SVG.
- * Layout matches the promo: black field, large username text behind the figure,
- * Rhagent Robin Hood mark in front (from public/rhagent-mark.png).
+ * Layout matches the hero banner: full Rhagent mark, then dark-olive hood text
+ * overlaid with multiply blend so face highlights show through the letters.
  */
 export function buildAgentPortraitSvg(username: string): string {
   const label = nftBackdropLabel(username);
@@ -53,25 +54,18 @@ export function buildAgentPortraitSvg(username: string): string {
   const fontSize = fontSizeForLabel(label);
   const mark = markDataUri();
 
-  // Escape for XML text nodes
   const esc = (s: string) =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+  // Vertically center the text band across the portrait (banner look)
+  const textY = Math.round(CANVAS.h * 0.52);
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${CANVAS.w}" height="${CANVAS.h}" viewBox="0 0 ${CANVAS.w} ${CANVAS.h}" role="img" aria-label="${esc(hood)}">
   <title>${esc(hood)}</title>
   <defs>
-    <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse">
-      <rect width="4" height="2" fill="${GREEN_BRIGHT}"/>
-      <rect y="2" width="4" height="2" fill="#9fcd00"/>
-    </pattern>
-    <linearGradient id="fadeR" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#000" stop-opacity="0"/>
-      <stop offset="55%" stop-color="#000" stop-opacity="0.25"/>
-      <stop offset="100%" stop-color="#000" stop-opacity="0.55"/>
-    </linearGradient>
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="2" result="b"/>
+    <filter id="textSoft" x="-5%" y="-20%" width="110%" height="140%">
+      <feGaussianBlur stdDeviation="0.4" result="b"/>
       <feMerge>
         <feMergeNode in="b"/>
         <feMergeNode in="SourceGraphic"/>
@@ -82,35 +76,7 @@ export function buildAgentPortraitSvg(username: string): string {
   <!-- Canvas -->
   <rect width="100%" height="100%" fill="#000000"/>
 
-  <!-- Backdrop username (promo RHAGENT.BOT slot) — bright lime for readability -->
-  <g transform="translate(36, 210)">
-    <text
-      x="0"
-      y="0"
-      fill="${GREEN_BRIGHT}"
-      fill-opacity="0.95"
-      font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'Arial Black', 'Helvetica Neue', Arial, sans-serif"
-      font-weight="900"
-      font-size="${fontSize}"
-      letter-spacing="-0.04em"
-      filter="url(#glow)"
-    >${esc(label)}</text>
-    <text
-      x="0"
-      y="0"
-      fill="url(#scan)"
-      fill-opacity="0.35"
-      font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'Arial Black', 'Helvetica Neue', Arial, sans-serif"
-      font-weight="900"
-      font-size="${fontSize}"
-      letter-spacing="-0.04em"
-    >${esc(label)}</text>
-  </g>
-
-  <!-- Soft vignette so mark reads cleanly over long names -->
-  <rect width="100%" height="100%" fill="url(#fadeR)" opacity="0.3"/>
-
-  <!-- Character mark — 40% so backdrop username stays readable -->
+  <!-- Character mark — full strength like the banner reference -->
   <image
     href="${mark}"
     xlink:href="${mark}"
@@ -118,20 +84,28 @@ export function buildAgentPortraitSvg(username: string): string {
     y="0"
     width="${CANVAS.w}"
     height="${CANVAS.h}"
-    opacity="0.4"
     preserveAspectRatio="xMidYMid meet"
   />
 
-  <!-- Small hood caption -->
+  <!--
+    Hood name overlay — dark olive + multiply:
+    over black → solid olive; over the mark → face/hat highlights show through the glyphs
+    (same effect as the RAYBLANCOETH hero banner).
+  -->
   <text
-    x="28"
-    y="658"
-    fill="${GREEN_BRIGHT}"
-    fill-opacity="0.85"
-    font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
-    font-size="16"
-    letter-spacing="0.04em"
-  >${esc(hood)}</text>
+    x="50%"
+    y="${textY}"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    fill="${GREEN_OLIVE}"
+    fill-opacity="0.92"
+    style="mix-blend-mode: multiply"
+    font-family="ui-sans-serif, system-ui, -apple-system, 'Arial Black', 'Helvetica Neue', Impact, Arial Black, Arial, sans-serif"
+    font-weight="900"
+    font-size="${fontSize}"
+    letter-spacing="-0.03em"
+    filter="url(#textSoft)"
+  >${esc(label)}</text>
 </svg>`;
 }
 
