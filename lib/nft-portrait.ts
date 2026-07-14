@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import opentype, { type Font } from "opentype.js";
 import sharp from "sharp";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import {
@@ -36,7 +37,7 @@ function heroPlacement(canvas: { w: number; h: number }, layout: PortraitLayout)
 }
 
 let _heroDataUri: string | null = null;
-let _fontCss: string | null = null;
+let _displayFont: Font | null = null;
 
 function heroDataUri(): string {
   if (_heroDataUri) return _heroDataUri;
@@ -46,13 +47,36 @@ function heroDataUri(): string {
   return _heroDataUri;
 }
 
-/** Embed Anton (OFL) so Railway/Linux renders names (no Impact/Arial Black there). */
-function displayFontCss(): string {
-  if (_fontCss) return _fontCss;
+/**
+ * Anton (OFL). Convert labels to SVG paths — sharp/librsvg on Railway ignores
+ * @font-face and has no Impact/Arial Black, which produced tofu boxes.
+ */
+function displayFont(): Font {
+  if (_displayFont) return _displayFont;
   const filePath = path.join(process.cwd(), "public", "fonts", "Anton-Regular.ttf");
-  const b64 = fs.readFileSync(filePath).toString("base64");
-  _fontCss = `@font-face{font-family:'RhagentDisplay';src:url('data:font/ttf;base64,${b64}') format('truetype');font-weight:400;font-style:normal;}`;
-  return _fontCss;
+  const buf = fs.readFileSync(filePath);
+  _displayFont = opentype.parse(
+    buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+  );
+  return _displayFont;
+}
+
+/** Centered label as vector path (no system font dependency). */
+function labelPathMarkup(label: string, canvasW: number, canvasH: number): string {
+  const font = displayFont();
+  const { fontSize: targetSize } = overlayTextMetrics(label, canvasW);
+  let fontSize = targetSize;
+  let advance = font.getAdvanceWidth(label, fontSize);
+  const usable = canvasW * 0.88;
+  if (advance > usable && advance > 0) {
+    fontSize = Math.max(48, Math.round(fontSize * (usable / advance)));
+    advance = font.getAdvanceWidth(label, fontSize);
+  }
+  const glyphPath = font.getPath(label, 0, 0, fontSize);
+  const bb = glyphPath.getBoundingBox();
+  const tx = canvasW / 2 - (bb.x1 + bb.x2) / 2;
+  const ty = canvasH / 2 - (bb.y1 + bb.y2) / 2;
+  return `<path d="${glyphPath.toPathData(2)}" transform="translate(${tx.toFixed(2)},${ty.toFixed(2)})" fill="${GREEN_OLIVE}" fill-opacity="0.95"/>`;
 }
 
 /** Sanitize username for display + URL slug. */
@@ -104,7 +128,6 @@ export function buildAgentPortraitSvg(
   const label = nftOverlayLabel(agentKey);
   const hood = nftHoodName(agentKey);
   const canvas = layout === "banner" ? BANNER : SQUARE;
-  const { fontSize, textLength } = overlayTextMetrics(label, canvas.w);
   const hero = heroDataUri();
   const guilloche = buildGuillocheBackdropMarkup({
     agentKey,
@@ -118,11 +141,11 @@ export function buildAgentPortraitSvg(
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
   const place = heroPlacement(canvas, layout);
+  const labelPath = labelPathMarkup(label, canvas.w, canvas.h);
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${canvas.w} ${canvas.h}" width="${canvas.w}" height="${canvas.h}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${esc(hood)}">
   <title>${esc(hood)}</title>
-  <defs><style type="text/css"><![CDATA[${displayFontCss()}]]></style></defs>
 
   <rect width="${canvas.w}" height="${canvas.h}" fill="${BG}"/>
   ${guilloche}
@@ -138,18 +161,7 @@ export function buildAgentPortraitSvg(
     opacity="0.92"
   />
 
-  <text
-    x="50%"
-    y="50%"
-    text-anchor="middle"
-    dominant-baseline="middle"
-    font-family="RhagentDisplay, Impact, 'Arial Black', sans-serif"
-    font-size="${fontSize}"
-    fill="${GREEN_OLIVE}"
-    fill-opacity="0.95"
-    textLength="${textLength}"
-    lengthAdjust="spacingAndGlyphs"
-  >${esc(label)}</text>
+  ${labelPath}
 </svg>`;
 }
 
