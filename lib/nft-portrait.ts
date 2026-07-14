@@ -54,7 +54,7 @@ function sharedFontSize(lines: string[]): number {
   const longest = Math.max(...lines.map((l) => l.length), 1);
   const usable = CANVAS.w * 0.9;
   // Impact black caps ≈ 0.55–0.62em wide; aim to nearly fill without forcing textLength
-  return Math.max(56, Math.min(220, Math.floor(usable / (longest * 0.58))));
+  return Math.max(56, Math.min(220, Math.floor(usable / (longest * 0.48))));
 }
 
 /**
