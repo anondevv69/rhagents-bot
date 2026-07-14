@@ -42,7 +42,6 @@ export function nftBackdropLabel(username: string): string {
 function hoodTextLines(label: string): string[] {
   const parts = label.split(".");
   if (parts.length >= 3) {
-    // rhagent.user.hood
     return [`${parts[0]}.`, `${parts.slice(1).join(".")}`];
   }
   if (label.length <= 14) return [label];
@@ -50,10 +49,12 @@ function hoodTextLines(label: string): string[] {
   return [label.slice(0, mid), label.slice(mid)];
 }
 
-/** Font size so ~0.5em glyphs fill most of the width without crushing into sticks. */
-function fontSizeForLine(line: string, textLength: number): number {
-  const advance = 0.5;
-  return Math.max(48, Math.min(260, Math.floor(textLength / (Math.max(line.length, 1) * advance))));
+/** Pick one size from the longest line so both rows match and stay readable. */
+function sharedFontSize(lines: string[]): number {
+  const longest = Math.max(...lines.map((l) => l.length), 1);
+  const usable = CANVAS.w * 0.9;
+  // Impact black caps ≈ 0.55–0.62em wide; aim to nearly fill without forcing textLength
+  return Math.max(56, Math.min(220, Math.floor(usable / (longest * 0.58))));
 }
 
 /**
@@ -64,20 +65,18 @@ export function buildAgentPortraitSvg(username: string): string {
   const label = nftBackdropLabel(username);
   const hood = nftHoodName(username);
   const lines = hoodTextLines(label);
-  const textLength = Math.round(CANVAS.w * 0.9);
+  const fontSize = sharedFontSize(lines);
   const mark = markDataUri();
 
-  const sizes = lines.map((line) => fontSizeForLine(line, textLength));
-  const lineGap = Math.round(Math.max(...sizes) * 0.12);
-  const blockHeight = sizes.reduce((a, b) => a + b, 0) + lineGap * (lines.length - 1);
+  const lineGap = Math.round(fontSize * 0.08);
+  const blockHeight = fontSize * lines.length + lineGap * (lines.length - 1);
   let y = Math.round(CANVAS.h / 2 - blockHeight / 2);
 
   const esc = (s: string) =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
   const textNodes = lines
-    .map((line, i) => {
-      const fontSize = sizes[i];
+    .map((line) => {
       const baseline = y + fontSize;
       y = baseline + lineGap;
       return `  <text
@@ -88,8 +87,7 @@ export function buildAgentPortraitSvg(username: string): string {
     font-weight="900"
     font-size="${fontSize}"
     fill="${GREEN_OLIVE}"
-    textLength="${textLength}"
-    lengthAdjust="spacingAndGlyphs"
+    letter-spacing="-0.02em"
   >${esc(line)}</text>`;
     })
     .join("\n");
@@ -101,7 +99,7 @@ export function buildAgentPortraitSvg(username: string): string {
   <!-- 1. Canvas -->
   <rect width="${CANVAS.w}" height="${CANVAS.h}" fill="#000000"/>
 
-  <!-- 2. Hood name UNDER the mark (two lines so it fits) -->
+  <!-- 2. Hood name UNDER the mark (two lines, natural letter width) -->
 ${textNodes}
 
   <!-- 3. Character ON TOP at 50% — text shows through the figure -->
