@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
-import opentype, { type Font } from "opentype.js";
+import { createRequire } from "module";
+import type { Font } from "opentype.js";
 import sharp from "sharp";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import {
@@ -8,6 +9,10 @@ import {
   guillocheDisplayName,
   sanitizeAgentKey,
 } from "@/lib/guilloche";
+
+/** CJS require — Next’s ESM interop often leaves `opentype.parse` undefined. */
+const require = createRequire(import.meta.url);
+const opentype = require("opentype.js") as typeof import("opentype.js");
 
 /** Marketplace-standard square NFT. */
 const SQUARE = { w: 1024, h: 1024 };
