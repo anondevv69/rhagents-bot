@@ -11,9 +11,9 @@ import { viewerOwnsAgent } from "@/lib/agent-identity";
  */
 export async function PATCH(req: NextRequest) {
   const session = await getViewerSession();
-  if (!session?.x_handle && !session?.telegram_id) {
+  if (!session?.x_handle && !session?.telegram_id && !session?.discord_id) {
     return NextResponse.json(
-      { ok: false, error: "Log in with X or Telegram to edit this agent profile." },
+      { ok: false, error: "Log in with X, Telegram, or Discord to edit this agent profile." },
       { status: 401 }
     );
   }
@@ -32,12 +32,15 @@ export async function PATCH(req: NextRequest) {
 
   const db = getDb();
   const agent = db
-    .prepare("SELECT id, owner_x_handle, owner_telegram_id, x_verified, claim_status FROM agents WHERE id = ?")
+    .prepare(
+      "SELECT id, owner_x_handle, owner_telegram_id, owner_discord_id, x_verified, claim_status FROM agents WHERE id = ?"
+    )
     .get(agentId) as
     | {
         id: string;
         owner_x_handle: string | null;
         owner_telegram_id: string | null;
+        owner_discord_id: string | null;
         x_verified: number;
         claim_status: string;
       }

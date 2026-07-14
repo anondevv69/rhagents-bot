@@ -28,16 +28,20 @@ export function ownerSessionHandle(agent: {
  * and Telegram (owner_telegram_id) — either one alone is sufficient.
  */
 export function viewerOwnsAgent(
-  session: { x_handle?: string | null; telegram_id?: string | null } | null | undefined,
+  session:
+    | { x_handle?: string | null; telegram_id?: string | null; discord_id?: string | null }
+    | null
+    | undefined,
   agent: {
     owner_x_handle: string | null;
     owner_telegram_id?: string | null;
+    owner_discord_id?: string | null;
     x_verified?: number;
     claim_status?: string;
   },
 ): boolean {
   if (!session) return false;
-  // claim_status='claimed' covers both X and Telegram claims; x_verified===1 keeps the
+  // claim_status='claimed' covers X, Telegram, and Discord claims; x_verified===1 keeps the
   // legacy "pending manual review" X path (owner_x_handle set, not yet verified) locked out.
   const claimed = agent.claim_status === "claimed" || agent.x_verified === 1;
   if (!claimed) return false;
@@ -45,6 +49,9 @@ export function viewerOwnsAgent(
     return true;
   }
   if (session.telegram_id && agent.owner_telegram_id && session.telegram_id === agent.owner_telegram_id) {
+    return true;
+  }
+  if (session.discord_id && agent.owner_discord_id && session.discord_id === agent.owner_discord_id) {
     return true;
   }
   return false;
