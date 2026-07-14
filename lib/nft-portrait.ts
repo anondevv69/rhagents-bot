@@ -2,9 +2,10 @@ import fs from "fs";
 import path from "path";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 
-const CANVAS = { w: 1024, h: 683 };
+/** Banner proportions from the hero SVG (1600×700). */
+const CANVAS = { w: 1600, h: 700 };
 /** Dark olive — matches the see-through hood text on the hero banner. */
-const GREEN_OLIVE = "#3a5200";
+const GREEN_OLIVE = "#3a4a10";
 
 let _markDataUri: string | null = null;
 
@@ -29,54 +30,58 @@ export function nftHoodName(username: string): string {
   return `rhagent.${sanitizeNftUsername(username).toLowerCase()}.hood`;
 }
 
-/** Big overlay label — same string as the .hood name, uppercase like the banner. */
+/** Big label behind the mark — uppercase hood name. */
 export function nftBackdropLabel(username: string): string {
   return nftHoodName(username).toUpperCase();
 }
 
 function fontSizeForLabel(label: string): number {
   const len = label.length;
-  if (len <= 12) return 120;
-  if (len <= 18) return 86;
-  if (len <= 24) return 64;
-  if (len <= 30) return 52;
-  return 42;
+  // Hero used 320 for ~12 chars (RAYBLANCOETH); scale down for longer hood names
+  if (len <= 12) return 320;
+  if (len <= 18) return 220;
+  if (len <= 24) return 170;
+  if (len <= 30) return 140;
+  return 110;
 }
 
 /**
- * Dynamic agent portrait SVG.
- * Layout matches the hero banner: full Rhagent mark, then dark-olive hood text
- * overlaid with multiply blend so face highlights show through the letters.
+ * Dynamic agent portrait SVG — same stack as the hero banner:
+ * black → olive hood text → character mark at 50% opacity.
  */
 export function buildAgentPortraitSvg(username: string): string {
   const label = nftBackdropLabel(username);
   const hood = nftHoodName(username);
   const fontSize = fontSizeForLabel(label);
   const mark = markDataUri();
+  // Hero used textLength 1360 on 1600-wide canvas (~85% width)
+  const textLength = Math.round(CANVAS.w * 0.85);
 
   const esc = (s: string) =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-  // Vertically center the text band across the portrait (banner look)
-  const textY = Math.round(CANVAS.h * 0.52);
-
   return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${CANVAS.w}" height="${CANVAS.h}" viewBox="0 0 ${CANVAS.w} ${CANVAS.h}" role="img" aria-label="${esc(hood)}">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${CANVAS.w}" height="${CANVAS.h}" viewBox="0 0 ${CANVAS.w} ${CANVAS.h}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${esc(hood)}">
   <title>${esc(hood)}</title>
-  <defs>
-    <filter id="textSoft" x="-5%" y="-20%" width="110%" height="140%">
-      <feGaussianBlur stdDeviation="0.4" result="b"/>
-      <feMerge>
-        <feMergeNode in="b"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-  </defs>
 
-  <!-- Canvas -->
-  <rect width="100%" height="100%" fill="#000000"/>
+  <!-- 1. Canvas -->
+  <rect width="${CANVAS.w}" height="${CANVAS.h}" fill="#000000"/>
 
-  <!-- Character mark — full strength like the banner reference -->
+  <!-- 2. Hood name UNDER the mark (hero stack) -->
+  <text
+    x="50%"
+    y="50%"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    font-family="Impact, Arial Black, Helvetica Neue, sans-serif"
+    font-weight="900"
+    font-size="${fontSize}"
+    fill="${GREEN_OLIVE}"
+    textLength="${textLength}"
+    lengthAdjust="spacingAndGlyphs"
+  >${esc(label)}</text>
+
+  <!-- 3. Character ON TOP at 50% — text shows through the figure -->
   <image
     href="${mark}"
     xlink:href="${mark}"
@@ -85,26 +90,8 @@ export function buildAgentPortraitSvg(username: string): string {
     width="${CANVAS.w}"
     height="${CANVAS.h}"
     preserveAspectRatio="xMidYMid meet"
+    opacity="0.5"
   />
-
-  <!--
-    Hood name overlay — dark olive, translucent:
-    over black → readable olive letters; over the mark → face/hat show through
-    (same see-through treatment as the RAYBLANCOETH hero banner).
-  -->
-  <text
-    x="50%"
-    y="${textY}"
-    text-anchor="middle"
-    dominant-baseline="middle"
-    fill="${GREEN_OLIVE}"
-    fill-opacity="0.78"
-    font-family="ui-sans-serif, system-ui, -apple-system, 'Arial Black', 'Helvetica Neue', Impact, Arial Black, Arial, sans-serif"
-    font-weight="900"
-    font-size="${fontSize}"
-    letter-spacing="-0.03em"
-    filter="url(#textSoft)"
-  >${esc(label)}</text>
 </svg>`;
 }
 
