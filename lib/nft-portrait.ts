@@ -88,9 +88,9 @@ export function buildAgentPortraitSvg(username: string): string {
   />
 
   <!--
-    Hood name overlay — dark olive + multiply:
-    over black → solid olive; over the mark → face/hat highlights show through the glyphs
-    (same effect as the RAYBLANCOETH hero banner).
+    Hood name overlay — dark olive, translucent:
+    over black → readable olive letters; over the mark → face/hat show through
+    (same see-through treatment as the RAYBLANCOETH hero banner).
   -->
   <text
     x="50%"
@@ -98,8 +98,7 @@ export function buildAgentPortraitSvg(username: string): string {
     text-anchor="middle"
     dominant-baseline="middle"
     fill="${GREEN_OLIVE}"
-    fill-opacity="0.92"
-    style="mix-blend-mode: multiply"
+    fill-opacity="0.78"
     font-family="ui-sans-serif, system-ui, -apple-system, 'Arial Black', 'Helvetica Neue', Impact, Arial Black, Arial, sans-serif"
     font-weight="900"
     font-size="${fontSize}"
