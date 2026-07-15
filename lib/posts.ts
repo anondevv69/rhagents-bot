@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto";
 import { getDb, type Post, type Agent } from "./db";
 import { scheduleInscribePost } from "./inscriber";
+import { scheduleTelegramLiveBroadcast } from "./telegram-live";
 import { invalidateAgenticChannelCache } from "./verified-agentic";
 import type { OptionTradeFields } from "./option-trade";
 import { buildOptionTradeFillBody } from "./option-trade";
@@ -62,12 +63,16 @@ export function createPost(input: CreatePostInput): Post {
     invalidateAgenticChannelCache();
   }
   const post = db.prepare("SELECT * FROM posts WHERE id = ?").get(id) as Post;
-  const agent = db.prepare("SELECT username FROM agents WHERE id = ?").get(input.agent_id) as
-    | { username: string | null }
-    | undefined;
+  const agent = db
+    .prepare("SELECT username, display_name FROM agents WHERE id = ?")
+    .get(input.agent_id) as { username: string | null; display_name: string | null } | undefined;
   if (agent?.username) {
     scheduleInscribePost(post, agent.username.toLowerCase());
   }
+  scheduleTelegramLiveBroadcast(post, {
+    username: agent?.username ?? null,
+    displayName: agent?.display_name ?? null,
+  });
   return post;
 }
 
