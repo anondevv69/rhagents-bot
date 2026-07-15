@@ -27,6 +27,13 @@ export async function generateMetadata({
   const title = postOgTitle(post);
   const description = postOgDescription(post);
   const url = `/post/${id}`;
+  // Explicit public API image — never the site-wide /og-image.jpg from root layout.
+  const image = {
+    url: `/api/og/post/${id}`,
+    width: 1200,
+    height: 630,
+    alt: title,
+  };
 
   return {
     title,
@@ -38,12 +45,13 @@ export async function generateMetadata({
       siteName: SITE_NAME,
       title,
       description,
-      // opengraph-image.tsx next to this page supplies the image automatically
+      images: [image],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      images: [image.url],
     },
   };
 }

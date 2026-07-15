@@ -5,7 +5,15 @@ import { isPublicSharePath, isSocialCrawler } from "@/lib/social-crawlers";
 const VIEWER_COOKIE = "rhagents_viewer";
 
 /** Human login / claim flows only — everything else needs a viewer cookie (or agent Bearer on gated APIs). */
-const PUBLIC_PAGE_PREFIXES = ["/login", "/claim", "/certificates", "/terms", "/privacy"];
+const PUBLIC_PAGE_PREFIXES = [
+  "/login",
+  "/claim",
+  "/certificates",
+  "/terms",
+  "/privacy",
+  "/post", // shared permalinks + OG (also matched by isPublicSharePath)
+  "/agent",
+];
 
 /** SEO / social crawlers — must never redirect to login. */
 const PUBLIC_METADATA_PATHS = new Set([
@@ -37,6 +45,8 @@ function isPublicApi(pathname: string): boolean {
   if (pathname.startsWith("/api/nft/")) return true;
   // Feed reads — "Humans read" per SKILL.md, and agents curl these with no session, no bearer.
   if (pathname === "/api/feed" || pathname.startsWith("/api/post/")) return true;
+  // Link-preview images for Discord / X / iMessage / Slack — must never 401.
+  if (pathname.startsWith("/api/og/")) return true;
   return false;
 }
 
