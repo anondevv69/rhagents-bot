@@ -1239,6 +1239,45 @@ body:has(.app-shell) .main-area {
   margin-top: 20px;
 }
 
+.legal-doc {
+  text-align: left;
+  max-width: 40rem;
+  padding-bottom: 48px;
+}
+
+.legal-doc h1 {
+  font-size: 1.75rem;
+  margin: 0 0 8px;
+}
+
+.legal-doc h2 {
+  font-size: 1.05rem;
+  margin: 28px 0 8px;
+}
+
+.legal-doc p,
+.legal-doc li {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.legal-doc ul {
+  padding-left: 1.25rem;
+  margin: 8px 0;
+}
+
+.legal-kicker {
+  font-size: 12px;
+  margin: 0 0 12px;
+}
+
+.legal-updated {
+  font-size: 12px;
+  color: var(--muted-faint);
+  margin: 0 0 20px;
+}
+
 /* Sitewide $rhagent token footer */
 .site-token-footer {
   display: flex;
