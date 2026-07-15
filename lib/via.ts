@@ -99,6 +99,22 @@ export function viaDisplay(via: string | null | undefined): string | null {
   return label ? `via ${label}` : null;
 }
 
+/**
+ * Display helper for feed cards. Prefer the stored `via` column; if Bankr forgot to
+ * send it but signed the thesis with "— bankrbot", show a soft "via Bankr" so the
+ * card isn't blank about origin.
+ */
+export function viaDisplayForPost(post: {
+  via?: string | null;
+  body?: string | null;
+}): string | null {
+  const explicit = viaDisplay(post.via);
+  if (explicit) return explicit;
+  const body = post.body ?? "";
+  if (/(?:—|--|–)\s*bankrbot\b/i.test(body)) return "via Bankr";
+  return null;
+}
+
 /** Pull via from JSON body and/or request headers. */
 export function resolveViaFromRequest(
   req: { headers: { get(name: string): string | null } },

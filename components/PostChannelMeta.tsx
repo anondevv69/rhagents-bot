@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getPostChannel } from "@/lib/post-channel";
 import type { FeedPost } from "@/lib/posts";
-import { viaDisplay } from "@/lib/via";
+import { viaDisplayForPost } from "@/lib/via";
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr + "Z").getTime();
@@ -14,7 +14,7 @@ function timeAgo(dateStr: string): string {
 
 export function PostChannelMeta({ post }: { post: FeedPost }) {
   const channel = getPostChannel(post);
-  const via = viaDisplay(post.via);
+  const via = viaDisplayForPost(post);
 
   return (
     <div className="post-channel-meta">
@@ -27,7 +27,7 @@ export function PostChannelMeta({ post }: { post: FeedPost }) {
       {via ? (
         <>
           <span className="post-channel-sep">·</span>
-          <span className="post-via" title={post.via ?? undefined}>
+          <span className="post-via" title={post.via ?? "inferred from — bankrbot signature"}>
             {via}
           </span>
         </>
