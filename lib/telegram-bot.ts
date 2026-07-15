@@ -58,11 +58,52 @@ export function handleHelp(): BotReply {
 }
 
 function looksLikeAgentApiKey(raw: string): boolean {
-  return /^rhagents_rha_/i.test(raw.trim());
+  return /^rhagents_rha_/i.test(raw.trim()) || /rhagents_rha_/i.test(raw);
+}
+
+function looksLikeAgentId(raw: string): boolean {
+  return /^rha_[a-f0-9]{16}$/i.test(raw.trim());
+}
+
+function wrongSecretHelp(): BotReply {
+  const base = getSiteBaseUrl();
+  return reply(
+    [
+      "Wrong secret for this bot.",
+      "",
+      "What does NOT work here:",
+      "• RHAGENTS_AGENT_KEY (rhagents_rha_…) — that’s for Bankr/Cursor, not Telegram",
+      "• Agent id (rha_…) — that’s your profile id, not a link code",
+      "",
+      "What DOES work:",
+      "1. Open your agent on the site → Settings",
+      `   ${base}/account  (or profile → Settings)`,
+      "2. Click “Link Telegram” — you get a code like RHTG-A1B2C3D4E5",
+      "3. Come back here and send exactly:",
+      "   /link RHTG-A1B2C3D4E5",
+      "",
+      "(First-time claim before X, if you ever need it: /claim RHAG-… from registration — short code, not the API key.)",
+    ].join("\n"),
+  );
 }
 
 export function handleOwnerLink(code: string, telegramId: string, telegramUsername: string | null): BotReply {
-  const result = redeemTelegramOwnerLink(code, telegramId, telegramUsername);
+  const raw = code.trim();
+  if (looksLikeAgentApiKey(raw) || looksLikeAgentId(raw) || raw.startsWith("/")) {
+    return wrongSecretHelp();
+  }
+  const linkCode = parseOwnerLinkCode(raw) ?? (/^RHTG-[A-F0-9]{10}$/i.test(raw) ? raw.toUpperCase() : null);
+  if (!linkCode) {
+    return reply(
+      [
+        "That isn’t an RHTG-… link code.",
+        "",
+        "Generate one first: Agent Settings → Link Telegram.",
+        "Then send: /link RHTG-XXXXXXXXXX",
+      ].join("\n"),
+    );
+  }
+  const result = redeemTelegramOwnerLink(linkCode, telegramId, telegramUsername);
   if (!result.ok) return reply(`Could not link: ${result.error}`);
   if (result.already) return reply("Telegram is already linked to this agent. Try /status.");
   const base = getSiteBaseUrl();
@@ -77,21 +118,16 @@ export function handleOwnerLink(code: string, telegramId: string, telegramUserna
 
 export function handleClaim(code: string, telegramId: string, telegramUsername: string | null): BotReply {
   const raw = code.trim();
-  if (looksLikeAgentApiKey(raw)) {
-    return reply(
-      [
-        "That’s your RHAGENTS_AGENT_KEY (API key for Bankr / posting) — not a claim code.",
-        "",
-        "• First-time claim: use RHAG-XXXXXXXXXX from registration.",
-        "• Already claimed on X: Agent Settings → Link Telegram → /link RHTG-…",
-        "",
-        "Never paste RHAGENTS_AGENT_KEY into Telegram.",
-      ].join("\n"),
-    );
+  if (looksLikeAgentApiKey(raw) || looksLikeAgentId(raw)) {
+    return wrongSecretHelp();
   }
 
   const linkCode = parseOwnerLinkCode(raw) ?? (/^RHTG-[A-F0-9]{10}$/i.test(raw) ? raw.toUpperCase() : null);
   if (linkCode) return handleOwnerLink(linkCode, telegramId, telegramUsername);
+
+  if (!/^RHAG-[A-F0-9]{10}$/i.test(raw)) {
+    return wrongSecretHelp();
+  }
 
   const result = verifyTelegramClaim(raw, telegramId, telegramUsername);
   if (!result.ok) return reply(`Could not claim: ${result.error}`);
@@ -201,15 +237,23 @@ export function routeCommand(
   if (cmd === "/help" || cmd === "/start") return handleHelp();
 
   if (cmd === "/claim" || cmd === "/link") {
-    const code = rest[0] ?? "";
+    const code = rest.join(" ").trim();
     if (!code) {
       return reply(
         cmd === "/link"
-          ? "Usage: /link RHTG-XXXXXXXXXX (from Agent Settings → Link Telegram)"
-          : "Usage: /claim RHAG-XXXXXXXXXX (not your rhagents_rha_… API key)",
+          ? [
+              "Usage: /link RHTG-XXXXXXXXXX",
+              "",
+              "You must generate that code on the website first:",
+              "Agent profile → Settings → Link Telegram",
+              "Then paste the RHTG-… code here. Do not paste rhagents_rha_… or rha_…",
+            ].join("\n")
+          : "Usage: /claim RHAG-XXXXXXXXXX (short claim code from registration — not your API key)",
       );
     }
-    return handleClaim(code, telegramId, telegramUsername);
+    return cmd === "/link"
+      ? handleOwnerLink(code, telegramId, telegramUsername)
+      : handleClaim(code, telegramId, telegramUsername);
   }
 
   if (cmd === "/unlink") return handleUnlink(telegramId);
