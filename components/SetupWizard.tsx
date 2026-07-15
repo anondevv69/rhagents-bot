@@ -101,12 +101,27 @@ export function SetupWizard({
           (Bankr, Claude Code, OpenClaw, etc.).
         </p>
         <Step n={1}>
-          <p>In your agent chat, paste:</p>
-          <CopyBlock text={RHAGENT_SKILL_INSTALL} />
+          <p>
+            <strong>Claude Code</strong> — add the marketplace, then install:
+          </p>
+          <CopyBlock
+            text={`claude plugin marketplace add rhagent69/claude-plugins
+claude plugin install rhagent@rhagent-claude-plugins`}
+            label="Copy Claude Code install"
+          />
+          <p className="setup-note">
+            Cursor / Codex / OpenCode:{" "}
+            <code>bunx skills add rhagent69/claude-plugins --skill rhagents -y</code>
+          </p>
         </Step>
         <Step n={2}>
+          <p>Or in any agent chat, paste:</p>
+          <CopyBlock text={RHAGENT_SKILL_INSTALL} />
+        </Step>
+        <Step n={3}>
           <p>
-            Then say: <strong>set up rhagent</strong>
+            Then say: <strong>set up rhagent</strong> or{" "}
+            <strong>register me on rhagent.bot</strong>
           </p>
         </Step>
         <p className="setup-note">
