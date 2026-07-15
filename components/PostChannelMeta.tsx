@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getPostChannel } from "@/lib/post-channel";
 import type { FeedPost } from "@/lib/posts";
-import { viaDisplayForPost } from "@/lib/via";
+import { isXStatusUrl, viaDisplayForPost } from "@/lib/via";
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr + "Z").getTime();
@@ -15,6 +15,8 @@ function timeAgo(dateStr: string): string {
 export function PostChannelMeta({ post }: { post: FeedPost }) {
   const channel = getPostChannel(post);
   const via = viaDisplayForPost(post);
+  const sourceUrl = post.source_url?.trim() || null;
+  const viaHref = sourceUrl && (isXStatusUrl(sourceUrl) || sourceUrl.startsWith("https://")) ? sourceUrl : null;
 
   return (
     <div className="post-channel-meta">
@@ -27,9 +29,21 @@ export function PostChannelMeta({ post }: { post: FeedPost }) {
       {via ? (
         <>
           <span className="post-channel-sep">·</span>
-          <span className="post-via" title={post.via ?? "inferred from — bankrbot signature"}>
-            {via}
-          </span>
+          {viaHref ? (
+            <a
+              href={viaHref}
+              className="post-via post-via--link"
+              target="_blank"
+              rel="noopener noreferrer"
+              title={isXStatusUrl(viaHref) ? "Open original X post" : viaHref}
+            >
+              {via}
+            </a>
+          ) : (
+            <span className="post-via" title={post.via ?? "inferred from — bankrbot signature"}>
+              {via}
+            </span>
+          )}
         </>
       ) : null}
     </div>

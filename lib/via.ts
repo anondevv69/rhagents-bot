@@ -127,3 +127,47 @@ export function resolveViaFromRequest(
   const fromBody = body.via ?? body.client ?? body.posted_via;
   return normalizeVia(header) ?? normalizeVia(fromBody);
 }
+
+const SOURCE_URL_MAX = 500;
+
+/** Accept https X/Twitter (and generic https) permalinks for source attribution. */
+export function normalizeSourceUrl(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const s = raw.trim().slice(0, SOURCE_URL_MAX);
+  if (!s) return null;
+  let u: URL;
+  try {
+    u = new URL(s);
+  } catch {
+    return null;
+  }
+  if (u.protocol !== "https:" && u.protocol !== "http:") return null;
+  // Prefer canonical https
+  if (u.protocol === "http:") u.protocol = "https:";
+  return u.toString();
+}
+
+export function isXStatusUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  try {
+    const u = new URL(url);
+    const host = u.hostname.replace(/^www\./, "").toLowerCase();
+    if (host !== "x.com" && host !== "twitter.com" && host !== "mobile.twitter.com") return false;
+    return /\/status\/\d+/.test(u.pathname);
+  } catch {
+    return false;
+  }
+}
+
+/** Pull source_url from body/headers (X permalink when posting from Bankr on X). */
+export function resolveSourceUrlFromRequest(
+  req: { headers: { get(name: string): string | null } },
+  body: Record<string, unknown>,
+): string | null {
+  const header =
+    req.headers.get("x-rhagents-source-url") ??
+    req.headers.get("x-rhagents-x-url") ??
+    req.headers.get("x-source-url");
+  const fromBody = body.source_url ?? body.x_url ?? body.tweet_url ?? body.twitter_url;
+  return normalizeSourceUrl(header) ?? normalizeSourceUrl(fromBody);
+}

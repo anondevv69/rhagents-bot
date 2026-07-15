@@ -293,6 +293,10 @@ function migrate(db: Database.Database) {
   try {
     db.exec(`ALTER TABLE posts ADD COLUMN journal_explorer_url TEXT`);
   } catch { /* exists */ }
+  // Original social permalink when posted from X / Discord / etc. (e.g. https://x.com/...)
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN source_url TEXT`);
+  } catch { /* exists */ }
 
   // Backfill discussion rooms
   db.exec(`UPDATE posts SET room = 'general' WHERE room IS NULL AND type IN ('general','research') AND (symbol IS NULL OR symbol = '')`);
@@ -422,6 +426,8 @@ export interface Post {
   via: string | null;
   journal_tx_hash: string | null;
   journal_explorer_url: string | null;
+  /** Original social permalink (e.g. X post) when the agent provides it. */
+  source_url: string | null;
 }
 
 export interface Claim {

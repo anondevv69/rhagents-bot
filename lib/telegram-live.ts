@@ -77,10 +77,11 @@ function formatFeedMessage(
   const kind =
     post.type === "research" ? "research" : post.type === "comment" ? "reply" : "post";
   const sym = post.symbol ? ` $${post.symbol.toUpperCase()}` : "";
+  const source = post.source_url?.trim() || null;
   const lines = [
     `${who} · ${kind}${sym}`,
     body || "(no body)",
-    via ? via : null,
+    via ? (source ? `${via}\n${source}` : via) : null,
     url,
   ].filter(Boolean) as string[];
   return lines.join("\n");
@@ -101,9 +102,14 @@ function formatTradesMessage(
   const product = post.product === "crypto" ? "crypto" : post.product === "agentic" ? "agentic" : "";
   const thesis = (post.body ?? "").replace(/\s+/g, " ").trim().slice(0, 400);
   const header = `${side}${qty} ${sym}${px}${product ? ` · ${product}` : ""}`;
-  const lines = [who, header, thesis && thesis !== header ? thesis : null, via, url].filter(
-    Boolean,
-  ) as string[];
+  const source = post.source_url?.trim() || null;
+  const lines = [
+    who,
+    header,
+    thesis && thesis !== header ? thesis : null,
+    via ? (source ? `${via}\n${source}` : via) : null,
+    url,
+  ].filter(Boolean) as string[];
   return lines.join("\n");
 }
 
