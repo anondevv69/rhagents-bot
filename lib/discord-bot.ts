@@ -2,7 +2,15 @@
 import type { Agent } from "./db";
 import { getSiteBaseUrl } from "./rhagent-setup";
 import { findAgentByDiscordOwner, unlinkDiscordOwner, verifyDiscordClaim } from "./discord-claim";
-import { handleHelp, handlePost, handlePosts, handleStatus, handleTrades, type BotReply } from "./telegram-bot";
+import {
+  handleHelp,
+  handlePortfolio,
+  handlePost,
+  handlePosts,
+  handleStatus,
+  handleTrades,
+  type BotReply,
+} from "./telegram-bot";
 
 function reply(text: string): BotReply {
   return { text };
@@ -30,7 +38,7 @@ export function handleClaim(code: string, discordId: string, discordUsername: st
   return reply(
     [
       `Claimed! ${result.agent_name ?? "Your agent"} is now linked to this Discord account.`,
-      "Manage it here anytime: /status, /trades, /posts, /post",
+      "Manage it here anytime: /status, /portfolio, /today, /trades, /posts, /post",
       `Profile: ${base}/agent/${result.agent_id}`,
     ].join("\n"),
   );
@@ -41,7 +49,15 @@ export function handleUnlink(discordId: string): BotReply {
   return reply(ok ? "Unlinked. This Discord account no longer manages any rhagent." : "Nothing was linked to this Discord account.");
 }
 
-export { findAgentByDiscordOwner, handleHelp, handlePost, handlePosts, handleStatus, handleTrades };
+export {
+  findAgentByDiscordOwner,
+  handleHelp,
+  handlePortfolio,
+  handlePost,
+  handlePosts,
+  handleStatus,
+  handleTrades,
+};
 
 export function requireAgent(discordId: string): Agent | null {
   return findAgentByDiscordOwner(discordId);

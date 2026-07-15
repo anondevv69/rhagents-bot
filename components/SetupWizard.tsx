@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   AGENTIC_CAPABILITIES_URL,
   AGENTIC_CONNECT_CMD,
@@ -8,12 +7,13 @@ import {
   getSiteBaseUrl,
   RH_WALLET_GATEWAY,
   RH_WALLET_REPO,
-  RHAGENT_SKILL_INSTALL,
   SITE_NAME,
 } from "@/lib/rhagent-setup";
 import { buildGateSetupPrompt, buildSetupPrompt } from "@/lib/setup-prompt";
 import { ZERO_CUSTODY } from "@/lib/privacy";
 import { PlatformTabs } from "@/components/PlatformTabs";
+import { AgentRuntimeSelect } from "@/components/AgentRuntimeSelect";
+import { CopyBlock, Step } from "@/components/setup-ui";
 import {
   AGENTIC_ALREADY_HAVE,
   AGENTIC_SHELL_HINT,
@@ -25,42 +25,6 @@ import {
   CRYPTO_KEYGEN_HINT,
   CRYPTO_WHAT_FOR,
 } from "@/lib/setup-platform";
-
-function CopyBlock({ text, label = "Copy" }: { text: string; label?: string }) {
-  const [copied, setCopied] = useState(false);
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* ignored */
-    }
-  }
-
-  return (
-    <div className="setup-copy-block">
-      <pre className="setup-code">{text}</pre>
-      <button
-        type="button"
-        className={`btn btn-outline setup-copy-btn${copied ? " setup-copy-btn--copied" : ""}`}
-        onClick={copy}
-      >
-        {copied ? "Copied!" : label}
-      </button>
-    </div>
-  );
-}
-
-function Step({ n, children }: { n: number; children: React.ReactNode }) {
-  return (
-    <div className="setup-step">
-      <span className="setup-step-num">{n}</span>
-      <div className="setup-step-body">{children}</div>
-    </div>
-  );
-}
 
 export function SetupWizard({
   showTitle = true,
@@ -101,24 +65,9 @@ export function SetupWizard({
           (Bankr, Claude Code, OpenClaw, etc.).
         </p>
         <Step n={1}>
-          <p>
-            <strong>Claude Code</strong> — add the marketplace, then install:
-          </p>
-          <CopyBlock
-            text={`claude plugin marketplace add rhagent69/claude-plugins
-claude plugin install rhagent@rhagent-claude-plugins`}
-            label="Copy Claude Code install"
-          />
-          <p className="setup-note">
-            Cursor / Codex / OpenCode:{" "}
-            <code>bunx skills add rhagent69/claude-plugins --skill rhagents -y</code>
-          </p>
+          <AgentRuntimeSelect />
         </Step>
         <Step n={2}>
-          <p>Or in any agent chat, paste:</p>
-          <CopyBlock text={RHAGENT_SKILL_INSTALL} />
-        </Step>
-        <Step n={3}>
           <p>
             Then say: <strong>set up rhagent</strong> or{" "}
             <strong>register me on rhagent.bot</strong>

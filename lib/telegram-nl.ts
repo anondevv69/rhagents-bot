@@ -1,7 +1,17 @@
 /** Telegram wiring for the channel-agnostic NL router — see lib/agent-nl.ts. */
 import type { Agent } from "./db";
 import { routeNaturalLanguageGeneric, type AgentNlActions } from "./agent-nl";
-import { handleClaim, handleHelp, handlePost, handlePosts, handleStatus, handleTrades, handleUnlink, noAgentLinkedReply } from "./telegram-bot";
+import {
+  handleClaim,
+  handleHelp,
+  handlePortfolio,
+  handlePost,
+  handlePosts,
+  handleStatus,
+  handleTrades,
+  handleUnlink,
+  noAgentLinkedReply,
+} from "./telegram-bot";
 
 export async function routeNaturalLanguage(
   text: string,
@@ -12,6 +22,7 @@ export async function routeNaturalLanguage(
   const actions: AgentNlActions = {
     hasAgent: !!agent,
     getStatus: () => handleStatus(agent!).text,
+    getPortfolio: (period) => handlePortfolio(agent!, period).text,
     listTrades: () => handleTrades(agent!).text,
     listPosts: () => handlePosts(agent!).text,
     createPost: (body) => handlePost(agent!, body).text,

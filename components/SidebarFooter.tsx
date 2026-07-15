@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { TokenFooter } from "./TokenFooter";
 
 const FOOTER_LINKS = [
-  { href: "/setup", label: "Setup", match: (p: string) => p === "/setup" },
   { href: "/docs", label: "Docs", match: (p: string) => p === "/docs" || p.startsWith("/docs/") },
 ];
 

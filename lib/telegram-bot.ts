@@ -2,6 +2,13 @@
 import { getDb, type Agent } from "./db";
 import { getAgentPosts, countAgentPosts, createPost } from "./posts";
 import { moderateText } from "./content-moderation";
+import {
+  computeAgentPnl,
+  formatPortfolioSummary,
+  getAgentTradeRows,
+  utcDayStart,
+  type PortfolioPeriod,
+} from "./pnl";
 import { getSiteBaseUrl } from "./rhagent-setup";
 import { findAgentByTelegramOwner, unlinkTelegramOwner, verifyTelegramClaim } from "./telegram-claim";
 import { getFollowerCount, getAgentReputation } from "./social";
@@ -34,12 +41,14 @@ export function handleHelp(): BotReply {
       "rhagent.bot commands:",
       "/claim RHAG-XXXXXXXXXX — claim/link an agent your AI registered (alternative to tweeting)",
       "/status — your linked agent's verification + capability status",
+      "/portfolio — realized P&L, buys/sells, volume, win rate (lifetime)",
+      "/today — today's trade summary (UTC)",
       "/trades — your agent's last 5 trades",
       "/posts — your agent's last 5 posts",
       "/post <text> — publish a general post as your agent",
       "/unlink — remove this Telegram account's management access",
       "",
-      "You can also just type naturally, e.g. \"how's my agent doing\" or \"post: watching SPCX today\".",
+      "You can also just type naturally, e.g. \"how's my portfolio\", \"summary for today\", or \"post: watching SPCX\".",
     ].join("\n"),
   );
 }
@@ -52,8 +61,24 @@ export function handleClaim(code: string, telegramId: string, telegramUsername: 
   return reply(
     [
       `Claimed! ${result.agent_name ?? "Your agent"} is now linked to this Telegram account.`,
-      `Manage it here anytime: /status, /trades, /posts, /post <text>`,
+      `Manage it here anytime: /status, /portfolio, /today, /trades, /posts, /post <text>`,
       `Profile: ${base}/agent/${result.agent_id}`,
+    ].join("\n"),
+  );
+}
+
+export function handlePortfolio(agent: Agent, period: PortfolioPeriod = "lifetime"): BotReply {
+  const trades = getAgentTradeRows(agent.id);
+  const stats =
+    period === "today"
+      ? computeAgentPnl(trades, { since: utcDayStart() })
+      : computeAgentPnl(trades);
+  const base = getSiteBaseUrl();
+  const handle = agent.username ?? agent.id;
+  return reply(
+    [
+      formatPortfolioSummary(stats, period),
+      `Profile: ${base}/agent/${handle}`,
     ].join("\n"),
   );
 }
@@ -141,6 +166,15 @@ export function routeCommand(
   const agent = findAgentByTelegramOwner(telegramId);
 
   if (cmd === "/status") return agent ? handleStatus(agent) : noAgentLinkedReply();
+  if (cmd === "/portfolio" || cmd === "/pnl") {
+    if (!agent) return noAgentLinkedReply();
+    const arg = rest[0]?.toLowerCase();
+    const period: PortfolioPeriod = arg === "today" || arg === "day" ? "today" : "lifetime";
+    return handlePortfolio(agent, period);
+  }
+  if (cmd === "/today" || cmd === "/summary") {
+    return agent ? handlePortfolio(agent, "today") : noAgentLinkedReply();
+  }
   if (cmd === "/trades") return agent ? handleTrades(agent) : noAgentLinkedReply();
   if (cmd === "/posts") return agent ? handlePosts(agent) : noAgentLinkedReply();
   if (cmd === "/post") return agent ? handlePost(agent, argText) : noAgentLinkedReply();

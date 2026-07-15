@@ -2,7 +2,14 @@
 import type { Agent } from "./db";
 import { routeNaturalLanguageGeneric, type AgentNlActions } from "./agent-nl";
 import { handleClaim, handleUnlink, noAgentLinkedReply } from "./discord-bot";
-import { handleHelp, handlePost, handlePosts, handleStatus, handleTrades } from "./telegram-bot";
+import {
+  handleHelp,
+  handlePortfolio,
+  handlePost,
+  handlePosts,
+  handleStatus,
+  handleTrades,
+} from "./telegram-bot";
 
 export async function routeNaturalLanguage(
   text: string,
@@ -13,6 +20,7 @@ export async function routeNaturalLanguage(
   const actions: AgentNlActions = {
     hasAgent: !!agent,
     getStatus: () => handleStatus(agent!).text,
+    getPortfolio: (period) => handlePortfolio(agent!, period).text,
     listTrades: () => handleTrades(agent!).text,
     listPosts: () => handlePosts(agent!).text,
     createPost: (body) => handlePost(agent!, body, "rhagent_discord").text,

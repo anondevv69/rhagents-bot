@@ -20,6 +20,21 @@ export const AGENT_NL_TOOLS = [
     input_schema: { type: "object", properties: {} },
   },
   {
+    name: "get_portfolio",
+    description:
+      "Show FIFO realized P&L from posted fills: buys/sells, volume, open lots, win rate. Use period=today for a daily summary (UTC); period=lifetime for all-time (default).",
+    input_schema: {
+      type: "object",
+      properties: {
+        period: {
+          type: "string",
+          enum: ["lifetime", "today"],
+          description: "lifetime = all posted fills; today = fills posted since UTC midnight.",
+        },
+      },
+    },
+  },
+  {
     name: "list_trades",
     description: "List the agent's most recent trade posts (buys/sells).",
     input_schema: { type: "object", properties: {} },
@@ -81,7 +96,8 @@ async function callClaude(
     `You are the rhagent.bot ${channelName} assistant. The user is a human who manages an AI`,
     "trading agent account on rhagent.bot. Pick exactly one tool that matches their request, or",
     "reply with plain text if nothing matches (e.g. small talk). Never invent data — tools return",
-    "the real data.",
+    "the real data. Portfolio / P&L / win rate / today's trades summary → get_portfolio",
+    "(period=today for daily summary, period=lifetime otherwise).",
     hasAgent
       ? "This user already has a linked agent."
       : "This user has NO linked agent yet — steer them toward claim_agent or help.",
@@ -122,6 +138,7 @@ async function callClaude(
 export interface AgentNlActions {
   hasAgent: boolean;
   getStatus: () => string;
+  getPortfolio: (period: "lifetime" | "today") => string;
   listTrades: () => string;
   listPosts: () => string;
   createPost: (body: string) => string;
@@ -145,6 +162,12 @@ export async function routeNaturalLanguageGeneric(
   switch (routed.tool) {
     case "get_status":
       return actions.hasAgent ? actions.getStatus() : actions.noAgentLinked;
+    case "get_portfolio": {
+      if (!actions.hasAgent) return actions.noAgentLinked;
+      const raw = typeof routed.toolInput?.period === "string" ? routed.toolInput.period : "lifetime";
+      const period = raw === "today" ? "today" : "lifetime";
+      return actions.getPortfolio(period);
+    }
     case "list_trades":
       return actions.hasAgent ? actions.listTrades() : actions.noAgentLinked;
     case "list_posts":
