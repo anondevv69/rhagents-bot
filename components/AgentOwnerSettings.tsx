@@ -42,6 +42,38 @@ export function AgentOwnerSettings({
   const [masked, setMasked] = useState(apiKeyMasked);
   const [copied, setCopied] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [linkBusy, setLinkBusy] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
+  const [linkInfo, setLinkInfo] = useState<{ code: string; deep_link: string | null } | null>(null);
+
+  async function createTelegramLink() {
+    setLinkBusy(true);
+    setLinkError(null);
+    setLinkInfo(null);
+    try {
+      const res = await fetch("/api/agent/link-telegram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_id: agentId }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        message?: string;
+        code?: string;
+        deep_link?: string | null;
+      };
+      if (!res.ok || !data.ok || !data.code) {
+        setLinkError(data.message ?? data.error ?? "Could not create link code");
+        return;
+      }
+      setLinkInfo({ code: data.code, deep_link: data.deep_link ?? null });
+    } catch {
+      setLinkError("Network error — try again");
+    } finally {
+      setLinkBusy(false);
+    }
+  }
 
   async function rotate() {
     setBusy(true);
@@ -107,7 +139,8 @@ export function AgentOwnerSettings({
       <section className="panel owner-settings-panel">
         <h2 className="owner-settings-heading">Connected as owner</h2>
         <p className="owner-settings-note">
-          These are the human accounts that can manage this agent on the site.
+          Human accounts that can manage this agent on the website / Telegram bot. Using Bankr to
+          trade does not auto-fill these — claim/link is separate.
         </p>
         <ConnRow
           label="X / Twitter"
@@ -115,18 +148,49 @@ export function AgentOwnerSettings({
           detail={connections.x.handle ? `@${connections.x.handle.replace(/^@/, "")}` : null}
         />
         <ConnRow
-          label="Telegram"
+          label="Telegram bot"
           connected={connections.telegram.connected}
           detail={
             connections.telegram.username
               ? `@${connections.telegram.username.replace(/^@/, "")}`
               : connections.telegram.connected
                 ? "linked"
-                : null
+                : "needed for /trades /portfolio in Telegram"
           }
         />
+        {!connections.telegram.connected ? (
+          <div className="owner-settings-link-tg">
+            {!linkInfo ? (
+              <button
+                type="button"
+                className="btn btn-outline owner-settings-rotate-btn"
+                onClick={createTelegramLink}
+                disabled={linkBusy}
+              >
+                {linkBusy ? "Creating…" : "Link Telegram"}
+              </button>
+            ) : (
+              <div className="owner-settings-newkey">
+                <p className="owner-settings-newkey-warn">Send this to @Rhagentdotbot (expires in 30 min):</p>
+                <pre className="owner-settings-newkey-value">/link {linkInfo.code}</pre>
+                {linkInfo.deep_link ? (
+                  <p className="owner-settings-note">
+                    Or open:{" "}
+                    <a href={linkInfo.deep_link} className="text-link" target="_blank" rel="noreferrer">
+                      {linkInfo.deep_link}
+                    </a>
+                  </p>
+                ) : null}
+                <button type="button" className="btn btn-outline" onClick={() => setLinkInfo(null)}>
+                  Hide
+                </button>
+              </div>
+            )}
+            {linkError ? <p className="owner-settings-error">{linkError}</p> : null}
+          </div>
+        ) : null}
         <ConnRow
-          label="Discord"
+          label="Discord bot"
           connected={connections.discord.connected}
           detail={
             connections.discord.username
@@ -137,12 +201,12 @@ export function AgentOwnerSettings({
           }
         />
         <ConnRow
-          label="Bankr wallet (profile)"
+          label="Bankr wallet on profile"
           connected={Boolean(connections.bankr_wallet)}
           detail={
             connections.bankr_wallet
               ? `${connections.bankr_wallet.slice(0, 6)}…${connections.bankr_wallet.slice(-4)}`
-              : null
+              : "optional — only if bankr_api_key was sent at registration (not “I use Bankr”)"
           }
         />
         <ConnRow

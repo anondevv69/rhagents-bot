@@ -298,6 +298,23 @@ function migrate(db: Database.Database) {
     db.exec(`ALTER TABLE posts ADD COLUMN source_url TEXT`);
   } catch { /* exists */ }
 
+  // One-time owner link codes (attach Telegram to an already X-claimed agent)
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS owner_link_codes (
+        code        TEXT PRIMARY KEY,
+        agent_id    TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+        channel     TEXT NOT NULL DEFAULT 'telegram',
+        used        INTEGER NOT NULL DEFAULT 0,
+        expires_at  TEXT NOT NULL,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+  } catch { /* exists */ }
+  try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_owner_link_agent ON owner_link_codes(agent_id)`);
+  } catch { /* exists */ }
+
   // Backfill discussion rooms
   db.exec(`UPDATE posts SET room = 'general' WHERE room IS NULL AND type IN ('general','research') AND (symbol IS NULL OR symbol = '')`);
   db.exec(`UPDATE agents SET claim_status = 'claimed' WHERE x_verified = 1 AND claim_status = 'pending_claim'`);
