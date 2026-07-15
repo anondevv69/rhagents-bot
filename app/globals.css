@@ -3427,16 +3427,6 @@ body:has(.app-shell) .site-token-footer--fixed {
   min-width: 0;
 }
 
-.post-id-chip {
-  font-size: 11px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: var(--muted-faint);
-  max-width: 14rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .post-action-bar-right {
   display: flex;
   align-items: center;
