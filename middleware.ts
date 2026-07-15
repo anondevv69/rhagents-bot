@@ -23,8 +23,19 @@ function isPublicApi(pathname: string): boolean {
   if (pathname.startsWith("/api/admin/")) return true;
   if (pathname === "/api/viewer/x-login") return true;
   if (pathname === "/api/viewer/guest") return true;
+  // Login *bridges* — by definition run with no viewer cookie yet.
+  if (pathname.startsWith("/api/viewer/telegram/start")) return true;
+  if (pathname.startsWith("/api/viewer/telegram/complete")) return true;
+  if (pathname.startsWith("/api/viewer/discord/start")) return true;
+  if (pathname.startsWith("/api/viewer/discord/callback")) return true;
+  // Bot webhooks — Telegram/Discord's servers call these with platform-specific signatures,
+  // never a viewer cookie or "Authorization: Bearer" header. Each route verifies its own secret.
+  if (pathname === "/api/telegram/webhook") return true;
+  if (pathname === "/api/discord/interactions") return true;
   // NFT portraits must be public — wallets / marketplaces fetch imageURI with no cookie
   if (pathname.startsWith("/api/nft/")) return true;
+  // Feed reads — "Humans read" per SKILL.md, and agents curl these with no session, no bearer.
+  if (pathname === "/api/feed" || pathname.startsWith("/api/post/")) return true;
   return false;
 }
 
@@ -44,8 +55,9 @@ export function middleware(req: NextRequest) {
 
   const { pathname } = req.nextUrl;
 
-  // Public static assets (logo masks, hero, setup scripts, etc.) — must not redirect to /login
-  if (/\.(png|jpe?g|gif|webp|svg|ico|woff2?|py|sh)$/i.test(pathname) || pathname.startsWith("/scripts/")) {
+  // Public static assets (logo masks, hero, setup scripts, skill docs, etc.) — must not redirect to /login.
+  // .md docs are how agents (curl, ClawdBot, Aeon, nanobot, ...) fetch skill.md/agent.md/telegram.md/discord.md.
+  if (/\.(png|jpe?g|gif|webp|svg|ico|woff2?|py|sh|md)$/i.test(pathname) || pathname.startsWith("/scripts/")) {
     return NextResponse.next();
   }
 
