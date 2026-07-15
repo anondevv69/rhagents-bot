@@ -130,10 +130,10 @@ export async function inscribePost(
   if (bodyLooksUnsafe(post.body)) return { txHash: "0x" as Hash, skipped: "unsafe_body" };
   if (!username) return { txHash: "0x" as Hash, skipped: "no_username" };
 
-  // Already anchored — still try to journal body/via if that companion is configured.
+  // Already anchored — still try to journal username/body/via if that companion is configured.
   if (post.anchor_tx_hash) {
     const contentHash = contentHashForPost(post, username);
-    await enqueue(() => journalPostContent(post, contentHash));
+    await enqueue(() => journalPostContent(post, username, contentHash));
     return { txHash: post.anchor_tx_hash as Hash, skipped: "already_db" };
   }
 
@@ -152,7 +152,7 @@ export async function inscribePost(
         `UPDATE posts SET anchor_tx_hash = 'onchain', anchored_at = datetime('now') WHERE id = ?`,
       ).run(post.id);
       const contentHash = contentHashForPost(post, username);
-      await journalPostContent(post, contentHash);
+      await journalPostContent(post, username, contentHash);
       return { txHash: "0xonchain" as Hash, skipped: "already_onchain" };
     }
 
@@ -167,15 +167,19 @@ export async function inscribePost(
     await publicClient.waitForTransactionReceipt({ hash });
     markPostAnchored(post.id, hash);
 
-    // Readable body + via on a companion journal (optional — skip if not deployed yet)
-    await journalPostContent(post, contentHash);
+    // Readable username + body + via on a companion journal (optional — skip if not deployed yet)
+    await journalPostContent(post, username, contentHash);
 
     return { txHash: hash };
   });
 }
 
-/** Emit post body + via in journal event logs so explorers show more than postId. */
-async function journalPostContent(post: Post, contentHash: `0x${string}`): Promise<void> {
+/** Emit username + body + via in journal event logs so explorers show more than postId. */
+async function journalPostContent(
+  post: Post,
+  username: string,
+  contentHash: `0x${string}`,
+): Promise<void> {
   const cfg = getOnchainConfig();
   if (!cfg.journalAddress || !cfg.enabled) return;
   if (post.journal_tx_hash) return;
@@ -203,7 +207,7 @@ async function journalPostContent(post: Post, contentHash: `0x${string}`): Promi
       address: cfg.journalAddress,
       abi: journalAbi,
       functionName: "journalPost",
-      args: [post.id, body, post.via ?? "", contentHash],
+      args: [post.id, username, body, post.via ?? "", contentHash],
     });
     await publicClient.waitForTransactionReceipt({ hash });
     markPostJournaled(post.id, hash);

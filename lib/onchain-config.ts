@@ -110,7 +110,7 @@ export const registryAbi = [
   },
 ] as const;
 
-/** Companion journal — readable body + via in event logs. */
+/** Companion journal — readable username + body + via in event logs. */
 export const journalAbi = [
   {
     type: "function",
@@ -118,6 +118,7 @@ export const journalAbi = [
     stateMutability: "nonpayable",
     inputs: [
       { name: "postId", type: "string" },
+      { name: "username", type: "string" },
       { name: "body", type: "string" },
       { name: "via", type: "string" },
       { name: "contentHash", type: "bytes32" },
