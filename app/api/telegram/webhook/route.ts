@@ -77,9 +77,14 @@ async function handleMessage(
     return;
   }
 
-  // Bare claim code with no leading slash — still honor it.
+  // Bare RHAG-… / RHTG-… / mistaken API key — still route through claim/link handlers.
+  if (/^rhagents_rha_/i.test(text) || /^RHAG-[A-F0-9]{10}$/i.test(text) || /^RHTG-[A-F0-9]{10}$/i.test(text)) {
+    const out = routeCommand(`/claim ${text}`, telegramId, telegramUsername);
+    await sendTelegramMessage(chatId, out.text);
+    return;
+  }
   const bareCode = parseClaimCodeFromText(text);
-  if (bareCode && /^RHAG-[A-F0-9]{10}$/i.test(text.trim())) {
+  if (bareCode) {
     const out = routeCommand(`/claim ${bareCode}`, telegramId, telegramUsername);
     await sendTelegramMessage(chatId, out.text);
     return;

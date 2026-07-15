@@ -10,6 +10,7 @@ import {
   type PortfolioPeriod,
 } from "./pnl";
 import { getSiteBaseUrl } from "./rhagent-setup";
+import { parseOwnerLinkCode, redeemTelegramOwnerLink } from "./owner-link";
 import { findAgentByTelegramOwner, unlinkTelegramOwner, verifyTelegramClaim } from "./telegram-claim";
 import { getFollowerCount, getAgentReputation } from "./social";
 
@@ -22,15 +23,17 @@ function reply(text: string): BotReply {
 }
 
 function noAgentLinkedReply(): BotReply {
+  const base = getSiteBaseUrl();
   return reply(
     [
       "No rhagent is linked to this Telegram account yet.",
       "",
-      "Your AI agent registers on rhagent.bot over HTTP (this bot can't create the account itself —",
-      "registration requires a haiku proof + a small verification trade). Once it's registered, it will",
-      "give you a claim code like RHAG-XXXXXXXXXX.",
+      "Two different secrets:",
+      "• RHAG-XXXXXXXXXX — claim/link code (short). Use /claim with this.",
+      "• RHAGENTS_AGENT_KEY (starts with rhagents_rha_…) — API key for Bankr/your agent. Do NOT paste that here.",
       "",
-      "Send that code here (as /claim RHAG-XXXXXXXXXX or just paste it) to finish claiming — no X/Twitter needed.",
+      "New agent (not claimed yet): send /claim RHAG-… from registration.",
+      `Already claimed on X? Open Agent Settings on ${base} → Link Telegram → get an RHTG-… code, then /link RHTG-… here.`,
     ].join("\n"),
   );
 }
@@ -39,7 +42,8 @@ export function handleHelp(): BotReply {
   return reply(
     [
       "rhagent.bot commands:",
-      "/claim RHAG-XXXXXXXXXX — claim/link an agent your AI registered (alternative to tweeting)",
+      "/claim RHAG-XXXXXXXXXX — claim a newly registered agent (not the API key)",
+      "/link RHTG-XXXXXXXXXX — attach Telegram after you already claimed on X (from Agent Settings)",
       "/status — your linked agent's verification + capability status",
       "/portfolio — realized P&L, buys/sells, volume, win rate (lifetime)",
       "/today — today's trade summary (UTC)",
@@ -53,8 +57,43 @@ export function handleHelp(): BotReply {
   );
 }
 
+function looksLikeAgentApiKey(raw: string): boolean {
+  return /^rhagents_rha_/i.test(raw.trim());
+}
+
+export function handleOwnerLink(code: string, telegramId: string, telegramUsername: string | null): BotReply {
+  const result = redeemTelegramOwnerLink(code, telegramId, telegramUsername);
+  if (!result.ok) return reply(`Could not link: ${result.error}`);
+  if (result.already) return reply("Telegram is already linked to this agent. Try /status.");
+  const base = getSiteBaseUrl();
+  return reply(
+    [
+      `Linked! ${result.agent_name ?? "Your agent"} can be managed from this Telegram account.`,
+      `Try /status, /portfolio, /trades`,
+      `Profile: ${base}/agent/${result.agent_id}`,
+    ].join("\n"),
+  );
+}
+
 export function handleClaim(code: string, telegramId: string, telegramUsername: string | null): BotReply {
-  const result = verifyTelegramClaim(code, telegramId, telegramUsername);
+  const raw = code.trim();
+  if (looksLikeAgentApiKey(raw)) {
+    return reply(
+      [
+        "That’s your RHAGENTS_AGENT_KEY (API key for Bankr / posting) — not a claim code.",
+        "",
+        "• First-time claim: use RHAG-XXXXXXXXXX from registration.",
+        "• Already claimed on X: Agent Settings → Link Telegram → /link RHTG-…",
+        "",
+        "Never paste RHAGENTS_AGENT_KEY into Telegram.",
+      ].join("\n"),
+    );
+  }
+
+  const linkCode = parseOwnerLinkCode(raw) ?? (/^RHTG-[A-F0-9]{10}$/i.test(raw) ? raw.toUpperCase() : null);
+  if (linkCode) return handleOwnerLink(linkCode, telegramId, telegramUsername);
+
+  const result = verifyTelegramClaim(raw, telegramId, telegramUsername);
   if (!result.ok) return reply(`Could not claim: ${result.error}`);
   if (result.already) return reply("This agent is already claimed and linked to you. Try /status.");
   const base = getSiteBaseUrl();
@@ -153,11 +192,23 @@ export function routeCommand(
   const cmd = cmdRaw.toLowerCase().replace(/@\w+$/, "");
   const argText = text.slice(cmdRaw.length).trim();
 
+  // /start RHTG-… deep link from Agent Settings (before bare /start → help)
+  if (cmd === "/start" && rest[0]) {
+    const linkCode = parseOwnerLinkCode(rest[0]);
+    if (linkCode) return handleOwnerLink(linkCode, telegramId, telegramUsername);
+  }
+
   if (cmd === "/help" || cmd === "/start") return handleHelp();
 
   if (cmd === "/claim" || cmd === "/link") {
-    const code = rest[0]?.toUpperCase();
-    if (!code) return reply("Usage: /claim RHAG-XXXXXXXXXX");
+    const code = rest[0] ?? "";
+    if (!code) {
+      return reply(
+        cmd === "/link"
+          ? "Usage: /link RHTG-XXXXXXXXXX (from Agent Settings → Link Telegram)"
+          : "Usage: /claim RHAG-XXXXXXXXXX (not your rhagents_rha_… API key)",
+      );
+    }
     return handleClaim(code, telegramId, telegramUsername);
   }
 
