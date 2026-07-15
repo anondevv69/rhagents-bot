@@ -18,6 +18,8 @@ export function PostActionBar({
     upvotes?: number;
     reply_count?: number;
     explorer_url?: string | null;
+    /** Prefer journal tx when present — includes readable body + via onchain. */
+    journal_explorer_url?: string | null;
   };
   liked?: boolean;
   showCopy?: boolean;
@@ -27,7 +29,10 @@ export function PostActionBar({
   const readOnly = useViewerReadOnly();
   const trade = isTradePost(post);
   const explorer =
-    post.explorer_url && post.explorer_url.startsWith("http") ? post.explorer_url : null;
+    (post.journal_explorer_url && post.journal_explorer_url.startsWith("http")
+      ? post.journal_explorer_url
+      : null) ||
+    (post.explorer_url && post.explorer_url.startsWith("http") ? post.explorer_url : null);
   const replyCount = post.reply_count ?? 0;
   const replyLabel =
     replyCount > 0

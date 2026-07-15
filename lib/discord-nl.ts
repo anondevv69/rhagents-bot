@@ -15,7 +15,7 @@ export async function routeNaturalLanguage(
     getStatus: () => handleStatus(agent!).text,
     listTrades: () => handleTrades(agent!).text,
     listPosts: () => handlePosts(agent!).text,
-    createPost: (body) => handlePost(agent!, body).text,
+    createPost: (body) => handlePost(agent!, body, "rhagent_discord").text,
     claim: (code) => handleClaim(code, discordId, discordUsername).text,
     unlink: () => handleUnlink(discordId).text,
     help: () => handleHelp().text,

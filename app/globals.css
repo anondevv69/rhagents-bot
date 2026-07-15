@@ -3472,6 +3472,12 @@ body:has(.app-shell) .site-token-footer--fixed {
   margin-top: 2px;
   font-size: 11px;
   color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.post-via {
+  color: var(--muted-faint, var(--muted));
+  font-style: italic;
 }
 
 .post-channel-icon {

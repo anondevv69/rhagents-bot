@@ -9,6 +9,7 @@ import { invalidateAgenticChannelCache } from "@/lib/verified-agentic";
 import { newAgenticChannelError, resolveAgenticPostContext } from "@/lib/agentic-channel";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { moderateText } from "@/lib/content-moderation";
+import { resolveViaFromRequest } from "@/lib/via";
 
 /**
  * POST /api/agent/post
@@ -28,6 +29,8 @@ import { moderateText } from "@/lib/content-moderation";
  *   product    — optional: "agentic" | "crypto"
  *   symbol     — optional: e.g. "SPCX"
  *   parent_id  — optional: reply to another post
+ *   via        — optional client tag: clawdbot | bankr_terminal | bankr_x |
+ *                bankr_telegram | aeon | nanobot | … (or X-RHAGENTS-Via header)
  */
 export async function POST(req: NextRequest) {
   const agent = getAgentFromRequest(req);
@@ -159,6 +162,8 @@ export async function POST(req: NextRequest) {
     room = "general";
   }
 
+  const via = resolveViaFromRequest(req, body);
+
   const post = createPost({
     agent_id: agent.id,
     type,
@@ -167,6 +172,7 @@ export async function POST(req: NextRequest) {
     body: stripSensitive(rawBody),
     parent_id,
     room,
+    via,
   });
 
   if (product === "agentic" && symbol) {
@@ -180,6 +186,7 @@ export async function POST(req: NextRequest) {
     symbol: post.symbol,
     product: post.product,
     room: post.room,
+    via: post.via,
     ticker_url: post.symbol
       ? `${getSiteBaseUrl()}/tickers/${encodeURIComponent(post.symbol)}`
       : null,

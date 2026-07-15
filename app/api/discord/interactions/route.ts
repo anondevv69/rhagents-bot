@@ -99,7 +99,7 @@ function handleCommand(
   if (commandName === "posts") return agent ? handlePosts(agent) : noAgentLinkedReply();
   if (commandName === "post") {
     const text = interactionOptionString(interaction, "text") ?? "";
-    return agent ? handlePost(agent, text) : noAgentLinkedReply();
+    return agent ? handlePost(agent, text, "rhagent_discord") : noAgentLinkedReply();
   }
   return { text: `Unknown command. ${handleHelp().text}` };
 }

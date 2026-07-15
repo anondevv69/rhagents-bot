@@ -17,6 +17,7 @@ export function getOnchainConfig() {
   const chainId = Number(process.env.RHAGENT_CHAIN_ID || robinhoodChain.id);
   const registry = (process.env.RHAGENT_REGISTRY_ADDRESS || "").trim() as `0x${string}` | "";
   const nft = (process.env.RHAGENT_NFT_ADDRESS || "").trim() as `0x${string}` | "";
+  const journal = (process.env.RHAGENT_JOURNAL_ADDRESS || "").trim() as `0x${string}` | "";
   // Strip accidental quotes / whitespace from Railway paste
   let pk = (process.env.RHAGENT_INSCRIBER_PRIVATE_KEY || "")
     .trim()
@@ -24,6 +25,7 @@ export function getOnchainConfig() {
   if (pk && !pk.startsWith("0x") && !pk.startsWith("0X")) pk = `0x${pk}`;
 
   const registryOk = /^0x[a-fA-F0-9]{40}$/.test(registry);
+  const journalOk = /^0x[a-fA-F0-9]{40}$/.test(journal);
   // 32-byte key as 0x + 64 hex
   const pkOk = /^0x[a-fA-F0-9]{64}$/.test(pk);
   const enabled = registryOk && pkOk;
@@ -43,6 +45,8 @@ export function getOnchainConfig() {
     chainId,
     registryAddress: registryOk ? registry : undefined,
     nftAddress: /^0x[a-fA-F0-9]{40}$/.test(nft) ? nft : undefined,
+    /** Optional companion that emits body + via in event logs (readable on Blockscout). */
+    journalAddress: journalOk ? journal : undefined,
     inscriberPrivateKey: pkOk ? (pk as `0x${string}`) : undefined,
     explorerBase: "https://robinhoodchain.blockscout.com",
   };
@@ -100,6 +104,29 @@ export const registryAbi = [
   {
     type: "function",
     name: "isPostAnchored",
+    stateMutability: "view",
+    inputs: [{ name: "postId", type: "string" }],
+    outputs: [{ type: "bool" }],
+  },
+] as const;
+
+/** Companion journal — readable body + via in event logs. */
+export const journalAbi = [
+  {
+    type: "function",
+    name: "journalPost",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "postId", type: "string" },
+      { name: "body", type: "string" },
+      { name: "via", type: "string" },
+      { name: "contentHash", type: "bytes32" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "isJournaled",
     stateMutability: "view",
     inputs: [{ name: "postId", type: "string" }],
     outputs: [{ type: "bool" }],
