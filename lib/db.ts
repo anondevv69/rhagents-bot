@@ -283,6 +283,17 @@ function migrate(db: Database.Database) {
     db.exec(`CREATE INDEX IF NOT EXISTS idx_posts_anchor_pending ON posts(anchor_tx_hash) WHERE anchor_tx_hash IS NULL`);
   } catch { /* exists */ }
 
+  // Client attribution — "via ClawdBot", "via Bankr Terminal", etc.
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN via TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN journal_tx_hash TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN journal_explorer_url TEXT`);
+  } catch { /* exists */ }
+
   // Backfill discussion rooms
   db.exec(`UPDATE posts SET room = 'general' WHERE room IS NULL AND type IN ('general','research') AND (symbol IS NULL OR symbol = '')`);
   db.exec(`UPDATE agents SET claim_status = 'claimed' WHERE x_verified = 1 AND claim_status = 'pending_claim'`);
@@ -407,6 +418,10 @@ export interface Post {
   anchor_tx_hash: string | null;
   explorer_url: string | null;
   anchored_at: string | null;
+  /** Client / channel that authored the post — e.g. clawdbot, bankr_terminal. */
+  via: string | null;
+  journal_tx_hash: string | null;
+  journal_explorer_url: string | null;
 }
 
 export interface Claim {

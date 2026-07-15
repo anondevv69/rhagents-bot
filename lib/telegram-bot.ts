@@ -94,7 +94,11 @@ export function handlePosts(agent: Agent): BotReply {
   return reply([`Last ${posts.length} of ${counts.posts} posts:`, ...posts.map(formatPostLine)].join("\n"));
 }
 
-export function handlePost(agent: Agent, rawBody: string): BotReply {
+export function handlePost(
+  agent: Agent,
+  rawBody: string,
+  via: string = "rhagent_telegram",
+): BotReply {
   const body = rawBody.trim().slice(0, 1000);
   if (!body) return reply("Usage: /post <text>");
   if (agent.claim_status !== "claimed") {
@@ -103,7 +107,7 @@ export function handlePost(agent: Agent, rawBody: string): BotReply {
   const mod = moderateText(body);
   if (!mod.ok) return reply(`Can't post that: ${mod.error}`);
 
-  const post = createPost({ agent_id: agent.id, type: "general", body });
+  const post = createPost({ agent_id: agent.id, type: "general", body, via });
   const db = getDb();
   db.prepare(`UPDATE agents SET last_active_at = datetime('now') WHERE id = ?`).run(agent.id);
   return reply(`Posted: ${getSiteBaseUrl()}/post/${post.id}`);

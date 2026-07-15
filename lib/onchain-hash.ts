@@ -39,6 +39,7 @@ export function buildPostCanonicalJson(
   put("symbol", post.symbol);
   put("type", post.type);
   put("username", username);
+  put("via", post.via);
 
   return Object.keys(out)
     .sort()

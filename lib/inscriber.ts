@@ -10,10 +10,14 @@ import { agentPortraitMetadataUrl } from "@/lib/nft-portrait";
 import {
   explorerTxUrl,
   getOnchainConfig,
+  journalAbi,
   registryAbi,
   robinhoodChain,
 } from "@/lib/onchain-config";
 import { bodyLooksUnsafe, contentHashForPost } from "@/lib/onchain-hash";
+
+/** Cap journaled body for gas — posts are already max 1000 chars. */
+const JOURNAL_BODY_MAX = 800;
 
 /** Serialize inscriber txs so nonces stay ordered. */
 let _chain: Promise<unknown> = Promise.resolve();
@@ -61,6 +65,13 @@ export function markPostAnchored(postId: string, txHash: string) {
   const db = getDb();
   db.prepare(
     `UPDATE posts SET anchor_tx_hash = ?, explorer_url = ?, anchored_at = datetime('now') WHERE id = ?`,
+  ).run(txHash, explorerTxUrl(txHash), postId);
+}
+
+export function markPostJournaled(postId: string, txHash: string) {
+  const db = getDb();
+  db.prepare(
+    `UPDATE posts SET journal_tx_hash = ?, journal_explorer_url = ? WHERE id = ?`,
   ).run(txHash, explorerTxUrl(txHash), postId);
 }
 
@@ -116,9 +127,15 @@ export async function inscribePost(
   const cfg = getOnchainConfig();
   if (!cfg.enabled) return null;
 
-  if (post.anchor_tx_hash) return { txHash: post.anchor_tx_hash as Hash, skipped: "already_db" };
   if (bodyLooksUnsafe(post.body)) return { txHash: "0x" as Hash, skipped: "unsafe_body" };
   if (!username) return { txHash: "0x" as Hash, skipped: "no_username" };
+
+  // Already anchored — still try to journal body/via if that companion is configured.
+  if (post.anchor_tx_hash) {
+    const contentHash = contentHashForPost(post, username);
+    await enqueue(() => journalPostContent(post, contentHash));
+    return { txHash: post.anchor_tx_hash as Hash, skipped: "already_db" };
+  }
 
   return enqueue(async () => {
     const { publicClient, walletClient, registry } = clients();
@@ -134,6 +151,8 @@ export async function inscribePost(
       db.prepare(
         `UPDATE posts SET anchor_tx_hash = 'onchain', anchored_at = datetime('now') WHERE id = ?`,
       ).run(post.id);
+      const contentHash = contentHashForPost(post, username);
+      await journalPostContent(post, contentHash);
       return { txHash: "0xonchain" as Hash, skipped: "already_onchain" };
     }
 
@@ -147,8 +166,50 @@ export async function inscribePost(
 
     await publicClient.waitForTransactionReceipt({ hash });
     markPostAnchored(post.id, hash);
+
+    // Readable body + via on a companion journal (optional — skip if not deployed yet)
+    await journalPostContent(post, contentHash);
+
     return { txHash: hash };
   });
+}
+
+/** Emit post body + via in journal event logs so explorers show more than postId. */
+async function journalPostContent(post: Post, contentHash: `0x${string}`): Promise<void> {
+  const cfg = getOnchainConfig();
+  if (!cfg.journalAddress || !cfg.enabled) return;
+  if (post.journal_tx_hash) return;
+  if (bodyLooksUnsafe(post.body)) return;
+
+  try {
+    const { publicClient, walletClient } = clients();
+    const already = await publicClient.readContract({
+      address: cfg.journalAddress,
+      abi: journalAbi,
+      functionName: "isJournaled",
+      args: [post.id],
+    });
+    if (already) {
+      markPostJournaled(post.id, "onchain");
+      return;
+    }
+
+    const body =
+      post.body.length > JOURNAL_BODY_MAX
+        ? `${post.body.slice(0, JOURNAL_BODY_MAX - 1)}…`
+        : post.body;
+
+    const hash = await walletClient.writeContract({
+      address: cfg.journalAddress,
+      abi: journalAbi,
+      functionName: "journalPost",
+      args: [post.id, body, post.via ?? "", contentHash],
+    });
+    await publicClient.waitForTransactionReceipt({ hash });
+    markPostJournaled(post.id, hash);
+  } catch (err) {
+    console.error("[inscriber] journal failed", post.id, err);
+  }
 }
 
 /** Fire-and-forget — never blocks the HTTP response. */
