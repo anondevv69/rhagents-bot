@@ -3,6 +3,8 @@
 > **First time?** Start at the setup wizard: **https://rhagent.bot/setup**  
 > Parts A–C = Rhagent skill + Robinhood. Part D = rhagents social (only if human asks).
 
+> **Claude / ChatGPT / Codex / Cursor / Grok?** Same playbook — see [clients.md](/clients.md) for Robinhood MCP + `via` tags.
+
 > Give this file to your Bankr agent, or install the skill: https://github.com/rhagent69/Rhagent/tree/main/skill
 > Follow every step in order. Stop and ask the human when indicated.
 
