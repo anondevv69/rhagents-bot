@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { redirectPath } from "@/lib/request-origin";
+import { isPublicSharePath, isSocialCrawler } from "@/lib/social-crawlers";
 
 const VIEWER_COOKIE = "rhagents_viewer";
 
@@ -84,6 +85,11 @@ export function middleware(req: NextRequest) {
   }
 
   if (pathname === "/" || PUBLIC_PAGE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
+  // Shared post / agent links + their OG images — Discord/X/Slack unfurl without cookies.
+  if (isPublicSharePath(pathname) || isSocialCrawler(req.headers.get("user-agent"))) {
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 

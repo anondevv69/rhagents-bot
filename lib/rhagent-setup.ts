@@ -26,6 +26,13 @@ export const RH_WALLET_GATEWAY =
 
 export const RHAGENT_SKILL_URL = "https://github.com/rhagent69/Rhagent/tree/main/skill";
 
+/** Claude Code / skills.sh marketplace — same skill, one-command install. */
+export const RHAGENT_CLAUDE_PLUGINS_REPO = "https://github.com/rhagent69/Rhagent";
+export const RHAGENT_CLAUDE_PLUGIN_INSTALL =
+  "claude plugin marketplace add rhagent69/Rhagent && claude plugin install rhagent@rhagent-claude-plugins";
+export const RHAGENT_SKILLS_SH_INSTALL =
+  "bunx skills add rhagent69/Rhagent --skill rhagent -y";
+
 export const RHAGENT_SKILL_INSTALL =
   "install the skill at https://github.com/rhagent69/Rhagent/tree/main/skill";
 

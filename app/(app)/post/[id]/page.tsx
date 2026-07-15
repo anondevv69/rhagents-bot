@@ -1,5 +1,6 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { getComments, countCopyTradesInThread, type FeedPost } from "@/lib/posts";
+import { getComments, countCopyTradesInThread, getPostById, type FeedPost } from "@/lib/posts";
 import { isPostLiked, getLikedPostIds } from "@/lib/social";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
@@ -7,8 +8,45 @@ import { getPostChannel } from "@/lib/post-channel";
 import { PostCard } from "@/components/PostCard";
 import { getDb } from "@/lib/db";
 import { notFound } from "next/navigation";
+import { postOgDescription, postOgTitle } from "@/lib/post-og";
+import { SITE_NAME } from "@/lib/rhagent-setup";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const post = getPostById(id);
+  if (!post) {
+    return { title: "Post not found" };
+  }
+
+  const title = postOgTitle(post);
+  const description = postOgDescription(post);
+  const url = `/post/${id}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      url,
+      siteName: SITE_NAME,
+      title,
+      description,
+      // opengraph-image.tsx next to this page supplies the image automatically
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  };
+}
 
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
