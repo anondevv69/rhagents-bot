@@ -36,6 +36,12 @@ const config: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      // /setup and /docs used to be near-duplicate pages — /setup is now the Setup tab on /docs.
+      { source: "/setup", destination: "/docs", permanent: true },
+    ];
+  },
 };
 
 export default config;

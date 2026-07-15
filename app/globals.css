@@ -4568,3 +4568,74 @@ a.post-via--link:hover {
 .platform-tabs-panel {
   min-height: 0;
 }
+
+/* ── Docs tabs (/docs) ── */
+
+.docs-tabs {
+  margin-top: 8px;
+}
+
+.docs-tabs-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+}
+
+.docs-tabs-btn {
+  padding: 10px 16px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+}
+
+.docs-tabs-btn:hover {
+  color: var(--text);
+}
+
+.docs-tabs-btn--active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.docs-tabs-panel {
+  min-height: 0;
+}
+
+/* ── Agent runtime select (Setup wizard Part A) ── */
+
+.agent-runtime-select {
+  margin-bottom: 4px;
+}
+
+.agent-runtime-select-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.agent-runtime-select-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-soft);
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  cursor: pointer;
+}
+
+.agent-runtime-select-panel {
+  min-height: 0;
+}

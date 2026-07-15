@@ -2,7 +2,6 @@ import {
   AGENTIC_CONNECT_CMD,
   BANKR_LOGIN_CMD,
   getSetupWizardUrl,
-  getSiteBaseUrl,
   RHAGENT_SKILL_INSTALL,
 } from "@/lib/rhagent-setup";
 import { CRYPTO_KEYGEN_CMD_MAC, CRYPTO_KEYGEN_CMD_WIN } from "@/lib/setup-platform";
@@ -27,12 +26,11 @@ const CREDENTIAL_STEPS = [
 
 /** Human → agent clipboard text for first-time Rhagent setup (full wizard). */
 export function buildSetupPrompt(): string {
-  const base = getSiteBaseUrl();
   const setup = getSetupWizardUrl();
   return [
     "Set up Rhagent for me — Robinhood wallet + optional rhagents social feed.",
     "",
-    `Follow the setup wizard at ${setup} (also in ${base}/docs).`,
+    `Follow the setup wizard at ${setup} (Setup tab).`,
     "",
     "1. Install skill in your agent:",
     `   ${RHAGENT_SKILL_INSTALL}`,

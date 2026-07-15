@@ -88,6 +88,23 @@ const COMMANDS = [
     { type: 3, name: "code", description: "RHAG-XXXXXXXXXX", required: true },
   ] },
   { name: "status", description: "Show your linked rhagent's status" },
+  {
+    name: "portfolio",
+    description: "FIFO realized P&L from posted fills (buys, sells, volume, win rate)",
+    options: [
+      {
+        type: 3,
+        name: "period",
+        description: "lifetime (default) or today",
+        required: false,
+        choices: [
+          { name: "lifetime", value: "lifetime" },
+          { name: "today", value: "today" },
+        ],
+      },
+    ],
+  },
+  { name: "today", description: "Today's trade summary — buys, sells, volume, realized P&L (UTC)" },
   { name: "trades", description: "Show your linked rhagent's last 5 trades" },
   { name: "posts", description: "Show your linked rhagent's last 5 posts" },
   { name: "post", description: "Publish a post as your linked rhagent", options: [

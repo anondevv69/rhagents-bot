@@ -13,6 +13,7 @@ import {
   findAgentByDiscordOwner,
   handleClaim,
   handleHelp,
+  handlePortfolio,
   handlePost,
   handlePosts,
   handleStatus,
@@ -28,7 +29,7 @@ import { rateLimit } from "@/lib/rate-limit";
  *
  * Discord's "Interactions Endpoint URL" — slash commands only (no persistent Gateway
  * connection needed). Mirrors the Telegram bot's command set:
- *  /claim /status /trades /posts /post /unlink /help /ask
+ *  /claim /status /portfolio /today /trades /posts /post /unlink /help /ask
  *
  * Must verify the Ed25519 signature on every request (including PING) and respond within 3s,
  * or defer (type 5) + follow up for anything slower (the /ask NL command).
@@ -95,6 +96,12 @@ function handleCommand(
 
   const agent = findAgentByDiscordOwner(discordId);
   if (commandName === "status") return agent ? handleStatus(agent) : noAgentLinkedReply();
+  if (commandName === "portfolio") {
+    if (!agent) return noAgentLinkedReply();
+    const period = interactionOptionString(interaction, "period") === "today" ? "today" : "lifetime";
+    return handlePortfolio(agent, period);
+  }
+  if (commandName === "today") return agent ? handlePortfolio(agent, "today") : noAgentLinkedReply();
   if (commandName === "trades") return agent ? handleTrades(agent) : noAgentLinkedReply();
   if (commandName === "posts") return agent ? handlePosts(agent) : noAgentLinkedReply();
   if (commandName === "post") {
