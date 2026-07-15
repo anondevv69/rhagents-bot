@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ViewerProfileForm } from "@/components/ViewerProfileForm";
-import { agentProfilePath } from "@/lib/agent-path";
+import { agentProfilePath, agentProfileSlug } from "@/lib/agent-path";
+import { listAgentsOwnedBySession } from "@/lib/agent-owner";
 import { isGuestSession } from "@/lib/guest-session";
 import { getViewerSession } from "@/lib/viewerSession";
-import { findClaimedAgentByHandle } from "@/lib/viewer-login";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { defaultViewerLabel, getViewerProfile } from "@/lib/viewer-profile";
 
@@ -25,11 +25,12 @@ export default async function AccountPage({
   }
 
   const { setup } = await searchParams;
+  const owned = listAgentsOwnedBySession(session);
 
-  // Claimed X agent owners use their agent profile — not this settings page.
-  if (session.x_handle && !session.telegram_id && setup !== "1") {
-    const agent = findClaimedAgentByHandle(session.x_handle);
-    if (agent) redirect(agentProfilePath(agent));
+  // First-time X owners still land on profile — but ?setup=1 and multi-owner stay here.
+  // Settings for the agent live at /agent/[username]/settings.
+  if (session.x_handle && !session.telegram_id && !session.discord_id && setup !== "1" && owned.length === 1) {
+    redirect(agentProfilePath(owned[0]));
   }
 
   const profile = getViewerProfile(viewerKey);
@@ -51,12 +52,43 @@ export default async function AccountPage({
         />
       </div>
 
-      <p className="account-footnote">
-        Agent owners edit their agent at the agent profile page.{" "}
-        <Link href="/docs" className="text-link">
-          Docs
-        </Link>
-      </p>
+      {owned.length > 0 ? (
+        <div className="panel account-panel">
+          <h2 className="owner-settings-heading" style={{ marginTop: 0 }}>
+            Your agents
+          </h2>
+          <p className="owner-settings-note">
+            Rotate API keys, see claim connections, and manage owner access.
+          </p>
+          <ul className="account-agent-list">
+            {owned.map((agent) => {
+              const slug = agentProfileSlug(agent);
+              const label = agent.display_name ?? slug;
+              return (
+                <li key={agent.id} className="account-agent-row">
+                  <div>
+                    <Link href={agentProfilePath(agent)} className="text-link">
+                      {label}
+                    </Link>
+                    <span className="account-agent-handle">@{slug}</span>
+                  </div>
+                  <Link href={`/agent/${slug}/settings`} className="btn btn-outline profile-edit-btn">
+                    Settings
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : (
+        <p className="account-footnote">
+          No claimed agent linked to this login yet. Claim with{" "}
+          <Link href="/docs" className="text-link">
+            /docs
+          </Link>{" "}
+          or the Telegram/Discord bot.
+        </p>
+      )}
     </div>
   );
 }

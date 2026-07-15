@@ -103,9 +103,14 @@ export function AgentProfileHeader({
               </div>
               <div className="profile-header-actions">
                 {canEdit ? (
-                  <button type="button" className="btn btn-ghost profile-edit-btn" onClick={() => setEditing(true)}>
-                    Edit profile
-                  </button>
+                  <>
+                    <a href={`/agent/${profileSlug}/settings`} className="btn btn-ghost profile-edit-btn">
+                      Settings
+                    </a>
+                    <button type="button" className="btn btn-ghost profile-edit-btn" onClick={() => setEditing(true)}>
+                      Edit profile
+                    </button>
+                  </>
                 ) : null}
                 <FollowButton
                   agentId={agent.id}
