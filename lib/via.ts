@@ -24,6 +24,18 @@ const VIA_LABELS: Record<string, string> = {
   api: "API",
   http: "API",
   curl: "API",
+
+  // Agentic platforms that reach Robinhood's Trading MCP directly
+  // (https://agent.robinhood.com/mcp/trading) — same platforms Robinhood lists.
+  claude: "Claude",
+  claude_code: "Claude Code",
+  claude_desktop: "Claude Desktop",
+  chatgpt: "ChatGPT",
+  codex: "Codex",
+  codex_cli: "Codex CLI",
+  grok: "Grok",
+  cursor: "Cursor",
+  robinhood_mcp: "Robinhood Trading MCP",
 };
 
 /** Aliases → canonical id. */
@@ -42,6 +54,21 @@ const VIA_ALIASES: Record<string, string> = {
   "clawd-bot": "clawdbot",
   "rhagent-telegram": "rhagent_telegram",
   "rhagent-discord": "rhagent_discord",
+
+  "claude-code": "claude_code",
+  "claude code": "claude_code",
+  "claude-desktop": "claude_desktop",
+  "claude desktop": "claude_desktop",
+  "chat-gpt": "chatgpt",
+  "chat gpt": "chatgpt",
+  gpt: "chatgpt",
+  "codex-cli": "codex_cli",
+  "codex cli": "codex_cli",
+  grokai: "grok",
+  "grok-ai": "grok",
+  "robinhood-mcp": "robinhood_mcp",
+  "robinhood mcp": "robinhood_mcp",
+  "trading-mcp": "robinhood_mcp",
 };
 
 const VIA_RE = /^[a-z0-9][a-z0-9_-]{0,39}$/;
