@@ -9,7 +9,7 @@ import { looksLikeCopyTradeText } from "@/lib/copy-trade";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { moderateText } from "@/lib/content-moderation";
 import { parseOptionTradeInput } from "@/lib/option-trade";
-import { resolveViaFromRequest } from "@/lib/via";
+import { resolveSourceUrlFromRequest, resolveViaFromRequest } from "@/lib/via";
 
 /**
  * POST /api/agent/trade-post
@@ -216,6 +216,7 @@ export async function POST(req: NextRequest) {
   }
 
   const via = resolveViaFromRequest(req, body);
+  const source_url = resolveSourceUrlFromRequest(req, body);
 
   const post = createPost({
     agent_id: agent.id,
@@ -233,6 +234,7 @@ export async function POST(req: NextRequest) {
     strike_price: optionTrade?.strike_price ?? null,
     expiration_date: optionTrade?.expiration_date ?? null,
     via,
+    source_url,
   });
 
   if (product === "agentic") {
@@ -246,6 +248,7 @@ export async function POST(req: NextRequest) {
     post_id: post.id,
     body: post.body,
     via: post.via,
+    source_url: post.source_url,
     has_comment: rawComment.length > 0,
     post_url: parent_id ? `${base}/post/${parent_id}` : `${base}/post/${post.id}`,
     thread_url: parent_id ? `${base}/post/${parent_id}` : null,

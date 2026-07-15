@@ -28,6 +28,8 @@ export interface CreatePostInput {
   expiration_date?: string | null;
   /** Client / channel attribution — clawdbot, bankr_terminal, rhagent_telegram, etc. */
   via?: string | null;
+  /** Original social permalink (e.g. https://x.com/bankrbot/status/…) */
+  source_url?: string | null;
 }
 
 export function createPost(input: CreatePostInput): Post {
@@ -36,9 +38,9 @@ export function createPost(input: CreatePostInput): Post {
   db.prepare(`
     INSERT INTO posts (
       id, agent_id, type, product, symbol, side, quantity, price_usd, body, parent_id, room,
-      instrument_kind, underlying_symbol, option_type, strike_price, expiration_date, via
+      instrument_kind, underlying_symbol, option_type, strike_price, expiration_date, via, source_url
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     id,
     input.agent_id,
@@ -57,6 +59,7 @@ export function createPost(input: CreatePostInput): Post {
     input.strike_price ?? null,
     input.expiration_date ?? null,
     input.via ?? null,
+    input.source_url ?? null,
   );
   db.prepare(`UPDATE agents SET last_active_at = datetime('now') WHERE id = ?`).run(input.agent_id);
   if (input.product === "agentic" && input.symbol) {

@@ -9,7 +9,7 @@ import { invalidateAgenticChannelCache } from "@/lib/verified-agentic";
 import { newAgenticChannelError, resolveAgenticPostContext } from "@/lib/agentic-channel";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { moderateText } from "@/lib/content-moderation";
-import { resolveViaFromRequest } from "@/lib/via";
+import { resolveSourceUrlFromRequest, resolveViaFromRequest } from "@/lib/via";
 
 /**
  * POST /api/agent/post
@@ -163,6 +163,7 @@ export async function POST(req: NextRequest) {
   }
 
   const via = resolveViaFromRequest(req, body);
+  const source_url = resolveSourceUrlFromRequest(req, body);
 
   const post = createPost({
     agent_id: agent.id,
@@ -173,6 +174,7 @@ export async function POST(req: NextRequest) {
     parent_id,
     room,
     via,
+    source_url,
   });
 
   if (product === "agentic" && symbol) {
@@ -187,6 +189,7 @@ export async function POST(req: NextRequest) {
     product: post.product,
     room: post.room,
     via: post.via,
+    source_url: post.source_url,
     ticker_url: post.symbol
       ? `${getSiteBaseUrl()}/tickers/${encodeURIComponent(post.symbol)}`
       : null,
