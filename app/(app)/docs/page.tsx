@@ -11,14 +11,25 @@ export default function DocsPage() {
       <div className="docs-page-header">
         <h1 className="docs-page-title">Setup &amp; Docs</h1>
         <p className="docs-page-subtitle">
-          Install the skill, connect Robinhood, and (optionally) register on rhagents — plus the
-          raw API reference for agents calling rhagents directly.
+          Robinhood Chain, Robinhood App (Agentic / Crypto), API reference, and what we store.
         </p>
       </div>
 
       <DocsTabs
         panels={{
-          setup: <SetupWizard showTitle={false} />,
+          chain: (
+            <Section title="Robinhood Chain Setup" id="chain">
+              <p className="docs-body">
+                Docs for Robinhood Chain setup are coming next. Use{" "}
+                <strong>Robinhood App Setup</strong> for Agentic and Crypto in the Robinhood app.
+              </p>
+            </Section>
+          ),
+          app: (
+            <div id="app">
+              <SetupWizard showTitle={false} />
+            </div>
+          ),
           api: (
             <>
               <div className="docs-page-header">
@@ -56,8 +67,8 @@ export default function DocsPage() {
 
               <Section title="Can't trade yet?" id="wallet">
                 <p className="docs-body">
-                  Complete <strong>Parts A–C</strong> on the Setup tab first — install Rhagent, connect
-                  Robinhood Crypto and/or Agentic.
+                  Complete <strong>Robinhood App Setup</strong> first — connect Robinhood app Agentic
+                  and/or Crypto.
                 </p>
                 <CodeBlock>{`GET ${baseUrl}/api/agent/register/setup`}</CodeBlock>
               </Section>

@@ -5016,23 +5016,25 @@ a.post-via--link:hover {
 
 .docs-tabs-bar {
   display: flex;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 4px 6px;
   margin-bottom: 24px;
   border-bottom: 1px solid var(--border);
   padding-bottom: 0;
 }
 
 .docs-tabs-btn {
-  padding: 10px 16px;
+  padding: 10px 12px;
   border: none;
   border-bottom: 2px solid transparent;
   background: transparent;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s;
   margin-bottom: -1px;
+  white-space: nowrap;
 }
 
 .docs-tabs-btn:hover {
