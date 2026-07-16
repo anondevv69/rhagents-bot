@@ -1,4 +1,4 @@
-/** "Which agent are you?" — one fork drives Part C; Parts A/B/D stay shared. */
+/** "Which agent are you?" — one fork drives Agentic connect; Crypto + register stay shared. */
 
 import {
   CLIENTS_DOC_URL,
@@ -21,6 +21,7 @@ export type AgentRuntimeId =
   | "chatgpt"
   | "cursor"
   | "codex"
+  | "codex-cli"
   | "grok"
   | "other-mcp"
   | "bankr"
@@ -45,8 +46,11 @@ export interface AgentRuntimeOption {
   intro: string;
   commands: AgentRuntimeCommand[];
   note?: string;
-  /** 1–3 short steps for Robinhood's native MCP (only when agenticPath === "native"). */
+  /** Click-path steps for Robinhood's native MCP (only when agenticPath === "native"). */
   nativeMcpSteps?: string[];
+  /** Optional docs link for that client's MCP UI. */
+  nativeDocsUrl?: string;
+  nativeDocsLabel?: string;
 }
 
 const ROBINHOOD_MCP = "https://agent.robinhood.com/mcp/trading";
@@ -63,10 +67,12 @@ export const AGENT_RUNTIME_OPTIONS: AgentRuntimeOption[] = [
     intro: "Add the marketplace, then install the plugin:",
     commands: [{ text: RHAGENT_CLAUDE_PLUGIN_INSTALL, label: "Copy Claude Code install" }],
     nativeMcpSteps: [
-      `Run: claude mcp add robinhood-trading --transport http ${ROBINHOOD_MCP}`,
-      "In Claude Code: /mcp → select robinhood-trading → authenticate",
-      "Finish Agentic account onboarding in a desktop browser when Robinhood prompts you",
+      `Run in your terminal: claude mcp add robinhood-trading --transport http ${ROBINHOOD_MCP}`,
+      "Enter /mcp in Claude Code",
+      "Select robinhood-trading and authenticate → finish Agentic account onboarding on desktop",
     ],
+    nativeDocsUrl: "https://docs.anthropic.com/en/docs/claude-code/mcp",
+    nativeDocsLabel: "Claude Code MCP docs",
   },
   {
     id: "claude-desktop",
@@ -82,10 +88,12 @@ export const AGENT_RUNTIME_OPTIONS: AgentRuntimeOption[] = [
     ],
     note: "No GitHub plugin marketplace on Claude Desktop — skill loads from URL / instructions.",
     nativeMcpSteps: [
-      "Settings → Connectors → Add custom connector",
-      `MCP link: ${ROBINHOOD_MCP}`,
+      "Go to Settings → Connectors → Add custom connector",
+      `Paste MCP link: ${ROBINHOOD_MCP}`,
       "Authenticate → finish Agentic account onboarding on desktop",
     ],
+    nativeDocsUrl: "https://support.anthropic.com/en/articles/11175166-getting-started-with-custom-connectors-using-remote-mcp",
+    nativeDocsLabel: "Claude Desktop connectors",
   },
   {
     id: "chatgpt",
@@ -102,9 +110,12 @@ export const AGENT_RUNTIME_OPTIONS: AgentRuntimeOption[] = [
     note: "No GitHub plugin marketplace on ChatGPT — skill loads from instructions.",
     nativeMcpSteps: [
       "Turn on Developer Mode",
-      "Settings → Apps → Create app",
-      `Add MCP link: ${ROBINHOOD_MCP} → authenticate → finish Agentic onboarding on desktop`,
+      "Go to Settings → Apps → Create app",
+      `Paste MCP link: ${ROBINHOOD_MCP}`,
+      "Authenticate → finish Agentic account onboarding on desktop",
     ],
+    nativeDocsUrl: "https://platform.openai.com/docs/guides/tools-remote-mcp",
+    nativeDocsLabel: "ChatGPT / OpenAI MCP docs",
   },
   {
     id: "cursor",
@@ -115,21 +126,37 @@ export const AGENT_RUNTIME_OPTIONS: AgentRuntimeOption[] = [
     commands: [{ text: RHAGENT_SKILLS_SH_INSTALL, label: "Copy Cursor install" }],
     nativeMcpSteps: [
       `Give your agent this MCP link: ${ROBINHOOD_MCP}`,
-      "Settings → Cursor Settings → Tools & MCPs → Connect",
+      "Go to Settings → Cursor Settings",
+      "Select Tools & MCPs → Connect → authenticate → finish Agentic account onboarding on desktop",
+    ],
+    nativeDocsUrl: "https://docs.cursor.com/context/model-context-protocol",
+    nativeDocsLabel: "Cursor MCP docs",
+  },
+  {
+    id: "codex",
+    label: "Codex",
+    group: "native",
+    agenticPath: "native",
+    intro: "Run in your project:",
+    commands: [{ text: RHAGENT_SKILLS_SH_INSTALL, label: "Copy Codex install" }],
+    nativeMcpSteps: [
+      "Go to Settings → MCP servers",
+      "Select Streamable HTTP",
+      `Paste MCP link: ${ROBINHOOD_MCP}`,
       "Authenticate → finish Agentic account onboarding on desktop",
     ],
   },
   {
-    id: "codex",
-    label: "Codex / Codex CLI",
+    id: "codex-cli",
+    label: "Codex CLI",
     group: "native",
     agenticPath: "native",
-    intro: "Run in your project (or use Claude Code plugin install):",
-    commands: [{ text: RHAGENT_SKILLS_SH_INSTALL, label: "Copy Codex install" }],
+    intro: "Run in your project (or use the Claude Code plugin install):",
+    commands: [{ text: RHAGENT_SKILLS_SH_INSTALL, label: "Copy Codex CLI install" }],
     nativeMcpSteps: [
-      `Codex UI: Settings → MCP servers → Streamable HTTP → ${ROBINHOOD_MCP}`,
-      `Codex CLI: codex mcp add robinhood-trading --url ${ROBINHOOD_MCP} → /mcp → authenticate`,
-      "Finish Agentic account onboarding on desktop",
+      `Run in your terminal: codex mcp add robinhood-trading --url ${ROBINHOOD_MCP}`,
+      "Enter /mcp in Codex CLI",
+      "Select robinhood-trading → finish Agentic account onboarding on desktop",
     ],
   },
   {
@@ -174,7 +201,7 @@ export const AGENT_RUNTIME_OPTIONS: AgentRuntimeOption[] = [
     agenticPath: "token",
     intro: "Paste this into your Bankr chat:",
     commands: [{ text: RHAGENT_SKILL_INSTALL, label: "Copy for Bankr" }],
-    note: "No plugin marketplace on Bankr — the skill installs straight from chat. Agentic uses our OAuth script (Part C).",
+    note: "No plugin marketplace on Bankr — the skill installs straight from chat. Agentic uses our OAuth script.",
   },
   {
     id: "opencode",
@@ -183,7 +210,7 @@ export const AGENT_RUNTIME_OPTIONS: AgentRuntimeOption[] = [
     agenticPath: "token",
     intro: "Run in your project:",
     commands: [{ text: RHAGENT_SKILLS_SH_INSTALL, label: "Copy OpenCode install" }],
-    note: "OpenCode is not on Robinhood's native MCP list — use our OAuth token flow for Agentic (Part C).",
+    note: "OpenCode is not on Robinhood's native MCP list — use our OAuth token flow for Agentic.",
   },
   {
     id: "openclaw",
@@ -192,7 +219,7 @@ export const AGENT_RUNTIME_OPTIONS: AgentRuntimeOption[] = [
     agenticPath: "token",
     intro: "Paste this into your OpenClaw chat:",
     commands: [{ text: RHAGENT_SKILL_INSTALL, label: "Copy for OpenClaw" }],
-    note: "No native Robinhood MCP — use our OAuth token flow for Agentic (Part C).",
+    note: "No native Robinhood MCP — use our OAuth token flow for Agentic.",
   },
   {
     id: "other",
@@ -201,7 +228,7 @@ export const AGENT_RUNTIME_OPTIONS: AgentRuntimeOption[] = [
     agenticPath: "token",
     intro: "In any agent chat, paste:",
     commands: [{ text: RHAGENT_SKILL_INSTALL, label: "Copy install line" }],
-    note: "If your runtime can't open a browser for Robinhood OAuth, use Part C (token flow).",
+    note: "If your runtime can't open a browser for Robinhood OAuth, use our token flow for Agentic.",
   },
 
   // ── Our Telegram / Discord trading bots ────────────────────────────────────
@@ -226,7 +253,10 @@ export const AGENT_RUNTIME_OPTIONS: AgentRuntimeOption[] = [
 ];
 
 export function getAgentRuntimeOption(id: AgentRuntimeId): AgentRuntimeOption {
-  return AGENT_RUNTIME_OPTIONS.find((o) => o.id === id) ?? AGENT_RUNTIME_OPTIONS.find((o) => o.id === "bankr")!;
+  return (
+    AGENT_RUNTIME_OPTIONS.find((o) => o.id === id) ??
+    AGENT_RUNTIME_OPTIONS.find((o) => o.id === "claude-code")!
+  );
 }
 
 export const AGENT_GROUP_LABELS: Record<AgentRuntimeOption["group"], string> = {
@@ -239,3 +269,20 @@ export const ROBINHOOD_MCP_URL = ROBINHOOD_MCP;
 export const ROBINHOOD_AGENTIC_OVERVIEW_URL = RH_OVERVIEW;
 export const ROBINHOOD_TRADING_WITH_AGENT_URL =
   "https://robinhood.com/us/en/support/articles/trading-with-your-agent/";
+
+/** Plain-language product cards for the setup wizard. */
+export const PRODUCT_AGENTIC = {
+  title: "Robinhood Agentic (stocks & options)",
+  summary:
+    "Trades stocks and options through a dedicated Robinhood Agentic account — the same account you open in the Robinhood app / web when you connect an AI agent. Quotes, portfolio, orders, option chains, scans.",
+  examples: "e.g. SPCX, NVDA, AAPL calls — bought and held in your Robinhood Agentic account.",
+};
+
+export const PRODUCT_CRYPTO = {
+  title: "Robinhood Crypto (API Trading)",
+  summary:
+    "Trades crypto pairs through Robinhood Crypto API Trading — BTC, DOGE, ETH, and other listed pairs in your Robinhood Crypto account. Separate from Agentic; Robinhood's native Trading MCP does not cover crypto.",
+  examples: "e.g. BTC-USD, DOGE-USD, ETH-USD — bought and held in your Robinhood Crypto account.",
+};
+
+export type VerifyProduct = "agentic" | "crypto" | "both";
