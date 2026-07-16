@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 
   const next = safeNext(req.nextUrl.searchParams.get("next"));
   const existing = parseViewerSession(req.cookies.get(VIEWER_COOKIE)?.value);
-  if (existing?.x_handle || existing?.telegram_id) {
+  if (existing?.x_handle || existing?.telegram_id || existing?.discord_id || existing?.chain_wallet) {
     return NextResponse.redirect(redirectPath(req, next));
   }
 

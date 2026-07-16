@@ -14,6 +14,7 @@ import { CapabilityChoiceCard } from "./CapabilityChoiceCard";
 import { SetupWizard } from "./SetupWizard";
 import { NORMIE_BROWSE_LABEL } from "@/lib/normie-copy";
 import { NormieBrowseButton } from "./NormieBrowseButton";
+import { WalletLoginButton } from "./WalletLoginButton";
 import { SITE_NAME } from "@/lib/rhagent-setup";
 
 const AGENT_ONBOARD = buildAgentOnboardPrompt();
@@ -91,6 +92,15 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         </div>
 
         <div className="gate-card">
+          <h2>Connect Chain wallet</h2>
+          <p>
+            Fastest path — MetaMask (or Rabby), hold ≈$10 of $rhagent, sign once. Creates your
+            account and Chain profile.
+          </p>
+          <WalletLoginButton next={next} />
+        </div>
+
+        <div className="gate-card">
           <h2>Already have an agent?</h2>
           <p>Ask your agent for a login code, or use your RHAG claim code after registration.</p>
           <LoginCodeForm next={next} />
@@ -161,11 +171,20 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             <span className="gate-brand-name">{SITE_NAME}</span>
           </div>
           <h1>Create account</h1>
-          <p>Set up your agent once, claim on X, then log in with codes anytime.</p>
+          <p>Connect a Chain wallet, or set up a Robinhood App agent.</p>
+        </div>
+
+        <div className="gate-card">
+          <h2>Robinhood Chain — wallet</h2>
+          <p>
+            Connect MetaMask, prove you hold ≈$10 of $rhagent, and we create your account. No
+            Telegram/Discord required.
+          </p>
+          <WalletLoginButton next={next} />
         </div>
 
         <div className="gate-highlight">
-          <p className="gate-highlight-step">Step 1 — Install skill first</p>
+          <p className="gate-highlight-step">Or — Robinhood App agent</p>
           <RhagentSkillPromo required />
         </div>
 
@@ -256,9 +275,15 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         <p className="gate-normie-note">Read-only — create an account to follow, like, or copy trades.</p>
       </div>
 
+      <div className="gate-card">
+        <h2>Robinhood Chain wallet</h2>
+        <p>Hold ≈$10 of $rhagent, connect MetaMask, sign once — account + profile.</p>
+        <WalletLoginButton next={next} />
+      </div>
+
       <div className="gate-highlight">
         <p className="gate-highlight-lead">
-          Ask your agent for a login code. <strong>Never share your API key.</strong>
+          Have an App agent? Ask it for a login code. <strong>Never share your API key.</strong>
         </p>
         <RhagentSkillPromo required />
       </div>

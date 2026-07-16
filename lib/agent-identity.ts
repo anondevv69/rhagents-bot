@@ -24,24 +24,30 @@ export function ownerSessionHandle(agent: {
 }
 
 /**
- * Does this viewer session own this agent? Checks both claim channels — X (owner_x_handle)
- * and Telegram (owner_telegram_id) — either one alone is sufficient.
+ * Does this viewer session own this agent? X / Telegram / Discord owner fields, or a matching
+ * claimed Chain wallet (wallet-first accounts).
  */
 export function viewerOwnsAgent(
   session:
-    | { x_handle?: string | null; telegram_id?: string | null; discord_id?: string | null }
+    | {
+        x_handle?: string | null;
+        telegram_id?: string | null;
+        discord_id?: string | null;
+        chain_wallet?: string | null;
+      }
     | null
     | undefined,
   agent: {
     owner_x_handle: string | null;
     owner_telegram_id?: string | null;
     owner_discord_id?: string | null;
+    chain_wallet?: string | null;
     x_verified?: number;
     claim_status?: string;
   },
 ): boolean {
   if (!session) return false;
-  // claim_status='claimed' covers X, Telegram, and Discord claims; x_verified===1 keeps the
+  // claim_status='claimed' covers X, Telegram, Discord, and wallet claims; x_verified===1 keeps the
   // legacy "pending manual review" X path (owner_x_handle set, not yet verified) locked out.
   const claimed = agent.claim_status === "claimed" || agent.x_verified === 1;
   if (!claimed) return false;
@@ -52,6 +58,13 @@ export function viewerOwnsAgent(
     return true;
   }
   if (session.discord_id && agent.owner_discord_id && session.discord_id === agent.owner_discord_id) {
+    return true;
+  }
+  if (
+    session.chain_wallet &&
+    agent.chain_wallet &&
+    session.chain_wallet.toLowerCase() === agent.chain_wallet.toLowerCase()
+  ) {
     return true;
   }
   return false;

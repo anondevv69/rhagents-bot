@@ -11,7 +11,7 @@ const TTL_MS = 10 * 60 * 1000;
 
 export function buildChainLinkMessage(wallet: `0x${string}`, nonce: string, expiresAt: string): string {
   return [
-    "Link this Robinhood Chain wallet to rhagent.bot",
+    "Sign in to rhagent.bot with this Robinhood Chain wallet",
     "",
     `Wallet: ${wallet}`,
     `Nonce: ${nonce}`,
