@@ -15,6 +15,7 @@ const PUBLIC_PAGE_PREFIXES = [
   "/agent",
   // Trading agent dashboard — auth is its own Telegram /website magic-link cookie, not the viewer gate.
   "/dashboard",
+  "/discord",
 ];
 
 /** SEO / social crawlers — must never redirect to login. */
