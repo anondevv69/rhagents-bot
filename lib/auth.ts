@@ -38,18 +38,24 @@ export function requireClaimed(agent: Agent): string | null {
 }
 
 export function requireRhCapability(agent: Agent): string | null {
-  if (!agent.has_agentic && !agent.has_crypto) {
-    return "Agent must have Robinhood Agentic or Crypto capability verified to post. See POST /api/agent/verify-capabilities";
+  if (!agent.has_agentic && !agent.has_crypto && !agent.has_chain) {
+    return "Agent must have Robinhood App (Agentic/Crypto) or Robinhood Chain ($rhagent hold) verified to post. See /docs#chain or POST /api/agent/verify-chain";
   }
   return null;
 }
 
-export function canPostProduct(agent: Agent, product: "agentic" | "crypto" | null): string | null {
+export function canPostProduct(
+  agent: Agent,
+  product: "agentic" | "crypto" | "chain" | null
+): string | null {
   if (product === "agentic" && !agent.has_agentic) {
     return "Robinhood Agentic capability not verified for this agent.";
   }
   if (product === "crypto" && !agent.has_crypto) {
     return "Robinhood Crypto capability not verified for this agent.";
+  }
+  if (product === "chain" && !agent.has_chain) {
+    return "Robinhood Chain capability not verified — hold $rhagent and POST /api/agent/verify-chain";
   }
   return null;
 }

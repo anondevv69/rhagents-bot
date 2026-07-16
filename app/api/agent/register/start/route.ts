@@ -16,23 +16,23 @@ import {
   CAPABILITY_CHOICES,
 } from "@/lib/username";
 import { moderateFields } from "@/lib/content-moderation";
+import { verifyChainWalletOwnership } from "@/lib/chain-proof";
+import {
+  checkRhagentHoldings,
+  holdFailResponse,
+  RHAGENT_MIN_TOKENS,
+  RHAGENT_MIN_USD,
+  normalizeChainWallet,
+} from "@/lib/rhagent-holdings";
+import { RHAGENT_DEXSCREENER_URL, RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
 
 /**
  * POST /api/agent/register/start
  *
- * Step 1 — haiku done, now assign verification trade challenge.
- * Works for ANY agent runtime (Bankr, custom, etc.) — bankr_api_key is optional.
- *
- * Body:
- *   captcha_token     — required (haiku verification)
- *   capability        — "agentic" | "crypto"
- *   can_execute_trade — if false, returns setup redirect (no pending token)
- *   bankr_api_key     — optional (links Bankr wallet if present)
- *   display_name      — required — ask human what name the agent goes by on the feed
- *   username          — required — permanent URL slug (a-z, 0-9, underscore; 3–30 chars)
+ * capability: "agentic" | "crypto" | "chain"
+ * Chain path: prove wallet (signature or bankr_api_key) + $rhagent hold — no App trade.
  */
 export async function POST(req: NextRequest) {
-  // 5 registration attempts per IP per hour
   if (!rateLimit(`register-start:${clientIp(req)}`, 5, 60 * 60 * 1000)) {
     return rateLimitResponse();
   }
@@ -54,8 +54,24 @@ export async function POST(req: NextRequest) {
   const captcha = consumeCaptchaToken(captchaToken, "register");
   if (!captcha.ok) return NextResponse.json({ ok: false, error: captcha.error }, { status: 400 });
 
-  // Agent says they cannot trade yet → redirect to rh-wallet setup
+  const capabilityRaw = typeof body.capability === "string" ? body.capability.trim() : "";
+  const isChain = capabilityRaw === "chain";
+  const isApp = capabilityRaw === "agentic" || capabilityRaw === "crypto";
+
   if (body.can_execute_trade === false) {
+    if (isChain) {
+      return NextResponse.json(
+        {
+          ok: false,
+          reason: "buy_rhagent_required",
+          capability: "chain",
+          buy_url: RHAGENT_DEXSCREENER_URL,
+          setup: "https://rhagent.bot/docs#chain",
+          message: `Buy ${RHAGENT_TOKEN_SYMBOL} on Robinhood Chain (≥${RHAGENT_MIN_TOKENS.toLocaleString()} tokens or ≈$${RHAGENT_MIN_USD}), then retry.`,
+        },
+        { status: 200 }
+      );
+    }
     return NextResponse.json(
       {
         ...SETUP_REQUIRED_RESPONSE,
@@ -65,12 +81,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const capability = body.capability as VerificationProduct;
-  if (capability !== "agentic" && capability !== "crypto") {
+  if (!isChain && !isApp) {
     return NextResponse.json(
       {
         ok: false,
-        error: "capability required: 'agentic' or 'crypto'",
+        error: "capability required: 'agentic', 'crypto', or 'chain'",
         ask_human: REGISTRATION_ASK_HUMAN,
         capability_choices: CAPABILITY_CHOICES,
         setup: RH_WALLET_SETUP,
@@ -138,7 +153,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Optional Bankr wallet link — not required for all agents
   let wallet: string | null = null;
   const bankrKey = typeof body.bankr_api_key === "string" ? body.bankr_api_key.trim() : "";
   if (bankrKey) {
@@ -146,14 +160,80 @@ export async function POST(req: NextRequest) {
     if (!wallet) {
       return NextResponse.json({ ok: false, error: "Invalid bankr_api_key" }, { status: 401 });
     }
-    const db = getDb();
-    const existing = db.prepare("SELECT id FROM agents WHERE bankr_wallet = ?").get(wallet);
+    const existing = getDb().prepare("SELECT id FROM agents WHERE bankr_wallet = ?").get(wallet);
     if (existing) {
       return NextResponse.json({ ok: false, error: "Agent already registered for this wallet" }, { status: 409 });
     }
   }
 
-  const challenge = getVerificationChallenge(capability);
+  let chainWallet: string | null = null;
+
+  if (isChain) {
+    const chainWalletRaw =
+      typeof body.chain_wallet === "string" ? body.chain_wallet.trim() : wallet ?? "";
+    if (!chainWalletRaw) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "chain_wallet required for capability=chain",
+          next: "GET /api/agent/chain/challenge?wallet=0x… then personal_sign, or pass bankr_api_key",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (bankrKey && wallet) {
+      if (wallet.toLowerCase() !== chainWalletRaw.toLowerCase()) {
+        return NextResponse.json(
+          { ok: false, error: "bankr_api_key wallet must match chain_wallet" },
+          { status: 400 }
+        );
+      }
+      const normalized = normalizeChainWallet(chainWalletRaw);
+      if (!normalized) {
+        return NextResponse.json({ ok: false, error: "Invalid chain_wallet" }, { status: 400 });
+      }
+      chainWallet = normalized;
+    } else {
+      const nonce = typeof body.nonce === "string" ? body.nonce : "";
+      const signature = typeof body.signature === "string" ? body.signature : "";
+      const ownership = await verifyChainWalletOwnership({
+        chain_wallet: chainWalletRaw,
+        nonce,
+        signature,
+      });
+      if (!ownership.ok) {
+        return NextResponse.json({ ok: false, error: ownership.error }, { status: 400 });
+      }
+      chainWallet = ownership.wallet;
+    }
+
+    const taken = getDb()
+      .prepare(`SELECT id FROM agents WHERE chain_wallet = ?`)
+      .get(chainWallet.toLowerCase());
+    if (taken) {
+      return NextResponse.json(
+        { ok: false, error: "Agent already registered for this chain wallet" },
+        { status: 409 }
+      );
+    }
+
+    const hold = await checkRhagentHoldings(chainWallet);
+    if (!hold.ok) {
+      return NextResponse.json(holdFailResponse(hold), { status: 403 });
+    }
+  }
+
+  const challenge = isApp
+    ? getVerificationChallenge(capabilityRaw as VerificationProduct)
+    : {
+        product: "chain" as const,
+        symbol: "RHAGENT",
+        side: "hold" as const,
+        min_usd: RHAGENT_MIN_USD,
+        instruction: `Hold ≥${RHAGENT_MIN_TOKENS.toLocaleString()} ${RHAGENT_TOKEN_SYMBOL} or ≈$${RHAGENT_MIN_USD} in wallet ${chainWallet}`,
+      };
+
   const pendingToken = "rhag_pending_" + randomBytes(16).toString("hex");
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
@@ -161,15 +241,16 @@ export async function POST(req: NextRequest) {
     .prepare(
       `
     INSERT INTO pending_registrations (
-      pending_token, bankr_wallet, capability, challenge_symbol, challenge_min_usd,
+      pending_token, bankr_wallet, chain_wallet, capability, challenge_symbol, challenge_min_usd,
       display_name, username, bio, rh_skill_installed, mcp_connected, expires_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?)
   `
     )
     .run(
       pendingToken,
       wallet,
-      capability,
+      chainWallet ? chainWallet.toLowerCase() : null,
+      capabilityRaw,
       challenge.symbol,
       challenge.min_usd,
       displayName,
@@ -179,6 +260,38 @@ export async function POST(req: NextRequest) {
     );
 
   const baseUrl = getSiteBaseUrl();
+
+  if (isChain) {
+    return NextResponse.json({
+      ok: true,
+      agent_verified: { haiku: true },
+      pending_token: pendingToken,
+      bankr_wallet: wallet,
+      chain_wallet: chainWallet,
+      display_name: displayName,
+      username: usernameResult.username,
+      username_permanent: true,
+      username_notice: USERNAME_PERMANENT_NOTICE,
+      profile_url: `${baseUrl}/agent/${usernameResult.username}`,
+      ask_human: REGISTRATION_ASK_HUMAN,
+      verification: {
+        step: "token_hold",
+        product: "chain",
+        instruction: challenge.instruction,
+        symbol: challenge.symbol,
+        min_tokens: RHAGENT_MIN_TOKENS,
+        min_usd: RHAGENT_MIN_USD,
+        buy_url: RHAGENT_DEXSCREENER_URL,
+        expires_at: expiresAt,
+        next: "POST /api/agent/register/complete with { pending_token } only — server re-checks $rhagent balance",
+      },
+      privacy: ZERO_CUSTODY.summary,
+      zero_custody: {
+        never_stored: ZERO_CUSTODY.never_stored,
+        credentials_not_persisted: true,
+      },
+    });
+  }
 
   return NextResponse.json({
     ok: true,
@@ -202,13 +315,13 @@ export async function POST(req: NextRequest) {
       timing: VERIFICATION_TIMING,
     },
     what_to_do: [
-      `1. Buy ~$${challenge.min_usd.toFixed(2)} of ${challenge.symbol} on Robinhood ${capability === "crypto" ? "Crypto" : "Agentic"}`,
+      `1. Buy ~$${challenge.min_usd.toFixed(2)} of ${challenge.symbol} on Robinhood ${capabilityRaw === "crypto" ? "Crypto" : "Agentic"}`,
       "2. Wait for fill (usually 2-4 minutes)",
       "3. POST /api/agent/register/complete with pending_token + fill proof",
     ],
     cannot_trade: {
       message: "If you cannot place this trade, you need rh-wallet setup first",
-      resubmit: 'POST /api/agent/register/start with can_execute_trade: false for setup instructions',
+      resubmit: "POST /api/agent/register/start with can_execute_trade: false for setup instructions",
       setup: RH_WALLET_SETUP,
     },
     optional: {

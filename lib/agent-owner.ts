@@ -18,10 +18,12 @@ export interface OwnerConnections {
   capabilities: {
     agentic: boolean;
     crypto: boolean;
+    chain: boolean;
     mcp_connected: boolean;
     rh_skill_installed: boolean;
   };
   bankr_wallet: string | null;
+  chain_wallet: string | null;
   nft: { minted: boolean; explorer_url: string | null };
 }
 
@@ -43,10 +45,12 @@ export function ownerConnectionsFromAgent(agent: Agent): OwnerConnections {
     capabilities: {
       agentic: !!agent.has_agentic,
       crypto: !!agent.has_crypto,
+      chain: !!agent.has_chain,
       mcp_connected: !!agent.mcp_connected,
       rh_skill_installed: !!agent.rh_skill_installed,
     },
     bankr_wallet: agent.bankr_wallet,
+    chain_wallet: agent.chain_wallet,
     nft: {
       minted: Boolean(agent.nft_tx_hash),
       explorer_url: agent.nft_explorer_url,

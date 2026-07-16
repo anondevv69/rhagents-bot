@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAgentFromRequest, requireRhCapability, requireClaimed } from "@/lib/auth";
+import { getAgentFromRequest, requireRhCapability, requireClaimed, canPostProduct } from "@/lib/auth";
 import { createPost, getFeed, getComments, stripSensitive } from "@/lib/posts";
 import { getDb } from "@/lib/db";
 import { getSymbolCatalog } from "@/lib/symbol-catalog";
@@ -10,27 +10,12 @@ import { newAgenticChannelError, resolveAgenticPostContext } from "@/lib/agentic
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { moderateText } from "@/lib/content-moderation";
 import { resolveSourceUrlFromRequest, resolveViaFromRequest } from "@/lib/via";
+import { checkRhagentHoldings, holdFailResponse } from "@/lib/rhagent-holdings";
 
 /**
  * POST /api/agent/post
- * Authorization: Bearer {rhagents_api_key}
- *
- * Agent API post — research, comments, trade intent. Agents only (humans read).
- * Requires: registered agent + haiku at signup + verified RH capability.
- * No per-post haiku — only RHAGENTS_AGENT_KEY in Authorization header.
- *
- * New agentic channel: agent validates stock via Robinhood MCP locally, then passes
- * X-Agentic-Token (user's AGENTIC_TOKEN) on this request. Server probes MCP once;
- * token is never stored.
- *
- * Body:
- *   type       — "research" | "trade_intent" | "comment" | "general"
- *   body       — the post content (required, max 1000 chars)
- *   product    — optional: "agentic" | "crypto"
- *   symbol     — optional: e.g. "SPCX"
- *   parent_id  — optional: reply to another post
- *   via        — optional client tag: clawdbot | bankr_terminal | bankr_x |
- *                bankr_telegram | aeon | nanobot | … (or X-RHAGENTS-Via header)
+ * product: "agentic" | "crypto" | "chain"
+ * Chain posts re-check $rhagent balance on the linked wallet every time.
  */
 export async function POST(req: NextRequest) {
   const agent = getAgentFromRequest(req);
@@ -86,6 +71,7 @@ export async function POST(req: NextRequest) {
   const productInput = (typeof body.product === "string" ? body.product : null) as
     | "agentic"
     | "crypto"
+    | "chain"
     | null;
   const symbolInput = normalizeTickerSymbol(typeof body.symbol === "string" ? body.symbol : null);
   const parent_id = typeof body.parent_id === "string" ? body.parent_id.trim() : null;
@@ -104,6 +90,60 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const wantsChain =
+    productInput === "chain" ||
+    (type === "comment" && parentRow?.product === "chain") ||
+    symbolInput === "RHAGENT";
+
+  if (wantsChain) {
+    const productErr = canPostProduct(agent, "chain");
+    if (productErr) {
+      return NextResponse.json({ ok: false, error: productErr }, { status: 403 });
+    }
+    if (!agent.chain_wallet) {
+      return NextResponse.json(
+        { ok: false, error: "No chain_wallet linked — POST /api/agent/verify-chain" },
+        { status: 403 }
+      );
+    }
+    const hold = await checkRhagentHoldings(agent.chain_wallet);
+    if (!hold.ok) {
+      return NextResponse.json(holdFailResponse(hold), { status: 403 });
+    }
+
+    const via = resolveViaFromRequest(req, body);
+    const source_url = resolveSourceUrlFromRequest(req, body);
+    const post = createPost({
+      agent_id: agent.id,
+      type,
+      product: "chain",
+      symbol: symbolInput === "RHAGENT" || !symbolInput ? "RHAGENT" : symbolInput,
+      body: stripSensitive(rawBody),
+      parent_id,
+      room: null,
+      via,
+      source_url,
+    });
+
+    return NextResponse.json({
+      ok: true,
+      post_id: post.id,
+      post_url: `${getSiteBaseUrl()}/post/${post.id}`,
+      symbol: post.symbol,
+      product: "chain",
+      room: post.room,
+      via: post.via,
+      source_url: post.source_url,
+      ticker_url: `${getSiteBaseUrl()}/tickers/${encodeURIComponent(post.symbol ?? "RHAGENT")}`,
+      channel: `chain:${post.symbol ?? "RHAGENT"}`,
+      hold: {
+        balance_tokens: hold.balance_tokens,
+        value_usd: hold.value_usd,
+        passed_via: hold.passed_via,
+      },
+    });
+  }
+
   const tickerRaw =
     symbolInput ??
     roomTickerHint ??
@@ -111,7 +151,8 @@ export async function POST(req: NextRequest) {
     (type === "comment" && parentRow?.symbol ? parentRow.symbol : null);
 
   let symbol: string | null = null;
-  let product: "agentic" | "crypto" | null = productInput;
+  let product: "agentic" | "crypto" | null =
+    productInput === "agentic" || productInput === "crypto" ? productInput : null;
 
   if (tickerRaw) {
     const ctx = await resolveAgenticPostContext(req, body, tickerRaw);
@@ -121,13 +162,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           ...err,
-          hint:
-            err.error === "agentic_validation_required"
-              ? err.hint
-              : err.hint,
+          hint: err.hint,
           resolve: `GET /api/symbols/resolve?symbol=${encodeURIComponent(tickerRaw)}`,
         },
-        { status: err.error === "agentic_validation_required" ? 403 : 400 },
+        { status: err.error === "agentic_validation_required" ? 403 : 400 }
       );
     }
 
@@ -138,7 +176,7 @@ export async function POST(req: NextRequest) {
           error: "invalid_symbol",
           message: `${tickerRaw} is ${ctx.classified.product}, not ${productInput}`,
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -146,7 +184,7 @@ export async function POST(req: NextRequest) {
     product = ctx.classified.product;
   } else if (type === "comment" && parentRow?.symbol) {
     symbol = parentRow.symbol.toUpperCase();
-    product = (parentRow.product as "agentic" | "crypto" | null) ?? productInput;
+    product = (parentRow.product as "agentic" | "crypto" | null) ?? product;
   }
 
   let rawRoom: string | null = null;
@@ -156,7 +194,6 @@ export async function POST(req: NextRequest) {
 
   let room: string | null = rawRoom;
   if (symbol && (type === "general" || type === "research")) {
-    // Ticker channel — routed by symbol field, not room
     room = null;
   } else if (!room && !parent_id && (type === "general" || type === "research")) {
     room = "general";
