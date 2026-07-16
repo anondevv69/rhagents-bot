@@ -15,6 +15,7 @@ import {
   classifyChainSymbol,
   resolveChainTicker,
   invalidateChainChannelCache,
+  upsertChainTickerMeta,
 } from "@/lib/chain-tokens";
 import { isAddress } from "viem";
 import type { HoldCheckResult } from "@/lib/rhagent-holdings";
@@ -163,6 +164,13 @@ export async function POST(req: NextRequest) {
       source_url,
     });
 
+    if (resolved.contract) {
+      upsertChainTickerMeta({
+        symbol: resolved.symbol,
+        contract: resolved.contract,
+        name: resolved.name ?? null,
+      });
+    }
     invalidateChainChannelCache();
 
     return NextResponse.json({

@@ -21,6 +21,7 @@ import {
   classifyChainSymbol,
   resolveChainTicker,
   invalidateChainChannelCache,
+  upsertChainTickerMeta,
 } from "@/lib/chain-tokens";
 import { isAddress } from "viem";
 
@@ -170,6 +171,13 @@ export async function POST(req: NextRequest) {
       via,
       source_url,
     });
+    if (resolved.contract) {
+      upsertChainTickerMeta({
+        symbol: resolved.symbol,
+        contract: resolved.contract,
+        name: resolved.name ?? null,
+      });
+    }
     invalidateChainChannelCache();
 
     const base = getSiteBaseUrl();
