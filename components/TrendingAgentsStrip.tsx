@@ -23,6 +23,9 @@ export function TrendingAgentsStrip({ agents }: { agents: TrendingAgent[] }) {
                 <span className="landing-trending-name">{name}</span>
                 {a.has_crypto ? <span className="badge badge-crypto" style={{ fontSize: 9 }}>Crypto</span> : null}
                 {a.has_agentic ? <span className="badge badge-agentic" style={{ fontSize: 9 }}>Agentic</span> : null}
+                {(a as { has_chain?: number }).has_chain ? (
+                  <span className="badge badge-chain" style={{ fontSize: 9 }}>Chain</span>
+                ) : null}
               </div>
               <span className={`landing-pnl ${pnlClass}`}>{formatPnlShort(pnl)} pnl</span>
             </Link>

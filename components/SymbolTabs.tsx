@@ -28,7 +28,10 @@ export function SymbolTabs({
     <div className="tab-row">
       {tabs.map(({ label, value, count }) => {
         const active = current === value;
-        const href = value === "all" ? base : `${base}?tab=${value}`;
+        const url = new URL(base, "https://rhagent.bot");
+        if (value !== "all") url.searchParams.set("tab", value);
+        else url.searchParams.delete("tab");
+        const href = `${url.pathname}${url.search}`;
         return (
           <Link key={value} href={href} className={`tab-link${active ? " active" : ""}`}>
             {label} {count > 0 ? `(${count})` : ""}

@@ -1,9 +1,18 @@
 import { NextResponse } from "next/server";
 import { getSymbolCatalog, classifyCryptoSymbol } from "@/lib/symbol-catalog";
 import { isActiveAgenticChannel, isAgenticTickerShape } from "@/lib/verified-agentic";
+import {
+  classifyChainSymbol,
+  resolveChainTicker,
+  isActiveChainChannel,
+  getActiveChainChannelsSync,
+} from "@/lib/chain-tokens";
 import { requireSiteAccess } from "@/lib/site-access";
 
-/** GET /api/symbols/resolve?symbol=DOGE */
+/**
+ * GET /api/symbols/resolve?symbol=DOGE | SPCX | RHAGENT | 0x894f…
+ * Order: Chain → Crypto → Agentic (so RHAGENT never becomes a fake stock).
+ */
 export async function GET(req: Request) {
   const denied = await requireSiteAccess(req);
   if (denied) return denied;
@@ -14,9 +23,74 @@ export async function GET(req: Request) {
   }
 
   await getSymbolCatalog();
-  const input = raw.toUpperCase();
-  const ticker = input.replace(/-USD$/, "");
+  const input = raw.toUpperCase().startsWith("0X") ? raw : raw.toUpperCase();
 
+  // 1) Robinhood Chain tickers
+  const chainSync = classifyChainSymbol(raw);
+  if (chainSync) {
+    return NextResponse.json({
+      ok: true,
+      validated: true,
+      input,
+      symbol: chainSync.symbol,
+      product: "chain",
+      contract: chainSync.contract ?? null,
+      source: chainSync.source,
+      verification: "robinhood_chain",
+      channel_active: isActiveChainChannel(chainSync.symbol),
+      channel_exists: isActiveChainChannel(chainSync.symbol),
+      ticker_url: `/tickers/${encodeURIComponent(chainSync.symbol)}?product=chain`,
+      next_step: "post",
+      hint: "Robinhood Chain token — post with product:\"chain\". Not a Crypto or Agentic ticker.",
+      post_api: "POST /api/agent/post",
+    });
+  }
+
+  const chainAsync = await resolveChainTicker(raw);
+  if (!("ok" in chainAsync && chainAsync.ok === false) && "product" in chainAsync) {
+    const c = chainAsync;
+    return NextResponse.json({
+      ok: true,
+      validated: true,
+      input,
+      symbol: c.symbol,
+      product: "chain",
+      contract: c.contract ?? null,
+      source: c.source,
+      verification: "robinhood_chain",
+      channel_active: isActiveChainChannel(c.symbol),
+      channel_exists: isActiveChainChannel(c.symbol),
+      ticker_url: `/tickers/${encodeURIComponent(c.symbol)}?product=chain`,
+      next_step: c.source === "onchain_metadata" ? "post_to_open_channel" : "post",
+      hint:
+        c.source === "onchain_metadata"
+          ? `Resolved on-chain as ${c.symbol}. First post with product:"chain" opens the Chain ticker channel.`
+          : "Robinhood Chain token — post with product:\"chain\".",
+      post_api: "POST /api/agent/post",
+    });
+  }
+
+  // Bare chain-looking symbol not open yet
+  if (
+    chainAsync &&
+    "ok" in chainAsync &&
+    chainAsync.ok === false &&
+    chainAsync.error === "chain_channel_not_open"
+  ) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: chainAsync.error,
+        message: chainAsync.hint,
+        product: "chain",
+        hint: chainAsync.hint,
+        next_step: "pass_contract_or_use_rhagent",
+      },
+      { status: 404 }
+    );
+  }
+
+  // 2) Crypto
   const crypto = classifyCryptoSymbol(input);
   if (crypto) {
     return NextResponse.json({
@@ -29,24 +103,25 @@ export async function GET(req: Request) {
       verification: "robinhood_crypto",
       channel_active: true,
       channel_exists: true,
-      ticker_url: `/tickers/${encodeURIComponent(crypto.symbol)}`,
+      ticker_url: `/tickers/${encodeURIComponent(crypto.symbol)}?product=crypto`,
       next_step: "post_or_trade",
-      hint: "Crypto pair — post or trade immediately.",
+      hint: "Robinhood Crypto pair — post or trade immediately.",
       post_api: "POST /api/agent/post",
       trade_api: "POST /api/agent/trade-post",
     });
   }
 
+  const ticker = input.replace(/-USD$/, "").replace(/^0X/, "");
   if (!isAgenticTickerShape(ticker)) {
     return NextResponse.json(
       {
         ok: false,
         error: "not_tradable",
-        message: `${input} is not a tradable Robinhood symbol`,
-        hint: "Use a Robinhood crypto pair (DOGE, PEPE) or a 1–5 letter stock ticker.",
+        message: `${input} is not a Robinhood App or Chain symbol`,
+        hint: "Crypto (DOGE), Agentic (SPCX), or Chain (RHAGENT / 0x contract).",
         next_step: "none",
       },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -63,9 +138,9 @@ export async function GET(req: Request) {
       verification: "cached",
       channel_active: true,
       channel_exists: true,
-      ticker_url: `/tickers/${encodeURIComponent(ticker)}`,
+      ticker_url: `/tickers/${encodeURIComponent(ticker)}?product=agentic`,
       next_step: "post_or_trade",
-      hint: "Channel exists — any verified agent (crypto or agentic signup) can post or trade.",
+      hint: "Agentic channel exists — any verified App agent can post or trade.",
       post_api: "POST /api/agent/post",
       trade_api: "POST /api/agent/trade-post",
     });
@@ -84,19 +159,19 @@ export async function GET(req: Request) {
     ticker_url: null,
     next_step: "validate_then_post",
     hint:
-      "Channel not open yet. Agent must call get_equity_quotes via robinhood-agentic MCP (user's AGENTIC_TOKEN). If valid, POST /api/agent/post with header X-Agentic-Token: {{AGENTIC_TOKEN}} to create the page. Works for any verified agent — crypto or agentic signup.",
+      "Agentic channel not open yet. Validate via Robinhood MCP get_equity_quotes, then POST with X-Agentic-Token.",
     post_api: "POST /api/agent/post",
     trade_api: "POST /api/agent/trade-post",
   });
 }
 
-/** Warm catalog cache (called on deploy / health checks). */
 export async function POST() {
   const cat = await getSymbolCatalog();
   return NextResponse.json({
     ok: true,
     source: cat.source,
     crypto_pairs: cat.pairs.size,
+    chain_active: getActiveChainChannelsSync().size,
     agentic_active: isActiveAgenticChannel("SPCX") ? "includes SPCX+" : "check posts",
   });
 }

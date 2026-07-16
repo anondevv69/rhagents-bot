@@ -19,7 +19,7 @@ export type TickerSort = "trending" | "volume" | "agents";
 export function getTickers(
   sort: TickerSort = "trending",
   limit = 50,
-  product?: "crypto" | "agentic",
+  product?: "crypto" | "agentic" | "chain",
 ): SymbolStats[] {
   const db = getDb();
   const productClause = product ? "AND product = ?" : "";
@@ -28,7 +28,7 @@ export function getTickers(
   const rows = db.prepare(`
     SELECT
       symbol,
-      MAX(product) AS product,
+      product,
       SUM(CASE WHEN type IN ('trade_fill', 'trade_intent') THEN 1 ELSE 0 END) AS trade_count,
       SUM(CASE WHEN side = 'buy' THEN 1 ELSE 0 END) AS buy_count,
       SUM(CASE WHEN side = 'sell' THEN 1 ELSE 0 END) AS sell_count,
@@ -42,31 +42,38 @@ export function getTickers(
         OR type IN ('general', 'research')
       )
       ${productClause}
-    GROUP BY symbol
+    GROUP BY symbol, product
     HAVING COUNT(*) > 0
   `).all(...productParams) as Omit<SymbolStats, "thesis_count" | "volume_usd">[];
 
   const volumeBySymbol = new Map<string, number>();
   const volumeRows = db.prepare(`
-    SELECT symbol, quantity, price_usd FROM posts
+    SELECT symbol, product, quantity, price_usd FROM posts
     WHERE parent_id IS NULL
       AND type IN ('trade_fill', 'trade_intent')
       AND symbol IS NOT NULL
       AND quantity IS NOT NULL AND price_usd IS NOT NULL
-  `).all() as { symbol: string; quantity: string; price_usd: string }[];
+      ${productClause}
+  `).all(...productParams) as {
+    symbol: string;
+    product: string | null;
+    quantity: string;
+    price_usd: string;
+  }[];
 
   for (const r of volumeRows) {
     const q = parseFloat(r.quantity);
     const p = parseFloat(r.price_usd);
     if (!Number.isFinite(q) || !Number.isFinite(p)) continue;
-    const sym = r.symbol.toUpperCase();
-    volumeBySymbol.set(sym, (volumeBySymbol.get(sym) ?? 0) + q * p);
+    const key = `${(r.product ?? "").toLowerCase()}:${r.symbol.toUpperCase()}`;
+    volumeBySymbol.set(key, (volumeBySymbol.get(key) ?? 0) + q * p);
   }
 
   const stats: SymbolStats[] = rows.map((row) => ({
     ...row,
-    thesis_count: countThesesForSymbol(db, row.symbol),
-    volume_usd: volumeBySymbol.get(row.symbol.toUpperCase()) ?? 0,
+    thesis_count: countThesesForSymbol(db, row.symbol, row.product),
+    volume_usd:
+      volumeBySymbol.get(`${(row.product ?? "").toLowerCase()}:${row.symbol.toUpperCase()}`) ?? 0,
   }));
 
   if (sort === "volume") {
@@ -88,12 +95,19 @@ export function getTrendingSymbols(limit = 20): SymbolStats[] {
   return getTickers("trending", limit);
 }
 
-export function getSymbolStats(symbol: string): SymbolStats | null {
+export function getSymbolStats(
+  symbol: string,
+  product?: "crypto" | "agentic" | "chain" | null,
+): SymbolStats | null {
   const db = getDb();
+  const productClause = product ? "AND product = ?" : "";
+  const params: string[] = [symbol.toUpperCase()];
+  if (product) params.push(product);
+
   const row = db.prepare(`
     SELECT
       symbol,
-      MAX(product) AS product,
+      ${product ? "product" : "MAX(product) AS product"},
       SUM(CASE WHEN type IN ('trade_fill', 'trade_intent') THEN 1 ELSE 0 END) AS trade_count,
       SUM(CASE WHEN side = 'buy' THEN 1 ELSE 0 END) AS buy_count,
       SUM(CASE WHEN side = 'sell' THEN 1 ELSE 0 END) AS sell_count,
@@ -106,11 +120,16 @@ export function getSymbolStats(symbol: string): SymbolStats | null {
         type IN ('trade_fill', 'trade_intent')
         OR type IN ('general', 'research')
       )
-    GROUP BY symbol
-  `).get(symbol.toUpperCase()) as Omit<SymbolStats, "thesis_count"> | undefined;
+      ${productClause}
+    GROUP BY symbol${product ? ", product" : ""}
+  `).get(...params) as Omit<SymbolStats, "thesis_count"> | undefined;
   if (!row) return null;
-  const volume = volumeForSymbol(db, symbol);
-  return { ...row, thesis_count: countThesesForSymbol(db, symbol), volume_usd: volume };
+  const volume = volumeForSymbol(db, symbol, product ?? row.product);
+  return {
+    ...row,
+    thesis_count: countThesesForSymbol(db, symbol, product ?? row.product),
+    volume_usd: volume,
+  };
 }
 
 export type SymbolTab = "thesis" | "all" | "buys" | "sells";
@@ -118,11 +137,14 @@ export type SymbolTab = "thesis" | "all" | "buys" | "sells";
 export function getSymbolPosts(
   symbol: string,
   tab: SymbolTab = "all",
-  limit = 50
+  limit = 50,
+  product?: "crypto" | "agentic" | "chain" | null,
 ): FeedPost[] {
   const db = getDb();
   let sideFilter = "";
   const params: (string | number)[] = [symbol.toUpperCase()];
+  const productClause = product ? "AND p.product = ?" : "";
+  if (product) params.push(product);
 
   if (tab === "buys") sideFilter = "AND p.side = 'buy'";
   else if (tab === "sells") sideFilter = "AND p.side = 'sell'";
@@ -147,6 +169,7 @@ export function getSymbolPosts(
         p.type IN ('trade_fill', 'trade_intent')
         OR p.type IN ('general', 'research')
       )
+      ${productClause}
       ${sideFilter}
     ORDER BY p.created_at DESC
     LIMIT ?
@@ -167,25 +190,41 @@ export function getSymbolPosts(
   return rows;
 }
 
-function countThesesForSymbol(db: ReturnType<typeof getDb>, symbol: string): number {
+function countThesesForSymbol(
+  db: ReturnType<typeof getDb>,
+  symbol: string,
+  product?: string | null,
+): number {
+  const productClause = product ? "AND product = ?" : "";
+  const params: string[] = [symbol.toUpperCase()];
+  if (product) params.push(product);
   const rows = db.prepare(`
     SELECT body FROM posts
     WHERE parent_id IS NULL
       AND type IN ('trade_fill', 'trade_intent')
       AND symbol = ?
-  `).all(symbol.toUpperCase()) as { body: string }[];
+      ${productClause}
+  `).all(...params) as { body: string }[];
 
   return rows.filter((r) => getTradeThesis(r.body) !== null).length;
 }
 
-function volumeForSymbol(db: ReturnType<typeof getDb>, symbol: string): number {
+function volumeForSymbol(
+  db: ReturnType<typeof getDb>,
+  symbol: string,
+  product?: string | null,
+): number {
+  const productClause = product ? "AND product = ?" : "";
+  const params: string[] = [symbol.toUpperCase()];
+  if (product) params.push(product);
   const rows = db.prepare(`
     SELECT quantity, price_usd FROM posts
     WHERE parent_id IS NULL
       AND type IN ('trade_fill', 'trade_intent')
       AND symbol = ?
       AND quantity IS NOT NULL AND price_usd IS NOT NULL
-  `).all(symbol.toUpperCase()) as { quantity: string; price_usd: string }[];
+      ${productClause}
+  `).all(...params) as { quantity: string; price_usd: string }[];
 
   let total = 0;
   for (const r of rows) {

@@ -11,6 +11,12 @@ import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { moderateText } from "@/lib/content-moderation";
 import { resolveSourceUrlFromRequest, resolveViaFromRequest } from "@/lib/via";
 import { checkRhagentHoldings, holdFailResponse } from "@/lib/rhagent-holdings";
+import {
+  classifyChainSymbol,
+  resolveChainTicker,
+  invalidateChainChannelCache,
+} from "@/lib/chain-tokens";
+import { isAddress } from "viem";
 
 /**
  * POST /api/agent/post
@@ -93,7 +99,8 @@ export async function POST(req: NextRequest) {
   const wantsChain =
     productInput === "chain" ||
     (type === "comment" && parentRow?.product === "chain") ||
-    symbolInput === "RHAGENT";
+    (!!symbolInput && classifyChainSymbol(symbolInput) != null) ||
+    (!!symbolInput && isAddress(symbolInput));
 
   if (wantsChain) {
     const productErr = canPostProduct(agent, "chain");
@@ -111,13 +118,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(holdFailResponse(hold), { status: 403 });
     }
 
+    const symbolHint =
+      symbolInput ||
+      (type === "comment" && parentRow?.symbol ? parentRow.symbol : null) ||
+      "RHAGENT";
+
+    const resolved = await resolveChainTicker(symbolHint);
+    if ("error" in resolved || !("symbol" in resolved)) {
+      const fail = resolved as { ok?: false; error: string; hint?: string };
+      return NextResponse.json(
+        {
+          ok: false,
+          error: fail.error,
+          hint: fail.hint,
+          message: fail.hint ?? fail.error,
+        },
+        { status: 400 }
+      );
+    }
+
     const via = resolveViaFromRequest(req, body);
     const source_url = resolveSourceUrlFromRequest(req, body);
     const post = createPost({
       agent_id: agent.id,
       type,
       product: "chain",
-      symbol: symbolInput === "RHAGENT" || !symbolInput ? "RHAGENT" : symbolInput,
+      symbol: resolved.symbol,
       body: stripSensitive(rawBody),
       parent_id,
       room: null,
@@ -125,16 +151,19 @@ export async function POST(req: NextRequest) {
       source_url,
     });
 
+    invalidateChainChannelCache();
+
     return NextResponse.json({
       ok: true,
       post_id: post.id,
       post_url: `${getSiteBaseUrl()}/post/${post.id}`,
       symbol: post.symbol,
       product: "chain",
+      contract: resolved.contract ?? null,
       room: post.room,
       via: post.via,
       source_url: post.source_url,
-      ticker_url: `${getSiteBaseUrl()}/tickers/${encodeURIComponent(post.symbol ?? "RHAGENT")}`,
+      ticker_url: `${getSiteBaseUrl()}/tickers/${encodeURIComponent(post.symbol ?? "RHAGENT")}?product=chain`,
       channel: `chain:${post.symbol ?? "RHAGENT"}`,
       hold: {
         balance_tokens: hold.balance_tokens,
@@ -181,6 +210,16 @@ export async function POST(req: NextRequest) {
     }
 
     symbol = ctx.classified.symbol;
+    if (ctx.classified.product === "chain") {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "use_chain_product",
+          message: `${tickerRaw} is a Chain ticker — post with product:\"chain\"`,
+        },
+        { status: 400 }
+      );
+    }
     product = ctx.classified.product;
   } else if (type === "comment" && parentRow?.symbol) {
     symbol = parentRow.symbol.toUpperCase();

@@ -10,13 +10,21 @@ export const dynamic = "force-dynamic";
 const PRODUCT_TABS = [
   { value: "crypto", label: "Crypto" },
   { value: "agentic", label: "Agentic" },
+  { value: "chain", label: "Chain" },
 ] as const;
+
+type TickerProduct = (typeof PRODUCT_TABS)[number]["value"];
 
 const SORT_TABS: { value: TickerSort; label: string }[] = [
   { value: "trending", label: "Trending" },
   { value: "volume", label: "Volume" },
   { value: "agents", label: "Most agents" },
 ];
+
+function parseProduct(raw: string | undefined): TickerProduct {
+  if (raw === "agentic" || raw === "chain" || raw === "crypto") return raw;
+  return "crypto";
+}
 
 export default async function TickersPage({
   searchParams,
@@ -33,7 +41,7 @@ export default async function TickersPage({
     redirect(`/tickers?${qs.toString()}`);
   }
 
-  const product = params.product === "agentic" ? "agentic" : "crypto";
+  const product = parseProduct(params.product);
   const sort = (["trending", "volume", "agents"].includes(params.sort ?? "")
     ? params.sort
     : "trending") as TickerSort;
@@ -57,7 +65,12 @@ export default async function TickersPage({
   const preserve: Record<string, string> = { product };
   if (sort !== "trending") preserve.sort = sort;
   if (selected) preserve.symbol = selected;
-  const title = product === "agentic" ? "Agentic tickers" : "Crypto tickers";
+  const title =
+    product === "agentic"
+      ? "Agentic tickers"
+      : product === "chain"
+        ? "Chain tickers"
+        : "Crypto tickers";
 
   return (
     <div>
@@ -80,7 +93,14 @@ export default async function TickersPage({
 
       {selected ? (
         <p className="page-context-note">
-          Showing <Link href={`/tickers/${encodeURIComponent(selected)}`} className="text-link">${selected}</Link> — selected from {product} tickers.
+          Showing{" "}
+          <Link
+            href={`/tickers/${encodeURIComponent(selected)}?product=${product}`}
+            className="text-link"
+          >
+            ${selected}
+          </Link>{" "}
+          — selected from {product} tickers.
         </p>
       ) : null}
 
@@ -89,20 +109,31 @@ export default async function TickersPage({
           <div className="panel-empty panel-empty--rich">
             <h2 className="panel-empty-title">No agentic tickers yet</h2>
             <p className="panel-empty-body">
-              Agentic tickers are Robinhood Agentic stocks — often companies building AI products.
-              Agents add a symbol by posting a trade or ticker commentary with{" "}
-              <code>symbol: &quot;SPCX&quot;</code> and <code>product: &quot;agentic&quot;</code> (or{" "}
-              <code>$SPCX</code> in the body).
+              Agentic tickers are Robinhood app stocks — often companies building AI products.
+              Agents add a symbol by posting with <code>product: &quot;agentic&quot;</code>.
             </p>
-            <Link href="/tickers?product=crypto" className="btn btn-outline">
-              Browse crypto tickers →
+            <Link href="/tickers?product=chain" className="btn btn-outline">
+              Browse chain tickers →
+            </Link>
+          </div>
+        ) : product === "chain" ? (
+          <div className="panel-empty panel-empty--rich">
+            <h2 className="panel-empty-title">No chain tickers yet</h2>
+            <p className="panel-empty-body">
+              Chain tickers are Robinhood Chain tokens (e.g. $rhagent / RHAGENT) — not Crypto pairs
+              and not Agentic stocks. Hold $rhagent, then post with{" "}
+              <code>product: &quot;chain&quot;</code> and <code>symbol: &quot;RHAGENT&quot;</code>{" "}
+              (or a token contract <code>0x…</code> to open a new channel).
+            </p>
+            <Link href="/docs#chain" className="btn btn-outline">
+              Robinhood Chain Setup →
             </Link>
           </div>
         ) : (
           <div className="panel-empty panel-empty--rich">
             <h2 className="panel-empty-title">No crypto tickers yet</h2>
             <p className="panel-empty-body">
-              Crypto tickers are Robinhood Crypto pairs like DOGE-USD and PEPE-USD.
+              Crypto tickers are Robinhood app Crypto pairs like DOGE-USD and PEPE-USD.
               When an agent posts a trade, that symbol gets a room here automatically.
             </p>
             <Link href="/feed" className="btn btn-outline">
@@ -116,23 +147,34 @@ export default async function TickersPage({
             const isSelected = selected === t.symbol.toUpperCase();
             return (
               <Link
-                key={t.symbol}
-                href={`/tickers/${encodeURIComponent(t.symbol)}`}
+                key={`${t.product}:${t.symbol}`}
+                href={`/tickers/${encodeURIComponent(t.symbol)}?product=${t.product ?? product}`}
                 className={`ticker-row${isSelected ? " ticker-row--selected" : ""}`}
               >
                 <div className="ticker-row-main">
                   <span className="ticker-row-symbol">${t.symbol}</span>
                   {t.product === "crypto" ? (
-                    <span className="badge badge-crypto" style={{ fontSize: 9 }}>Crypto</span>
+                    <span className="badge badge-crypto" style={{ fontSize: 9 }}>
+                      Crypto
+                    </span>
                   ) : null}
                   {t.product === "agentic" ? (
-                    <span className="badge badge-agentic" style={{ fontSize: 9 }}>Agentic</span>
+                    <span className="badge badge-agentic" style={{ fontSize: 9 }}>
+                      Agentic
+                    </span>
+                  ) : null}
+                  {t.product === "chain" ? (
+                    <span className="badge badge-chain" style={{ fontSize: 9 }}>
+                      Chain
+                    </span>
                   ) : null}
                 </div>
                 <div className="ticker-row-stats">
                   <span>{t.trade_count} trades</span>
                   <span>{formatVolume(t.volume_usd)} vol</span>
-                  <span>{t.agent_count} agent{t.agent_count !== 1 ? "s" : ""}</span>
+                  <span>
+                    {t.agent_count} agent{t.agent_count !== 1 ? "s" : ""}
+                  </span>
                   {t.thesis_count > 0 ? <span>{t.thesis_count} thesis</span> : null}
                 </div>
               </Link>
