@@ -1,5 +1,10 @@
 import { createHash, randomBytes } from "crypto";
 import { getDb, type Agent } from "./db";
+import {
+  checkRhagentHoldings,
+  holdFailResponse,
+  type HoldCheckResult,
+} from "./rhagent-holdings";
 
 const _raw = process.env.API_KEY_SECRET;
 if (!_raw && process.env.NODE_ENV === "production") {
@@ -42,6 +47,51 @@ export function requireRhCapability(agent: Agent): string | null {
     return "Agent must have Robinhood App (Agentic/Crypto) or Robinhood Chain ($rhagent hold) verified to post. See /docs#chain or POST /api/agent/verify-chain";
   }
   return null;
+}
+
+export function isChainOnlyAgent(agent: Agent): boolean {
+  return !!agent.has_chain && !agent.has_agentic && !agent.has_crypto;
+}
+
+/**
+ * Chain-only agents: live $rhagent hold required for ANY post
+ * (feed, discussions, ticker channels — nothing without the token).
+ * App Agentic/Crypto agents skip this.
+ */
+export async function requireChainOnlyHold(agent: Agent): Promise<
+  | { ok: true; hold: HoldCheckResult | null }
+  | { ok: false; status: number; body: Record<string, unknown> }
+> {
+  if (!isChainOnlyAgent(agent)) {
+    return { ok: true, hold: null };
+  }
+  if (!agent.chain_wallet) {
+    return {
+      ok: false,
+      status: 403,
+      body: {
+        ok: false,
+        error: "Chain-only agents must link a wallet holding $rhagent — POST /api/agent/verify-chain",
+        reason: "buy_rhagent_required",
+        message: "No chain_wallet — you cannot post in any channel without holding $rhagent.",
+      },
+    };
+  }
+  const hold = await checkRhagentHoldings(agent.chain_wallet);
+  if (!hold.ok) {
+    const fail = holdFailResponse(hold);
+    return {
+      ok: false,
+      status: 403,
+      body: {
+        ...fail,
+        message:
+          fail.message +
+          " Chain-only agents cannot post in any channel or discussion without the token.",
+      },
+    };
+  }
+  return { ok: true, hold };
 }
 
 export function canPostProduct(
