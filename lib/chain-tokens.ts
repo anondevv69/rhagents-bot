@@ -10,6 +10,7 @@ import { robinhoodChain } from "@/lib/onchain-config";
 import { RHAGENT_TOKEN_CONTRACT, RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
 import { getDb } from "@/lib/db";
 import { getSymbolCatalogSync, classifyCryptoSymbol } from "@/lib/symbol-catalog";
+import { assertRobinhoodChainCryptoToken } from "@/lib/robinhood-chain-crypto";
 
 export type ChainTokenMeta = {
   symbol: string;
@@ -140,7 +141,7 @@ export function chainSymbolAvoidingCryptoCollision(erc20Symbol: string): string 
 /** Resolve unknown contract → ERC-20 symbol for opening a new chain channel. */
 export async function resolveChainTokenFromContract(
   contractRaw: string
-): Promise<ChainClassification | { ok: false; error: string }> {
+): Promise<ChainClassification | { ok: false; error: string; hint?: string }> {
   if (!isAddress(contractRaw)) {
     return { ok: false, error: "Invalid contract address" };
   }
@@ -149,13 +150,22 @@ export async function resolveChainTokenFromContract(
   const seeded = classifyChainSymbol(contract);
   if (seeded) return seeded;
 
+  const gate = await assertRobinhoodChainCryptoToken(contract);
+  if (!gate.ok) {
+    return { ok: false, error: gate.error, hint: gate.hint };
+  }
+
   try {
     const client = publicClient();
-    const [symbolRaw, nameRaw] = await Promise.all([
+    const [symbolRaw] = await Promise.all([
       client.readContract({ address: contract, abi: erc20MetaAbi, functionName: "symbol" }),
-      client.readContract({ address: contract, abi: erc20MetaAbi, functionName: "name" }).catch(() => ""),
     ]);
-    const symbol = chainSymbolAvoidingCryptoCollision(String(symbolRaw ?? ""));
+    const fromMeta = chainSymbolAvoidingCryptoCollision(String(symbolRaw ?? ""));
+    const symbol =
+      fromMeta ||
+      (gate.symbol_hint
+        ? chainSymbolAvoidingCryptoCollision(gate.symbol_hint)
+        : "TOKEN.CHAIN");
     if (!symbol) {
       return { ok: false, error: "Token has no symbol()" };
     }
@@ -164,12 +174,12 @@ export async function resolveChainTokenFromContract(
       symbol,
       contract,
       source: "onchain_metadata",
-      ...(nameRaw ? {} : {}),
     };
   } catch (e) {
     return {
       ok: false,
       error: `Could not read token metadata: ${e instanceof Error ? e.message : "rpc_error"}`,
+      hint: "Contract must be a Robinhood Chain crypto token with a readable symbol().",
     };
   }
 }
@@ -198,14 +208,26 @@ export async function resolveChainTicker(raw: string): Promise<
 
   if (isAddress(input)) {
     const resolved = await resolveChainTokenFromContract(input);
-    if ("ok" in resolved && resolved.ok === false) return resolved;
+    if ("ok" in resolved && resolved.ok === false) {
+      return { ok: false, error: resolved.error, hint: resolved.hint };
+    }
     return resolved as ChainClassification;
+  }
+
+  // Reject App Crypto pairs attempted as Chain
+  const asAppCrypto = classifyCryptoSymbol(input, getSymbolCatalogSync());
+  if (asAppCrypto) {
+    return {
+      ok: false,
+      error: "app_crypto_not_chain",
+      hint: `${asAppCrypto.symbol} is Robinhood App Crypto — use product:"crypto", not Chain.`,
+    };
   }
 
   // Bare symbol not yet active — tell agent to pass contract to open channel
   return {
     ok: false,
     error: "chain_channel_not_open",
-    hint: `Chain channel ${input} is not open yet. POST with product:"chain" and symbol:"0x…contract…" (or RHAGENT) to create it. Docs: /docs#chain`,
+    hint: `Chain channel ${input} is not open yet. Pass a Robinhood Chain crypto contract (0x…) listed on DexScreener/hood.markets, or RHAGENT. Docs: /docs#chain`,
   };
 }
