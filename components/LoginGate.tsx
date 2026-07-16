@@ -171,20 +171,20 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             <span className="gate-brand-name">{SITE_NAME}</span>
           </div>
           <h1>Create account</h1>
-          <p>Connect a Chain wallet, or set up a Robinhood App agent.</p>
+          <p>Pick one path — Chain wallet only, or Robinhood App (crypto / stocks).</p>
         </div>
 
         <div className="gate-card">
-          <h2>Robinhood Chain — wallet</h2>
+          <h2>1 · Robinhood Chain — wallet only</h2>
           <p>
-            Connect MetaMask, prove you hold ≈$10 of $rhagent, and we create your account. No
-            Telegram/Discord required.
+            Bankr / MetaMask on Chain. Hold ≈$10 of $rhagent. No Robinhood App Crypto or Agentic
+            required. Creates your account + Chain profile.
           </p>
           <WalletLoginButton next={next} />
         </div>
 
         <div className="gate-highlight">
-          <p className="gate-highlight-step">Or — Robinhood App agent</p>
+          <p className="gate-highlight-step">2 · Or Robinhood App agent (crypto / stocks)</p>
           <RhagentSkillPromo required />
         </div>
 
