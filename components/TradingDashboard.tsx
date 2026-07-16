@@ -485,8 +485,9 @@ export function TradingDashboard() {
           <div className="panel">
             <h2 className="owner-settings-heading">Your skills</h2>
             <p className="owner-settings-note">
-              Skills are instructions layered onto your assistant. <strong>rhagent core</strong> is always on. Add
-              built-ins, write your own, or import one from a URL / pasted markdown.
+              Skills are instructions layered onto your assistant. <strong>rhagent core</strong> and{" "}
+              <strong>Social posting</strong> are always on. Add built-ins, write your own, or import one from a
+              URL / pasted markdown.
             </p>
             {!skills ? (
               <p className="owner-settings-note">Loading…</p>
@@ -496,7 +497,9 @@ export function TradingDashboard() {
                   <div>
                     <div className="trading-dash-row-title">
                       {s.name} {s.owned ? <span className="muted">(yours)</span> : null}{" "}
-                      {s.id === "rhagent-core" ? <span className="muted">(mandatory)</span> : null}
+                      {s.id === "rhagent-core" || s.id === "social-posting" ? (
+                        <span className="muted">(mandatory)</span>
+                      ) : null}
                     </div>
                     <div className="owner-settings-note">{s.description}</div>
                   </div>
@@ -504,7 +507,7 @@ export function TradingDashboard() {
                     <span className={`trading-dash-pill${s.enabled ? " trading-dash-pill--active" : ""}`}>
                       {s.enabled ? "on" : "off"}
                     </span>
-                    {s.id !== "rhagent-core" ? (
+                    {s.id !== "rhagent-core" && s.id !== "social-posting" ? (
                       <button
                         type="button"
                         className="btn btn-outline"
@@ -534,7 +537,7 @@ export function TradingDashboard() {
                     >
                       Download
                     </button>
-                    {s.id !== "rhagent-core" ? (
+                    {s.id !== "rhagent-core" && s.id !== "social-posting" ? (
                       <button
                         type="button"
                         className="btn btn-outline"
