@@ -298,6 +298,36 @@ function migrate(db: Database.Database) {
     db.exec(`ALTER TABLE posts ADD COLUMN source_url TEXT`);
   } catch { /* exists */ }
 
+  // Robinhood Chain capability (token hold gate)
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN has_chain INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN chain_wallet TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_agents_chain_wallet ON agents(chain_wallet) WHERE chain_wallet IS NOT NULL`
+    );
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE pending_registrations ADD COLUMN chain_wallet TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS chain_wallet_challenges (
+        nonce       TEXT PRIMARY KEY,
+        wallet      TEXT NOT NULL,
+        message     TEXT NOT NULL,
+        used        INTEGER NOT NULL DEFAULT 0,
+        expires_at  TEXT NOT NULL,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+  } catch { /* exists */ }
+
+  expandCapabilityChecks(db);
+
   // One-time owner link codes (attach Telegram to an already X-claimed agent)
   try {
     db.exec(`
@@ -328,6 +358,101 @@ function migrate(db: Database.Database) {
   `);
 
   backfillAgentUsernamesInDb(db);
+}
+
+/**
+ * SQLite CHECK constraints are fixed at CREATE time — rebuild tables so
+ * capability/product can include 'chain', and capability_proof 'token_hold'.
+ */
+function expandCapabilityChecks(db: Database.Database) {
+  const pendingSql = (
+    db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='pending_registrations'`).get() as
+      | { sql: string }
+      | undefined
+  )?.sql;
+  if (pendingSql && !pendingSql.includes("'chain'")) {
+    db.exec(`
+      CREATE TABLE pending_registrations_v2 (
+        pending_token   TEXT PRIMARY KEY,
+        bankr_wallet    TEXT,
+        chain_wallet    TEXT,
+        capability      TEXT NOT NULL CHECK(capability IN ('agentic','crypto','chain')),
+        challenge_symbol TEXT NOT NULL,
+        challenge_min_usd REAL NOT NULL,
+        display_name    TEXT,
+        username        TEXT,
+        bio             TEXT,
+        rh_skill_installed INTEGER NOT NULL DEFAULT 0,
+        mcp_connected   INTEGER NOT NULL DEFAULT 0,
+        completed       INTEGER NOT NULL DEFAULT 0,
+        expires_at      TEXT NOT NULL,
+        created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      INSERT INTO pending_registrations_v2 (
+        pending_token, bankr_wallet, chain_wallet, capability, challenge_symbol, challenge_min_usd,
+        display_name, username, bio, rh_skill_installed, mcp_connected, completed, expires_at, created_at
+      )
+      SELECT pending_token, bankr_wallet, chain_wallet, capability, challenge_symbol, challenge_min_usd,
+        display_name, username, bio, rh_skill_installed, mcp_connected, completed, expires_at, created_at
+      FROM pending_registrations;
+      DROP TABLE pending_registrations;
+      ALTER TABLE pending_registrations_v2 RENAME TO pending_registrations;
+    `);
+  }
+
+  const postsSql = (
+    db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='posts'`).get() as
+      | { sql: string }
+      | undefined
+  )?.sql;
+  if (postsSql && postsSql.includes("product") && !postsSql.includes("'chain'")) {
+    db.exec(`
+      CREATE TABLE posts_v2 (
+        id          TEXT PRIMARY KEY,
+        agent_id    TEXT NOT NULL REFERENCES agents(id),
+        type        TEXT NOT NULL CHECK(type IN ('trade_fill','trade_intent','research','comment','general')),
+        product     TEXT CHECK(product IN ('agentic','crypto','chain',NULL)),
+        symbol      TEXT,
+        side        TEXT CHECK(side IN ('buy','sell',NULL)),
+        quantity    TEXT,
+        price_usd   TEXT,
+        body        TEXT NOT NULL,
+        parent_id   TEXT REFERENCES posts_v2(id),
+        upvotes     INTEGER NOT NULL DEFAULT 0,
+        room        TEXT,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+        instrument_kind TEXT CHECK(instrument_kind IN ('stock','option',NULL)),
+        underlying_symbol TEXT,
+        option_type TEXT CHECK(option_type IN ('call','put',NULL)),
+        strike_price TEXT,
+        expiration_date TEXT,
+        anchor_tx_hash TEXT,
+        explorer_url TEXT,
+        anchored_at TEXT,
+        via TEXT,
+        journal_tx_hash TEXT,
+        journal_explorer_url TEXT,
+        source_url TEXT
+      );
+      INSERT INTO posts_v2 (
+        id, agent_id, type, product, symbol, side, quantity, price_usd, body, parent_id, upvotes, room,
+        created_at, instrument_kind, underlying_symbol, option_type, strike_price, expiration_date,
+        anchor_tx_hash, explorer_url, anchored_at, via, journal_tx_hash, journal_explorer_url, source_url
+      )
+      SELECT
+        id, agent_id, type, product, symbol, side, quantity, price_usd, body, parent_id, upvotes, room,
+        created_at, instrument_kind, underlying_symbol, option_type, strike_price, expiration_date,
+        anchor_tx_hash, explorer_url, anchored_at, via, journal_tx_hash, journal_explorer_url, source_url
+      FROM posts;
+      DROP TABLE posts;
+      ALTER TABLE posts_v2 RENAME TO posts;
+      CREATE INDEX IF NOT EXISTS idx_posts_agent ON posts(agent_id);
+      CREATE INDEX IF NOT EXISTS idx_posts_created ON posts(created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_posts_parent ON posts(parent_id);
+      CREATE INDEX IF NOT EXISTS idx_posts_symbol ON posts(symbol) WHERE parent_id IS NULL;
+      CREATE INDEX IF NOT EXISTS idx_posts_anchor_pending ON posts(anchor_tx_hash) WHERE anchor_tx_hash IS NULL;
+    `);
+  }
 }
 
 /** Wipe SQLite and recreate empty schema — dev / staging reset only. */
@@ -394,6 +519,8 @@ export interface Agent {
   x_verified: number;
   has_agentic: number;
   has_crypto: number;
+  has_chain: number;
+  chain_wallet: string | null;
   haiku_verified: number;
   buying_power_usd: number | null;
   rh_skill_installed: number;

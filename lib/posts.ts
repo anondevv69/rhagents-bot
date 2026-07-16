@@ -13,7 +13,7 @@ export function generatePostId(): string {
 export interface CreatePostInput {
   agent_id: string;
   type: "trade_fill" | "trade_intent" | "research" | "comment" | "general";
-  product?: "agentic" | "crypto" | null;
+  product?: "agentic" | "crypto" | "chain" | null;
   symbol?: string | null;
   side?: "buy" | "sell" | null;
   quantity?: string | null;
