@@ -4799,3 +4799,212 @@ a.post-via--link:hover {
 .agent-runtime-select-panel {
   min-height: 0;
 }
+
+/* ── Trading dashboard (Telegram agent settings on rhagent.bot) ───────────── */
+
+.gate-inner--dashboard {
+  max-width: min(920px, 100%);
+}
+
+.gate-page:has(.gate-inner--dashboard) {
+  justify-content: flex-start;
+  align-items: stretch;
+  padding-top: 28px;
+}
+
+.trading-dash {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.trading-dash-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.trading-dash-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.trading-dash-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.trading-dash-tab {
+  border: 1px solid var(--border-soft);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.trading-dash-tab.is-active {
+  color: var(--bg);
+  background: var(--rh-neon);
+  border-color: var(--rh-neon);
+}
+
+.trading-dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.trading-dash-stat-value {
+  margin-top: 6px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.trading-dash-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trading-dash-stack-tight {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.trading-dash-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.trading-dash-row:last-child {
+  border-bottom: 0;
+}
+
+.trading-dash-row-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.trading-dash-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.trading-dash-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid var(--border-soft);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+.trading-dash-pill--active {
+  color: var(--bg);
+  background: var(--rh-neon);
+  border-color: var(--rh-neon);
+}
+
+.trading-dash-pill--paused,
+.trading-dash-pill--frozen {
+  color: #fff;
+  background: var(--down);
+  border-color: var(--down);
+}
+
+.trading-dash-notice {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 180, 40, 0.35);
+  background: rgba(255, 180, 40, 0.08);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.trading-dash-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trading-dash-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.trading-dash-form input,
+.trading-dash-form select,
+.trading-dash-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-soft);
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.trading-dash-check {
+  flex-direction: row !important;
+  align-items: flex-start;
+  gap: 8px !important;
+  font-weight: 600 !important;
+  color: var(--text) !important;
+}
+
+.trading-dash-check input {
+  width: auto;
+  margin-top: 2px;
+}
+
+.trading-dash-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: var(--shadow-surface);
+}
+
+.trading-dash-toast.is-error {
+  border-color: rgba(255, 80, 80, 0.5);
+  color: #ffb4b4;
+}
+
+.muted {
+  color: var(--muted);
+}
