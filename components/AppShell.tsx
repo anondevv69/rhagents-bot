@@ -6,6 +6,7 @@ import { MobileNavMenu } from "./MobileNavMenu";
 import { SearchBar } from "./SearchBar";
 import { SidebarNav } from "./SidebarNav";
 import { SidebarFooter } from "./SidebarFooter";
+import { ThemeToggle } from "./ThemeToggle";
 import { TopbarAuth } from "./TopbarAuth";
 import { AppPageBody } from "./AppPageBody";
 import { RightRail } from "./RightRail";
@@ -32,6 +33,7 @@ export function AppShell({ children, readOnly = false }: { children: React.React
           <MobileNavMenu />
           <SearchBar />
           <div className="topbar-auth-slot">
+            <ThemeToggle />
             <Suspense fallback={null}>
               <TopbarAuth />
             </Suspense>
