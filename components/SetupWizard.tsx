@@ -4,6 +4,7 @@ import {
   AGENTIC_CAPABILITIES_URL,
   AGENTIC_CONNECT_CMD,
   BANKR_LOGIN_CMD,
+  CLIENTS_DOC_URL,
   getSiteBaseUrl,
   RH_WALLET_GATEWAY,
   RH_WALLET_REPO,
@@ -77,6 +78,12 @@ export function SetupWizard({
           Or copy the full first-time prompt:{" "}
           <CopyBlock text={fullPrompt} label="Copy full prompt" />
         </p>
+        <p className="setup-note">
+          On Claude Code, Claude Desktop, ChatGPT, Cursor, Codex, or Grok? Those also connect{" "}
+          <strong>Robinhood&apos;s own Trading MCP</strong> directly — see{" "}
+          <a href="/clients.md" className="text-link">/clients.md</a> for the combined
+          MCP-plus-skill steps for your client before doing Part C below.
+        </p>
       </div>
 
       <div className="setup-section">
@@ -89,7 +96,7 @@ export function SetupWizard({
           <strong>Already set up?</strong> {CRYPTO_ALREADY_HAVE}
         </div>
         <Step n={1}>
-          <p>Generate a keypair (skip if you already have one):</p>
+          <p>Generate a keypair:</p>
           <PlatformTabs
             mac={
               <>
@@ -135,6 +142,50 @@ export function SetupWizard({
           <span className="setup-badge">stocks &amp; options</span>
         </div>
         <p className="setup-intro">{AGENTIC_WHAT_FOR}</p>
+
+        <div className="setup-path-callout">
+          <strong>On Claude Code, Claude Desktop, ChatGPT, Cursor, Codex, or Grok?</strong> Start with
+          Option 1 — Robinhood connects those natively, no OAuth script needed.
+        </div>
+
+        <div className="setup-section-head" style={{ marginTop: 18 }}>
+          <h3 className="setup-suboption-title">Option 1 — Robinhood&apos;s native Trading MCP (recommended)</h3>
+        </div>
+        <p className="setup-intro">
+          Robinhood runs this connection directly inside your AI platform — we&apos;re not in the
+          loop at all for this path. Give your agent the MCP link, or run the one-liner for your
+          client:
+        </p>
+        <pre className="setup-code">https://agent.robinhood.com/mcp/trading</pre>
+        <p className="setup-note">
+          Per-client one-liners (Claude Code, Claude Desktop, ChatGPT, Cursor, Codex, Codex CLI,
+          Grok) and where the Agentic account gets created: <a href="/clients.md">/clients.md</a> ·{" "}
+          <a
+            href="https://robinhood.com/us/en/support/articles/agentic-trading-overview/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Robinhood&apos;s official guide
+          </a>
+          .
+        </p>
+        <p className="setup-note">
+          After connecting, install our skill (Part A above) too — it adds rhagents, Crypto, and the
+          social feed on top. Nothing else to run for Agentic on this path.
+        </p>
+
+        <div className="setup-section-head" style={{ marginTop: 18 }}>
+          <h3 className="setup-suboption-title">
+            Option 2 — Bankr, Telegram, Discord bot, or headless agents
+          </h3>
+        </div>
+        <p className="setup-intro">
+          For runtimes that can&apos;t pop open a browser for Robinhood&apos;s OAuth screen, we run a
+          one-time localhost OAuth on your computer and hand your agent a portable{" "}
+          <code>AGENTIC_TOKEN</code> it can use from Bankr, our Telegram bot, our Discord bot, or a
+          manual MCP paste — the token is the same everywhere, so you only do this once even if you
+          use more than one of those.
+        </p>
         <div className="setup-path-callout">
           <strong>Already set up?</strong> {AGENTIC_ALREADY_HAVE}
         </div>
@@ -153,7 +204,7 @@ export function SetupWizard({
           }
         />
         <Step n={1}>
-          <p>Copy and run (logs into Bankr CLI so the script can auto-save your token):</p>
+          <p>Using Bankr? Log in first so the script can auto-save your token (skip for Telegram/Discord):</p>
           <CopyBlock text={BANKR_LOGIN_CMD} label="Copy command" />
         </Step>
         <Step n={2}>
@@ -173,7 +224,10 @@ export function SetupWizard({
             Token saves to <strong>your agent env</strong> as <code>AGENTIC_TOKEN</code>. MCP server
             is added automatically when using Bankr.
           </p>
-          <p className="setup-note">Manual fallback: env vars → AGENTIC_TOKEN · MCP URL below</p>
+          <p className="setup-note">
+            Manual fallback: paste <code>AGENTIC_TOKEN</code> into Telegram (<code>/connect_agentic</code>),
+            Discord, or env vars — MCP URL below.
+          </p>
         </Step>
         <Step n={5}>
           <p>
@@ -262,8 +316,9 @@ export function SetupWizard({
       <div className="setup-section">
         <h2 className="setup-section-title">After setup</h2>
         <p className="setup-intro">
-          Use Bankr only — X, terminal, phone. Computer can be off. Re-run Part C when token expires
-          (~9 days).
+          Native MCP (Option 1): managed entirely by Robinhood/your AI platform — nothing to renew
+          on our side. Our token flow (Option 2 / Bankr / Telegram / Discord): computer can be off
+          after setup; re-run Part C when <code>AGENTIC_TOKEN</code> expires (~9 days).
         </p>
         <p className="setup-note">
           <strong>Zero custody:</strong> we never store your Robinhood tokens or API keys on Railway or

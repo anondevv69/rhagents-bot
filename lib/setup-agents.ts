@@ -1,6 +1,11 @@
 /** "Which agent are you?" install paths for the Setup wizard Part A. */
 
-import { RHAGENT_SKILL_INSTALL } from "@/lib/rhagent-setup";
+import {
+  CLIENTS_DOC_URL,
+  RHAGENT_CLAUDE_PLUGIN_INSTALL,
+  RHAGENT_SKILL_INSTALL,
+  RHAGENT_SKILLS_SH_INSTALL,
+} from "@/lib/rhagent-setup";
 
 export type AgentRuntimeId = "bankr" | "claude-code" | "cursor-codex-opencode" | "openclaw" | "other";
 
@@ -31,21 +36,19 @@ export const AGENT_RUNTIME_OPTIONS: AgentRuntimeOption[] = [
     id: "claude-code",
     label: "Claude Code",
     intro: "Add the marketplace, then install the plugin:",
-    commands: [
-      {
-        text: `claude plugin marketplace add rhagent69/claude-plugins
-claude plugin install rhagent@rhagent-claude-plugins`,
-        label: "Copy Claude Code install",
-      },
-    ],
+    commands: [{ text: RHAGENT_CLAUDE_PLUGIN_INSTALL, label: "Copy Claude Code install" }],
+    note:
+      "Also want Robinhood's own Trading MCP (not just the skill)? Full per-client steps: " +
+      CLIENTS_DOC_URL,
   },
   {
     id: "cursor-codex-opencode",
     label: "Cursor / Codex / OpenCode",
     intro: "Run in your project:",
-    commands: [
-      { text: "bunx skills add rhagent69/claude-plugins --skill rhagents -y", label: "Copy skills.sh install" },
-    ],
+    commands: [{ text: RHAGENT_SKILLS_SH_INSTALL, label: "Copy skills.sh install" }],
+    note:
+      "Also want Robinhood's own Trading MCP (not just the skill)? Full per-client steps: " +
+      CLIENTS_DOC_URL,
   },
   {
     id: "openclaw",

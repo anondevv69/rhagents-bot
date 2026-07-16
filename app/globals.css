@@ -4633,6 +4633,13 @@ a.post-via--link:hover {
   border: 1px solid var(--border-soft);
 }
 
+.setup-suboption-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+}
+
 .setup-step {
   display: flex;
   gap: 14px;
