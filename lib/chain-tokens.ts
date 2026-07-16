@@ -7,7 +7,7 @@
 
 import { createPublicClient, http, parseAbi, getAddress, isAddress } from "viem";
 import { robinhoodChain } from "@/lib/onchain-config";
-import { RHAGENT_TOKEN_CONTRACT, RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
+import { RHAGENT_TOKEN_CONTRACT } from "@/lib/rhagent-token";
 import { getDb } from "@/lib/db";
 import { getSymbolCatalogSync, classifyCryptoSymbol } from "@/lib/symbol-catalog";
 import { assertRobinhoodChainCryptoToken } from "@/lib/robinhood-chain-crypto";
@@ -23,7 +23,8 @@ export const CHAIN_SEED_TOKENS: Record<string, ChainTokenMeta> = {
   RHAGENT: {
     symbol: "RHAGENT",
     contract: RHAGENT_TOKEN_CONTRACT as `0x${string}`,
-    name: RHAGENT_TOKEN_SYMBOL,
+    /** Human-facing token name (distinct from ticker $RHAGENT). */
+    name: "rhagent",
   },
 };
 
@@ -90,10 +91,79 @@ export function invalidateChainChannelCache(): void {
   channelCache = null;
 }
 
+/** Persist / refresh Chain ticker identity when a room is opened or a fill posts. */
+export function upsertChainTickerMeta(meta: {
+  symbol: string;
+  contract: string;
+  name?: string | null;
+}): void {
+  if (!isAddress(meta.contract)) return;
+  const symbol = meta.symbol.trim().toUpperCase();
+  if (!symbol) return;
+  const contract = getAddress(meta.contract);
+  const name = meta.name?.trim() || null;
+  const db = getDb();
+  db.prepare(
+    `
+    INSERT INTO chain_tickers (symbol, contract, name, created_at, updated_at)
+    VALUES (?, ?, ?, datetime('now'), datetime('now'))
+    ON CONFLICT(symbol) DO UPDATE SET
+      contract = excluded.contract,
+      name = COALESCE(excluded.name, chain_tickers.name),
+      updated_at = datetime('now')
+  `
+  ).run(symbol, contract, name);
+}
+
+/** Resolve display meta for a Chain ticker page (seed → DB). */
+export function getChainTickerMeta(symbolRaw: string): ChainTokenMeta | null {
+  const input = normalizeChainSymbolInput(symbolRaw);
+  if (!input || isAddress(input)) return null;
+  const sym = input.replace(/\.CHAIN$/, "");
+  const seed = CHAIN_SEED_TOKENS[sym] ?? CHAIN_SEED_TOKENS[input];
+  if (seed) return seed;
+
+  const row = getDb()
+    .prepare(`SELECT symbol, contract, name FROM chain_tickers WHERE symbol = ? OR symbol = ?`)
+    .get(input, sym) as { symbol: string; contract: string; name: string | null } | undefined;
+  if (!row || !isAddress(row.contract)) return null;
+  return {
+    symbol: row.symbol,
+    contract: getAddress(row.contract) as `0x${string}`,
+    name: row.name ?? undefined,
+  };
+}
+
+/** Empty stats shell so seed / known Chain rooms render before the first post. */
+export function emptyChainSymbolStats(symbol: string): {
+  symbol: string;
+  product: "chain";
+  trade_count: number;
+  buy_count: number;
+  sell_count: number;
+  agent_count: number;
+  thesis_count: number;
+  volume_usd: number;
+  last_trade_at: string | null;
+} {
+  return {
+    symbol: symbol.toUpperCase(),
+    product: "chain",
+    trade_count: 0,
+    buy_count: 0,
+    sell_count: 0,
+    agent_count: 0,
+    thesis_count: 0,
+    volume_usd: 0,
+    last_trade_at: null,
+  };
+}
+
 export type ChainClassification = {
   product: "chain";
   symbol: string;
   contract?: `0x${string}`;
+  name?: string;
   source: "seed" | "platform_active" | "onchain_metadata";
 };
 
@@ -106,7 +176,13 @@ export function classifyChainSymbol(raw: string): ChainClassification | null {
     const addr = getAddress(input);
     for (const meta of Object.values(CHAIN_SEED_TOKENS)) {
       if (meta.contract.toLowerCase() === addr.toLowerCase()) {
-        return { product: "chain", symbol: meta.symbol, contract: meta.contract, source: "seed" };
+        return {
+          product: "chain",
+          symbol: meta.symbol,
+          contract: meta.contract,
+          name: meta.name,
+          source: "seed",
+        };
       }
     }
     return null; // need async resolve for unknown contracts
@@ -114,11 +190,24 @@ export function classifyChainSymbol(raw: string): ChainClassification | null {
 
   const seed = CHAIN_SEED_TOKENS[input] ?? CHAIN_SEED_TOKENS[input.replace(/\.CHAIN$/, "")];
   if (seed && (input === seed.symbol || input === `${seed.symbol}.CHAIN`)) {
-    return { product: "chain", symbol: seed.symbol, contract: seed.contract, source: "seed" };
+    return {
+      product: "chain",
+      symbol: seed.symbol,
+      contract: seed.contract,
+      name: seed.name,
+      source: "seed",
+    };
   }
 
   if (isActiveChainChannel(input)) {
-    return { product: "chain", symbol: input, source: "platform_active" };
+    const stored = getChainTickerMeta(input);
+    return {
+      product: "chain",
+      symbol: input,
+      contract: stored?.contract,
+      name: stored?.name,
+      source: "platform_active",
+    };
   }
 
   return null;
@@ -157,8 +246,9 @@ export async function resolveChainTokenFromContract(
 
   try {
     const client = publicClient();
-    const [symbolRaw] = await Promise.all([
+    const [symbolRaw, nameRaw] = await Promise.all([
       client.readContract({ address: contract, abi: erc20MetaAbi, functionName: "symbol" }),
+      client.readContract({ address: contract, abi: erc20MetaAbi, functionName: "name" }).catch(() => null),
     ]);
     const fromMeta = chainSymbolAvoidingCryptoCollision(String(symbolRaw ?? ""));
     const symbol =
@@ -169,10 +259,12 @@ export async function resolveChainTokenFromContract(
     if (!symbol) {
       return { ok: false, error: "Token has no symbol()" };
     }
+    const name = nameRaw != null ? String(nameRaw).trim().slice(0, 64) || undefined : undefined;
     return {
       product: "chain",
       symbol,
       contract,
+      name,
       source: "onchain_metadata",
     };
   } catch (e) {

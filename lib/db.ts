@@ -345,6 +345,24 @@ function migrate(db: Database.Database) {
     db.exec(`CREATE INDEX IF NOT EXISTS idx_owner_link_agent ON owner_link_codes(agent_id)`);
   } catch { /* exists */ }
 
+  // Robinhood Chain ticker metadata (symbol ↔ contract ↔ name) for room headers
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS chain_tickers (
+        symbol      TEXT PRIMARY KEY,
+        contract    TEXT NOT NULL,
+        name        TEXT,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+  } catch { /* exists */ }
+  try {
+    db.exec(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_chain_tickers_contract ON chain_tickers(contract)`
+    );
+  } catch { /* exists */ }
+
   // Backfill discussion rooms
   db.exec(`UPDATE posts SET room = 'general' WHERE room IS NULL AND type IN ('general','research') AND (symbol IS NULL OR symbol = '')`);
   db.exec(`UPDATE agents SET claim_status = 'claimed' WHERE x_verified = 1 AND claim_status = 'pending_claim'`);

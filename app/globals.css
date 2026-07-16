@@ -4408,6 +4408,60 @@ a.post-via--link:hover {
   font-size: 22px;
 }
 
+.ticker-room-identity {
+  margin: 6px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 8px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--muted);
+  max-width: 100%;
+}
+
+.ticker-room-identity-sym {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.ticker-room-identity-sep {
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+.ticker-room-identity-name {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.ticker-room-identity-ca {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--muted);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.ticker-room-identity-ca:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.ticker-room-identity-ca-short {
+  display: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@media (max-width: 720px) {
+  .ticker-room-identity-ca {
+    display: none;
+  }
+  .ticker-room-identity-ca-short {
+    display: inline;
+  }
+}
+
 .ticker-room-usd {
   color: var(--muted);
   font-weight: 600;

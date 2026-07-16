@@ -4,6 +4,11 @@ import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { PostList } from "@/components/PostList";
 import { SymbolTabs } from "@/components/SymbolTabs";
+import {
+  emptyChainSymbolStats,
+  getChainTickerMeta,
+} from "@/lib/chain-tokens";
+import { shortenContractAddress } from "@/lib/rhagent-token";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +16,10 @@ export const dynamic = "force-dynamic";
 function parseProduct(raw: string | undefined): "crypto" | "agentic" | "chain" | null {
   if (raw === "crypto" || raw === "agentic" || raw === "chain") return raw;
   return null;
+}
+
+function dexScreenerUrl(contract: string): string {
+  return `https://dexscreener.com/robinhood/${contract.toLowerCase()}`;
 }
 
 export default async function TickerRoomPage({
@@ -35,10 +44,21 @@ export default async function TickerRoomPage({
       if (stats) break;
     }
   }
+
+  // Seed / known Chain rooms render even before the first post (so CA is visible).
+  const chainMeta =
+    product === "chain" || stats?.product === "chain" || (!stats && !product)
+      ? getChainTickerMeta(symbol)
+      : null;
+  if (!stats && chainMeta && (product === "chain" || !product)) {
+    stats = emptyChainSymbolStats(chainMeta.symbol);
+  }
   if (!stats) notFound();
 
   const effectiveProduct = (stats.product as "crypto" | "agentic" | "chain" | null) ?? product;
   const posts = getSymbolPosts(symbol, tab, 50, effectiveProduct);
+  const displayMeta =
+    effectiveProduct === "chain" ? getChainTickerMeta(symbol) ?? chainMeta : null;
 
   const session = await getViewerSession();
   const viewerKey = viewerKeyFromSession(session);
@@ -48,18 +68,48 @@ export default async function TickerRoomPage({
     effectiveProduct ? `?product=${effectiveProduct}` : ""
   }`;
 
+  const displayTicker = symbol.replace(/-USD$/, "").replace(/\.CHAIN$/, "");
+
   return (
     <div className="room-page">
       <div className="room-header ticker-room-header">
         <div className="room-header-left">
           <h1 className="room-title ticker-room-title">
             <span className="room-slug">$</span>
-            {symbol.replace(/-USD$/, "").replace(/\.CHAIN$/, "")}
+            {displayTicker}
             {symbol.endsWith("-USD") ? <span className="ticker-room-usd">-USD</span> : null}
             {symbol.endsWith(".CHAIN") ? (
               <span className="ticker-room-usd">.CHAIN</span>
             ) : null}
           </h1>
+          {displayMeta ? (
+            <p className="ticker-room-identity">
+              <span className="ticker-room-identity-sym">${displayMeta.symbol}</span>
+              {displayMeta.name ? (
+                <>
+                  <span className="ticker-room-identity-sep" aria-hidden="true">
+                    —
+                  </span>
+                  <span className="ticker-room-identity-name">{displayMeta.name}</span>
+                </>
+              ) : null}
+              <span className="ticker-room-identity-sep" aria-hidden="true">
+                —
+              </span>
+              <a
+                href={dexScreenerUrl(displayMeta.contract)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ticker-room-identity-ca"
+                title={displayMeta.contract}
+              >
+                <code>{displayMeta.contract}</code>
+              </a>
+              <span className="ticker-room-identity-ca-short" title={displayMeta.contract}>
+                {shortenContractAddress(displayMeta.contract)}
+              </span>
+            </p>
+          ) : null}
           <div className="ticker-room-badges">
             {stats.product === "agentic" && <span className="badge badge-agentic">Agentic</span>}
             {stats.product === "crypto" && <span className="badge badge-crypto">Crypto</span>}
