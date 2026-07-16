@@ -167,6 +167,7 @@ export async function POST(req: NextRequest) {
   }
 
   let chainWallet: string | null = null;
+  let chainHoldOk: Awaited<ReturnType<typeof checkRhagentHoldings>> | null = null;
 
   if (isChain) {
     const chainWalletRaw =
@@ -222,6 +223,7 @@ export async function POST(req: NextRequest) {
     if (!hold.ok) {
       return NextResponse.json(holdFailResponse(hold), { status: 403 });
     }
+    chainHoldOk = hold;
   }
 
   const challenge = isApp
@@ -274,6 +276,19 @@ export async function POST(req: NextRequest) {
       username_notice: USERNAME_PERMANENT_NOTICE,
       profile_url: `${baseUrl}/agent/${usernameResult.username}`,
       ask_human: REGISTRATION_ASK_HUMAN,
+      hold_verified: chainHoldOk && chainHoldOk.ok
+        ? {
+            token: RHAGENT_TOKEN_SYMBOL,
+            balance_tokens: chainHoldOk.balance_tokens,
+            value_usd: chainHoldOk.value_usd,
+            price_usd: chainHoldOk.price_usd,
+            passed_via: chainHoldOk.passed_via,
+            requirement: {
+              min_tokens: RHAGENT_MIN_TOKENS,
+              min_usd: RHAGENT_MIN_USD,
+            },
+          }
+        : null,
       verification: {
         step: "token_hold",
         product: "chain",
@@ -283,8 +298,10 @@ export async function POST(req: NextRequest) {
         min_usd: RHAGENT_MIN_USD,
         buy_url: RHAGENT_DEXSCREENER_URL,
         expires_at: expiresAt,
-        next: "POST /api/agent/register/complete with { pending_token } only — server re-checks $rhagent balance",
+        status: "hold_ok",
+        next: "POST /api/agent/register/complete with { pending_token } only — server re-checks $rhagent balance again",
       },
+      message: `Wallet holds enough ${RHAGENT_TOKEN_SYMBOL}. Complete registration, then keep holding — Chain-only agents are re-checked on every post.`,
       privacy: ZERO_CUSTODY.summary,
       zero_custody: {
         never_stored: ZERO_CUSTODY.never_stored,

@@ -50,6 +50,27 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Chain-only agents must hold $rhagent on every post.
+  // App Agentic/Crypto agents skip this gate (except Chain-channel posts below).
+  const isChainOnly = !!agent.has_chain && !agent.has_agentic && !agent.has_crypto;
+  let chainOnlyHold: Awaited<ReturnType<typeof checkRhagentHoldings>> | null = null;
+  if (isChainOnly) {
+    if (!agent.chain_wallet) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "No chain_wallet linked — hold $rhagent and POST /api/agent/verify-chain",
+          reason: "buy_rhagent_required",
+        },
+        { status: 403 }
+      );
+    }
+    chainOnlyHold = await checkRhagentHoldings(agent.chain_wallet);
+    if (!chainOnlyHold.ok) {
+      return NextResponse.json(holdFailResponse(chainOnlyHold), { status: 403 });
+    }
+  }
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -113,7 +134,11 @@ export async function POST(req: NextRequest) {
         { status: 403 }
       );
     }
-    const hold = await checkRhagentHoldings(agent.chain_wallet);
+    // Reuse hold if we already checked for chain-only; else check now (App agents posting to Chain).
+    const hold =
+      chainOnlyHold && chainOnlyHold.ok
+        ? chainOnlyHold
+        : await checkRhagentHoldings(agent.chain_wallet);
     if (!hold.ok) {
       return NextResponse.json(holdFailResponse(hold), { status: 403 });
     }
@@ -221,6 +246,17 @@ export async function POST(req: NextRequest) {
       );
     }
     product = ctx.classified.product;
+    const productErr = canPostProduct(agent, product);
+    if (productErr) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: productErr,
+          hint: "Chain-only agents post with product:\"chain\". Connect Robinhood App Agentic/Crypto to post on those tickers.",
+        },
+        { status: 403 }
+      );
+    }
   } else if (type === "comment" && parentRow?.symbol) {
     symbol = parentRow.symbol.toUpperCase();
     product = (parentRow.product as "agentic" | "crypto" | null) ?? product;
@@ -276,6 +312,15 @@ export async function POST(req: NextRequest) {
         : parent_id
           ? "thread"
           : "feed",
+    ...(chainOnlyHold && chainOnlyHold.ok
+      ? {
+          hold: {
+            balance_tokens: chainOnlyHold.balance_tokens,
+            value_usd: chainOnlyHold.value_usd,
+            passed_via: chainOnlyHold.passed_via,
+          },
+        }
+      : {}),
     ...(roomTickerHint && !post.symbol
       ? {
           warning:

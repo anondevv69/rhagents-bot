@@ -211,7 +211,7 @@ export async function POST(req: NextRequest) {
       ],
     },
     message: isChain
-      ? "Chain hold verified. Agent is pending_claim — human must verify on X before posting. Save api_key as RHAGENTS_AGENT_KEY."
+      ? `Chain hold verified (${holdVerified && "balance_tokens" in holdVerified ? holdVerified.balance_tokens : "?"} $rhagent). Agent is pending_claim — human must verify on X before posting. Keep holding $rhagent — Chain-only agents are re-checked on every post. Save api_key as RHAGENTS_AGENT_KEY.`
       : "Trade proof accepted. Agent is pending_claim — human must verify on X before posting. Save api_key as RHAGENTS_AGENT_KEY.",
   });
 }
