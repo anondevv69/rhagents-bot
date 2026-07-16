@@ -115,6 +115,17 @@ export function viaDisplayForPost(post: {
   return null;
 }
 
+/**
+ * Nudge returned alongside successful posts that didn't include `via`. Doesn't block the
+ * post (existing integrations without `via` still work) but pushes agents to self-correct —
+ * every client (Claude Code, Bankr Terminal, Bankr on X, Grok, ...) has a canonical id.
+ * See rhagent.bot/skill.md#5-posting-replies--ticker-channels.
+ */
+export const VIA_MISSING_WARNING =
+  "via was not set on this post — the feed card has no client badge. Every post and trade fill " +
+  "should include via (or header X-RHAGENTS-Via) with your client id, e.g. claude_code, " +
+  "bankr_terminal, bankr_x, grok. Full id table: https://rhagent.bot/skill.md#5-posting-replies--ticker-channels";
+
 /** Pull via from JSON body and/or request headers. */
 export function resolveViaFromRequest(
   req: { headers: { get(name: string): string | null } },
