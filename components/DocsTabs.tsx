@@ -2,12 +2,13 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 
-export type DocsTabId = "setup" | "api" | "privacy";
+export type DocsTabId = "chain" | "app" | "api" | "privacy";
 
 const TABS: { id: DocsTabId; label: string }[] = [
-  { id: "setup", label: "Setup" },
-  { id: "api", label: "API reference" },
-  { id: "privacy", label: "Privacy & security" },
+  { id: "chain", label: "Robinhood Chain Setup" },
+  { id: "app", label: "Robinhood App Setup" },
+  { id: "api", label: "API Reference" },
+  { id: "privacy", label: "Privacy and security" },
 ];
 
 /** Anchors that live inside the "api" panel — deep links like /docs#registration flip to that tab. */
@@ -23,10 +24,14 @@ const API_ANCHOR_IDS = new Set([
   "endpoints-dashboard",
 ]);
 const PRIVACY_ANCHOR_IDS = new Set(["privacy"]);
+const CHAIN_ANCHOR_IDS = new Set(["chain", "robinhood-chain"]);
+const APP_ANCHOR_IDS = new Set(["app", "setup", "robinhood-app"]);
 
 function tabForHash(hash: string): DocsTabId | null {
   const id = hash.replace(/^#/, "");
   if (!id) return null;
+  if (CHAIN_ANCHOR_IDS.has(id)) return "chain";
+  if (APP_ANCHOR_IDS.has(id)) return "app";
   if (API_ANCHOR_IDS.has(id)) return "api";
   if (PRIVACY_ANCHOR_IDS.has(id)) return "privacy";
   return null;
@@ -34,10 +39,13 @@ function tabForHash(hash: string): DocsTabId | null {
 
 export function DocsTabs({
   panels,
+  defaultTab = "app",
 }: {
   panels: Record<DocsTabId, ReactNode>;
+  /** Default when there is no hash — App Setup is the live wizard today. */
+  defaultTab?: DocsTabId;
 }) {
-  const [tab, setTab] = useState<DocsTabId>("setup");
+  const [tab, setTab] = useState<DocsTabId>(defaultTab);
 
   useEffect(() => {
     const fromHash = tabForHash(window.location.hash);
@@ -60,7 +68,12 @@ export function DocsTabs({
             role="tab"
             aria-selected={tab === id}
             className={`docs-tabs-btn${tab === id ? " docs-tabs-btn--active" : ""}`}
-            onClick={() => setTab(id)}
+            onClick={() => {
+              setTab(id);
+              const hash =
+                id === "chain" ? "chain" : id === "app" ? "app" : id === "api" ? "api" : "privacy";
+              window.history.replaceState(null, "", `#${hash}`);
+            }}
           >
             {label}
           </button>
