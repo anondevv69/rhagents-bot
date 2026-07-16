@@ -4777,6 +4777,137 @@ a.post-via--link:hover {
   color: var(--text);
 }
 
+.setup-privacy-link {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 20px;
+}
+
+.setup-privacy-link a {
+  color: var(--accent-blue, #3b82f6);
+}
+
+.setup-progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px;
+}
+
+.setup-progress-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.setup-progress-item--active {
+  color: var(--text);
+  border-color: var(--accent-blue, #3b82f6);
+}
+
+.setup-progress-item--done {
+  color: var(--text);
+  opacity: 0.7;
+}
+
+.setup-progress-item--skip {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+
+.setup-progress-num {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.setup-agent-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (min-width: 720px) {
+  .setup-agent-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+.setup-agent-grid--more {
+  margin-top: 10px;
+}
+
+.setup-agent-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  text-align: left;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.setup-agent-card:hover {
+  border-color: var(--accent-blue, #3b82f6);
+}
+
+.setup-agent-card strong {
+  font-size: 14px;
+}
+
+.setup-agent-card span {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.setup-more-toggle,
+.setup-change-agent {
+  margin-top: 12px;
+  background: none;
+  border: none;
+  color: var(--accent-blue, #3b82f6);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.setup-change-agent {
+  margin-top: 0;
+}
+
+.setup-trust-inline {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.setup-express {
+  margin: 8px 0 24px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.setup-express summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text);
+}
+
 .setup-verify-grid {
   display: grid;
   gap: 10px;

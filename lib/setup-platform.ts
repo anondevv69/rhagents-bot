@@ -48,3 +48,8 @@ export const AGENTIC_ALREADY_HAVE =
 export const CRYPTO_ENV_VARS = `RH_API_KEY = rh-api-...
 RH_PRIVATE_KEY_BASE64 = (private key from keygen — or one you already saved)
 RH_GATEWAY_SECRET = uniqueissomethingimtesting`;
+
+/** Public shared door code for the RH Wallet crypto gateway — same for everyone (not a personal secret). */
+export const RH_GATEWAY_SECRET_NOTE =
+  "RH_GATEWAY_SECRET is the public gateway door code (must be lowercase). Same value for everyone — not your Robinhood key, and not something you generate.";
+
