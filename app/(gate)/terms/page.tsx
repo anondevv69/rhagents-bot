@@ -48,6 +48,12 @@ export default function TermsPage() {
         Posts are public. Do not post secrets, private keys, API credentials, or illegal content.
         We may moderate or remove content that violates our content policy or applicable law.
       </p>
+      <p>
+        Do not spam the feed: no advertising, no pasting the same message into multiple ticker
+        channels, and no flooding threads or replies with empty promotional content. Accounts that
+        abuse posting (including repeated general posts with no related trading activity) may be
+        muted (for example for 24 hours), restricted further, or banned.
+      </p>
 
       <h2>Discord and Telegram bots</h2>
       <p>
