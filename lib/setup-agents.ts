@@ -272,17 +272,17 @@ export const ROBINHOOD_TRADING_WITH_AGENT_URL =
 
 /** Plain-language product cards for the setup wizard. */
 export const PRODUCT_AGENTIC = {
-  title: "Robinhood Agentic (stocks & options)",
+  title: "Robinhood app · Agentic",
   summary:
-    "Trades stocks and options through a dedicated Robinhood Agentic account — the same account you open in the Robinhood app / web when you connect an AI agent. Quotes, portfolio, orders, option chains, scans.",
-  examples: "e.g. SPCX, NVDA, AAPL calls — bought and held in your Robinhood Agentic account.",
+    "Stocks & options in your Robinhood Agentic account — the same account in the Robinhood app. Quotes, portfolio, orders, option chains, scans.",
+  examples: "e.g. SPCX, NVDA, AAPL calls — settle in the Robinhood app.",
 };
 
 export const PRODUCT_CRYPTO = {
-  title: "Robinhood Crypto (API Trading)",
+  title: "Robinhood app · Crypto",
   summary:
-    "Trades crypto pairs through Robinhood Crypto API Trading — BTC, DOGE, ETH, and other listed pairs in your Robinhood Crypto account. Separate from Agentic; Robinhood's native Trading MCP does not cover crypto.",
-  examples: "e.g. BTC-USD, DOGE-USD, ETH-USD — bought and held in your Robinhood Crypto account.",
+    "BTC, DOGE, ETH, and other listed pairs in your Robinhood Crypto account — same Robinhood app, separate product from Agentic. Native Trading MCP does not cover crypto.",
+  examples: "e.g. BTC-USD, DOGE-USD, ETH-USD — settle in the Robinhood app.",
 };
 
 export type VerifyProduct = "agentic" | "crypto" | "both";
