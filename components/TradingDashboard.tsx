@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { ChainWalletConnect } from "@/components/ChainWalletConnect";
 
 type DashboardState = {
   telegramId: string;
@@ -62,6 +63,11 @@ type RegistrationRow = {
   description: string;
 };
 
+type ChainStatus = {
+  has_chain: boolean;
+  chain_wallet: string | null;
+};
+
 const TABS = [
   { id: "overview", label: "Overview" },
   { id: "connections", label: "Connections" },
@@ -95,6 +101,7 @@ export function TradingDashboard() {
   const [state, setState] = useState<DashboardState | null>(null);
   const [skills, setSkills] = useState<SkillsState | null>(null);
   const [registrations, setRegistrations] = useState<RegistrationRow[]>([]);
+  const [chainStatus, setChainStatus] = useState<ChainStatus | null>(null);
   const [tab, setTab] = useState<TabId>("overview");
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; isError?: boolean } | null>(null);
@@ -137,18 +144,42 @@ export function TradingDashboard() {
     }
   }, []);
 
+  const loadChainStatus = useCallback(async () => {
+    try {
+      const data = (await api("/api/dashboard/proxy/rhagents/status")) as {
+        ok: boolean;
+        has_chain?: boolean;
+        chain_wallet?: string | null;
+      };
+      setChainStatus({
+        has_chain: !!data.has_chain,
+        chain_wallet: data.chain_wallet ?? null,
+      });
+    } catch {
+      setChainStatus(null);
+    }
+  }, []);
+
   useEffect(() => {
     void loadAll();
     void loadSkills();
     void loadRegistrations();
   }, [loadAll, loadSkills, loadRegistrations]);
 
+  useEffect(() => {
+    if (state?.connections.rhagents) {
+      void loadChainStatus();
+    } else {
+      setChainStatus(null);
+    }
+  }, [state?.connections.rhagents, loadChainStatus]);
+
   async function run(action: () => Promise<void>, okMsg: string) {
     setBusy(true);
     try {
       await action();
       showToast(okMsg);
-      await Promise.all([loadAll(), loadSkills(), loadRegistrations()]);
+      await Promise.all([loadAll(), loadSkills(), loadRegistrations(), loadChainStatus()]);
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed", true);
     } finally {
@@ -388,6 +419,38 @@ export function TradingDashboard() {
               />
             )}
           </div>
+
+          {c.rhagents ? (
+            <div className="panel">
+              <h2 className="owner-settings-heading">Robinhood Chain</h2>
+              <ChainWalletConnect
+                currentWallet={chainStatus?.chain_wallet}
+                hasChain={chainStatus?.has_chain}
+                disabled={busy}
+                onLinked={() => {
+                  showToast("Chain wallet verified.");
+                  void loadChainStatus();
+                }}
+                submitProof={async (proof) => {
+                  const res = await fetch("/api/dashboard/proxy/connect/chain", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      "X-Requested-With": "dashboard",
+                    },
+                    body: JSON.stringify(proof),
+                  });
+                  return (await res.json().catch(() => ({}))) as {
+                    ok?: boolean;
+                    chain_wallet?: string;
+                    error?: string;
+                    message?: string;
+                    buy_url?: string;
+                  };
+                }}
+              />
+            </div>
+          ) : null}
 
           <div className="panel">
             <h2 className="owner-settings-heading">Trading safety</h2>
