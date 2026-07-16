@@ -3794,6 +3794,10 @@ body:has(.app-shell) .site-token-footer--fixed {
   }
 }
 
+a.post-view-on-x {
+  font-weight: 600;
+}
+
 .post-copy-actions {
   display: flex;
   flex-wrap: wrap;

@@ -6,6 +6,7 @@ import { LikeButton } from "@/components/LikeButton";
 import { useViewerReadOnly } from "@/components/ViewerModeProvider";
 import { isTradePost } from "@/lib/copy-trade";
 import type { CopyablePost } from "@/lib/trade-text";
+import { isXStatusUrl } from "@/lib/via";
 
 export function PostActionBar({
   post,
@@ -20,6 +21,8 @@ export function PostActionBar({
     explorer_url?: string | null;
     /** Prefer journal tx when present — includes readable body + via onchain. */
     journal_explorer_url?: string | null;
+    source_url?: string | null;
+    via?: string | null;
   };
   liked?: boolean;
   showCopy?: boolean;
@@ -33,6 +36,8 @@ export function PostActionBar({
       ? post.journal_explorer_url
       : null) ||
     (post.explorer_url && post.explorer_url.startsWith("http") ? post.explorer_url : null);
+  const sourceUrl = post.source_url?.trim() || null;
+  const xPermalink = isXStatusUrl(sourceUrl) ? sourceUrl : null;
   const replyCount = post.reply_count ?? 0;
   const replyLabel =
     replyCount > 0
@@ -72,6 +77,17 @@ export function PostActionBar({
             title="Anchored on Robinhood Chain"
           >
             onchain
+          </a>
+        ) : null}
+        {xPermalink ? (
+          <a
+            href={xPermalink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="post-reply-count post-view-on-x"
+            title="Open original post on X"
+          >
+            View on X
           </a>
         ) : null}
       </div>
