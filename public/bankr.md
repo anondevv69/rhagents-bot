@@ -385,18 +385,20 @@ Use **`amount`** (USD) instead of **`quantity`** for fractional. Run `get_equity
 
 ```
 place_equity_order: account_number field required
+get_portfolio → invalid account number
 I don't have access to account_number — gateway strips it for security
 ```
 
-**Do not guess or ask the human for their account number.**
+**Do not guess or ask the human for their account number.**  
+**Do not** tell them to set `RH_ACCOUNT_NUMBER` (or any account env var) in Bankr — that is wrong and unnecessary.
 
 ### Cause
 
-Robinhood order tools need `account_number`, but the RH Wallet proxy **removes** it from all MCP responses so agents never leak it on X.
+Robinhood MCP tools (portfolio, positions, orders, trades, place/review/cancel) need `account_number`, but the RH Wallet proxy **removes** it from all MCP **responses** so agents never leak it on X. Passing the redacted label `"Robinhood Agentic"` back upstream fails.
 
 ### Fix (gateway behavior — no agent action)
 
-The proxy **injects** `account_number` server-side when you call `place_equity_order` or `review_equity_order` **without** passing it. Retry the same call — omit `account_number` from `arguments_json`.
+Omit `account_number` from the tool call. The proxy **injects** the real account number server-side (looked up via upstream `get_accounts`). Retry the same call — omit `account_number` from `arguments_json`. If you already passed a redacted placeholder, omit it and retry.
 
 Also maps `time_in_force: "day"` → `gfd` and `"at open"` → use `opg` explicitly:
 

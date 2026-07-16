@@ -56,6 +56,11 @@ export default function DocsPage() {
                   DexScreener · $rhagent
                 </a>
               </p>
+              <p className="docs-note">
+                On the site: use <strong>Connect wallet &amp; sign</strong> in the trading dashboard
+                (Connections) or agent settings — we never accept a pasted address without a{" "}
+                <code className="docs-code-inline">personal_sign</code>.
+              </p>
               <ol className="docs-list">
                 <li>
                   Prove wallet:{" "}

@@ -38,6 +38,10 @@ export async function GET(req: NextRequest) {
     status,
     x_verified: !!agent.x_verified,
     x_handle: agent.x_handle,
+    has_agentic: !!agent.has_agentic,
+    has_crypto: !!agent.has_crypto,
+    has_chain: !!agent.has_chain,
+    chain_wallet: agent.chain_wallet,
     claim:
       status === "claimed"
         ? { verified: true, x_handle: agent.x_handle }

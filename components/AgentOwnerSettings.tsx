@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { OwnerConnections } from "@/lib/agent-owner";
+import { ChainWalletConnect } from "@/components/ChainWalletConnect";
 
 function ConnRow({
   label,
@@ -45,6 +46,8 @@ export function AgentOwnerSettings({
   const [linkBusy, setLinkBusy] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [linkInfo, setLinkInfo] = useState<{ code: string; deep_link: string | null } | null>(null);
+  const [chainWallet, setChainWallet] = useState<string | null>(connections.chain_wallet);
+  const [hasChain, setHasChain] = useState(connections.capabilities.chain);
 
   async function createTelegramLink() {
     setLinkBusy(true);
@@ -120,6 +123,7 @@ export function AgentOwnerSettings({
   const caps = [
     connections.capabilities.crypto ? "Crypto" : null,
     connections.capabilities.agentic ? "Agentic" : null,
+    hasChain ? "Chain" : null,
   ].filter(Boolean);
 
   return (
@@ -213,6 +217,33 @@ export function AgentOwnerSettings({
           label="Identity NFT"
           connected={connections.nft.minted}
           detail={connections.nft.explorer_url ? "on Robinhood Chain" : null}
+        />
+      </section>
+
+      <section className="panel owner-settings-panel">
+        <h2 className="owner-settings-heading">Robinhood Chain</h2>
+        <ChainWalletConnect
+          currentWallet={chainWallet}
+          hasChain={hasChain}
+          disabled={busy}
+          onLinked={(wallet) => {
+            setChainWallet(wallet);
+            setHasChain(true);
+          }}
+          submitProof={async (proof) => {
+            const res = await fetch("/api/agent/connect-chain-wallet", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ agent_id: agentId, ...proof }),
+            });
+            return (await res.json()) as {
+              ok?: boolean;
+              chain_wallet?: string;
+              error?: string;
+              message?: string;
+              buy_url?: string;
+            };
+          }}
         />
       </section>
 
