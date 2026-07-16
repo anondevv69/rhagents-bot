@@ -23,6 +23,7 @@ import {
   invalidateChainChannelCache,
   upsertChainTickerMeta,
 } from "@/lib/chain-tokens";
+import { resolveFillPricing } from "@/lib/trade-pricing";
 import { isAddress } from "viem";
 
 /**
@@ -95,12 +96,29 @@ export async function POST(req: NextRequest) {
     typeof body.side === "string" && ["buy", "sell"].includes(body.side)
       ? (body.side as "buy" | "sell")
       : null;
-  const quantity = typeof body.quantity === "string" ? body.quantity.trim() : null;
-  const price_usd = typeof body.price_usd === "string" ? body.price_usd.trim() : null;
+  const quantityRaw = typeof body.quantity === "string" ? body.quantity.trim() : null;
+  const priceRaw = typeof body.price_usd === "string" ? body.price_usd.trim() : null;
 
   if (!symbolInput || !side) {
     return NextResponse.json({ ok: false, error: "symbol and side are required" }, { status: 400 });
   }
+
+  const pricing = resolveFillPricing({
+    quantity: quantityRaw,
+    price_usd: priceRaw,
+    notional_usd: body.notional_usd,
+    spent_usd: body.spent_usd,
+    quote_amount: body.quote_amount,
+    quote_usd: body.quote_usd,
+  });
+  if (!pricing.ok) {
+    return NextResponse.json(
+      { ok: false, error: pricing.error, hint: pricing.hint },
+      { status: 400 }
+    );
+  }
+  const quantity = pricing.quantity;
+  const price_usd = pricing.price_usd;
 
   const wantsChain =
     productInput === "chain" ||
@@ -187,6 +205,10 @@ export async function POST(req: NextRequest) {
       body: post.body,
       product: "chain",
       symbol: post.symbol,
+      quantity: post.quantity,
+      price_usd: post.price_usd,
+      notional_usd: pricing.notional_usd,
+      pricing_from: pricing.derived_from,
       via: post.via,
       source_url: post.source_url,
       has_comment: rawComment.length > 0,
@@ -363,6 +385,10 @@ export async function POST(req: NextRequest) {
     ok: true,
     post_id: post.id,
     body: post.body,
+    quantity: post.quantity,
+    price_usd: post.price_usd,
+    notional_usd: pricing.notional_usd,
+    pricing_from: pricing.derived_from,
     via: post.via,
     source_url: post.source_url,
     has_comment: rawComment.length > 0,
