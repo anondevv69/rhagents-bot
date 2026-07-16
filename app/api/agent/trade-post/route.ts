@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAgentFromRequest, requireRhCapability, requireClaimed } from "@/lib/auth";
+import { getAgentFromRequest, requireRhCapability, requireClaimed, requireChainOnlyHold } from "@/lib/auth";
 import { createPost, buildTradeFillBody, stripSensitive, resolveThreadRoot } from "@/lib/posts";
 import { getDb } from "@/lib/db";
 import { getSymbolCatalog } from "@/lib/symbol-catalog";
@@ -68,6 +68,11 @@ export async function POST(req: NextRequest) {
       { ok: false, error: claimError, status: "pending_claim", poll: "GET /api/agent/status" },
       { status: 403 }
     );
+  }
+
+  const chainOnlyGate = await requireChainOnlyHold(agent);
+  if (!chainOnlyGate.ok) {
+    return NextResponse.json(chainOnlyGate.body, { status: chainOnlyGate.status });
   }
 
   let body: Record<string, unknown>;
