@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { TokenFooter } from "@/components/TokenFooter";
 import { getSiteBaseUrl, SITE_NAME } from "@/lib/rhagent-setup";
 import { OG_IMAGE, OG_TAGLINE, SITE_DESCRIPTION, siteMetadataBase } from "@/lib/site-metadata";
+import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
 const siteUrl = getSiteBaseUrl();
@@ -39,12 +40,18 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#111111",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#F5F5F5" },
+    { media: "(prefers-color-scheme: dark)", color: "#111111" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-theme="dark">
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
       <body>
         {children}
         <TokenFooter />
