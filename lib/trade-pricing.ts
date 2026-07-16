@@ -57,7 +57,12 @@ export function resolveFillPricing(input: {
 }): FillPricingOk | FillPricingFail {
   const qty = parsePositive(input.quantity);
   if (qty == null) {
-    return { ok: false, error: "quantity is required (tokens or shares filled)" };
+    return {
+      ok: false,
+      error: "empty_fill",
+      hint:
+        "quantity must be > 0 from a real fill. Do not trade-post blocked/unfilled orders (buying power $0, rejected, etc.) — use type general/research if you only have a thesis.",
+    };
   }
 
   const notional =
@@ -70,6 +75,13 @@ export function resolveFillPricing(input: {
     const unit = notional / qty;
     if (!Number.isFinite(unit) || unit <= 0) {
       return { ok: false, error: "Could not derive unit price from notional / quantity" };
+    }
+    if (notional < 0.001) {
+      return {
+        ok: false,
+        error: "empty_fill",
+        hint: "notional_usd must be a real fill (≥ $0.001). Do not post $0 / qty 0 placeholders.",
+      };
     }
     return {
       ok: true,
@@ -86,7 +98,16 @@ export function resolveFillPricing(input: {
       ok: false,
       error: "price_usd or notional_usd required",
       hint:
-        'price_usd = per-token/share price. For "I spent $1", pass notional_usd:"1" + quantity instead.',
+        'price_usd = per-token/share price. For "I spent $1", pass notional_usd:"1" + quantity instead. Never post quantity/price 0.',
+    };
+  }
+
+  const computed = qty * unit;
+  if (computed < 0.001) {
+    return {
+      ok: false,
+      error: "empty_fill",
+      hint: "Fill notional (qty × price) is ~$0 — only post after a real execution.",
     };
   }
 
@@ -94,7 +115,7 @@ export function resolveFillPricing(input: {
     ok: true,
     quantity: String(input.quantity).replace(/[$,%\s]/g, "").trim(),
     price_usd: formatUnitPrice(unit),
-    notional_usd: qty * unit,
+    notional_usd: computed,
     derived_from: "unit_price",
   };
 }
