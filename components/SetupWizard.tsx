@@ -11,7 +11,7 @@ import {
   SITE_NAME,
 } from "@/lib/rhagent-setup";
 import { buildGateSetupPrompt, buildSetupPrompt } from "@/lib/setup-prompt";
-import { ZERO_CUSTODY } from "@/lib/privacy";
+import { ZERO_CUSTODY, TRADING_BOT_CUSTODY } from "@/lib/privacy";
 import { PlatformTabs } from "@/components/PlatformTabs";
 import { AgentRuntimeSelect } from "@/components/AgentRuntimeSelect";
 import { CopyBlock, Step } from "@/components/setup-ui";
@@ -69,10 +69,13 @@ export function SetupWizard({
       ) : null}
 
       <div className="setup-trust setup-trust--hero">
-        <strong>{ZERO_CUSTODY.headline}.</strong> {ZERO_CUSTODY.summary} Keys and tokens belong in{" "}
-        <strong>Bankr env vars</strong>, your <strong>local agent runtime</strong>, or our{" "}
-        <strong>Telegram / Discord bot vault</strong> — not rhagents servers.
+        <strong>{ZERO_CUSTODY.headline}.</strong> {ZERO_CUSTODY.summary}
       </div>
+      <p className="setup-note" style={{ marginTop: 10 }}>
+        Using our <strong>Telegram / Discord trading bot</strong> instead? That path encrypts
+        credentials at rest so the bot can trade while your computer is off — see the end of this
+        page (and Docs → Privacy).
+      </p>
 
       {/* ── Goal ──────────────────────────────────────────────────────────── */}
       <div className="setup-section">
@@ -340,9 +343,10 @@ export function SetupWizard({
                 <strong>Already set up?</strong> {AGENTIC_ALREADY_HAVE}
               </div>
               <div className="setup-trust">
-                <strong>We hold nothing.</strong> OAuth runs on your machine; credentials save only to
-                your agent env or bot vault. Our Railway gateway is a stateless pass-through — it
-                never writes your secrets to disk.
+                <strong>Skill / MCP path:</strong> OAuth for native clients stays in your AI platform.
+                Our <code>rh-connect.sh</code> token flow saves <code>AGENTIC_TOKEN</code> to{" "}
+                <em>your</em> agent env (or Bankr) — not to rhagent.bot. Gateway forwards in memory
+                only.
               </div>
               <PlatformTabs
                 mac={
@@ -533,16 +537,26 @@ export function SetupWizard({
             : "Token / bot path: computer can be off after setup; re-run Agentic connect when AGENTIC_TOKEN expires (~9 days)."}
         </p>
         <p className="setup-note">
-          <strong>Zero custody:</strong> we never store your Robinhood tokens or API keys on Railway
-          or in our database. Secrets stay in your agent vault (or Telegram/Discord bot vault); the
-          gateway only forwards requests in memory.{" "}
+          <strong>Skill / MCP path:</strong> {ZERO_CUSTODY.summary}{" "}
           <a href={RH_WALLET_REPO} target="_blank" rel="noreferrer">
             GitHub
           </a>
         </p>
+        <p className="setup-note" style={{ marginTop: 10 }}>
+          <strong>Telegram / Discord trading bot:</strong> {TRADING_BOT_CUSTODY.summary}
+        </p>
         <ul className="setup-note" style={{ marginTop: 8, paddingLeft: 18 }}>
-          <li>Never stored: RH_API_KEY, RH_PRIVATE_KEY_BASE64, AGENTIC_TOKEN</li>
-          <li>Stored on rhagents: RHAGENTS_AGENT_KEY + public trades/profile only</li>
+          <li>
+            Never persisted on rhagent.bot: RH_API_KEY, RH_PRIVATE_KEY_BASE64, AGENTIC_TOKEN
+          </li>
+          <li>
+            Optional once at register/start: bankr_api_key → public wallet address only; key discarded
+          </li>
+          <li>
+            Trading bot vault (encrypted at rest): RH keys + AGENTIC_TOKEN when you connect via bot /
+            dashboard
+          </li>
+          <li>Stored on rhagent.bot: RHAGENTS_AGENT_KEY + public trades/profile only</li>
         </ul>
       </div>
     </div>
