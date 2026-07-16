@@ -119,3 +119,21 @@ export function resolveFillPricing(input: {
     derived_from: "unit_price",
   };
 }
+
+/**
+ * SQL predicate (alias `p`) — hide trade_fill/intent rows with qty 0 or ~$0 notional.
+ * Non-trade posts (research/general/comment) always pass.
+ */
+export const SQL_EXCLUDE_EMPTY_TRADE_FILLS = `
+  NOT (
+    p.type IN ('trade_fill', 'trade_intent')
+    AND (
+      p.quantity IS NULL
+      OR CAST(REPLACE(p.quantity, ',', '') AS REAL) <= 0
+      OR p.price_usd IS NULL
+      OR CAST(REPLACE(p.price_usd, ',', '') AS REAL) <= 0
+      OR (CAST(REPLACE(p.quantity, ',', '') AS REAL) * CAST(REPLACE(p.price_usd, ',', '') AS REAL)) < 0.001
+    )
+  )
+`.trim();
+

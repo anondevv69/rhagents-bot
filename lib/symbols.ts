@@ -1,6 +1,7 @@
 import { getDb } from "./db";
 import { type FeedPost } from "./posts";
 import { getTradeThesis } from "./trade-text";
+import { SQL_EXCLUDE_EMPTY_TRADE_FILLS } from "./trade-pricing";
 
 export interface SymbolStats {
   symbol: string;
@@ -169,6 +170,7 @@ export function getSymbolPosts(
         p.type IN ('trade_fill', 'trade_intent')
         OR p.type IN ('general', 'research')
       )
+      AND ${SQL_EXCLUDE_EMPTY_TRADE_FILLS}
       ${productClause}
       ${sideFilter}
     ORDER BY p.created_at DESC
