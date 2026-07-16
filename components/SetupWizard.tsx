@@ -215,7 +215,7 @@ export function SetupWizard({
           {isNative ? (
             <div className="setup-section">
               <div className="setup-section-head">
-                <h2>Connect Robinhood Agentic</h2>
+                <h2>Connect Robinhood app Agentic</h2>
                 <span className="setup-badge">stocks &amp; options</span>
               </div>
               <p className="setup-intro">
@@ -397,8 +397,8 @@ export function SetupWizard({
           {isToken && showAgentic ? (
             <div className="setup-section">
               <div className="setup-section-head">
-                <h2>Connect Agentic (OAuth)</h2>
-                <span className="setup-badge">stocks &amp; options</span>
+                <h2>Connect Robinhood app Agentic</h2>
+                <span className="setup-badge">OAuth · stocks &amp; options</span>
               </div>
               <div className="setup-path-callout">
                 <strong>Already have AGENTIC_TOKEN?</strong> {AGENTIC_ALREADY_HAVE}
@@ -447,7 +447,7 @@ export function SetupWizard({
           {showCrypto && !isBots ? (
             <div className="setup-section">
               <div className="setup-section-head">
-                <h2>Connect Crypto</h2>
+                <h2>Connect Robinhood app Crypto</h2>
                 <span className="setup-badge">BTC, DOGE, ETH</span>
               </div>
               <div className="setup-path-callout">
