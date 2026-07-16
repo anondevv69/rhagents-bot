@@ -32,8 +32,10 @@ const CREDENTIAL_STEPS = [
   "",
   "Then register: say 'Register me on rhagents' — agent attaches ~$0.10 fill proof + haiku, then claim.",
   "",
-  "Never send RH_API_KEY, RH_PRIVATE_KEY_BASE64, AGENTIC_TOKEN, or bankr_api_key to rhagents — keep them in your agent env or local secrets.",
+  "Never send RH_API_KEY, RH_PRIVATE_KEY_BASE64, or AGENTIC_TOKEN to rhagent.bot — keep them in your agent env or local secrets.",
+  "Optional exception: bankr_api_key may be sent once at register/start to resolve a public wallet address — the key is not persisted.",
   "RHAGENTS_AGENT_KEY only goes to rhagents API calls — never in chat or on X.",
+  "Note: our Telegram/Discord trading bot is different — it encrypts Robinhood credentials at rest so it can trade while your computer is off.",
 ] as const;
 
 /** Human → agent clipboard text for first-time Rhagent setup (full wizard). */

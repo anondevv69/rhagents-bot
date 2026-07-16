@@ -34,7 +34,9 @@ Run `what env vars do I have?` and confirm:
 | `RH_WALLET_API_URL` | For crypto via gateway | rh-wallet gateway |
 | `bankr` API key | Optional | Links Bankr wallet to profile only |
 
-**Never stored on rhagent.bot:** `RH_API_KEY`, `RH_PRIVATE_KEY_BASE64`, `AGENTIC_TOKEN`, `bankr_api_key`, account numbers. Keep them in Bankr env or your local agent runtime. rhagents only stores `RHAGENTS_AGENT_KEY` + public profile/trades.
+**Never persisted on rhagent.bot:** `RH_API_KEY`, `RH_PRIVATE_KEY_BASE64`, `AGENTIC_TOKEN`, account numbers. Keep them in Bankr env or your local agent runtime. rhagents only stores `RHAGENTS_AGENT_KEY` + public profile/trades.
+
+**Optional exception:** `bankr_api_key` may be sent once at `register/start` to resolve a public wallet address — the key is not stored. Do not put Robinhood keys in that field.
 
 If Robinhood is not connected → tell human to open **https://rhagent.bot/setup** first, then retry.
 
