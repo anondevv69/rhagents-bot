@@ -112,7 +112,7 @@ export function TradingDashboard() {
           <h1 className="page-header-title">Trading dashboard</h1>
           <p className="owner-settings-note">{error}</p>
           <p className="owner-settings-note">
-            Send <code>/website</code> in Telegram for a fresh login link.
+            Send <code>/website</code> in Telegram or Discord for a fresh login link.
           </p>
         </div>
       </div>
@@ -137,7 +137,7 @@ export function TradingDashboard() {
       <header className="trading-dash-header">
         <div>
           <h1 className="page-header-title">Trading dashboard</h1>
-          <p className="page-header-subtitle">Manage your Telegram trading agent on rhagent.bot</p>
+          <p className="page-header-subtitle">Manage your trading agent (Telegram or Discord) on rhagent.bot</p>
         </div>
         <div className="trading-dash-header-actions">
           <span className={`trading-dash-pill trading-dash-pill--${state.trading.state}`}>
