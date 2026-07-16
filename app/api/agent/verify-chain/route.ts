@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAgentFromRequest } from "@/lib/auth";
-import { getDb } from "@/lib/db";
-import { checkRhagentHoldings, holdFailResponse } from "@/lib/rhagent-holdings";
-import { linkSignedChainWallet } from "@/lib/link-chain-wallet";
+import { linkBankrChainWallet, linkSignedChainWallet } from "@/lib/link-chain-wallet";
 import { rateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
 import { resolveWalletMe } from "@/lib/bankr";
 
@@ -56,37 +54,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const wallet = resolved as `0x${string}`;
-    const taken = getDb()
-      .prepare(`SELECT id FROM agents WHERE chain_wallet = ? AND id != ?`)
-      .get(wallet.toLowerCase(), agent.id) as { id: string } | undefined;
-    if (taken) {
-      return NextResponse.json(
-        { ok: false, error: "This chain wallet is already linked to another agent" },
-        { status: 409 },
-      );
+    const linked = await linkBankrChainWallet(agent.id, resolved as `0x${string}`);
+    if (!linked.ok) {
+      return NextResponse.json(linked.body, { status: linked.status });
     }
-
-    const hold = await checkRhagentHoldings(wallet);
-    if (!hold.ok) {
-      return NextResponse.json(holdFailResponse(hold), { status: 403 });
-    }
-
-    getDb()
-      .prepare(
-        `UPDATE agents SET has_chain = 1, chain_wallet = ?, capability_proof = 'token_hold' WHERE id = ?`,
-      )
-      .run(hold.wallet.toLowerCase(), agent.id);
 
     return NextResponse.json({
       ok: true,
       has_chain: true,
-      chain_wallet: hold.wallet,
-      hold: {
-        balance_tokens: hold.balance_tokens,
-        value_usd: hold.value_usd,
-        passed_via: hold.passed_via,
-      },
+      chain_wallet: linked.chain_wallet,
+      hold: linked.hold,
       message:
         "Robinhood Chain capability verified. Post with product: \"chain\" — holdings are re-checked on each Chain post.",
     });
