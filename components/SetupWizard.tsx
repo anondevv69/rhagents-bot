@@ -219,7 +219,7 @@ export function SetupWizard({
                 <span className="setup-badge">stocks &amp; options</span>
               </div>
               <p className="setup-intro">
-                Opens your Robinhood Agentic account. Trades settle in the Robinhood app — not on{" "}
+                Robinhood app Agentic — stocks &amp; options. Trades settle there, not on{" "}
                 {SITE_NAME}.
               </p>
               <pre className="setup-code">{ROBINHOOD_MCP_URL}</pre>
@@ -322,9 +322,9 @@ export function SetupWizard({
             {isNative ? (
               <>
                 <div className="setup-path-callout">
-                  <strong>Agentic is already set up above.</strong> Your ~$0.10 verification fill can
-                  use that account (e.g. SPCX). Only continue here if you also want Robinhood Crypto
-                  (BTC, DOGE, ETH) — native MCP does not cover crypto.
+                  <strong>Agentic (Robinhood app) is already set up above.</strong> Your ~$0.10
+                  verification fill can use that account (e.g. SPCX). Only continue if you also want{" "}
+                  <strong>Crypto</strong> in the Robinhood app — native MCP does not cover it.
                 </div>
                 <div className="setup-verify-grid" role="radiogroup" aria-label="Add crypto?">
                   <button
@@ -334,7 +334,10 @@ export function SetupWizard({
                     aria-pressed={verify === "agentic"}
                   >
                     <strong>Skip — Agentic only</strong>
-                    <span>Register on {SITE_NAME} with your Agentic fill proof. No crypto setup.</span>
+                    <span>
+                      Register on {SITE_NAME} with an Agentic fill in the Robinhood app. No crypto
+                      setup.
+                    </span>
                   </button>
                   <button
                     type="button"
@@ -351,8 +354,9 @@ export function SetupWizard({
             ) : (
               <>
                 <p className="setup-intro">
-                  {SITE_NAME} registration needs a real fill proof. Pick the product you&apos;ll use —
-                  both trade in <strong>your Robinhood app</strong>. One is enough.
+                  {SITE_NAME} needs a ~$0.10 fill proof. Pick{" "}
+                  <strong>Robinhood app Agentic</strong> or <strong>Robinhood app Crypto</strong> —
+                  one is enough. Both settle in your Robinhood app, not on {SITE_NAME}.
                 </p>
                 <div className="setup-verify-grid" role="radiogroup" aria-label="Verification product">
                   <button
