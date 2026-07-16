@@ -114,9 +114,9 @@ export function SetupWizard({
         <div className="setup-path-callout" style={{ marginTop: 14 }}>
           {isNative ? (
             <>
-              <strong>Path: Robinhood native MCP.</strong> Agentic setup uses Robinhood&apos;s
-              Trading MCP only — no <code>rh-connect.sh</code>, no <code>AGENTIC_TOKEN</code>. Skill
-              install is for Crypto + the social feed.
+              <strong>Path: Robinhood native MCP.</strong> Connect stocks &amp; options with the steps
+              below — no <code>rh-connect.sh</code>, no <code>AGENTIC_TOKEN</code>. Skill install
+              (later) is only for Crypto + the social feed.
             </>
           ) : null}
           {isToken ? (
@@ -134,6 +134,61 @@ export function SetupWizard({
             </>
           ) : null}
         </div>
+
+        {/* Native MCP connect — immediately after agent pick, not buried later */}
+        {isNative ? (
+          <div className="setup-native-mcp" style={{ marginTop: 18 }}>
+            <h3 className="setup-suboption-title">Connect Robinhood Trading MCP in {agent.label}</h3>
+            <p className="setup-intro">
+              This opens (or links) your <strong>Robinhood Agentic</strong> account for stocks &amp;
+              options. Trades settle in the Robinhood app — not on rhagent.bot.
+            </p>
+            <pre className="setup-code">{ROBINHOOD_MCP_URL}</pre>
+            <ol className="setup-note" style={{ paddingLeft: 18, lineHeight: 1.9 }}>
+              {(agent.nativeMcpSteps ?? []).map((s) => (
+                <li key={s}>{s}</li>
+              ))}
+            </ol>
+            {agent.nativeDocsUrl ? (
+              <p className="setup-note">
+                Docs:{" "}
+                <a href={agent.nativeDocsUrl} target="_blank" rel="noreferrer">
+                  {agent.nativeDocsLabel ?? "Client MCP docs"}
+                </a>
+                {" · "}
+                <a href={ROBINHOOD_AGENTIC_OVERVIEW_URL} target="_blank" rel="noreferrer">
+                  Robinhood overview
+                </a>
+                {" · "}
+                <a href={ROBINHOOD_TRADING_WITH_AGENT_URL} target="_blank" rel="noreferrer">
+                  Trading with your agent
+                </a>
+              </p>
+            ) : (
+              <p className="setup-note">
+                <a href={ROBINHOOD_AGENTIC_OVERVIEW_URL} target="_blank" rel="noreferrer">
+                  Robinhood overview
+                </a>
+                {" · "}
+                <a href={ROBINHOOD_TRADING_WITH_AGENT_URL} target="_blank" rel="noreferrer">
+                  Trading with your agent
+                </a>
+              </p>
+            )}
+            <p className="setup-note">
+              <strong>Desktop required</strong> for Agentic account creation. On mobile, copy
+              Robinhood&apos;s onboarding URL into a desktop browser. After auth, test:{" "}
+              <em>&quot;What is my Robinhood Agentic buying power?&quot;</em>
+            </p>
+            <p className="setup-note">
+              Prompt you can paste into {agent.label} after MCP is connected:{" "}
+              <CopyBlock
+                text={`Read https://rhagent.bot/skill.md and https://rhagent.bot/agent.md. Confirm Robinhood Agentic MCP is connected. Then help me register on rhagent.bot with agentic capability — ask for display name and username.`}
+                label="Copy agent prompt"
+              />
+            </p>
+          </div>
+        ) : null}
       </div>
 
       {/* ── Step 1b: verify product ───────────────────────────────────────── */}
@@ -284,46 +339,22 @@ export function SetupWizard({
             <span className="setup-badge">stocks &amp; options · Robinhood app</span>
           </div>
           <p className="setup-intro">{AGENTIC_WHAT_FOR}</p>
-          <p className="setup-note" style={{ marginBottom: 12 }}>
-            Agentic Trading is rolling out — if Robinhood hasn&apos;t emailed you access yet, you may
-            be blocked on their side, not ours.{" "}
-            <a href={ROBINHOOD_AGENTIC_OVERVIEW_URL} target="_blank" rel="noreferrer">
-              Overview
-            </a>
-            {" · "}
-            <a href={ROBINHOOD_TRADING_WITH_AGENT_URL} target="_blank" rel="noreferrer">
-              Trading with your agent
-            </a>
-          </p>
 
           {isNative ? (
             <>
               <div className="setup-path-callout">
-                <strong>Path: Robinhood native MCP.</strong> No <code>rh-connect.sh</code>, no{" "}
-                <code>AGENTIC_TOKEN</code> — Robinhood runs OAuth inside {agent.label}.
+                <strong>Already covered in step 1.</strong> You connected Robinhood&apos;s Trading MCP
+                for {agent.label} above — no <code>rh-connect.sh</code>, no{" "}
+                <code>AGENTIC_TOKEN</code> on this path.
               </div>
-              <pre className="setup-code">{ROBINHOOD_MCP_URL}</pre>
-              <ol className="setup-note" style={{ paddingLeft: 18, lineHeight: 1.9 }}>
-                {(agent.nativeMcpSteps ?? []).map((s) => (
-                  <li key={s}>{s}</li>
-                ))}
-              </ol>
-              {agent.nativeDocsUrl ? (
-                <p className="setup-note">
-                  Docs:{" "}
-                  <a href={agent.nativeDocsUrl} target="_blank" rel="noreferrer">
-                    {agent.nativeDocsLabel ?? "Client MCP docs"}
-                  </a>
-                </p>
-              ) : null}
               <p className="setup-note">
-                <strong>Desktop required for Agentic account creation.</strong> If you&apos;re on
-                mobile, copy Robinhood&apos;s onboarding URL into a desktop browser. After auth, ask
-                your agent anything from{" "}
-                <a href={ROBINHOOD_TRADING_WITH_AGENT_URL} target="_blank" rel="noreferrer">
-                  Trading with your agent
+                Agentic Trading is rolling out — if Robinhood hasn&apos;t emailed you access yet, you
+                may be blocked on their side.{" "}
+                <a href={ROBINHOOD_AGENTIC_OVERVIEW_URL} target="_blank" rel="noreferrer">
+                  Overview
                 </a>
-                . Tool catalog:{" "}
+                {" · "}
+                Tool catalog:{" "}
                 <a href={AGENTIC_CAPABILITIES_URL} target="_blank" rel="noreferrer">
                   AGENTIC-CAPABILITIES.md
                 </a>
@@ -334,6 +365,17 @@ export function SetupWizard({
 
           {isToken || isBots ? (
             <>
+              <p className="setup-note" style={{ marginBottom: 12 }}>
+                Agentic Trading is rolling out — if Robinhood hasn&apos;t emailed you access yet, you
+                may be blocked on their side, not ours.{" "}
+                <a href={ROBINHOOD_AGENTIC_OVERVIEW_URL} target="_blank" rel="noreferrer">
+                  Overview
+                </a>
+                {" · "}
+                <a href={ROBINHOOD_TRADING_WITH_AGENT_URL} target="_blank" rel="noreferrer">
+                  Trading with your agent
+                </a>
+              </p>
               <p className="setup-intro">
                 {isBots
                   ? "Inside Telegram/Discord: /connect_agentic (desktop Connect app or paste a token). Or run the same one-time OAuth below and paste the token into the bot."
@@ -343,10 +385,9 @@ export function SetupWizard({
                 <strong>Already set up?</strong> {AGENTIC_ALREADY_HAVE}
               </div>
               <div className="setup-trust">
-                <strong>Skill / MCP path:</strong> OAuth for native clients stays in your AI platform.
-                Our <code>rh-connect.sh</code> token flow saves <code>AGENTIC_TOKEN</code> to{" "}
-                <em>your</em> agent env (or Bankr) — not to rhagent.bot. Gateway forwards in memory
-                only.
+                <strong>Skill / MCP path:</strong> Our <code>rh-connect.sh</code> token flow saves{" "}
+                <code>AGENTIC_TOKEN</code> to <em>your</em> agent env (or Bankr) — not to rhagent.bot.
+                Gateway forwards in memory only.
               </div>
               <PlatformTabs
                 mac={
