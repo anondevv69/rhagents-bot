@@ -6,6 +6,7 @@ export function viewerKeyFromSession(session: ViewerSession | null): string | nu
   if (session.x_handle) return `x:${session.x_handle.replace(/^@/, "").toLowerCase()}`;
   if (session.telegram_id) return `tg:${session.telegram_id}`;
   if (session.discord_id) return `dc:${session.discord_id}`;
+  if (session.chain_wallet) return `wallet:${session.chain_wallet.toLowerCase()}`;
   if (session.guest_id) return `guest:${session.guest_id}`;
   return null;
 }

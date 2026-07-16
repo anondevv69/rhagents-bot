@@ -27,9 +27,8 @@ export default async function AccountPage({
   const { setup } = await searchParams;
   const owned = listAgentsOwnedBySession(session);
 
-  // First-time X owners still land on profile — but ?setup=1 and multi-owner stay here.
-  // Settings for the agent live at /agent/[username]/settings.
-  if (session.x_handle && !session.telegram_id && !session.discord_id && setup !== "1" && owned.length === 1) {
+  // Single owned agent → jump to profile (X / wallet / etc.), unless ?setup=1.
+  if (setup !== "1" && owned.length === 1) {
     redirect(agentProfilePath(owned[0]));
   }
 

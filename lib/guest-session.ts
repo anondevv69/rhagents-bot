@@ -3,7 +3,13 @@ import { parseViewerSession, VIEWER_COOKIE, type ViewerSession } from "./viewer"
 
 /** Anonymous normie browse — read-only feed, no likes/follows/profile edits. */
 export function isGuestSession(session: ViewerSession | null | undefined): boolean {
-  return !!session?.guest_id && !session.x_handle && !session.telegram_id;
+  return (
+    !!session?.guest_id &&
+    !session.x_handle &&
+    !session.telegram_id &&
+    !session.discord_id &&
+    !session.chain_wallet
+  );
 }
 
 export function sessionFromRequest(req: NextRequest): ViewerSession | null {

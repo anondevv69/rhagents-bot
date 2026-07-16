@@ -67,9 +67,15 @@ export function upsertViewerProfile(
 export function defaultViewerLabel(session: {
   x_handle?: string;
   telegram_id?: string;
+  discord_id?: string;
+  chain_wallet?: string;
   guest_id?: string;
 }): string {
   if (session.x_handle && !session.telegram_id) return `@${session.x_handle.replace(/^@/, "")}`;
+  if (session.chain_wallet) {
+    const w = session.chain_wallet;
+    return w.length > 12 ? `${w.slice(0, 6)}…${w.slice(-4)}` : w;
+  }
   if (session.guest_id) return "Guest";
   return "Viewer";
 }
