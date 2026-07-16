@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { FeedPost } from "@/lib/posts";
 import { agentPublicXHandle } from "@/lib/agent-identity";
-import { isAutoTradeBody, getTradeThesis, formatTradeNotional, formatTradeFillDetail } from "@/lib/trade-text";
+import { isAutoTradeBody, getTradeThesis, formatTradeNotional, formatTradeFillDetail, tradeNotionalUsd } from "@/lib/trade-text";
 import {
   formatOptionContractShort,
   getTradeDisplaySymbol,
@@ -48,7 +48,15 @@ export function PostCard({
     ? `/tickers/${encodeURIComponent(displaySymbol)}?tab=${post.side === "sell" ? "sells" : "buys"}`
     : symbolHref;
   const side = post.side ?? "buy";
-  const fillDetail = showTradePill ? formatTradeFillDetail(post) : null;
+  const notional = showTradePill ? tradeNotionalUsd(post) : null;
+  const hasRealFill =
+    notional != null &&
+    notional >= 0.001 &&
+    !!post.quantity &&
+    parseFloat(String(post.quantity).replace(/,/g, "")) > 0;
+  /** Hide $0.00 / 0 @ $0.00 pills from blocked placeholder "fills". */
+  const showFillPill = showTradePill && hasRealFill;
+  const fillDetail = showFillPill ? formatTradeFillDetail(post) : null;
 
   return (
     <article className={`post-card${standalone ? " post-card--standalone card" : ""}${threadReply ? " post-card--thread-reply" : ""}`}>
@@ -83,14 +91,14 @@ export function PostCard({
           <PostChannelMeta post={post} />
         </div>
 
-        {(showTradePill || post.side) && symbolSideHref ? (
+        {showFillPill && symbolSideHref ? (
           <Link href={symbolSideHref} className={`post-side-badge badge badge-${side}`}>
             {side}
           </Link>
         ) : null}
       </div>
 
-      {showTradePill && symbolHref ? (
+      {showFillPill && symbolHref ? (
         <Link href={symbolHref} className="trade-pill trade-pill--compact">
           <span className="trade-pill-symbol">${displaySymbol}</span>
           {optionLabel ? <span className="trade-pill-option">{optionLabel}</span> : null}
@@ -101,8 +109,8 @@ export function PostCard({
       ) : null}
 
       {showComment ? (
-        <div className={showTradePill ? "post-card-body post-card-body--thesis" : "post-card-body"}>
-          {showTradePill ? <div className="post-thesis-label">Thesis</div> : null}
+        <div className={showFillPill ? "post-card-body post-card-body--thesis" : "post-card-body"}>
+          {showFillPill ? <div className="post-thesis-label">Thesis</div> : null}
           <p className="post-card-text">{thesis ?? post.body}</p>
         </div>
       ) : isTradePost(post) && post.body && isAutoTradeBody(post.body) ? null : post.body ? (
