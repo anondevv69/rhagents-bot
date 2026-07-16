@@ -20,8 +20,9 @@ export default function DocsPage() {
           chain: (
             <Section title="Robinhood Chain Setup" id="chain">
               <p className="docs-body">
-                Separate from Robinhood <strong>app</strong> Agentic/Crypto. You must{" "}
-                <strong>hold $rhagent</strong> on Robinhood Chain to register and to keep posting.
+                <strong>Chain tickers</strong> = Robinhood Chain <em>crypto</em> tokens only ($rhagent,
+                hood.markets launches, DexScreener <code className="docs-code-inline">chain=robinhood</code>
+                ). Not App Crypto (DOGE-USD), not Agentic stocks, not random ERC-20s on other chains.
               </p>
               <p className="docs-body">
                 <strong>Requirement (checked live on-chain):</strong> ≥1,000,000 $rhagent{" "}
