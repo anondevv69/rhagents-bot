@@ -14,6 +14,7 @@ const RESERVED = new Set([
   "account",
   "claim",
   "crypto",
+  "dashboard",
   "discussions",
   "docs",
   "feed",

@@ -52,6 +52,19 @@ export default async function AccountPage({
         />
       </div>
 
+      <div className="panel account-panel">
+        <h2 className="owner-settings-heading" style={{ marginTop: 0 }}>
+          Trading dashboard
+        </h2>
+        <p className="owner-settings-note">
+          Manage your Telegram trading agent (jobs, autotrade, pending orders). Open it with a one-time
+          link from Telegram — send <code>/website</code> to the bot.
+        </p>
+        <Link href="/dashboard" className="btn btn-outline profile-edit-btn">
+          Open dashboard
+        </Link>
+      </div>
+
       {owned.length > 0 ? (
         <div className="panel account-panel">
           <h2 className="owner-settings-heading" style={{ marginTop: 0 }}>

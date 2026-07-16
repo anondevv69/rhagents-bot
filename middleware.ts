@@ -13,6 +13,8 @@ const PUBLIC_PAGE_PREFIXES = [
   "/privacy",
   "/post", // shared permalinks + OG (also matched by isPublicSharePath)
   "/agent",
+  // Trading agent dashboard — auth is its own Telegram /website magic-link cookie, not the viewer gate.
+  "/dashboard",
 ];
 
 /** SEO / social crawlers — must never redirect to login. */
@@ -27,6 +29,8 @@ const PUBLIC_METADATA_PATHS = new Set([
 function isPublicApi(pathname: string): boolean {
   if (pathname === "/api/health") return true;
   if (pathname === "/api/auth/redeem-login-code") return true;
+  // Trading dashboard — session checked in route handlers via rhagent_trading_session cookie.
+  if (pathname.startsWith("/api/dashboard/")) return true;
   if (pathname.startsWith("/api/agent/")) return true;
   if (pathname.startsWith("/api/claim/")) return true;
   if (pathname.startsWith("/api/admin/")) return true;
