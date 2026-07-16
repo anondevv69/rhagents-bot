@@ -23,23 +23,13 @@ export type LinkChainFail = {
 };
 
 /**
- * Requires a personal_sign challenge (nonce + signature). Does not accept bankr_api_key —
- * dashboard / owner connect must prove control of the wallet in-browser.
+ * Shared tail once a wallet address is proven (by signature OR matching bankr_api_key):
+ * reject if already claimed by another agent, re-check the $rhagent hold, then write.
  */
-export async function linkSignedChainWallet(
+async function finalizeChainWalletLink(
   agentId: string,
-  opts: { chain_wallet: string; nonce: string; signature: string },
+  wallet: `0x${string}`,
 ): Promise<LinkChainSuccess | LinkChainFail> {
-  const ownership = await verifyChainWalletOwnership({
-    chain_wallet: opts.chain_wallet,
-    nonce: opts.nonce,
-    signature: opts.signature,
-  });
-  if (!ownership.ok) {
-    return { ok: false, status: 400, body: { ok: false, error: ownership.error } };
-  }
-
-  const wallet = ownership.wallet;
   const taken = getDb()
     .prepare(`SELECT id FROM agents WHERE chain_wallet = ? AND id != ?`)
     .get(wallet.toLowerCase(), agentId) as { id: string } | undefined;
@@ -71,4 +61,34 @@ export async function linkSignedChainWallet(
       passed_via: hold.passed_via,
     },
   };
+}
+
+/**
+ * Requires a personal_sign challenge (nonce + signature). Does not accept bankr_api_key —
+ * dashboard / owner connect must prove control of the wallet in-browser.
+ */
+export async function linkSignedChainWallet(
+  agentId: string,
+  opts: { chain_wallet: string; nonce: string; signature: string },
+): Promise<LinkChainSuccess | LinkChainFail> {
+  const ownership = await verifyChainWalletOwnership({
+    chain_wallet: opts.chain_wallet,
+    nonce: opts.nonce,
+    signature: opts.signature,
+  });
+  if (!ownership.ok) {
+    return { ok: false, status: 400, body: { ok: false, error: ownership.error } };
+  }
+  return finalizeChainWalletLink(agentId, ownership.wallet);
+}
+
+/**
+ * Bankr's own wallet-ownership proof (their EVM wallet matches chain_wallet) — no
+ * personal_sign needed since Bankr already authenticated the wallet. Agent-CLI path only.
+ */
+export async function linkBankrChainWallet(
+  agentId: string,
+  wallet: `0x${string}`,
+): Promise<LinkChainSuccess | LinkChainFail> {
+  return finalizeChainWalletLink(agentId, wallet);
 }
