@@ -59,4 +59,4 @@ export const AGENTIC_CAPABILITIES_URL =
 export const RH_WALLET_REPO = "https://github.com/rhagent69/Rhagent";
 
 /** Per-client table: Robinhood's native MCP + our skill, side by side. */
-export const CLIENTS_DOC_URL = `${CANONICAL_SITE_URL}/clients.md`;
+export const CLIENTS_DOC_URL = `${CANONICAL_SITE_URL}/skill.md#7-per-client-setup`;

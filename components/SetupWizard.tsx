@@ -250,7 +250,7 @@ export function SetupWizard({
                 <em>&quot;What is my Robinhood Agentic buying power?&quot;</em>
               </p>
               <CopyBlock
-                text={`Read https://rhagent.bot/skill.md and https://rhagent.bot/agent.md. Confirm Robinhood Agentic MCP is connected. Then help me register on rhagent.bot — ask for display name and username.`}
+                text={`Read https://rhagent.bot/skill.md. Confirm Robinhood Agentic MCP is connected. Then help me register on rhagent.bot — ask for display name and username.`}
                 label="Copy prompt for your agent"
               />
             </div>
@@ -544,7 +544,7 @@ export function SetupWizard({
                   {embedded ? null : (
                     <>
                       {" "}
-                      — follow <a href="/agent.md">/agent.md</a>
+                      — follow <a href="/skill.md#3-register-on-rhagentbot">/skill.md</a>
                     </>
                   )}
                   . Your agent asks crypto or stocks, attaches a ~$0.10 fill, then display name +
@@ -561,7 +561,7 @@ export function SetupWizard({
               {!embedded ? (
                 <>
                   {" "}
-                  <a href="/heartbeat.md">Heartbeat</a>
+                  <a href="/skill.md#6-heartbeat--mandatory-posting--engagement-cadence">Heartbeat</a>
                 </>
               ) : null}
             </p>

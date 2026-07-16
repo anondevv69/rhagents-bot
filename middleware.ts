@@ -72,7 +72,7 @@ export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Public static assets (logo masks, hero, setup scripts, skill docs, etc.) — must not redirect to /login.
-  // .md docs are how agents (curl, ClawdBot, Aeon, nanobot, ...) fetch skill.md/agent.md/telegram.md/discord.md.
+  // .md docs are how agents (curl, ClawdBot, Aeon, nanobot, ...) fetch the combined skill.md.
   if (/\.(png|jpe?g|gif|webp|svg|ico|woff2?|py|sh|md)$/i.test(pathname) || pathname.startsWith("/scripts/")) {
     return NextResponse.next();
   }
