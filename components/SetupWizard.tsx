@@ -315,50 +315,78 @@ export function SetupWizard({
           {/* ── Verify product ──────────────────────────────────────────── */}
           <div className="setup-section">
             <div className="setup-section-head">
-              <h2>Verify with Robinhood</h2>
-              <span className="setup-badge">one is enough</span>
+              <h2>{isNative ? "Also connect Crypto?" : "Verify with Robinhood"}</h2>
+              <span className="setup-badge">{isNative ? "optional" : "one is enough"}</span>
             </div>
-            <p className="setup-intro">
-              {SITE_NAME} registration needs a real fill proof. Pick the product you&apos;ll use —
-              both trade in <strong>your Robinhood app</strong>.
-            </p>
+
             {isNative ? (
-              <p className="setup-note">
-                You already connected Agentic MCP above. Pick <strong>Crypto</strong> only if you
-                also want BTC/DOGE/ETH (or crypto-only verification).
-              </p>
-            ) : null}
-            <div className="setup-verify-grid" role="radiogroup" aria-label="Verification product">
-              <button
-                type="button"
-                className={`setup-verify-card${verify === "agentic" ? " setup-verify-card--active" : ""}`}
-                onClick={() => setVerify("agentic")}
-                aria-pressed={verify === "agentic"}
-              >
-                <strong>{PRODUCT_AGENTIC.title}</strong>
-                <span>{PRODUCT_AGENTIC.summary}</span>
-                <em>{PRODUCT_AGENTIC.examples}</em>
-              </button>
-              <button
-                type="button"
-                className={`setup-verify-card${verify === "crypto" ? " setup-verify-card--active" : ""}`}
-                onClick={() => setVerify("crypto")}
-                aria-pressed={verify === "crypto"}
-              >
-                <strong>{PRODUCT_CRYPTO.title}</strong>
-                <span>{PRODUCT_CRYPTO.summary}</span>
-                <em>{PRODUCT_CRYPTO.examples}</em>
-              </button>
-              <button
-                type="button"
-                className={`setup-verify-card setup-verify-card--both${verify === "both" ? " setup-verify-card--active" : ""}`}
-                onClick={() => setVerify("both")}
-                aria-pressed={verify === "both"}
-              >
-                <strong>Both</strong>
-                <span>Still only one fill proof is required to register on {SITE_NAME}.</span>
-              </button>
-            </div>
+              <>
+                <div className="setup-path-callout">
+                  <strong>Agentic is already set up above.</strong> Your ~$0.10 verification fill can
+                  use that account (e.g. SPCX). Only continue here if you also want Robinhood Crypto
+                  (BTC, DOGE, ETH) — native MCP does not cover crypto.
+                </div>
+                <div className="setup-verify-grid" role="radiogroup" aria-label="Add crypto?">
+                  <button
+                    type="button"
+                    className={`setup-verify-card${verify === "agentic" ? " setup-verify-card--active" : ""}`}
+                    onClick={() => setVerify("agentic")}
+                    aria-pressed={verify === "agentic"}
+                  >
+                    <strong>Skip — Agentic only</strong>
+                    <span>Register on {SITE_NAME} with your Agentic fill proof. No crypto setup.</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`setup-verify-card${verify === "both" || verify === "crypto" ? " setup-verify-card--active" : ""}`}
+                    onClick={() => setVerify("both")}
+                    aria-pressed={verify === "both" || verify === "crypto"}
+                  >
+                    <strong>{PRODUCT_CRYPTO.title}</strong>
+                    <span>{PRODUCT_CRYPTO.summary}</span>
+                    <em>{PRODUCT_CRYPTO.examples}</em>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="setup-intro">
+                  {SITE_NAME} registration needs a real fill proof. Pick the product you&apos;ll use —
+                  both trade in <strong>your Robinhood app</strong>. One is enough.
+                </p>
+                <div className="setup-verify-grid" role="radiogroup" aria-label="Verification product">
+                  <button
+                    type="button"
+                    className={`setup-verify-card${verify === "agentic" ? " setup-verify-card--active" : ""}`}
+                    onClick={() => setVerify("agentic")}
+                    aria-pressed={verify === "agentic"}
+                  >
+                    <strong>{PRODUCT_AGENTIC.title}</strong>
+                    <span>{PRODUCT_AGENTIC.summary}</span>
+                    <em>{PRODUCT_AGENTIC.examples}</em>
+                  </button>
+                  <button
+                    type="button"
+                    className={`setup-verify-card${verify === "crypto" ? " setup-verify-card--active" : ""}`}
+                    onClick={() => setVerify("crypto")}
+                    aria-pressed={verify === "crypto"}
+                  >
+                    <strong>{PRODUCT_CRYPTO.title}</strong>
+                    <span>{PRODUCT_CRYPTO.summary}</span>
+                    <em>{PRODUCT_CRYPTO.examples}</em>
+                  </button>
+                  <button
+                    type="button"
+                    className={`setup-verify-card setup-verify-card--both${verify === "both" ? " setup-verify-card--active" : ""}`}
+                    onClick={() => setVerify("both")}
+                    aria-pressed={verify === "both"}
+                  >
+                    <strong>Both</strong>
+                    <span>Still only one fill proof is required to register on {SITE_NAME}.</span>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           {/* ── Token path: Agentic OAuth (only if needed) ──────────────── */}
