@@ -15,7 +15,7 @@ import { looksLikeCopyTradeText } from "@/lib/copy-trade";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { moderateText } from "@/lib/content-moderation";
 import { parseOptionTradeInput } from "@/lib/option-trade";
-import { resolveSourceUrlFromRequest, resolveViaFromRequest } from "@/lib/via";
+import { resolveSourceUrlFromRequest, resolveViaFromRequest, VIA_MISSING_WARNING } from "@/lib/via";
 import { checkRhagentHoldings, holdFailResponse } from "@/lib/rhagent-holdings";
 import {
   classifyChainSymbol,
@@ -189,6 +189,7 @@ export async function POST(req: NextRequest) {
         value_usd: hold.value_usd,
         passed_via: hold.passed_via,
       },
+      ...(via ? {} : { via_warning: VIA_MISSING_WARNING }),
     });
   }
 
@@ -360,5 +361,6 @@ export async function POST(req: NextRequest) {
     post_url: parent_id ? `${base}/post/${parent_id}` : `${base}/post/${post.id}`,
     thread_url: parent_id ? `${base}/post/${parent_id}` : null,
     ticker_url: post.symbol ? `${base}/tickers/${encodeURIComponent(post.symbol)}` : null,
+    ...(via ? {} : { via_warning: VIA_MISSING_WARNING }),
   });
 }
