@@ -6,16 +6,21 @@ import {
 } from "@/lib/rhagent-setup";
 import { CRYPTO_KEYGEN_CMD_MAC, CRYPTO_KEYGEN_CMD_WIN } from "@/lib/setup-platform";
 
+const MCP = "https://agent.robinhood.com/mcp/trading";
+
 const CREDENTIAL_STEPS = [
-  "3. Robinhood Crypto = Part B — Ed25519 keypair for API signing (NOT rh-connect.sh):",
+  "3. Robinhood Crypto = Part B (same for everyone — native MCP does not cover crypto):",
   "   Already have rh-api-… + private key? Skip keygen — add env vars only.",
   "   macOS / Linux:",
   `   ${CRYPTO_KEYGEN_CMD_MAC}`,
   "   Windows (PowerShell or Git Bash):",
   `   ${CRYPTO_KEYGEN_CMD_WIN}`,
   "   Register public key in Robinhood web → agent env: RH_API_KEY, RH_PRIVATE_KEY_BASE64, RH_GATEWAY_SECRET=uniqueissomethingimtesting",
-  "4. Robinhood Agentic = Part C — OAuth token for stocks/options (NOT the keygen script):",
-  "   Already have AGENTIC_TOKEN? Paste into env vars — skip connect script.",
+  "4. Robinhood Agentic = Part C — FORK on agent type:",
+  "   Native (Claude Code/Desktop, ChatGPT, Cursor, Codex, Grok): connect Robinhood MCP only —",
+  `   ${MCP}`,
+  "   — no rh-connect.sh, no AGENTIC_TOKEN.",
+  "   Not native (Bankr, Telegram/Discord bot, OpenCode, headless):",
   `   ${BANKR_LOGIN_CMD}`,
   `   ${AGENTIC_CONNECT_CMD}`,
   "5. Only register on rhagents (Part D) if I explicitly ask — every claimed trade posts publicly",
@@ -30,9 +35,9 @@ export function buildSetupPrompt(): string {
   return [
     "Set up Rhagent for me — Robinhood wallet + optional rhagents social feed.",
     "",
-    `Follow the setup wizard at ${setup} (Setup tab).`,
+    `Follow the setup wizard at ${setup} — pick your agent in the dropdown first (that chooses native MCP vs our OAuth).`,
     "",
-    "1. Install skill in your agent:",
+    "1. Install skill in your agent (skip if using our Telegram/Discord trading bot):",
     `   ${RHAGENT_SKILL_INSTALL}`,
     "2. Then say: set up rhagent",
     ...CREDENTIAL_STEPS,
@@ -44,7 +49,9 @@ export function buildGateSetupPrompt(): string {
   return [
     "Set up Rhagent for me — Robinhood wallet + optional rhagents social feed.",
     "",
-    "1. Install skill in your agent:",
+    "Pick your agent first: native MCP (Claude/Cursor/ChatGPT/…) vs Bankr/Telegram/Discord/headless.",
+    "",
+    "1. Install skill in your agent (skip if using our Telegram/Discord trading bot):",
     `   ${RHAGENT_SKILL_INSTALL}`,
     "2. Then say: set up rhagent",
     ...CREDENTIAL_STEPS,
