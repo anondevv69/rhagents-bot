@@ -37,9 +37,35 @@ type DashboardState = {
   events: Array<{ description: string }>;
 };
 
+type SkillRow = {
+  id: string;
+  name: string;
+  description: string | null;
+  body: string;
+  is_builtin: number;
+  enabled: boolean;
+  owned: boolean;
+};
+
+type SkillsState = {
+  active: SkillRow[];
+  catalog: SkillRow[];
+  maxCustom: number;
+};
+
+type RegistrationRow = {
+  id: string;
+  username: string;
+  display_name: string;
+  capability: string;
+  status: string;
+  description: string;
+};
+
 const TABS = [
   { id: "overview", label: "Overview" },
   { id: "connections", label: "Connections" },
+  { id: "skills", label: "Skills" },
   { id: "jobs", label: "Jobs" },
   { id: "orders", label: "Pending orders" },
   { id: "autotrade", label: "Autotrade" },
@@ -67,6 +93,8 @@ async function api(path: string, options: RequestInit = {}) {
 
 export function TradingDashboard() {
   const [state, setState] = useState<DashboardState | null>(null);
+  const [skills, setSkills] = useState<SkillsState | null>(null);
+  const [registrations, setRegistrations] = useState<RegistrationRow[]>([]);
   const [tab, setTab] = useState<TabId>("overview");
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; isError?: boolean } | null>(null);
@@ -88,16 +116,39 @@ export function TradingDashboard() {
     }
   }, []);
 
+  const loadSkills = useCallback(async () => {
+    try {
+      const data = (await api("/api/dashboard/proxy/skills")) as SkillsState & { ok: boolean };
+      setSkills(data);
+    } catch {
+      /* surfaced via toast on individual actions instead */
+    }
+  }, []);
+
+  const loadRegistrations = useCallback(async () => {
+    try {
+      const data = (await api("/api/dashboard/proxy/rhagents/registrations")) as {
+        ok: boolean;
+        registrations: RegistrationRow[];
+      };
+      setRegistrations(data.registrations ?? []);
+    } catch {
+      /* best-effort */
+    }
+  }, []);
+
   useEffect(() => {
     void loadAll();
-  }, [loadAll]);
+    void loadSkills();
+    void loadRegistrations();
+  }, [loadAll, loadSkills, loadRegistrations]);
 
   async function run(action: () => Promise<void>, okMsg: string) {
     setBusy(true);
     try {
       await action();
       showToast(okMsg);
-      await loadAll();
+      await Promise.all([loadAll(), loadSkills(), loadRegistrations()]);
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed", true);
     } finally {
@@ -195,29 +246,149 @@ export function TradingDashboard() {
       {tab === "connections" && (
         <div className="trading-dash-stack">
           <div className="panel">
-            <h2 className="owner-settings-heading">Connections</h2>
+            <h2 className="owner-settings-heading">Robinhood Crypto</h2>
             <div className="owner-settings-conn">
-              <span className="owner-settings-conn-label">Robinhood Crypto</span>
+              <span className="owner-settings-conn-label">Status</span>
               <span className={`owner-settings-conn-status${c.crypto ? " is-on" : ""}`}>
-                {c.crypto ? "Connected" : c.cryptoPending ? "Pending — finish with /save_rh_key" : "Not connected"}
+                {c.crypto ? "Connected" : c.cryptoPending ? "Pending — paste the rh-api-... key below" : "Not connected"}
               </span>
             </div>
+            <CryptoConnectForm
+              pending={!!c.cryptoPending}
+              connected={c.crypto}
+              busy={busy}
+              onGenerate={() =>
+                new Promise<string>((resolve, reject) => {
+                  api("/api/dashboard/proxy/connect/crypto/generate", { method: "POST" })
+                    .then((r) => {
+                      showToast("Keypair generated — paste the public key into Robinhood.");
+                      void Promise.all([loadAll(), loadSkills(), loadRegistrations()]);
+                      resolve((r as { publicKey: string }).publicKey);
+                    })
+                    .catch((err) => {
+                      showToast(err instanceof Error ? err.message : "Failed", true);
+                      reject(err);
+                    });
+                })
+              }
+              onSaveKey={(apiKey) =>
+                run(
+                  () => api("/api/dashboard/proxy/connect/crypto/save-key", { method: "POST", body: JSON.stringify({ apiKey }) }).then(() => undefined),
+                  "Crypto connected.",
+                )
+              }
+              onPastePair={(apiKey, privateKeyBase64) =>
+                run(
+                  () =>
+                    api("/api/dashboard/proxy/connect/crypto", {
+                      method: "POST",
+                      body: JSON.stringify({ apiKey, privateKeyBase64 }),
+                    }).then(() => undefined),
+                  "Crypto connected.",
+                )
+              }
+              onDisconnect={() =>
+                run(() => api("/api/dashboard/proxy/disconnect/crypto", { method: "POST" }).then(() => undefined), "Crypto disconnected.")
+              }
+            />
+          </div>
+
+          <div className="panel">
+            <h2 className="owner-settings-heading">Robinhood Agentic (stocks &amp; options)</h2>
             <div className="owner-settings-conn">
-              <span className="owner-settings-conn-label">Robinhood Agentic</span>
+              <span className="owner-settings-conn-label">Status</span>
               <span className={`owner-settings-conn-status${c.agentic ? " is-on" : ""}`}>
                 {c.agentic ? "Connected" : "Not connected"}
               </span>
             </div>
+            <p className="owner-settings-note">
+              Robinhood requires OAuth on a desktop browser or an MCP client — that step can&apos;t be skipped. Once
+              you have a token (from the desktop Connect app, a direct MCP client, or the setup wizard), paste it
+              below.
+            </p>
+            <TokenConnectForm
+              connected={c.agentic}
+              busy={busy}
+              placeholder="Agentic token"
+              onSave={(token) =>
+                run(
+                  () => api("/api/dashboard/proxy/connect/agentic", { method: "POST", body: JSON.stringify({ token }) }).then(() => undefined),
+                  "Agentic connected.",
+                )
+              }
+              onDisconnect={() =>
+                run(() => api("/api/dashboard/proxy/disconnect/agentic", { method: "POST" }).then(() => undefined), "Agentic disconnected.")
+              }
+            />
+          </div>
+
+          <div className="panel">
+            <h2 className="owner-settings-heading">rhagent.bot</h2>
             <div className="owner-settings-conn">
-              <span className="owner-settings-conn-label">rhagent.bot</span>
+              <span className="owner-settings-conn-label">Status</span>
               <span className={`owner-settings-conn-status${c.rhagents ? " is-on" : ""}`}>
                 {c.rhagents ? "Connected — trades auto-post" : "Required — trading blocked until linked"}
               </span>
             </div>
-            <p className="owner-settings-note">
-              Manage connections from Telegram: /connect_crypto, /connect_agentic, /rhagentkey.
-            </p>
+            {!c.rhagents ? (
+              <>
+                <p className="owner-settings-note">
+                  Either paste an existing agent key, or register a brand-new rhagent.bot profile (small ~$0.10
+                  ownership-verification trade, needs Crypto or Agentic connected above first).
+                </p>
+                <TokenConnectForm
+                  connected={c.rhagents}
+                  busy={busy}
+                  placeholder="RHAGENTS_AGENT_KEY"
+                  onSave={(key) =>
+                    run(
+                      () => api("/api/dashboard/proxy/connect/rhagents", { method: "POST", body: JSON.stringify({ key }) }).then(() => undefined),
+                      "rhagent.bot linked.",
+                    )
+                  }
+                  onDisconnect={() =>
+                    run(() => api("/api/dashboard/proxy/disconnect/rhagents", { method: "POST" }).then(() => undefined), "rhagent.bot disconnected.")
+                  }
+                />
+                <RhagentsRegisterForm
+                  disabled={busy || (!c.crypto && !c.agentic)}
+                  registrations={registrations}
+                  onRegister={(username, displayName) =>
+                    run(
+                      () =>
+                        api("/api/dashboard/proxy/rhagents/register", {
+                          method: "POST",
+                          body: JSON.stringify({ username, displayName }),
+                        }).then(() => undefined),
+                      "Registration staged — confirm below to run the verification trade.",
+                    )
+                  }
+                  onConfirm={(id) =>
+                    run(
+                      () => api(`/api/dashboard/proxy/rhagents/register/${encodeURIComponent(id)}/confirm`, { method: "POST" }).then(() => undefined),
+                      "Registration step run — check status below.",
+                    )
+                  }
+                />
+              </>
+            ) : (
+              <TokenConnectForm
+                connected={c.rhagents}
+                busy={busy}
+                placeholder="RHAGENTS_AGENT_KEY"
+                onSave={(key) =>
+                  run(
+                    () => api("/api/dashboard/proxy/connect/rhagents", { method: "POST", body: JSON.stringify({ key }) }).then(() => undefined),
+                    "rhagent.bot linked.",
+                  )
+                }
+                onDisconnect={() =>
+                  run(() => api("/api/dashboard/proxy/disconnect/rhagents", { method: "POST" }).then(() => undefined), "rhagent.bot disconnected.")
+                }
+              />
+            )}
           </div>
+
           <div className="panel">
             <h2 className="owner-settings-heading">Trading safety</h2>
             <p className="owner-settings-note">
@@ -242,6 +413,145 @@ export function TradingDashboard() {
                 Resume trading
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {tab === "skills" && (
+        <div className="trading-dash-stack">
+          <div className="panel">
+            <h2 className="owner-settings-heading">Your skills</h2>
+            <p className="owner-settings-note">
+              Skills are instructions layered onto your assistant. <strong>rhagent core</strong> is always on. Add
+              built-ins, write your own, or import one from a URL / pasted markdown.
+            </p>
+            {!skills ? (
+              <p className="owner-settings-note">Loading…</p>
+            ) : (
+              skills.active.map((s) => (
+                <div key={s.id} className="trading-dash-row">
+                  <div>
+                    <div className="trading-dash-row-title">
+                      {s.name} {s.owned ? <span className="muted">(yours)</span> : null}{" "}
+                      {s.id === "rhagent-core" ? <span className="muted">(mandatory)</span> : null}
+                    </div>
+                    <div className="owner-settings-note">{s.description}</div>
+                  </div>
+                  <div className="trading-dash-actions">
+                    <span className={`trading-dash-pill${s.enabled ? " trading-dash-pill--active" : ""}`}>
+                      {s.enabled ? "on" : "off"}
+                    </span>
+                    {s.id !== "rhagent-core" ? (
+                      <button
+                        type="button"
+                        className="btn btn-outline"
+                        disabled={busy}
+                        onClick={() =>
+                          run(
+                            () =>
+                              api(`/api/dashboard/proxy/skills/${encodeURIComponent(s.id)}/${s.enabled ? "disable" : "enable"}`, {
+                                method: "POST",
+                              }).then(() => undefined),
+                            s.enabled ? "Disabled." : "Enabled.",
+                          )
+                        }
+                      >
+                        {s.enabled ? "Turn off" : "Turn on"}
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      disabled={busy}
+                      onClick={() =>
+                        api(`/api/dashboard/proxy/skills/${encodeURIComponent(s.id)}/export`)
+                          .then((r) => downloadMarkdown((r as { filename: string; markdown: string }).filename, (r as { markdown: string }).markdown))
+                          .catch((err) => showToast(err instanceof Error ? err.message : "Failed", true))
+                      }
+                    >
+                      Download
+                    </button>
+                    {s.id !== "rhagent-core" ? (
+                      <button
+                        type="button"
+                        className="btn btn-outline"
+                        disabled={busy}
+                        onClick={() =>
+                          run(
+                            () => api(`/api/dashboard/proxy/skills/${encodeURIComponent(s.id)}`, { method: "DELETE" }).then(() => undefined),
+                            s.owned ? "Deleted." : "Removed.",
+                          )
+                        }
+                      >
+                        {s.owned ? "Delete" : "Remove"}
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="panel">
+            <h2 className="owner-settings-heading">Built-in catalog</h2>
+            {!skills || !skills.catalog.length ? (
+              <p className="owner-settings-note">No more built-ins to add — you have them all.</p>
+            ) : (
+              skills.catalog.map((s) => (
+                <div key={s.id} className="trading-dash-row">
+                  <div>
+                    <div className="trading-dash-row-title">{s.name}</div>
+                    <div className="owner-settings-note">{s.description}</div>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    disabled={busy}
+                    onClick={() =>
+                      run(
+                        () => api(`/api/dashboard/proxy/skills/${encodeURIComponent(s.id)}/enable`, { method: "POST" }).then(() => undefined),
+                        "Added.",
+                      )
+                    }
+                  >
+                    Add
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="panel">
+            <h2 className="owner-settings-heading">
+              Write a custom skill{" "}
+              {skills ? (
+                <span className="trading-dash-pill">
+                  {skills.active.filter((s) => s.owned).length}/{skills.maxCustom}
+                </span>
+              ) : null}
+            </h2>
+            <CreateSkillForm
+              disabled={busy}
+              onCreate={(payload) =>
+                run(
+                  () => api("/api/dashboard/proxy/skills", { method: "POST", body: JSON.stringify(payload) }).then(() => undefined),
+                  "Skill created.",
+                )
+              }
+            />
+          </div>
+
+          <div className="panel">
+            <h2 className="owner-settings-heading">Import a skill</h2>
+            <ImportSkillForm
+              disabled={busy}
+              onImport={(source) =>
+                run(
+                  () => api("/api/dashboard/proxy/skills/import", { method: "POST", body: JSON.stringify({ source }) }).then(() => undefined),
+                  "Skill imported.",
+                )
+              }
+            />
           </div>
         </div>
       )}
@@ -438,21 +748,36 @@ export function TradingDashboard() {
       )}
 
       {tab === "llm" && (
-        <div className="panel">
-          <h2 className="owner-settings-heading">Assistant settings</h2>
-          <LlmForm
-            initial={state.llm}
-            disabled={busy}
-            onSave={(payload) =>
-              run(
-                () => api("/api/dashboard/proxy/settings/llm", { method: "PATCH", body: JSON.stringify(payload) }).then(() => undefined),
-                "Saved.",
-              )
-            }
-          />
-          <p className="owner-settings-note">
-            API keys are never shown here — set them from Telegram with /setkey (message auto-deletes).
-          </p>
+        <div className="trading-dash-stack">
+          <div className="panel">
+            <h2 className="owner-settings-heading">Assistant settings</h2>
+            <LlmForm
+              initial={state.llm}
+              disabled={busy}
+              onSave={(payload) =>
+                run(
+                  () => api("/api/dashboard/proxy/settings/llm", { method: "PATCH", body: JSON.stringify(payload) }).then(() => undefined),
+                  "Saved.",
+                )
+              }
+            />
+          </div>
+          <div className="panel">
+            <h2 className="owner-settings-heading">Your LLM API key</h2>
+            <p className="owner-settings-note">
+              Write-only — never shown back here. Bring your own key so nothing is shared across users.
+            </p>
+            <LlmKeyForm
+              disabled={busy}
+              defaultProvider={state.llm.provider}
+              onSave={(payload) =>
+                run(
+                  () => api("/api/dashboard/proxy/settings/llm-key", { method: "POST", body: JSON.stringify(payload) }).then(() => undefined),
+                  "Key saved.",
+                )
+              }
+            />
+          </div>
         </div>
       )}
 
@@ -671,6 +996,321 @@ function LlmForm({
       </label>
       <button type="submit" className="btn btn-primary" disabled={disabled}>
         Save
+      </button>
+    </form>
+  );
+}
+
+function LlmKeyForm({
+  disabled,
+  defaultProvider,
+  onSave,
+}: {
+  disabled: boolean;
+  defaultProvider: string;
+  onSave: (payload: Record<string, unknown>) => void;
+}) {
+  return (
+    <form
+      className="trading-dash-form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        onSave({ provider: fd.get("provider"), key: fd.get("key") });
+        e.currentTarget.reset();
+      }}
+    >
+      <label>
+        Provider
+        <select name="provider" defaultValue={defaultProvider || "anthropic"} disabled={disabled}>
+          <option value="anthropic">Anthropic</option>
+          <option value="openai">OpenAI</option>
+          <option value="grok">Grok</option>
+        </select>
+      </label>
+      <label>
+        API key
+        <input name="key" type="password" autoComplete="off" required disabled={disabled} />
+      </label>
+      <button type="submit" className="btn btn-primary" disabled={disabled}>
+        Save key
+      </button>
+    </form>
+  );
+}
+
+function downloadMarkdown(filename: string, markdown: string) {
+  const blob = new Blob([markdown], { type: "text/markdown" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function CryptoConnectForm({
+  pending,
+  connected,
+  busy,
+  onGenerate,
+  onSaveKey,
+  onPastePair,
+  onDisconnect,
+}: {
+  pending: boolean;
+  connected: boolean;
+  busy: boolean;
+  onGenerate: () => Promise<string>;
+  onSaveKey: (apiKey: string) => void;
+  onPastePair: (apiKey: string, privateKeyBase64: string) => void;
+  onDisconnect: () => void;
+}) {
+  const [publicKey, setPublicKey] = useState<string | null>(null);
+  const [advanced, setAdvanced] = useState(false);
+
+  if (connected) {
+    return (
+      <div className="trading-dash-actions">
+        <button type="button" className="btn btn-outline" disabled={busy} onClick={onDisconnect}>
+          Disconnect
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="trading-dash-stack-tight">
+      {!pending ? (
+        <div className="trading-dash-actions">
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={busy}
+            onClick={() => onGenerate().then(setPublicKey).catch(() => undefined)}
+          >
+            Generate keypair
+          </button>
+          <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => setAdvanced((v) => !v)}>
+            {advanced ? "Hide" : "Paste an existing key pair instead"}
+          </button>
+        </div>
+      ) : null}
+      {publicKey || pending ? (
+        <div className="owner-settings-note">
+          {publicKey ? (
+            <>
+              Public key (paste into Robinhood → Account → Settings → Crypto → API Trading → + Add key):
+              <br />
+              <code>{publicKey}</code>
+            </>
+          ) : (
+            "Keypair already generated — paste the rh-api-... key Robinhood gave you below."
+          )}
+        </div>
+      ) : null}
+      {pending || publicKey ? (
+        <form
+          className="trading-dash-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const fd = new FormData(e.currentTarget);
+            onSaveKey(String(fd.get("apiKey") || ""));
+          }}
+        >
+          <label>
+            rh-api-... key
+            <input name="apiKey" type="text" placeholder="rh-api-..." required disabled={busy} />
+          </label>
+          <button type="submit" className="btn btn-primary" disabled={busy}>
+            Save key
+          </button>
+        </form>
+      ) : null}
+      {advanced ? (
+        <form
+          className="trading-dash-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const fd = new FormData(e.currentTarget);
+            onPastePair(String(fd.get("apiKey") || ""), String(fd.get("privateKeyBase64") || ""));
+            e.currentTarget.reset();
+          }}
+        >
+          <label>
+            rh-api-... key
+            <input name="apiKey" type="text" placeholder="rh-api-..." required disabled={busy} />
+          </label>
+          <label>
+            Private key (base64)
+            <input name="privateKeyBase64" type="password" required disabled={busy} />
+          </label>
+          <button type="submit" className="btn btn-outline" disabled={busy}>
+            Save pair
+          </button>
+        </form>
+      ) : null}
+    </div>
+  );
+}
+
+function TokenConnectForm({
+  connected,
+  busy,
+  placeholder,
+  onSave,
+  onDisconnect,
+}: {
+  connected: boolean;
+  busy: boolean;
+  placeholder: string;
+  onSave: (value: string) => void;
+  onDisconnect: () => void;
+}) {
+  if (connected) {
+    return (
+      <div className="trading-dash-actions">
+        <button type="button" className="btn btn-outline" disabled={busy} onClick={onDisconnect}>
+          Disconnect
+        </button>
+      </div>
+    );
+  }
+  return (
+    <form
+      className="trading-dash-form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        onSave(String(fd.get("value") || ""));
+        e.currentTarget.reset();
+      }}
+    >
+      <label>
+        {placeholder}
+        <input name="value" type="password" autoComplete="off" required disabled={busy} />
+      </label>
+      <button type="submit" className="btn btn-primary" disabled={busy}>
+        Save
+      </button>
+    </form>
+  );
+}
+
+function RhagentsRegisterForm({
+  disabled,
+  registrations,
+  onRegister,
+  onConfirm,
+}: {
+  disabled: boolean;
+  registrations: RegistrationRow[];
+  onRegister: (username: string, displayName: string) => void;
+  onConfirm: (id: string) => void;
+}) {
+  return (
+    <div className="trading-dash-stack-tight">
+      <form
+        className="trading-dash-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const fd = new FormData(e.currentTarget);
+          onRegister(String(fd.get("username") || ""), String(fd.get("displayName") || ""));
+        }}
+      >
+        <label>
+          Username
+          <input name="username" type="text" placeholder="ray_trades" required disabled={disabled} />
+        </label>
+        <label>
+          Display name
+          <input name="displayName" type="text" placeholder="Ray's Trading Agent" required disabled={disabled} />
+        </label>
+        <button type="submit" className="btn btn-outline" disabled={disabled}>
+          Register on rhagent.bot
+        </button>
+      </form>
+      {registrations.length ? (
+        <div className="trading-dash-stack-tight">
+          {registrations
+            .filter((r) => r.status !== "completed" && r.status !== "cancelled" && r.status !== "expired")
+            .map((r) => (
+              <div key={r.id} className="trading-dash-row">
+                <div className="owner-settings-note">{r.description}</div>
+                <button type="button" className="btn btn-primary" disabled={disabled} onClick={() => onConfirm(r.id)}>
+                  Continue
+                </button>
+              </div>
+            ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function CreateSkillForm({
+  disabled,
+  onCreate,
+}: {
+  disabled: boolean;
+  onCreate: (payload: Record<string, unknown>) => void;
+}) {
+  return (
+    <form
+      className="trading-dash-form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        onCreate({
+          name: fd.get("name"),
+          description: fd.get("description") || null,
+          body: fd.get("body"),
+        });
+        e.currentTarget.reset();
+      }}
+    >
+      <label>
+        Name
+        <input name="name" type="text" required placeholder="Options basics" disabled={disabled} />
+      </label>
+      <label>
+        Short description (optional)
+        <input name="description" type="text" placeholder="One line summary" disabled={disabled} />
+      </label>
+      <label>
+        Skill text
+        <textarea name="body" rows={6} required placeholder="Instructions for your assistant…" disabled={disabled} />
+      </label>
+      <button type="submit" className="btn btn-primary" disabled={disabled}>
+        Create skill
+      </button>
+    </form>
+  );
+}
+
+function ImportSkillForm({ disabled, onImport }: { disabled: boolean; onImport: (source: string) => void }) {
+  return (
+    <form
+      className="trading-dash-form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        onImport(String(fd.get("source") || ""));
+        e.currentTarget.reset();
+      }}
+    >
+      <label>
+        URL or pasted skill markdown
+        <textarea
+          name="source"
+          rows={4}
+          required
+          placeholder="https://rhagent.bot/skill.md or paste a skill.md-style file"
+          disabled={disabled}
+        />
+      </label>
+      <button type="submit" className="btn btn-outline" disabled={disabled}>
+        Import
       </button>
     </form>
   );

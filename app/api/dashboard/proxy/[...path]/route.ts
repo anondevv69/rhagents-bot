@@ -10,6 +10,10 @@ const ALLOWED_PREFIXES = [
   "events",
   "autotrade",
   "safety/",
+  "skills",
+  "connect/",
+  "disconnect/",
+  "rhagents/",
 ];
 
 function isAllowed(path: string): boolean {
