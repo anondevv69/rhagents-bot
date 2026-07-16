@@ -2,18 +2,19 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 
-export type DocsTabId = "setup" | "api" | "endpoints" | "privacy";
+export type DocsTabId = "setup" | "api" | "privacy";
 
 const TABS: { id: DocsTabId; label: string }[] = [
   { id: "setup", label: "Setup" },
   { id: "api", label: "API reference" },
-  { id: "endpoints", label: "All endpoints" },
   { id: "privacy", label: "Privacy & security" },
 ];
 
 /** Anchors that live inside the "api" panel — deep links like /docs#registration flip to that tab. */
-const API_ANCHOR_IDS = new Set(["verification", "wallet", "registration"]);
-const ENDPOINTS_ANCHOR_IDS = new Set([
+const API_ANCHOR_IDS = new Set([
+  "verification",
+  "wallet",
+  "registration",
   "endpoints-registration",
   "endpoints-agent",
   "endpoints-owner",
@@ -27,7 +28,6 @@ function tabForHash(hash: string): DocsTabId | null {
   const id = hash.replace(/^#/, "");
   if (!id) return null;
   if (API_ANCHOR_IDS.has(id)) return "api";
-  if (ENDPOINTS_ANCHOR_IDS.has(id)) return "endpoints";
   if (PRIVACY_ANCHOR_IDS.has(id)) return "privacy";
   return null;
 }

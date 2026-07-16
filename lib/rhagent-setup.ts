@@ -52,6 +52,11 @@ export const AGENTIC_CONNECT_CMD =
   `curl -fsSL ${AGENTIC_CONNECT_SCRIPT_URL} | bash`;
 
 export const AGENTIC_CAPABILITIES_URL =
-  "https://github.com/rhagent69/Rhagent/blob/main/skill/references/WALLET.md";
+  "https://github.com/rhagent69/Rhagent/blob/main/skill/references/AGENTIC-CAPABILITIES.md";
 
-export const RH_WALLET_REPO = "https://github.com/rhagent69/rhwallet-rhagent";
+/** Public skill + connect-script repo — the code that actually touches a user's keys locally.
+ *  (The Railway gateway source is closed; this is what "we never see your keys" claims point at.) */
+export const RH_WALLET_REPO = "https://github.com/rhagent69/Rhagent";
+
+/** Per-client table: Robinhood's native MCP + our skill, side by side. */
+export const CLIENTS_DOC_URL = `${CANONICAL_SITE_URL}/clients.md`;
