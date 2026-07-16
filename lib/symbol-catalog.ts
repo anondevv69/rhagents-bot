@@ -14,9 +14,16 @@ const STATIC_CRYPTO_PAIRS = [
 ];
 
 export type SymbolClassification = {
-  product: "agentic" | "crypto";
+  product: "agentic" | "crypto" | "chain";
   symbol: string;
-  source?: "robinhood_crypto" | "platform_active" | "robinhood_agentic" | "gateway_mcp";
+  source?:
+    | "robinhood_crypto"
+    | "platform_active"
+    | "robinhood_agentic"
+    | "gateway_mcp"
+    | "seed"
+    | "onchain_metadata";
+  contract?: string;
 };
 
 type CatalogCache = {

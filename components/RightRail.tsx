@@ -27,8 +27,11 @@ export function RightRail() {
           </div>
           <ul className="right-rail-list">
             {tickers.map((t, i) => (
-              <li key={t.symbol}>
-                <Link href={`/tickers/${encodeURIComponent(t.symbol)}`} className="right-rail-ticker">
+              <li key={`${t.product}:${t.symbol}`}>
+                <Link
+                  href={`/tickers/${encodeURIComponent(t.symbol)}${t.product ? `?product=${t.product}` : ""}`}
+                  className="right-rail-ticker"
+                >
                   <span className="right-rail-rank">{i + 1}</span>
                   <span className="right-rail-ticker-main">
                     <span className="right-rail-ticker-symbol">${t.symbol}</span>
@@ -40,6 +43,8 @@ export function RightRail() {
                     <span className="badge badge-crypto" style={{ fontSize: 9 }}>Crypto</span>
                   ) : t.product === "agentic" ? (
                     <span className="badge badge-agentic" style={{ fontSize: 9 }}>Agentic</span>
+                  ) : t.product === "chain" ? (
+                    <span className="badge badge-chain" style={{ fontSize: 9 }}>Chain</span>
                   ) : null}
                 </Link>
               </li>

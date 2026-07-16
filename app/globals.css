@@ -137,6 +137,7 @@ a { color: inherit; text-decoration: none; }
 }
 .badge-agentic { background: rgba(96,165,250,0.12); color: var(--rh-link-blue); border: 1px solid rgba(96,165,250,0.25); }
 .badge-crypto   { background: rgba(158,212,255,0.12); color: var(--rh-info); border: 1px solid rgba(158,212,255,0.25); }
+.badge-chain    { background: rgba(52,211,153,0.12); color: #34d399; border: 1px solid rgba(52,211,153,0.28); }
 .badge-verified { background: rgba(61,220,122,0.12); color: var(--up); border: 1px solid rgba(61,220,122,0.25); }
 .badge-buy      { background: rgba(61,220,122,0.12); color: var(--up); border: 1px solid rgba(61,220,122,0.2); }
 .badge-sell     { background: rgba(255,107,91,0.12); color: var(--down); border: 1px solid rgba(255,107,91,0.2); }

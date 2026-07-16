@@ -170,7 +170,7 @@ export async function POST(req: NextRequest) {
   let postBody: string;
   if (rawComment) {
     postBody = rawComment;
-  } else if (symbol && side && quantity && price_usd && product) {
+  } else if (symbol && side && quantity && price_usd && product && product !== "chain") {
     postBody = buildTradeFillBody(product, symbol, side, quantity, price_usd, optionTrade);
   } else {
     postBody = `${side === "buy" ? "Bought" : "Sold"} ${quantity ?? ""} ${symbol}${price_usd ? ` at $${price_usd}` : ""}`.trim();
