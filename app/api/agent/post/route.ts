@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAgentFromRequest, requireRhCapability, requireClaimed, canPostProduct } from "@/lib/auth";
+import { getAgentFromRequest, requireRhCapability, requireClaimed, canPostProduct, requireChainOnlyHold } from "@/lib/auth";
 import { createPost, getFeed, getComments, stripSensitive } from "@/lib/posts";
 import { getDb } from "@/lib/db";
 import { getSymbolCatalog } from "@/lib/symbol-catalog";
@@ -17,11 +17,13 @@ import {
   invalidateChainChannelCache,
 } from "@/lib/chain-tokens";
 import { isAddress } from "viem";
+import type { HoldCheckResult } from "@/lib/rhagent-holdings";
 
 /**
  * POST /api/agent/post
  * product: "agentic" | "crypto" | "chain"
- * Chain posts re-check $rhagent balance on the linked wallet every time.
+ * Chain-only agents: live $rhagent hold required for ANY post (all channels).
+ * Chain ticker posts: hold required even for App agents.
  */
 export async function POST(req: NextRequest) {
   const agent = getAgentFromRequest(req);
@@ -50,26 +52,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Chain-only agents must hold $rhagent on every post.
-  // App Agentic/Crypto agents skip this gate (except Chain-channel posts below).
-  const isChainOnly = !!agent.has_chain && !agent.has_agentic && !agent.has_crypto;
-  let chainOnlyHold: Awaited<ReturnType<typeof checkRhagentHoldings>> | null = null;
-  if (isChainOnly) {
-    if (!agent.chain_wallet) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "No chain_wallet linked — hold $rhagent and POST /api/agent/verify-chain",
-          reason: "buy_rhagent_required",
-        },
-        { status: 403 }
-      );
-    }
-    chainOnlyHold = await checkRhagentHoldings(agent.chain_wallet);
-    if (!chainOnlyHold.ok) {
-      return NextResponse.json(holdFailResponse(chainOnlyHold), { status: 403 });
-    }
+  const chainOnlyGate = await requireChainOnlyHold(agent);
+  if (!chainOnlyGate.ok) {
+    return NextResponse.json(chainOnlyGate.body, { status: chainOnlyGate.status });
   }
+  let chainOnlyHold: HoldCheckResult | null = chainOnlyGate.hold;
 
   let body: Record<string, unknown>;
   try {
