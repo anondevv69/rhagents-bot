@@ -5,6 +5,7 @@ import { scheduleTelegramLiveBroadcast } from "./telegram-live";
 import { invalidateAgenticChannelCache } from "./verified-agentic";
 import type { OptionTradeFields } from "./option-trade";
 import { buildOptionTradeFillBody } from "./option-trade";
+import { SQL_EXCLUDE_EMPTY_TRADE_FILLS } from "./trade-pricing";
 
 export function generatePostId(): string {
   return "post_" + randomBytes(8).toString("hex");
@@ -101,7 +102,7 @@ export function getFeed(
   sort: FeedSort = "new",
 ): FeedPost[] {
   const db = getDb();
-  const clauses: string[] = ["p.parent_id IS NULL"];
+  const clauses: string[] = ["p.parent_id IS NULL", SQL_EXCLUDE_EMPTY_TRADE_FILLS];
   const params: (string | number)[] = [];
 
   if (product) {
@@ -177,6 +178,7 @@ export function getAgentPosts(
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
     WHERE p.agent_id = ? AND p.parent_id IS NULL ${typeFilter} ${sideClause}
+      AND ${SQL_EXCLUDE_EMPTY_TRADE_FILLS}
     ORDER BY p.created_at DESC
     LIMIT ?
   `).all(...params) as FeedPost[];
@@ -191,14 +193,23 @@ export function countAgentPosts(agentId: string): { posts: number; trades: numbe
   const trades = db.prepare(`
     SELECT COUNT(*) AS n FROM posts
     WHERE agent_id = ? AND parent_id IS NULL AND type IN ${TRADE_TYPES}
+      AND quantity IS NOT NULL AND CAST(REPLACE(quantity, ',', '') AS REAL) > 0
+      AND price_usd IS NOT NULL AND CAST(REPLACE(price_usd, ',', '') AS REAL) > 0
+      AND (CAST(REPLACE(quantity, ',', '') AS REAL) * CAST(REPLACE(price_usd, ',', '') AS REAL)) >= 0.001
   `).get(agentId) as { n: number };
   const buys = db.prepare(`
     SELECT COUNT(*) AS n FROM posts
     WHERE agent_id = ? AND parent_id IS NULL AND type IN ${TRADE_TYPES} AND side = 'buy'
+      AND quantity IS NOT NULL AND CAST(REPLACE(quantity, ',', '') AS REAL) > 0
+      AND price_usd IS NOT NULL AND CAST(REPLACE(price_usd, ',', '') AS REAL) > 0
+      AND (CAST(REPLACE(quantity, ',', '') AS REAL) * CAST(REPLACE(price_usd, ',', '') AS REAL)) >= 0.001
   `).get(agentId) as { n: number };
   const sells = db.prepare(`
     SELECT COUNT(*) AS n FROM posts
     WHERE agent_id = ? AND parent_id IS NULL AND type IN ${TRADE_TYPES} AND side = 'sell'
+      AND quantity IS NOT NULL AND CAST(REPLACE(quantity, ',', '') AS REAL) > 0
+      AND price_usd IS NOT NULL AND CAST(REPLACE(price_usd, ',', '') AS REAL) > 0
+      AND (CAST(REPLACE(quantity, ',', '') AS REAL) * CAST(REPLACE(price_usd, ',', '') AS REAL)) >= 0.001
   `).get(agentId) as { n: number };
   const comments = db.prepare(`
     SELECT COUNT(*) AS n FROM posts WHERE agent_id = ? AND parent_id IS NOT NULL
