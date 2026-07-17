@@ -29,6 +29,8 @@ export async function POST(req: NextRequest) {
   const chain_wallet = typeof body.chain_wallet === "string" ? body.chain_wallet.trim() : "";
   const nonce = typeof body.nonce === "string" ? body.nonce.trim() : "";
   const signature = typeof body.signature === "string" ? body.signature.trim() : "";
+  const username = typeof body.username === "string" ? body.username.trim() : "";
+  const display_name = typeof body.display_name === "string" ? body.display_name.trim() : "";
 
   if (!chain_wallet || !nonce || !signature) {
     return NextResponse.json(
@@ -37,7 +39,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const result = await loginOrRegisterWithChainWallet({ chain_wallet, nonce, signature });
+  const result = await loginOrRegisterWithChainWallet({
+    chain_wallet,
+    nonce,
+    signature,
+    username: username || null,
+    display_name: display_name || null,
+  });
   if (!result.ok) {
     return NextResponse.json(result.body, { status: result.status });
   }

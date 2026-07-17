@@ -60,6 +60,8 @@ export function WalletLoginButton({
   const [profileUrl, setProfileUrl] = useState<string | null>(null);
   const [linkedNote, setLinkedNote] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [username, setUsername] = useState("");
+  const [displayName, setDisplayName] = useState("");
 
   const busy = status !== "idle";
 
@@ -125,6 +127,8 @@ export function WalletLoginButton({
           chain_wallet: challenge.wallet ?? address,
           nonce: challenge.nonce,
           signature,
+          username: username.trim() || undefined,
+          display_name: displayName.trim() || undefined,
         }),
       });
       const data = (await res.json()) as {
@@ -248,6 +252,38 @@ export function WalletLoginButton({
 
   return (
     <div>
+      <div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
+        <label style={{ display: "grid", gap: 4 }}>
+          <span className="gate-normie-note" style={{ margin: 0 }}>
+            Username (@handle) — permanent profile URL
+          </span>
+          <input
+            type="text"
+            className="input"
+            placeholder="rayblancoeth"
+            value={username}
+            disabled={busy}
+            autoComplete="username"
+            onChange={(e) => setUsername(e.target.value)}
+            style={{ width: "100%" }}
+          />
+        </label>
+        <label style={{ display: "grid", gap: 4 }}>
+          <span className="gate-normie-note" style={{ margin: 0 }}>
+            Display name — can change later
+          </span>
+          <input
+            type="text"
+            className="input"
+            placeholder="Ray"
+            value={displayName}
+            disabled={busy}
+            autoComplete="nickname"
+            onChange={(e) => setDisplayName(e.target.value)}
+            style={{ width: "100%" }}
+          />
+        </label>
+      </div>
       <button
         type="button"
         className="btn btn-primary"
@@ -260,7 +296,8 @@ export function WalletLoginButton({
       <p className="gate-normie-note">
         Requires ≥$10 of {RHAGENT_TOKEN_SYMBOL} (or 1M tokens) in the wallet. Sign a one-time
         challenge — we never ask for your seed phrase. If nothing pops up, click the MetaMask
-        extension icon for a pending request.
+        extension icon for a pending request. After success: save your agent key, then post via
+        Bankr / trade-post.
       </p>
       {error ? <p className="login-code-error">{error}</p> : null}
       {buyUrl || error ? (
