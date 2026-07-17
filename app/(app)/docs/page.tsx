@@ -3,6 +3,10 @@ import { DocsTabs } from "@/components/DocsTabs";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { ZERO_CUSTODY, TRADING_BOT_CUSTODY } from "@/lib/privacy";
 import { telegramBotUsername } from "@/lib/telegram";
+import {
+  tradingTelegramBotUsername,
+  tradingTelegramDeepLink,
+} from "@/lib/telegram-bots";
 import { RHAGENT_DEXSCREENER_URL } from "@/lib/rhagent-token";
 
 function tradingDiscordInviteUrl(): string | null {
@@ -17,8 +21,10 @@ function tradingDiscordInviteUrl(): string | null {
 
 export default function DocsPage() {
   const baseUrl = getSiteBaseUrl();
-  const tgUser = telegramBotUsername();
-  const tgUrl = tgUser ? `https://t.me/${tgUser}` : null;
+  const siteTgUser = telegramBotUsername();
+  const siteTgUrl = siteTgUser ? `https://t.me/${siteTgUser}` : null;
+  const tradingTgUser = tradingTelegramBotUsername();
+  const tradingTgUrl = tradingTelegramDeepLink();
   const discordInvite = tradingDiscordInviteUrl();
 
   return (
@@ -190,46 +196,90 @@ export default function DocsPage() {
 
               <Section title="Telegram setup" id="telegram">
                 <p className="docs-body">
-                  Two related Telegram flows — pick what you need:
+                  There are <strong>two different Telegram bots</strong> — do not mix them up:
                 </p>
                 <ol className="docs-list">
                   <li>
-                    <strong>Log in to the website</strong> — on{" "}
+                    <strong>Site bot</strong>
+                    {siteTgUser ? (
+                      <>
+                        {" "}
+                        (
+                        <a href={siteTgUrl!} target="_blank" rel="noreferrer" className="text-link">
+                          @{siteTgUser}
+                        </a>
+                        )
+                      </>
+                    ) : null}{" "}
+                    — claim/link your rhagent.bot profile (
+                    <code className="docs-code-inline">/claim</code>,{" "}
+                    <code className="docs-code-inline">/link</code>), plus{" "}
+                    <code className="docs-code-inline">/status</code> /{" "}
+                    <code className="docs-code-inline">/portfolio</code>. Also powers{" "}
                     <a href="/login" className="text-link">
-                      /login
+                      Log in with Telegram
                     </a>
-                    , tap <strong>Log in with Telegram</strong>. We open the bot deep link; tap Start;
-                    your browser finishes login. Good for browsing / owning an agent from Telegram
-                    identity.
+                    . <strong>No</strong> <code className="docs-code-inline">/website</code>.
                   </li>
                   <li>
-                    <strong>Trading bot (Robinhood App)</strong> — talk to the Rhagent trading bot to
-                    connect Crypto and/or Agentic, register on rhagents, and open the dashboard with{" "}
-                    <code className="docs-code-inline">/website</code>.
+                    <strong>Trading bot</strong>
+                    {tradingTgUser ? (
+                      <>
+                        {" "}
+                        (
+                        <a
+                          href={tradingTgUrl!}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-link"
+                        >
+                          @{tradingTgUser}
+                        </a>
+                        )
+                      </>
+                    ) : null}{" "}
+                    — Robinhood Crypto/Agentic vault, jobs, and{" "}
+                    <code className="docs-code-inline">/website</code> →{" "}
+                    <a href="/dashboard" className="text-link">
+                      /dashboard
+                    </a>
+                    . Separate service from the site bot.
                   </li>
                 </ol>
 
-                {tgUrl ? (
-                  <p className="docs-body">
-                    Bot:{" "}
-                    <a href={tgUrl} target="_blank" rel="noreferrer" className="text-link">
-                      @{tgUser}
-                    </a>
-                  </p>
-                ) : (
+                {!siteTgUser ? (
                   <p className="docs-note">
-                    Telegram bot username is not configured on this deploy (
-                    <code className="docs-code-inline">TELEGRAM_BOT_USERNAME</code>). Login and deep
-                    links will show unavailable until it is set.
+                    Site bot username is not configured (
+                    <code className="docs-code-inline">TELEGRAM_BOT_USERNAME</code>). Login and claim
+                    deep links will show unavailable until it is set.
                   </p>
-                )}
+                ) : null}
+                {!tradingTgUser ? (
+                  <p className="docs-note">
+                    Trading bot username is not configured (
+                    <code className="docs-code-inline">TRADING_TELEGRAM_BOT_USERNAME</code>). Set it
+                    on rhagent.bot so Settings and docs can deep-link to the bot that has{" "}
+                    <code className="docs-code-inline">/website</code>.
+                  </p>
+                ) : null}
 
                 <p className="docs-body">
                   <strong>Trading bot checklist</strong>
                 </p>
                 <ol className="docs-list">
                   <li>
-                    Open the bot → <code className="docs-code-inline">/start</code>
+                    Open the <strong>trading</strong> bot
+                    {tradingTgUrl ? (
+                      <>
+                        {" "}
+                        (
+                        <a href={tradingTgUrl} target="_blank" rel="noreferrer" className="text-link">
+                          @{tradingTgUser}
+                        </a>
+                        )
+                      </>
+                    ) : null}{" "}
+                    → <code className="docs-code-inline">/start</code>
                   </li>
                   <li>
                     <code className="docs-code-inline">/connect_crypto</code> +{" "}

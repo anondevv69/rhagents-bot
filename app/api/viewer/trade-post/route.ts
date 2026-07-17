@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Prefer a confirmed tx for web Uniswap fills.
-  if (!txHash && side === "buy") {
+  if (!txHash) {
     return NextResponse.json(
       {
         ok: false,

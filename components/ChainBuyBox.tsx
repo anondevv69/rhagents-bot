@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import {
-  executeEthToTokenSwap,
+  executeChainSwap,
   walletErrorMessage,
   type SwapQuoteClient,
 } from "@/lib/browser-uniswap-swap";
@@ -15,34 +15,35 @@ type QuoteResponse = SwapQuoteClient & {
   notional_usd?: number | null;
   eth_usd?: number | null;
   slippage_bps?: number;
+  amountEth?: string;
+  amountToken?: string;
+  token_balance?: string | null;
+  side?: "buy" | "sell";
 };
 
-type Mode = "buy" | "post";
+type Mode = "buy" | "sell" | "post";
 
 type Props = {
   symbol: string;
   contract?: string | null;
   loggedIn: boolean;
-  /** Copy-trade: original post id */
   parentId?: string | null;
-  /** Prefill ETH amount */
   defaultAmountEth?: string;
+  defaultAmountToken?: string;
+  /** Prefill buy vs sell (e.g. copy-trade of a sell). */
+  defaultSide?: "buy" | "sell";
   loginHref?: string;
   nextPath?: string;
-  /** Compact mode for modal / copy-trade (buy-only) */
   compact?: boolean;
-  /**
-   * Ticker-page mode: one panel for Buy on Uniswap (+ optional thesis) or Post thesis only.
-   * Ignored when compact / parentId (copy-trade stays buy-focused).
-   */
   combined?: boolean;
   onDone?: (result: { post_url?: string; tx_hash?: string }) => void;
 };
 
-const PRESETS = ["0.001", "0.005", "0.01"] as const;
+const BUY_PRESETS = ["0.001", "0.005", "0.01"] as const;
+const SELL_PRESETS = ["1000", "10000", "100000"] as const;
 
 /**
- * Normie Chain actions: Uniswap buy with optional thesis, and/or post-only thesis.
+ * Normie Chain actions: Uniswap buy/sell with optional thesis, or post-only.
  */
 export function ChainBuyBox({
   symbol,
@@ -50,6 +51,8 @@ export function ChainBuyBox({
   loggedIn,
   parentId,
   defaultAmountEth = "0.001",
+  defaultAmountToken = "1000",
+  defaultSide = "buy",
   loginHref = "/login",
   nextPath,
   compact = false,
@@ -59,8 +62,11 @@ export function ChainBuyBox({
   const router = useRouter();
   const hasContract = !!(contract && /^0x[a-fA-F0-9]{40}$/i.test(contract));
   const showCombined = combined && !compact && !parentId;
-  const [mode, setMode] = useState<Mode>(hasContract ? "buy" : "post");
+  const [mode, setMode] = useState<Mode>(
+    hasContract ? (defaultSide === "sell" ? "sell" : "buy") : "post",
+  );
   const [amountEth, setAmountEth] = useState(defaultAmountEth);
+  const [amountToken, setAmountToken] = useState(defaultAmountToken);
   const [thesis, setThesis] = useState(parentId ? "Copied this trade." : "");
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
@@ -68,20 +74,29 @@ export function ChainBuyBox({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [tokenBalance, setTokenBalance] = useState<string | null>(null);
 
   const loginNext =
     nextPath ?? `/tickers/${encodeURIComponent(symbol)}?product=chain`;
 
+  const tradeMode = mode === "buy" || mode === "sell";
+
   const refreshQuote = useCallback(async () => {
     if (!loggedIn || !hasContract || !contract) return;
-    if (showCombined && mode !== "buy") return;
+    if (showCombined && !tradeMode) return;
+    if (mode === "sell" && !amountToken.trim()) return;
+    if (mode === "buy" && !amountEth.trim()) return;
+
     setQuoting(true);
     setQuoteError(null);
     try {
       const q = new URLSearchParams({
         token: contract,
-        amount_eth: amountEth,
+        side: mode === "sell" ? "sell" : "buy",
       });
+      if (mode === "sell") q.set("amount_token", amountToken);
+      else q.set("amount_eth", amountEth);
+
       const res = await fetch(`/api/viewer/swap/quote?${q}`);
       const data = (await res.json()) as QuoteResponse;
       if (!res.ok || data.ok === false) {
@@ -90,22 +105,32 @@ export function ChainBuyBox({
         return;
       }
       setQuote(data);
+      if (data.token_balance != null) setTokenBalance(data.token_balance);
     } catch (err) {
       setQuote(null);
       setQuoteError(err instanceof Error ? err.message : "Quote failed");
     } finally {
       setQuoting(false);
     }
-  }, [loggedIn, hasContract, contract, amountEth, showCombined, mode]);
+  }, [
+    loggedIn,
+    hasContract,
+    contract,
+    showCombined,
+    tradeMode,
+    mode,
+    amountEth,
+    amountToken,
+  ]);
 
   useEffect(() => {
     if (!loggedIn || !hasContract) return;
-    if (showCombined && mode !== "buy") return;
+    if (showCombined && !tradeMode) return;
     const t = setTimeout(() => {
       void refreshQuote();
     }, 400);
     return () => clearTimeout(t);
-  }, [loggedIn, hasContract, showCombined, mode, refreshQuote]);
+  }, [loggedIn, hasContract, showCombined, tradeMode, refreshQuote]);
 
   async function postThesisOnly() {
     const text = thesis.trim();
@@ -133,12 +158,14 @@ export function ChainBuyBox({
     return data;
   }
 
-  async function buyWithThesis() {
+  async function swapWithThesis(side: "buy" | "sell") {
     if (!hasContract || !contract) throw new Error("Missing token contract.");
     let q = quote;
-    if (!q?.calldata) {
+    if (!q?.calldata || q.side !== side) {
       setStatus("Getting quote…");
-      const params = new URLSearchParams({ token: contract, amount_eth: amountEth });
+      const params = new URLSearchParams({ token: contract, side });
+      if (side === "sell") params.set("amount_token", amountToken);
+      else params.set("amount_eth", amountEth);
       const res = await fetch(`/api/viewer/swap/quote?${params}`);
       const data = (await res.json()) as QuoteResponse;
       if (!res.ok || data.ok === false) {
@@ -148,26 +175,34 @@ export function ChainBuyBox({
       setQuote(data);
     }
 
-    setStatus("Confirm swap in MetaMask…");
-    const { txHash } = await executeEthToTokenSwap(q);
+    const { txHash } = await executeChainSwap(
+      { ...q, side, token: contract },
+      { onStatus: setStatus },
+    );
 
     setStatus("Posting fill…");
     const thesisText = thesis.trim();
-    const ethIn = Number(q.amountInEth);
+    const ethAmt = Number(q.amountEth ?? q.amountInEth ?? 0);
     const notional =
       q.notional_usd != null && Number.isFinite(q.notional_usd)
         ? q.notional_usd
-        : Number.isFinite(ethIn)
-          ? ethIn * (q.eth_usd && q.eth_usd > 0 ? q.eth_usd : 2500)
+        : Number.isFinite(ethAmt)
+          ? ethAmt * (q.eth_usd && q.eth_usd > 0 ? q.eth_usd : 2500)
           : null;
+
+    const quantity =
+      side === "buy"
+        ? q.amountToken || q.amountOut
+        : q.amountToken || q.amountIn || amountToken;
+
     const postRes = await fetch("/api/viewer/trade-post", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         product: "chain",
         symbol: contract,
-        side: "buy",
-        quantity: q.amountOut,
+        side,
+        quantity,
         notional_usd: notional != null ? String(Math.max(notional, 0.01)) : undefined,
         thesis: thesisText || undefined,
         parent_id: parentId || undefined,
@@ -198,8 +233,7 @@ export function ChainBuyBox({
     setError(null);
     setStatus(null);
     try {
-      const doPost = showCombined ? mode === "post" : false;
-      if (doPost || !hasContract) {
+      if ((showCombined && mode === "post") || !hasContract) {
         setStatus("Posting…");
         const data = await postThesisOnly();
         setThesis("");
@@ -209,13 +243,19 @@ export function ChainBuyBox({
         return;
       }
 
-      const data = await buyWithThesis();
+      const side = mode === "sell" ? "sell" : "buy";
+      const data = await swapWithThesis(side);
       setStatus("Done");
       setThesis(parentId ? "Copied this trade." : "");
       onDone?.({ post_url: data.post_url, tx_hash: data.tx_hash });
       router.refresh();
     } catch (err) {
-      setError(walletErrorMessage(err, doPostLabel(showCombined, mode, hasContract)));
+      setError(
+        walletErrorMessage(
+          err,
+          mode === "post" ? "Post failed" : mode === "sell" ? "Sell failed" : "Buy failed",
+        ),
+      );
       setStatus(null);
     } finally {
       setBusy(false);
@@ -231,8 +271,8 @@ export function ChainBuyBox({
       <div className={`panel chain-buy${compact ? " chain-buy--compact" : ""}`}>
         <p className="owner-settings-note" style={{ marginBottom: 10 }}>
           {showCombined
-            ? `Log in with MetaMask to buy $${symbol} on Uniswap or post a thesis. Need ≈$10 of $rhagent${hasContract ? " (and the token to post-only)" : ""}.`
-            : `Log in with MetaMask to buy $${symbol} on Uniswap (Robinhood Chain) in one click.`}
+            ? `Log in with MetaMask to buy or sell $${symbol} on Uniswap, or post a thesis.`
+            : `Log in with MetaMask to trade $${symbol} on Uniswap (Robinhood Chain).`}
         </p>
         <a href={`${loginHref}?next=${encodeURIComponent(loginNext)}`} className="btn btn-primary">
           Log in with MetaMask
@@ -241,8 +281,9 @@ export function ChainBuyBox({
     );
   }
 
-  const buyMode = !showCombined || mode === "buy";
   const postMode = showCombined && mode === "post";
+  const buyMode = mode === "buy";
+  const sellMode = mode === "sell";
 
   return (
     <form
@@ -250,44 +291,44 @@ export function ChainBuyBox({
       onSubmit={onSubmit}
     >
       {showCombined ? (
-        <div className="chain-buy-modes" role="tablist" aria-label="Buy or post">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "buy"}
-            className={`chain-buy-mode${mode === "buy" ? " chain-buy-mode--active" : ""}`}
-            disabled={!hasContract || busy}
-            onClick={() => {
-              setMode("buy");
-              setError(null);
-              setStatus(null);
-            }}
-          >
-            Buy + thesis
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "post"}
-            className={`chain-buy-mode${mode === "post" ? " chain-buy-mode--active" : ""}`}
-            disabled={busy}
-            onClick={() => {
-              setMode("post");
-              setError(null);
-              setStatus(null);
-            }}
-          >
-            Post only
-          </button>
+        <div className="chain-buy-modes" role="tablist" aria-label="Buy, sell, or post">
+          {(
+            [
+              ["buy", "Buy + thesis", !hasContract],
+              ["sell", "Sell + thesis", !hasContract],
+              ["post", "Post only", false],
+            ] as const
+          ).map(([id, label, disabled]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={mode === id}
+              className={`chain-buy-mode${mode === id ? " chain-buy-mode--active" : ""}`}
+              disabled={disabled || busy}
+              onClick={() => {
+                setMode(id);
+                setError(null);
+                setStatus(null);
+                setQuote(null);
+                setQuoteError(null);
+              }}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       ) : (
         <label
           className="owner-settings-note"
-          htmlFor={compact ? `chain-buy-amt-${contract}` : "chain-buy-amount"}
+          htmlFor={compact ? `chain-swap-amt-${contract}` : "chain-swap-amount"}
           style={{ display: "block", marginBottom: 8 }}
         >
-          Buy ${symbol} on Uniswap
-          <span style={{ opacity: 0.7 }}> — ETH → token (Uniswap on Robinhood Chain)</span>
+          {defaultSide === "sell" ? "Sell" : "Buy"} ${symbol} on Uniswap
+          <span style={{ opacity: 0.7 }}>
+            {" "}
+            — {defaultSide === "sell" ? "token → ETH" : "ETH → token"}
+          </span>
         </label>
       )}
 
@@ -304,7 +345,7 @@ export function ChainBuyBox({
             style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}
           >
             <input
-              id={compact ? `chain-buy-amt-${contract}` : "chain-buy-amount"}
+              id={compact ? `chain-swap-amt-${contract}` : "chain-swap-amount"}
               className="input"
               type="text"
               inputMode="decimal"
@@ -317,7 +358,7 @@ export function ChainBuyBox({
             <span className="owner-settings-note" style={{ alignSelf: "center" }}>
               ETH
             </span>
-            {PRESETS.map((p) => (
+            {BUY_PRESETS.map((p) => (
               <button
                 key={p}
                 type="button"
@@ -330,18 +371,84 @@ export function ChainBuyBox({
               </button>
             ))}
           </div>
-          <div className="owner-settings-note" style={{ marginBottom: 10, minHeight: 20 }}>
-            {quoting
-              ? "Quoting…"
-              : quoteError
-                ? quoteError
-                : quote
-                  ? `≈ ${Number(quote.amountOut).toLocaleString(undefined, { maximumFractionDigits: 4 })} ${symbol}${
-                      quote.notional_usd != null ? ` · ~$${quote.notional_usd.toFixed(2)}` : ""
-                    } · ${quote.slippage_bps != null ? `${(Number(quote.slippage_bps) / 100).toFixed(1)}%` : "1%"} slip`
-                  : null}
+        </>
+      ) : null}
+
+      {sellMode && hasContract ? (
+        <>
+          {showCombined ? (
+            <p className="owner-settings-note" style={{ marginBottom: 8 }}>
+              Sell ${symbol} for ETH on Uniswap, then post the fill
+              {thesis.trim() ? " with your thesis" : ""}.
+              {tokenBalance != null ? (
+                <span style={{ opacity: 0.75 }}>
+                  {" "}
+                  Balance: {Number(tokenBalance).toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                </span>
+              ) : null}
+            </p>
+          ) : null}
+          <div
+            className="chain-buy-row"
+            style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}
+          >
+            <input
+              id={compact ? `chain-sell-amt-${contract}` : "chain-sell-amount"}
+              className="input"
+              type="text"
+              inputMode="decimal"
+              value={amountToken}
+              onChange={(e) => setAmountToken(e.target.value)}
+              disabled={busy}
+              aria-label={`${symbol} amount`}
+              style={{ width: 140 }}
+            />
+            <span className="owner-settings-note" style={{ alignSelf: "center" }}>
+              ${symbol}
+            </span>
+            {SELL_PRESETS.map((p) => (
+              <button
+                key={p}
+                type="button"
+                className="btn"
+                disabled={busy}
+                onClick={() => setAmountToken(p)}
+                style={{ padding: "6px 10px", fontSize: 12 }}
+              >
+                {Number(p).toLocaleString()}
+              </button>
+            ))}
+            {tokenBalance && Number(tokenBalance) > 0 ? (
+              <button
+                type="button"
+                className="btn"
+                disabled={busy}
+                onClick={() => setAmountToken(tokenBalance)}
+                style={{ padding: "6px 10px", fontSize: 12 }}
+              >
+                Max
+              </button>
+            ) : null}
           </div>
         </>
+      ) : null}
+
+      {tradeMode && hasContract ? (
+        <div className="owner-settings-note" style={{ marginBottom: 10, minHeight: 20 }}>
+          {quoting
+            ? "Quoting…"
+            : quoteError
+              ? quoteError
+              : quote
+                ? buyMode
+                  ? `≈ ${Number(quote.amountToken || quote.amountOut).toLocaleString(undefined, { maximumFractionDigits: 4 })} ${symbol}${
+                      quote.notional_usd != null ? ` · ~$${quote.notional_usd.toFixed(2)}` : ""
+                    }`
+                  : `≈ ${Number(quote.amountEth || quote.amountOut).toLocaleString(undefined, { maximumFractionDigits: 6 })} ETH${
+                      quote.notional_usd != null ? ` · ~$${quote.notional_usd.toFixed(2)}` : ""
+                    }`
+                : null}
+        </div>
       ) : null}
 
       {postMode ? (
@@ -362,7 +469,9 @@ export function ChainBuyBox({
             ? "Optional thesis (copy-trade)…"
             : postMode
               ? "Share a thesis, update, or comment…"
-              : "Optional thesis to post with this buy…"
+              : sellMode
+                ? "Optional thesis to post with this sell…"
+                : "Optional thesis to post with this buy…"
         }
         disabled={busy}
         style={{ width: "100%", resize: "vertical", marginBottom: 10 }}
@@ -384,27 +493,29 @@ export function ChainBuyBox({
         className="btn btn-primary"
         disabled={
           busy ||
-          (buyMode && hasContract
-            ? quoting || !!quoteError || !amountEth
+          (tradeMode && hasContract
+            ? quoting ||
+              !!quoteError ||
+              (buyMode ? !amountEth : !amountToken)
             : !thesis.trim())
         }
       >
         {busy
-          ? buyMode && hasContract
-            ? "Buying…"
+          ? tradeMode
+            ? sellMode
+              ? "Selling…"
+              : "Buying…"
             : "Posting…"
           : parentId
-            ? "Copy trade on Uniswap"
-            : buyMode && hasContract
-              ? "Buy on Uniswap"
-              : "Post"}
+            ? defaultSide === "sell"
+              ? "Copy sell on Uniswap"
+              : "Copy buy on Uniswap"
+            : sellMode
+              ? "Sell on Uniswap"
+              : buyMode
+                ? "Buy on Uniswap"
+                : "Post"}
       </button>
     </form>
   );
-}
-
-function doPostLabel(showCombined: boolean, mode: Mode, hasContract: boolean): string {
-  if (showCombined && mode === "post") return "Post failed";
-  if (!hasContract) return "Post failed";
-  return "Buy failed";
 }

@@ -4,12 +4,14 @@ import { getViewerSession } from "@/lib/viewerSession";
 import { viewerHasIdentity, viewerIdentityKey, viewerOwnsAgent } from "@/lib/agent-identity";
 import { createTelegramOwnerLink } from "@/lib/owner-link";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { siteTelegramBotUsername } from "@/lib/telegram-bots";
 
 /**
  * POST /api/agent/link-telegram
  * Body: { agent_id: string }
  *
- * Owner session (X / Telegram / Discord / MetaMask) mints a one-time RHTG-… code to attach Telegram.
+ * Owner session mints a one-time RHTG-… code for the **site** Telegram bot
+ * (@TELEGRAM_BOT_USERNAME) — not the trading bot (/website).
  */
 export async function POST(req: NextRequest) {
   const session = await getViewerSession();
@@ -68,13 +70,17 @@ export async function POST(req: NextRequest) {
   }
 
   const link = createTelegramOwnerLink(agentId);
+  const botUsername = siteTelegramBotUsername();
+  const botHandle = botUsername ? `@${botUsername}` : "the rhagent.bot Telegram bot";
   return NextResponse.json({
     ok: true,
     code: link.code,
     deep_link: link.deep_link,
+    bot_username: botUsername,
+    bot_kind: "site",
     expires_at: link.expires_at,
     instructions: link.deep_link
-      ? `Open ${link.deep_link} (or send /link ${link.code} to the bot). Expires in 30 minutes.`
-      : `Send /link ${link.code} to the rhagent.bot Telegram bot. Expires in 30 minutes.`,
+      ? `Open ${link.deep_link} (or send /link ${link.code} to ${botHandle}). Expires in 30 minutes. This is the site bot — not the trading bot (/website).`
+      : `Send /link ${link.code} to ${botHandle}. Expires in 30 minutes. This is the site bot — not the trading bot (/website).`,
   });
 }

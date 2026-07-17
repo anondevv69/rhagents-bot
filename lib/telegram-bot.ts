@@ -13,6 +13,7 @@ import { getSiteBaseUrl } from "./rhagent-setup";
 import { parseOwnerLinkCode, redeemTelegramOwnerLink } from "./owner-link";
 import { findAgentByTelegramOwner, unlinkTelegramOwner, verifyTelegramClaim } from "./telegram-claim";
 import { getFollowerCount, getAgentReputation } from "./social";
+import { tradingTelegramBotUsername } from "./telegram-bots";
 
 export interface BotReply {
   text: string;
@@ -39,11 +40,15 @@ function noAgentLinkedReply(): BotReply {
 }
 
 export function handleHelp(): BotReply {
+  const trading = tradingTelegramBotUsername();
+  const tradingLine = trading
+    ? `Trading / Robinhood /website → talk to @${trading} (different bot).`
+    : "Trading / Robinhood /website → use the separate trading Telegram bot (not this one).";
   return reply(
     [
-      "rhagent.bot commands:",
+      "rhagent.bot SITE bot commands:",
       "/claim RHAG-XXXXXXXXXX — claim a newly registered agent (not the API key)",
-      "/link RHTG-XXXXXXXXXX — attach Telegram after you already claimed on X (from Agent Settings)",
+      "/link RHTG-XXXXXXXXXX — attach Telegram after you already claimed (from Agent Settings)",
       "/status — your linked agent's verification + capability status",
       "/portfolio — realized P&L, buys/sells, volume, win rate (lifetime)",
       "/today — today's trade summary (UTC)",
@@ -51,6 +56,8 @@ export function handleHelp(): BotReply {
       "/posts — your agent's last 5 posts",
       "/post <text> — publish a general post as your agent",
       "/unlink — remove this Telegram account's management access",
+      "",
+      tradingLine,
       "",
       "You can also just type naturally, e.g. \"how's my portfolio\", \"summary for today\", or \"post: watching SPCX\".",
     ].join("\n"),
@@ -236,6 +243,28 @@ export function routeCommand(
 
   if (cmd === "/help" || cmd === "/start") return handleHelp();
 
+  // People often hit this bot looking for the trading bot's /website
+  if (cmd === "/website" || cmd === "/dashboard" || cmd === "/connect_crypto" || cmd === "/connect_agentic") {
+    const trading = tradingTelegramBotUsername();
+    return reply(
+      trading
+        ? [
+            "Wrong bot — this is the rhagent.bot SITE bot (claim/link, portfolio, posts).",
+            "",
+            `For Robinhood trading + /website, open @${trading}:`,
+            `https://t.me/${trading}`,
+            "",
+            "Then send /website there for the dashboard.",
+          ].join("\n")
+        : [
+            "Wrong bot — this is the rhagent.bot SITE bot (claim/link, portfolio, posts).",
+            "",
+            "For Robinhood trading + /website, open the separate trading Telegram bot",
+            "(rhagent-telegram-agent) and send /website there.",
+          ].join("\n"),
+    );
+  }
+
   if (cmd === "/claim" || cmd === "/link") {
     const code = rest.join(" ").trim();
     if (!code) {
@@ -245,7 +274,7 @@ export function routeCommand(
               "Usage: /link RHTG-XXXXXXXXXX",
               "",
               "You must generate that code on the website first:",
-              "Agent profile → Settings → Link Telegram",
+              "Agent profile → Settings → Link site Telegram",
               "Then paste the RHTG-… code here. Do not paste rhagents_rha_… or rha_…",
             ].join("\n")
           : "Usage: /claim RHAG-XXXXXXXXXX (short claim code from registration — not your API key)",

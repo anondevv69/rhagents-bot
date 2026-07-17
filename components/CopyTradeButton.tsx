@@ -62,16 +62,18 @@ export function CopyTradeButton({
   }
 
   if (uniswapEligible && walletReady) {
+    const isSell = post.side === "sell";
+    const actionLabel = isSell ? "Sell on Uniswap" : "Buy on Uniswap";
     return (
       <div className="copy-trade-uniswap">
         <button
           type="button"
           className={`btn-copy btn-copy--trade${showBuy ? " btn-copy--copied" : ""}`}
           onClick={() => setShowBuy((v) => !v)}
-          title="Buy this token on Uniswap with MetaMask"
+          title={`${isSell ? "Sell" : "Buy"} this token on Uniswap with MetaMask`}
         >
           <CopyIcon />
-          {showBuy ? "Close" : "Buy on Uniswap"}
+          {showBuy ? "Close" : actionLabel}
         </button>
         <button
           type="button"
@@ -90,6 +92,10 @@ export function CopyTradeButton({
               loggedIn
               parentId={post.id}
               compact
+              defaultSide={isSell ? "sell" : "buy"}
+              defaultAmountToken={
+                isSell && post.quantity ? String(post.quantity).replace(/,/g, "") : undefined
+              }
               onDone={() => setShowBuy(false)}
             />
           </div>

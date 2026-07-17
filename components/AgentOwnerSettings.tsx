@@ -30,12 +30,20 @@ export function AgentOwnerSettings({
   displayName,
   apiKeyMasked,
   connections,
+  siteTelegramBot = null,
+  tradingTelegramBot = null,
+  tradingTelegramUrl = null,
 }: {
   agentId: string;
   username: string;
   displayName: string;
   apiKeyMasked: string;
   connections: OwnerConnections;
+  /** Site claim/link bot @username (no @). */
+  siteTelegramBot?: string | null;
+  /** Trading bot @username (has /website). */
+  tradingTelegramBot?: string | null;
+  tradingTelegramUrl?: string | null;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +53,11 @@ export function AgentOwnerSettings({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [linkBusy, setLinkBusy] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
-  const [linkInfo, setLinkInfo] = useState<{ code: string; deep_link: string | null } | null>(null);
+  const [linkInfo, setLinkInfo] = useState<{
+    code: string;
+    deep_link: string | null;
+    bot_username: string | null;
+  } | null>(null);
   const [xLinkBusy, setXLinkBusy] = useState(false);
   const [xLinkError, setXLinkError] = useState<string | null>(null);
   const [xLinkInfo, setXLinkInfo] = useState<{
@@ -77,12 +89,17 @@ export function AgentOwnerSettings({
         message?: string;
         code?: string;
         deep_link?: string | null;
+        bot_username?: string | null;
       };
       if (!res.ok || !data.ok || !data.code) {
         setLinkError(data.message ?? data.error ?? "Could not create link code");
         return;
       }
-      setLinkInfo({ code: data.code, deep_link: data.deep_link ?? null });
+      setLinkInfo({
+        code: data.code,
+        deep_link: data.deep_link ?? null,
+        bot_username: data.bot_username ?? null,
+      });
     } catch {
       setLinkError("Network error — try again");
     } finally {
@@ -281,18 +298,28 @@ export function AgentOwnerSettings({
           </div>
         ) : null}
         <ConnRow
-          label="Telegram bot"
+          label={
+            siteTelegramBot
+              ? `Site Telegram (@${siteTelegramBot})`
+              : "Site Telegram (rhagent.bot)"
+          }
           connected={connections.telegram.connected}
           detail={
             connections.telegram.username
               ? `@${connections.telegram.username.replace(/^@/, "")}`
               : connections.telegram.connected
                 ? "linked"
-                : "needed for /trades /portfolio in Telegram"
+                : "Claim/link bot — /status /portfolio /trades (not /website)"
           }
         />
         {!connections.telegram.connected ? (
           <div className="owner-settings-link-tg">
+            <p className="owner-settings-note" style={{ marginBottom: 8 }}>
+              This links your Telegram to this agent on the <strong>site bot</strong>
+              {siteTelegramBot ? ` (@${siteTelegramBot})` : ""}. It does{" "}
+              <strong>not</strong> open the trading bot — that one has{" "}
+              <code>/website</code> (see below).
+            </p>
             {!linkInfo ? (
               <button
                 type="button"
@@ -300,11 +327,17 @@ export function AgentOwnerSettings({
                 onClick={createTelegramLink}
                 disabled={linkBusy}
               >
-                {linkBusy ? "Creating…" : "Link Telegram"}
+                {linkBusy ? "Creating…" : "Link site Telegram"}
               </button>
             ) : (
               <div className="owner-settings-newkey">
-                <p className="owner-settings-newkey-warn">Send this to @Rhagentdotbot (expires in 30 min):</p>
+                <p className="owner-settings-newkey-warn">
+                  Send this to{" "}
+                  <strong>
+                    @{linkInfo.bot_username || siteTelegramBot || "the site Telegram bot"}
+                  </strong>{" "}
+                  (expires in 30 min) — not the trading bot:
+                </p>
                 <pre className="owner-settings-newkey-value">/link {linkInfo.code}</pre>
                 {linkInfo.deep_link ? (
                   <p className="owner-settings-note">
@@ -322,6 +355,38 @@ export function AgentOwnerSettings({
             {linkError ? <p className="owner-settings-error">{linkError}</p> : null}
           </div>
         ) : null}
+
+        <div className="owner-settings-conn" style={{ marginTop: 8 }}>
+          <span className="owner-settings-conn-label">
+            {tradingTelegramBot
+              ? `Trading Telegram (@${tradingTelegramBot})`
+              : "Trading Telegram"}
+          </span>
+          <span className="owner-settings-conn-detail" style={{ gridColumn: "1 / -1" }}>
+            Separate bot for Robinhood Crypto/Agentic + dashboard. Use{" "}
+            <code>/website</code> there — not on the site bot above.
+          </span>
+          {tradingTelegramUrl ? (
+            <p style={{ gridColumn: "1 / -1", margin: "6px 0 0" }}>
+              <a
+                href={tradingTelegramUrl}
+                className="btn btn-outline owner-settings-rotate-btn"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open trading bot
+              </a>{" "}
+              <a href="/dashboard" className="text-link" style={{ marginLeft: 8 }}>
+                Dashboard
+              </a>
+            </p>
+          ) : (
+            <p className="owner-settings-note" style={{ gridColumn: "1 / -1", marginTop: 6 }}>
+              Set <code>TRADING_TELEGRAM_BOT_USERNAME</code> on rhagent.bot to show the deep link.
+              Meanwhile: open your trading bot in Telegram → <code>/website</code>.
+            </p>
+          )}
+        </div>
         <ConnRow
           label="Discord bot"
           connected={connections.discord.connected}

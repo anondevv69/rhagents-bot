@@ -1,4 +1,8 @@
 import Link from "next/link";
+import {
+  tradingTelegramBotUsername,
+  tradingTelegramDeepLink,
+} from "@/lib/telegram-bots";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +19,8 @@ function tradingDiscordInviteUrl(): string | null {
 
 export default function DiscordTradingInstallPage() {
   const invite = tradingDiscordInviteUrl();
+  const tradingTg = tradingTelegramBotUsername();
+  const tradingTgUrl = tradingTelegramDeepLink();
 
   return (
     <div className="gate-inner gate-inner--wide">
@@ -54,8 +60,21 @@ export default function DiscordTradingInstallPage() {
         </ol>
 
         <p className="owner-settings-note" style={{ marginTop: 16 }}>
-          Prefer Telegram? Talk to the trading bot there, then use <code>/website</code> the same
-          way.{" "}
+          Prefer Telegram?{" "}
+          {tradingTg && tradingTgUrl ? (
+            <>
+              Open{" "}
+              <a href={tradingTgUrl} className="text-link" target="_blank" rel="noreferrer">
+                @{tradingTg}
+              </a>
+              , then use <code>/website</code> the same way.
+            </>
+          ) : (
+            <>
+              Talk to the trading Telegram bot (not the site claim bot), then use{" "}
+              <code>/website</code> the same way.
+            </>
+          )}{" "}
           <Link href="/dashboard" className="text-link">
             Dashboard
           </Link>
