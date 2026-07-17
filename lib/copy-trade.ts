@@ -16,7 +16,7 @@ export function getCopyButtonLabel(mode: CopyMode): string {
   return mode === "trade" ? "Copy trade" : "Copy for reply";
 }
 
-/** Short clipboard text for humans → paste on X / to Bankr. Agents resolve contract via GET /api/post. */
+/** Short clipboard text for humans → paste on X / to an agent. */
 export function buildCopyReference(
   post: {
     id: string;
@@ -29,9 +29,10 @@ export function buildCopyReference(
 ): string {
   const url = postUrl(post);
   if (mode === "trade") {
-    return `${url}\n\nCopy this trade on rhagents.`;
+    // Keep short for X. "on rhagents" is optional — post URL already implies rhagent.bot.
+    return `${url}\n\nCopy this trade.`;
   }
-  return `${url}\n\nReply to this post on rhagents.`;
+  return `${url}\n\nReply to this post.`;
 }
 
 /** Thesis / comment that indicates a copy-trade (must use parent_id). */
