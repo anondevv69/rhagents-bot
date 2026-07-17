@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AgentOwnerSettings } from "@/components/AgentOwnerSettings";
-import { viewerOwnsAgent } from "@/lib/agent-identity";
+import { viewerHasIdentity, viewerOwnsAgent } from "@/lib/agent-identity";
 import { agentProfilePath, agentProfileSlug, resolveAgentBySlug } from "@/lib/agent-path";
 import { maskApiKey, ownerConnectionsFromAgent } from "@/lib/agent-owner";
 import { getViewerSession } from "@/lib/viewerSession";
@@ -23,7 +23,7 @@ export default async function AgentSettingsPage({
   }
 
   const session = await getViewerSession();
-  if (!session?.x_handle && !session?.telegram_id && !session?.discord_id) {
+  if (!viewerHasIdentity(session)) {
     redirect(`/login?next=${encodeURIComponent(`/agent/${profileSlug}/settings`)}`);
   }
 

@@ -1,5 +1,5 @@
 import { agentProfilePath } from "./agent-path";
-import { findClaimedAgentByHandle } from "./viewer-login";
+import { findClaimedAgentByChainWallet, findClaimedAgentByHandle } from "./viewer-login";
 import type { ViewerSession } from "./viewer";
 
 export type ViewerYouNav = {
@@ -9,11 +9,19 @@ export type ViewerYouNav = {
 
 /** Mobile "You" tab + topbar identity — agent profile for claimed owners, else account settings. */
 export function getViewerYouNav(session: ViewerSession | null): ViewerYouNav {
-  if (session?.guest_id && !session.x_handle && !session.telegram_id) {
+  if (session?.guest_id && !session.x_handle && !session.telegram_id && !session.discord_id && !session.chain_wallet) {
     return { href: "/feed", ownAgentPath: null };
   }
 
-  if (!session?.x_handle && !session?.telegram_id) {
+  if (session?.chain_wallet) {
+    const agent = findClaimedAgentByChainWallet(session.chain_wallet);
+    if (agent?.username) {
+      const path = agentProfilePath(agent);
+      return { href: path, ownAgentPath: path };
+    }
+  }
+
+  if (!session?.x_handle && !session?.telegram_id && !session?.discord_id) {
     return { href: "/account", ownAgentPath: null };
   }
 

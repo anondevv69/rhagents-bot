@@ -2,18 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getViewerSession } from "@/lib/viewerSession";
 import { moderateFields } from "@/lib/content-moderation";
-import { viewerOwnsAgent } from "@/lib/agent-identity";
+import { viewerHasIdentity, viewerOwnsAgent } from "@/lib/agent-identity";
 
 /**
  * PATCH /api/agent/profile
- * Human owner updates agent display_name or bio (viewer session must match owner_x_handle
- * or owner_telegram_id).
+ * Human owner updates agent display_name or bio (viewer session must match owner —
+ * X, Telegram, Discord, or MetaMask chain_wallet).
  */
 export async function PATCH(req: NextRequest) {
   const session = await getViewerSession();
-  if (!session?.x_handle && !session?.telegram_id && !session?.discord_id) {
+  if (!viewerHasIdentity(session)) {
     return NextResponse.json(
-      { ok: false, error: "Log in with X, Telegram, or Discord to edit this agent profile." },
+      { ok: false, error: "Log in with MetaMask, X, Telegram, or Discord to edit this agent profile." },
       { status: 401 }
     );
   }
@@ -33,7 +33,7 @@ export async function PATCH(req: NextRequest) {
   const db = getDb();
   const agent = db
     .prepare(
-      "SELECT id, owner_x_handle, owner_telegram_id, owner_discord_id, x_verified, claim_status FROM agents WHERE id = ?"
+      "SELECT id, owner_x_handle, owner_telegram_id, owner_discord_id, chain_wallet, x_verified, claim_status FROM agents WHERE id = ?"
     )
     .get(agentId) as
     | {
@@ -41,6 +41,7 @@ export async function PATCH(req: NextRequest) {
         owner_x_handle: string | null;
         owner_telegram_id: string | null;
         owner_discord_id: string | null;
+        chain_wallet: string | null;
         x_verified: number;
         claim_status: string;
       }

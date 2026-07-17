@@ -330,6 +330,17 @@ export async function POST(req: NextRequest) {
     );
   }
   const product = classified.product as "agentic" | "crypto";
+  const productErr = canPostProduct(agent, product);
+  if (productErr) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: productErr,
+        hint: "Chain-only agents use product:\"chain\". Connect Robinhood App Agentic/Crypto to trade-post those fills.",
+      },
+      { status: 403 },
+    );
+  }
 
   const rawComment =
     (typeof body.thesis === "string" ? body.thesis.trim() : "") ||

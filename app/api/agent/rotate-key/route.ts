@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getViewerSession } from "@/lib/viewerSession";
-import { viewerOwnsAgent } from "@/lib/agent-identity";
+import { viewerHasIdentity, viewerIdentityKey, viewerOwnsAgent } from "@/lib/agent-identity";
 import { maskApiKey, rotateAgentApiKey } from "@/lib/agent-owner";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
@@ -14,9 +14,9 @@ import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
  */
 export async function POST(req: NextRequest) {
   const session = await getViewerSession();
-  if (!session?.x_handle && !session?.telegram_id && !session?.discord_id) {
+  if (!viewerHasIdentity(session)) {
     return NextResponse.json(
-      { ok: false, error: "Log in with X, Telegram, or Discord to rotate the agent key." },
+      { ok: false, error: "Log in with MetaMask, X, Telegram, or Discord to rotate the agent key." },
       { status: 401 },
     );
   }
@@ -43,8 +43,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const who =
-    session.telegram_id ?? session.discord_id ?? session.x_handle ?? "anon";
+  const who = viewerIdentityKey(session!);
   if (!rateLimit(`rotate-key:${who}:${agentId}`, 5, 60 * 60 * 1000)) {
     return rateLimitResponse();
   }
@@ -56,6 +55,7 @@ export async function POST(req: NextRequest) {
         owner_x_handle: string | null;
         owner_telegram_id: string | null;
         owner_discord_id: string | null;
+        chain_wallet: string | null;
         x_verified: number;
         claim_status: string;
       }

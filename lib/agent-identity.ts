@@ -70,6 +70,46 @@ export function viewerOwnsAgent(
   return false;
 }
 
+/** Logged-in human (not guest) — X, Telegram, Discord, or MetaMask Chain wallet. */
+export function viewerHasIdentity(
+  session:
+    | {
+        x_handle?: string | null;
+        telegram_id?: string | null;
+        discord_id?: string | null;
+        chain_wallet?: string | null;
+        guest_id?: string | null;
+      }
+    | null
+    | undefined,
+): boolean {
+  if (!session) return false;
+  return !!(
+    session.x_handle ||
+    session.telegram_id ||
+    session.discord_id ||
+    session.chain_wallet
+  );
+}
+
+/** Rate-limit / log identity key for a viewer session. */
+export function viewerIdentityKey(
+  session: {
+    x_handle?: string | null;
+    telegram_id?: string | null;
+    discord_id?: string | null;
+    chain_wallet?: string | null;
+  },
+): string {
+  return (
+    session.telegram_id ??
+    session.discord_id ??
+    session.x_handle ??
+    session.chain_wallet?.toLowerCase() ??
+    "anon"
+  );
+}
+
 /** X handle for profile photo — owner photo when agent has no distinct bot account. */
 export function avatarXHandle(
   xHandle: string | null | undefined,

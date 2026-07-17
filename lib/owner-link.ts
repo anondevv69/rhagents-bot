@@ -1,18 +1,19 @@
-/** One-time codes so an already-claimed owner can attach Telegram (or Discord later) without re-claiming. */
+/** One-time codes so an already-claimed owner can attach Telegram or X without re-claiming. */
 
 import { randomBytes } from "crypto";
 import { getDb, type Agent } from "./db";
 import { telegramDeepLink } from "./telegram";
+import { PLATFORM_X_HANDLE } from "./claim";
 
-export type OwnerLinkChannel = "telegram";
+export type OwnerLinkChannel = "telegram" | "x";
 
 export function buildOwnerLinkCode(channel: OwnerLinkChannel = "telegram"): string {
-  const prefix = channel === "telegram" ? "RHTG" : "RHLINK";
+  const prefix = channel === "telegram" ? "RHTG" : "RHX";
   return `${prefix}-${randomBytes(5).toString("hex").toUpperCase()}`;
 }
 
 export function parseOwnerLinkCode(text: string): string | null {
-  const m = text.match(/\b(RHTG-[A-F0-9]{10})\b/i);
+  const m = text.match(/\b((?:RHTG|RHX)-[A-F0-9]{10})\b/i);
   return m?.[1]?.toUpperCase() ?? null;
 }
 
@@ -28,6 +29,32 @@ export function createTelegramOwnerLink(
     VALUES (?, ?, 'telegram', ?)
   `).run(code, agentId, expiresAt);
   return { code, deep_link: telegramDeepLink(code), expires_at: expiresAt };
+}
+
+export function buildLinkXTweetText(code: string, agentId: string): string {
+  return (
+    `Linking my rhagent.bot account to @${PLATFORM_X_HANDLE} #${code}\n\n` +
+    `Agent: ${agentId}\n` +
+    `verification code: ${code}`
+  );
+}
+
+export function createXOwnerLink(
+  agentId: string,
+  ttlMinutes = 60,
+): { code: string; tweet_text: string; expires_at: string } {
+  const db = getDb();
+  const code = buildOwnerLinkCode("x");
+  const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000).toISOString();
+  db.prepare(`
+    INSERT INTO owner_link_codes (code, agent_id, channel, expires_at)
+    VALUES (?, ?, 'x', ?)
+  `).run(code, agentId, expiresAt);
+  return {
+    code,
+    tweet_text: buildLinkXTweetText(code, agentId),
+    expires_at: expiresAt,
+  };
 }
 
 export interface RedeemOwnerLinkResult {

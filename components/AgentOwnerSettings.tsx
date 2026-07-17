@@ -46,6 +46,18 @@ export function AgentOwnerSettings({
   const [linkBusy, setLinkBusy] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [linkInfo, setLinkInfo] = useState<{ code: string; deep_link: string | null } | null>(null);
+  const [xLinkBusy, setXLinkBusy] = useState(false);
+  const [xLinkError, setXLinkError] = useState<string | null>(null);
+  const [xLinkInfo, setXLinkInfo] = useState<{
+    code: string;
+    tweet_text: string;
+    tweet_intent_url: string;
+  } | null>(null);
+  const [xTweetUrl, setXTweetUrl] = useState("");
+  const [xVerifyBusy, setXVerifyBusy] = useState(false);
+  const [xLinkedHandle, setXLinkedHandle] = useState<string | null>(
+    connections.x.handle,
+  );
   const [chainWallet, setChainWallet] = useState<string | null>(connections.chain_wallet);
   const [hasChain, setHasChain] = useState(connections.capabilities.chain);
 
@@ -75,6 +87,74 @@ export function AgentOwnerSettings({
       setLinkError("Network error — try again");
     } finally {
       setLinkBusy(false);
+    }
+  }
+
+  async function createXLink() {
+    setXLinkBusy(true);
+    setXLinkError(null);
+    setXLinkInfo(null);
+    try {
+      const res = await fetch("/api/agent/link-x", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_id: agentId }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        message?: string;
+        code?: string;
+        tweet_text?: string;
+        tweet_intent_url?: string;
+      };
+      if (!res.ok || !data.ok || !data.code || !data.tweet_text || !data.tweet_intent_url) {
+        setXLinkError(data.message ?? data.error ?? "Could not create X link code");
+        return;
+      }
+      setXLinkInfo({
+        code: data.code,
+        tweet_text: data.tweet_text,
+        tweet_intent_url: data.tweet_intent_url,
+      });
+    } catch {
+      setXLinkError("Network error — try again");
+    } finally {
+      setXLinkBusy(false);
+    }
+  }
+
+  async function verifyXLink() {
+    if (!xLinkInfo || !xTweetUrl.trim()) return;
+    setXVerifyBusy(true);
+    setXLinkError(null);
+    try {
+      const res = await fetch("/api/agent/link-x/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agent_id: agentId,
+          code: xLinkInfo.code,
+          tweet_url: xTweetUrl.trim(),
+        }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        message?: string;
+        owner_x_handle?: string;
+      };
+      if (!res.ok || !data.ok) {
+        setXLinkError(data.message ?? data.error ?? "Could not verify tweet");
+        return;
+      }
+      if (data.owner_x_handle) setXLinkedHandle(data.owner_x_handle);
+      setXLinkInfo(null);
+      setXTweetUrl("");
+    } catch {
+      setXLinkError("Network error — try again");
+    } finally {
+      setXVerifyBusy(false);
     }
   }
 
@@ -148,9 +228,58 @@ export function AgentOwnerSettings({
         </p>
         <ConnRow
           label="X / Twitter"
-          connected={connections.x.connected}
-          detail={connections.x.handle ? `@${connections.x.handle.replace(/^@/, "")}` : null}
+          connected={Boolean(xLinkedHandle)}
+          detail={xLinkedHandle ? `@${xLinkedHandle.replace(/^@/, "")}` : null}
         />
+        {!xLinkedHandle ? (
+          <div className="owner-settings-link-tg" style={{ marginBottom: 12 }}>
+            {!xLinkInfo ? (
+              <button
+                type="button"
+                className="btn btn-outline owner-settings-rotate-btn"
+                onClick={createXLink}
+                disabled={xLinkBusy}
+              >
+                {xLinkBusy ? "Creating…" : "Link X"}
+              </button>
+            ) : (
+              <div className="owner-settings-newkey">
+                <p className="owner-settings-newkey-warn">
+                  Post this tweet, then paste the tweet URL below (expires in 60 min):
+                </p>
+                <pre className="owner-settings-newkey-value">{xLinkInfo.tweet_text}</pre>
+                <p className="owner-settings-note">
+                  <a href={xLinkInfo.tweet_intent_url} className="text-link" target="_blank" rel="noreferrer">
+                    Open compose on X
+                  </a>
+                </p>
+                <input
+                  type="url"
+                  className="input"
+                  placeholder="https://x.com/you/status/…"
+                  value={xTweetUrl}
+                  onChange={(e) => setXTweetUrl(e.target.value)}
+                  disabled={xVerifyBusy}
+                  style={{ width: "100%", marginBottom: 8 }}
+                />
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={verifyXLink}
+                    disabled={xVerifyBusy || !xTweetUrl.trim()}
+                  >
+                    {xVerifyBusy ? "Verifying…" : "Verify tweet"}
+                  </button>
+                  <button type="button" className="btn btn-outline" onClick={() => setXLinkInfo(null)}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+            {xLinkError ? <p className="owner-settings-error">{xLinkError}</p> : null}
+          </div>
+        ) : null}
         <ConnRow
           label="Telegram bot"
           connected={connections.telegram.connected}

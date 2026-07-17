@@ -26,6 +26,24 @@ export function findClaimedAgentByHandle(handle: string): { x_handle: string; id
   return { id: agent.id, x_handle: sessionHandle, username: agent.username ?? null };
 }
 
+export function findClaimedAgentByChainWallet(
+  wallet: string,
+): { id: string; username: string | null; chain_wallet: string } | null {
+  const normalized = wallet.trim().toLowerCase();
+  if (!normalized.startsWith("0x") || normalized.length !== 42) return null;
+  const db = getDb();
+  const agent = db
+    .prepare(
+      `SELECT id, username, chain_wallet FROM agents
+       WHERE LOWER(chain_wallet) = ?
+         AND (claim_status = 'claimed' OR x_verified = 1)
+       LIMIT 1`,
+    )
+    .get(normalized) as { id: string; username: string | null; chain_wallet: string } | undefined;
+  if (!agent?.chain_wallet) return null;
+  return agent;
+}
+
 export function findVerifiedClaim(code: string): { x_handle: string; agent_id: string } | null {
   const db = getDb();
   const row = db.prepare(`
