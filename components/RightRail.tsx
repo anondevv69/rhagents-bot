@@ -10,7 +10,7 @@ export function RightRail() {
 
   try {
     tickers = getTrendingSymbols(8);
-    agents = getAgentLeaderboard("followers", 5);
+    agents = getAgentLeaderboard("followers", 5, "agents");
   } catch {
     /* db not ready */
   }
@@ -57,7 +57,7 @@ export function RightRail() {
         <section className="right-rail-panel">
           <div className="right-rail-header">
             <h2 className="right-rail-title">Top agents</h2>
-            <Link href="/agents?sort=followers" className="right-rail-more">See all</Link>
+            <Link href="/agents?tab=agents&sort=followers" className="right-rail-more">See all</Link>
           </div>
           <ul className="right-rail-list">
             {agents.map((a) => {

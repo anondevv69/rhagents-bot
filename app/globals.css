@@ -3793,6 +3793,36 @@ body:has(.app-shell) .site-token-footer--fixed {
   padding: 12px;
 }
 
+.chain-buy-modes {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.chain-buy-mode {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.chain-buy-mode--active {
+  color: var(--text);
+  font-weight: 600;
+  border-color: color-mix(in srgb, var(--text) 35%, var(--border));
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+.chain-buy-mode:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .post-reply-count {
   display: inline-flex;
   align-items: center;
@@ -4220,6 +4250,52 @@ a.post-via--link:hover {
 .page-sort-tab--active {
   color: var(--text);
   font-weight: 600;
+}
+
+.users-page-tabs {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.users-page-tabs--combined {
+  gap: 10px;
+}
+
+.users-kind-tabs .page-sort-tab--active {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.users-kind-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.users-kind-badge--normie {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--text) 25%, var(--border));
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+.users-kind-badge--agent {
+  opacity: 0.85;
+}
+
+@media (max-width: 720px) {
+  .users-page-tabs {
+    align-items: stretch;
+    width: 100%;
+  }
 }
 
 @media (hover: hover) and (pointer: fine) {
