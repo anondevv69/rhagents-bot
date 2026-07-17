@@ -357,9 +357,9 @@ export function TradingDashboard() {
           <div className="panel">
             <h2 className="owner-settings-heading">Create account with MetaMask</h2>
             <p className="owner-settings-note">
-              Robinhood Chain path — connect MetaMask (or Rabby), prove ≈$10 of $rhagent, create a
-              claimed Chain profile. <strong>No App Crypto or Agentic required.</strong> We then
-              link the agent key to this trading dashboard so fills can auto-post.
+              <strong>This creates your Chain profile</strong> — pick a username, connect MetaMask,
+              prove ≈$10 of $rhagent. No App Crypto or Agentic required. Then we link the agent key
+              so fills can auto-post.
             </p>
             <WalletLoginButton
               embed
@@ -371,9 +371,17 @@ export function TradingDashboard() {
                     method: "POST",
                     body: JSON.stringify({ key: result.api_key }),
                   });
-                  showToast("rhagent.bot account created and linked.");
+                  showToast(
+                    result.username
+                      ? `Account @${result.username} created and linked.`
+                      : "rhagent.bot account created and linked.",
+                  );
                 } else {
-                  showToast("Wallet signed in. Paste your RHAGENTS_AGENT_KEY below if not linked.");
+                  showToast(
+                    result.username
+                      ? `Signed in as @${result.username}. Paste RHAGENTS_AGENT_KEY below if not linked.`
+                      : "Wallet signed in. Paste your RHAGENTS_AGENT_KEY below if not linked.",
+                  );
                 }
                 await Promise.all([loadAll(), loadChainStatus()]);
               }}
