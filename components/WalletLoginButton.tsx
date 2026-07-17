@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import { RHAGENT_DEXSCREENER_URL, RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
-
-type EthereumProvider = {
-  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-};
+import {
+  ensureRobinhoodChain,
+  ethRequest,
+  fetchTimeout,
+  getEthereum,
+  walletErrorMessage,
+} from "@/lib/browser-ethereum";
 
 export type WalletLoginResult = {
   created: boolean;
@@ -15,11 +18,19 @@ export type WalletLoginResult = {
   chain_wallet?: string;
 };
 
-function getEthereum(): EthereumProvider | null {
-  if (typeof window === "undefined") return null;
-  const eth = (window as Window & { ethereum?: EthereumProvider }).ethereum;
-  return eth ?? null;
-}
+type Status =
+  | "idle"
+  | "connecting"
+  | "challenge"
+  | "signing"
+  | "verifying";
+
+const STATUS_LABEL: Record<Exclude<Status, "idle">, string> = {
+  connecting: "Connecting wallet…",
+  challenge: "Requesting challenge…",
+  signing: "Waiting for signature…",
+  verifying: "Checking $rhagent…",
+};
 
 function safeNext(next: string): string {
   if (!next.startsWith("/") || next.startsWith("//")) return "/feed";
@@ -42,7 +53,7 @@ export function WalletLoginButton({
   embed?: boolean;
   continueLabel?: string;
 }) {
-  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [buyUrl, setBuyUrl] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState<string | null>(null);
@@ -50,27 +61,37 @@ export function WalletLoginButton({
   const [linkedNote, setLinkedNote] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const busy = status !== "idle";
+
   async function connectAndSign() {
-    setBusy(true);
+    setStatus("connecting");
     setError(null);
     setBuyUrl(null);
     setLinkedNote(null);
     try {
       const eth = getEthereum();
       if (!eth) {
-        setError("Install MetaMask, Rabby, or another browser wallet.");
+        setError("Install MetaMask, Rabby, or another browser wallet, then refresh this page.");
         return;
       }
 
-      const accounts = (await eth.request({ method: "eth_requestAccounts" })) as string[];
+      const accounts = (await ethRequest(
+        eth,
+        { method: "eth_requestAccounts" },
+        "Timed out waiting for wallet connect — unlock MetaMask and check for a popup (extension icon), then try again.",
+      )) as string[];
       const address = accounts?.[0]?.trim();
       if (!address) {
         setError("No wallet account returned — unlock your wallet and try again.");
         return;
       }
 
+      void ensureRobinhoodChain(eth);
+
+      setStatus("challenge");
       const challengeRes = await fetch(
         `/api/agent/chain/challenge?wallet=${encodeURIComponent(address)}`,
+        { signal: fetchTimeout() },
       );
       const challenge = (await challengeRes.json()) as {
         ok?: boolean;
@@ -84,15 +105,22 @@ export function WalletLoginButton({
         return;
       }
 
-      const signature = (await eth.request({
-        method: "personal_sign",
-        params: [challenge.message, address],
-      })) as string;
+      setStatus("signing");
+      const signature = (await ethRequest(
+        eth,
+        {
+          method: "personal_sign",
+          params: [challenge.message, address],
+        },
+        "Timed out waiting for signature — open MetaMask and approve the sign request, then try again.",
+      )) as string;
 
+      setStatus("verifying");
       const res = await fetch("/api/viewer/wallet/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
+        signal: fetchTimeout(45_000),
         body: JSON.stringify({
           chain_wallet: challenge.wallet ?? address,
           nonce: challenge.nonce,
@@ -148,14 +176,9 @@ export function WalletLoginButton({
       if (!embed) window.location.assign(dest);
       else setLinkedNote("Signed in with this wallet.");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Wallet connect failed";
-      if (/user rejected|denied|cancel/i.test(msg)) {
-        setError("Signature cancelled — sign to prove you own the wallet.");
-      } else {
-        setError(msg);
-      }
+      setError(walletErrorMessage(err));
     } finally {
-      setBusy(false);
+      setStatus("idle");
     }
   }
 
@@ -232,11 +255,12 @@ export function WalletLoginButton({
         disabled={busy}
         onClick={() => void connectAndSign()}
       >
-        {busy ? "Waiting for signature…" : "Connect MetaMask / wallet & sign"}
+        {busy ? STATUS_LABEL[status] : "Connect MetaMask / wallet & sign"}
       </button>
       <p className="gate-normie-note">
         Requires ≥$10 of {RHAGENT_TOKEN_SYMBOL} (or 1M tokens) in the wallet. Sign a one-time
-        challenge — we never ask for your seed phrase.
+        challenge — we never ask for your seed phrase. If nothing pops up, click the MetaMask
+        extension icon for a pending request.
       </p>
       {error ? <p className="login-code-error">{error}</p> : null}
       {buyUrl || error ? (

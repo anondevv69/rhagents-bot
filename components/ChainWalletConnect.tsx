@@ -1,6 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import {
+  ensureRobinhoodChain,
+  ethRequest,
+  fetchTimeout,
+  getEthereum,
+  walletErrorMessage,
+} from "@/lib/browser-ethereum";
 
 export type ChainWalletProof = {
   chain_wallet: string;
@@ -8,15 +15,14 @@ export type ChainWalletProof = {
   signature: string;
 };
 
-type EthereumProvider = {
-  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-};
+type Status = "idle" | "connecting" | "challenge" | "signing" | "verifying";
 
-function getEthereum(): EthereumProvider | null {
-  if (typeof window === "undefined") return null;
-  const eth = (window as Window & { ethereum?: EthereumProvider }).ethereum;
-  return eth ?? null;
-}
+const STATUS_LABEL: Record<Exclude<Status, "idle">, string> = {
+  connecting: "Connecting wallet…",
+  challenge: "Requesting challenge…",
+  signing: "Waiting for signature…",
+  verifying: "Verifying wallet…",
+};
 
 function shortAddr(addr: string) {
   if (addr.length < 12) return addr;
@@ -47,34 +53,45 @@ export function ChainWalletConnect({
     buy_url?: string;
   }>;
 }) {
-  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [buyUrl, setBuyUrl] = useState<string | null>(null);
   const [linkedWallet, setLinkedWallet] = useState<string | null>(currentWallet ?? null);
 
   const shown = linkedWallet ?? currentWallet ?? null;
   const connected = Boolean(hasChain && shown);
+  const busy = status !== "idle";
 
   async function connectAndSign() {
-    setBusy(true);
+    setStatus("connecting");
     setError(null);
     setBuyUrl(null);
     try {
       const eth = getEthereum();
       if (!eth) {
-        setError("Install a browser wallet (MetaMask, Rabby, etc.) that supports ethereum.request.");
+        setError(
+          "Install a browser wallet (MetaMask, Rabby, etc.), then refresh this page.",
+        );
         return;
       }
 
-      const accounts = (await eth.request({ method: "eth_requestAccounts" })) as string[];
+      const accounts = (await ethRequest(
+        eth,
+        { method: "eth_requestAccounts" },
+        "Timed out waiting for wallet connect — unlock MetaMask and check for a popup, then try again.",
+      )) as string[];
       const address = accounts?.[0]?.trim();
       if (!address) {
         setError("No wallet account returned — unlock your wallet and try again.");
         return;
       }
 
+      void ensureRobinhoodChain(eth);
+
+      setStatus("challenge");
       const challengeRes = await fetch(
         `/api/agent/chain/challenge?wallet=${encodeURIComponent(address)}`,
+        { signal: fetchTimeout() },
       );
       const challenge = (await challengeRes.json()) as {
         ok?: boolean;
@@ -88,11 +105,17 @@ export function ChainWalletConnect({
         return;
       }
 
-      const signature = (await eth.request({
-        method: "personal_sign",
-        params: [challenge.message, address],
-      })) as string;
+      setStatus("signing");
+      const signature = (await ethRequest(
+        eth,
+        {
+          method: "personal_sign",
+          params: [challenge.message, address],
+        },
+        "Timed out waiting for signature — open MetaMask and approve the sign request, then try again.",
+      )) as string;
 
+      setStatus("verifying");
       const result = await submitProof({
         chain_wallet: challenge.wallet ?? address,
         nonce: challenge.nonce,
@@ -109,14 +132,9 @@ export function ChainWalletConnect({
       setLinkedWallet(wallet);
       onLinked?.(wallet);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Wallet connect failed";
-      if (/user rejected|denied|cancel/i.test(msg)) {
-        setError("Signature cancelled — you must sign to prove you own the wallet.");
-      } else {
-        setError(msg);
-      }
+      setError(walletErrorMessage(err));
     } finally {
-      setBusy(false);
+      setStatus("idle");
     }
   }
 
@@ -138,7 +156,8 @@ export function ChainWalletConnect({
       <p className="owner-settings-note">
         We issue a one-time challenge and require a{" "}
         <code>personal_sign</code> from the wallet that holds $rhagent (≥1M tokens or ~$10). That
-        proves control — anyone can copy a public address.
+        proves control — anyone can copy a public address. If nothing pops up, click the MetaMask
+        extension icon.
       </p>
       <button
         type="button"
@@ -147,7 +166,7 @@ export function ChainWalletConnect({
         onClick={() => void connectAndSign()}
       >
         {busy
-          ? "Waiting for signature…"
+          ? STATUS_LABEL[status]
           : connected
             ? "Reconnect / change wallet"
             : "Connect wallet & sign"}
