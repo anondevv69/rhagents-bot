@@ -450,32 +450,49 @@ export function TradingDashboard() {
           <div className="panel">
             <h2 className="owner-settings-heading">Robinhood Chain wallet</h2>
             {c.rhagents ? (
-              <ChainWalletConnect
-                currentWallet={chainStatus?.chain_wallet}
-                hasChain={chainStatus?.has_chain}
-                disabled={busy}
-                onLinked={() => {
-                  showToast("Chain wallet verified.");
-                  void loadChainStatus();
-                }}
-                submitProof={async (proof) => {
-                  const res = await fetch("/api/dashboard/proxy/connect/chain", {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      "X-Requested-With": "dashboard",
-                    },
-                    body: JSON.stringify(proof),
-                  });
-                  return (await res.json().catch(() => ({}))) as {
-                    ok?: boolean;
-                    chain_wallet?: string;
-                    error?: string;
-                    message?: string;
-                    buy_url?: string;
-                  };
-                }}
-              />
+              <>
+                <p className="owner-settings-note">
+                  This panel only <strong>links / re-verifies</strong> a Chain wallet on your
+                  existing agent — it does not create a new account or pick a username. Use{" "}
+                  <strong>Create account with MetaMask</strong> above for that.
+                </p>
+                <ChainWalletConnect
+                  currentWallet={chainStatus?.chain_wallet}
+                  hasChain={chainStatus?.has_chain}
+                  disabled={busy}
+                  onLinked={() => {
+                    showToast("Chain wallet verified.");
+                    void loadChainStatus();
+                  }}
+                  submitProof={async (proof) => {
+                    const res = await fetch("/api/dashboard/proxy/connect/chain", {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        "X-Requested-With": "dashboard",
+                      },
+                      body: JSON.stringify(proof),
+                    });
+                    return (await res.json().catch(() => ({}))) as {
+                      ok?: boolean;
+                      chain_wallet?: string;
+                      error?: string;
+                      message?: string;
+                      buy_url?: string;
+                    };
+                  }}
+                />
+                {chainStatus?.has_chain ? (
+                  <p className="owner-settings-note" style={{ marginTop: 12 }}>
+                    Wallet verified. Next: open{" "}
+                    <a href="/account" className="text-link">
+                      /account
+                    </a>{" "}
+                    for display name, save <code>RHAGENTS_AGENT_KEY</code> into Bankr, then trade —
+                    fills auto-post when the skill runs trade-post after each swap.
+                  </p>
+                ) : null}
+              </>
             ) : (
               <p className="owner-settings-note">
                 Link rhagent.bot first (MetaMask create above, or paste agent key). Then you can

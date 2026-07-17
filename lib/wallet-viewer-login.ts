@@ -6,13 +6,17 @@ import { generateAgentId, generateApiKey } from "@/lib/auth";
 import { getDb, type Agent } from "@/lib/db";
 import { verifyChainWalletOwnership } from "@/lib/chain-proof";
 import { checkRhagentHoldings, holdFailResponse, type HoldCheckOk } from "@/lib/rhagent-holdings";
-import { isUsernameTaken } from "@/lib/username";
+import { isUsernameTaken, validateUsername } from "@/lib/username";
 
 function shortWalletLabel(wallet: `0x${string}`): string {
   return `${wallet.slice(0, 6)}…${wallet.slice(-4)}`;
 }
 
-function allocateUsername(wallet: `0x${string}`): string {
+function allocateUsername(wallet: `0x${string}`, preferred?: string | null): string {
+  if (preferred) {
+    const v = validateUsername(preferred);
+    if (v.ok && !isUsernameTaken(v.username)) return v.username;
+  }
   const base = `w_${wallet.slice(2, 10).toLowerCase()}`;
   let candidate = base;
   let n = 2;
@@ -31,12 +35,26 @@ function findAgentByChainWallet(wallet: `0x${string}`): Agent | null {
   );
 }
 
-function createChainAgentFromWallet(wallet: `0x${string}`, hold: HoldCheckOk): { agent: Agent; api_key: string; created: true } {
+function createChainAgentFromWallet(
+  wallet: `0x${string}`,
+  hold: HoldCheckOk,
+  opts?: { username?: string | null; display_name?: string | null },
+): { agent: Agent; api_key: string; created: true } | { error: string } {
+  if (opts?.username) {
+    const v = validateUsername(opts.username);
+    if (!v.ok) return { error: v.error };
+    if (isUsernameTaken(v.username)) {
+      return { error: `Username @${v.username} is taken — pick another` };
+    }
+  }
+
   const db = getDb();
   const agentId = generateAgentId();
   const apiKey = generateApiKey(agentId);
-  const username = allocateUsername(wallet);
-  const displayName = shortWalletLabel(wallet);
+  const username = allocateUsername(wallet, opts?.username);
+  const displayName =
+    (opts?.display_name?.trim() && opts.display_name.trim().slice(0, 40)) ||
+    shortWalletLabel(wallet);
 
   db.prepare(
     `INSERT INTO agents (
@@ -104,6 +122,10 @@ export async function loginOrRegisterWithChainWallet(opts: {
   chain_wallet: string;
   nonce: string;
   signature: string;
+  /** Desired @handle — only used when creating a new agent. Permanent after create. */
+  username?: string | null;
+  /** Display name — only used when creating a new agent. */
+  display_name?: string | null;
 }): Promise<WalletLoginOk | WalletLoginFail> {
   const ownership = await verifyChainWalletOwnership({
     chain_wallet: opts.chain_wallet,
@@ -137,15 +159,22 @@ export async function loginOrRegisterWithChainWallet(opts: {
     };
   }
 
-  const { agent, api_key } = createChainAgentFromWallet(hold.wallet, hold);
+  const created = createChainAgentFromWallet(hold.wallet, hold, {
+    username: opts.username,
+    display_name: opts.display_name,
+  });
+  if ("error" in created) {
+    return { ok: false, status: 400, body: { ok: false, error: created.error } };
+  }
+
   return {
     ok: true,
     created: true,
     chain_wallet: hold.wallet,
-    agent_id: agent.id,
-    username: agent.username,
-    display_name: agent.display_name,
-    api_key,
+    agent_id: created.agent.id,
+    username: created.agent.username,
+    display_name: created.agent.display_name,
+    api_key: created.api_key,
     hold: {
       balance_tokens: hold.balance_tokens,
       value_usd: hold.value_usd,
