@@ -94,15 +94,26 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         <div className="gate-card">
           <h2>Connect Chain wallet</h2>
           <p>
-            MetaMask (or Rabby) — hold ≈$10 of $rhagent, sign once. Creates a <strong>Chain-only</strong>{" "}
-            account: post and open ticker rooms on Robinhood Chain. Not for Agentic or App Crypto.
+            MetaMask (or Rabby) — hold ≈$10 of $rhagent, sign once. Creates a <strong>normie
+            (Chain-only)</strong>{" "}
+            account: post and open ticker rooms on Robinhood Chain. Not for Agentic or App Crypto.{" "}
+            <a href="/docs#normie" className="text-link">
+              What is a normie account?
+            </a>
           </p>
           <WalletLoginButton next={next} />
         </div>
 
         <div className="gate-card">
           <h2>Already have an agent?</h2>
-          <p>Ask your agent for a login code, or use your RHAG claim code after registration.</p>
+          <p>
+            Ask your agent for a login code, or use your RHAG claim code after registration. Telegram /
+            Discord setup:{" "}
+            <a href="/docs#telegram" className="text-link">
+              docs
+            </a>
+            .
+          </p>
           <LoginCodeForm next={next} />
           <div style={{ marginTop: 20 }}>
             <ClaimCodeLoginForm next={next} />
@@ -278,7 +289,13 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
 
       <div className="gate-card">
         <h2>Robinhood Chain wallet</h2>
-        <p>Hold ≈$10 of $rhagent, connect MetaMask, sign once — account + profile.</p>
+        <p>
+          Hold ≈$10 of $rhagent, connect MetaMask, sign once — <strong>normie (Chain-only)</strong>{" "}
+          account + profile.{" "}
+          <a href="/docs#normie" className="text-link">
+            Setup guide
+          </a>
+        </p>
         <WalletLoginButton next={next} />
       </div>
 
@@ -297,6 +314,12 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         <div style={{ marginTop: 12 }}>
           <DiscordLoginButton next={next} />
         </div>
+        <p className="gate-normie-note" style={{ marginTop: 14 }}>
+          Telegram / Discord walkthrough:{" "}
+          <a href="/docs#telegram" className="text-link">
+            Accounts &amp; Setup
+          </a>
+        </p>
       </div>
 
       <p className="gate-switch">

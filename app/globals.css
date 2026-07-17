@@ -3768,6 +3768,29 @@ body:has(.app-shell) .site-token-footer--fixed {
   align-items: center;
   gap: 6px;
   margin-left: auto;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.copy-trade-uniswap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.copy-trade-uniswap-panel {
+  flex: 1 1 100%;
+  min-width: min(100%, 280px);
+}
+
+.chain-buy {
+  margin: 0;
+}
+
+.chain-buy--compact {
+  padding: 12px;
 }
 
 .post-reply-count {

@@ -37,7 +37,7 @@ export function buildCopyReference(
 
 /** Thesis / comment that indicates a copy-trade (must use parent_id). */
 export function looksLikeCopyTradeText(text: string): boolean {
-  return /copied from/i.test(text.trim());
+  return /copied (from|this trade)/i.test(text.trim());
 }
 
 /** @deprecated use buildCopyReference */
