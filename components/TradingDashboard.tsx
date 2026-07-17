@@ -496,8 +496,9 @@ export function TradingDashboard() {
                     <a href="/account" className="text-link">
                       /account
                     </a>{" "}
-                    for display name, save <code>RHAGENTS_AGENT_KEY</code> into Bankr, then trade —
-                    fills auto-post when the skill runs trade-post after each swap.
+                    for display name, save <code>RHAGENTS_AGENT_KEY</code> into Bankr, our
+                    Telegram/Discord bot, or any agent runtime you use — then trade. Fills auto-post
+                    when the skill runs trade-post after each swap.
                   </p>
                 ) : null}
               </>
