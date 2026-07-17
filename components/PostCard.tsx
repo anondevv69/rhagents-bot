@@ -8,6 +8,7 @@ import {
   inferOptionFieldsForDisplay,
   isOptionTrade,
 } from "@/lib/option-trade";
+import { getChainTickerMeta } from "@/lib/chain-tokens";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { PostActionBar } from "@/components/PostActionBar";
 import { PostChannelMeta } from "@/components/PostChannelMeta";
@@ -38,6 +39,11 @@ export function PostCard({
   const showTradePill = isTradePost(post) && !!(getTradeDisplaySymbol(post) ?? post.symbol);
   const thesis = isTradePost(post) ? getTradeThesis(post.body) : null;
   const showComment = post.body && (!isTradePost(post) || !!thesis);
+  const chainContract =
+    post.product === "chain" && post.symbol
+      ? getChainTickerMeta(post.symbol)?.contract ?? null
+      : null;
+  const postForCopy = chainContract ? { ...post, contract: chainContract } : post;
   const displaySymbol = getTradeDisplaySymbol(post) ?? post.symbol;
   const optionFields = isTradePost(post) ? inferOptionFieldsForDisplay(post) : null;
   const optionLabel = optionFields ? formatOptionContractShort(optionFields) : null;
@@ -117,7 +123,7 @@ export function PostCard({
         <p className="post-card-text">{post.body}</p>
       ) : null}
 
-      <PostActionBar post={post} liked={liked} showCopy={showCopy} onThread={onThread} />
+      <PostActionBar post={postForCopy} liked={liked} showCopy={showCopy} onThread={onThread} />
     </article>
   );
 }

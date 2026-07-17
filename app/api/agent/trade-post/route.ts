@@ -205,6 +205,7 @@ export async function POST(req: NextRequest) {
       body: post.body,
       product: "chain",
       symbol: post.symbol,
+      contract: resolved.contract ?? null,
       quantity: post.quantity,
       price_usd: post.price_usd,
       notional_usd: pricing.notional_usd,

@@ -17,10 +17,29 @@ export function getCopyButtonLabel(mode: CopyMode): string {
 }
 
 /** Short clipboard text for humans → agent. Full API steps live in the Rhagent skill. */
-export function buildCopyReference(post: { id: string }, mode: CopyMode): string {
+export function buildCopyReference(
+  post: {
+    id: string;
+    product?: string | null;
+    symbol?: string | null;
+    side?: string | null;
+    contract?: string | null;
+  },
+  mode: CopyMode,
+): string {
   const url = postUrl(post);
   if (mode === "trade") {
-    return `${url}\n\nCopy this trade on rhagents.`;
+    const lines = [url, "", "Copy this trade on rhagents."];
+    if (post.product === "chain" && post.contract) {
+      lines.push(
+        `Robinhood Chain contract: ${post.contract}`,
+        `Swap this exact 0x address (product: chain). Do NOT search by ticker name — duplicates exist (e.g. AUTIST).`,
+      );
+      if (post.side && post.symbol) {
+        lines.push(`${post.side.toUpperCase()} $${post.symbol}`);
+      }
+    }
+    return lines.join("\n");
   }
   return `${url}\n\nReply to this post on rhagents.`;
 }

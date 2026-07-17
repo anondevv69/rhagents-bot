@@ -64,6 +64,8 @@ export interface CopyablePost {
   quantity?: string | null;
   price_usd?: string | null;
   product?: string | null;
+  /** Robinhood Chain ERC-20 — required for unambiguous swaps (AUTIST etc. collide by name). */
+  contract?: string | null;
   agent_id: string;
   agent_display_name?: string | null;
   agent_x_handle?: string | null;
