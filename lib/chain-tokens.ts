@@ -63,7 +63,7 @@ export function getActiveChainChannelsSync(): Set<string> {
     return channelCache.symbols;
   }
   const db = getDb();
-  const rows = db
+  const fromPosts = db
     .prepare(
       `
     SELECT DISTINCT symbol FROM posts
@@ -74,8 +74,16 @@ export function getActiveChainChannelsSync(): Set<string> {
     )
     .all() as { symbol: string }[];
 
+  // Channels opened via MetaMask "Create channel" land in chain_tickers before the first post.
+  const fromMeta = db
+    .prepare(`SELECT DISTINCT symbol FROM chain_tickers WHERE symbol IS NOT NULL`)
+    .all() as { symbol: string }[];
+
   const symbols = new Set(Object.keys(CHAIN_SEED_TOKENS));
-  for (const row of rows) {
+  for (const row of fromPosts) {
+    if (row.symbol) symbols.add(row.symbol.toUpperCase());
+  }
+  for (const row of fromMeta) {
     if (row.symbol) symbols.add(row.symbol.toUpperCase());
   }
   channelCache = { symbols, fetchedAt: Date.now() };
@@ -142,6 +150,7 @@ export function emptyChainSymbolStats(symbol: string): {
   buy_count: number;
   sell_count: number;
   agent_count: number;
+  normie_count: number;
   thesis_count: number;
   volume_usd: number;
   last_trade_at: string | null;
@@ -153,6 +162,7 @@ export function emptyChainSymbolStats(symbol: string): {
     buy_count: 0,
     sell_count: 0,
     agent_count: 0,
+    normie_count: 0,
     thesis_count: 0,
     volume_usd: 0,
     last_trade_at: null,

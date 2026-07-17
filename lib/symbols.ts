@@ -10,7 +10,10 @@ export interface SymbolStats {
   buy_count: number;
   sell_count: number;
   thesis_count: number;
+  /** Posters with App Agentic/Crypto (or non–chain-only). */
   agent_count: number;
+  /** MetaMask / Chain-only accounts (no App Agentic or Crypto). */
+  normie_count: number;
   volume_usd: number;
   last_trade_at: string | null;
 }
@@ -23,38 +26,45 @@ export function getTickers(
   product?: "crypto" | "agentic" | "chain",
 ): SymbolStats[] {
   const db = getDb();
-  const productClause = product ? "AND product = ?" : "";
+  const productClause = product ? "AND p.product = ?" : "";
   const productParams = product ? [product] : [];
 
   const rows = db.prepare(`
     SELECT
-      symbol,
-      product,
-      SUM(CASE WHEN type IN ('trade_fill', 'trade_intent') THEN 1 ELSE 0 END) AS trade_count,
-      SUM(CASE WHEN side = 'buy' THEN 1 ELSE 0 END) AS buy_count,
-      SUM(CASE WHEN side = 'sell' THEN 1 ELSE 0 END) AS sell_count,
-      COUNT(DISTINCT agent_id) AS agent_count,
-      MAX(created_at) AS last_trade_at
-    FROM posts
-    WHERE parent_id IS NULL
-      AND symbol IS NOT NULL
+      p.symbol AS symbol,
+      p.product AS product,
+      SUM(CASE WHEN p.type IN ('trade_fill', 'trade_intent') THEN 1 ELSE 0 END) AS trade_count,
+      SUM(CASE WHEN p.side = 'buy' THEN 1 ELSE 0 END) AS buy_count,
+      SUM(CASE WHEN p.side = 'sell' THEN 1 ELSE 0 END) AS sell_count,
+      COUNT(DISTINCT CASE
+        WHEN a.has_agentic = 1 OR a.has_crypto = 1 OR IFNULL(a.has_chain, 0) = 0
+        THEN p.agent_id END) AS agent_count,
+      COUNT(DISTINCT CASE
+        WHEN IFNULL(a.has_chain, 0) = 1 AND IFNULL(a.has_agentic, 0) = 0 AND IFNULL(a.has_crypto, 0) = 0
+        THEN p.agent_id END) AS normie_count,
+      MAX(p.created_at) AS last_trade_at
+    FROM posts p
+    JOIN agents a ON a.id = p.agent_id
+    WHERE p.parent_id IS NULL
+      AND p.symbol IS NOT NULL
       AND (
-        type IN ('trade_fill', 'trade_intent')
-        OR type IN ('general', 'research')
+        p.type IN ('trade_fill', 'trade_intent')
+        OR p.type IN ('general', 'research')
       )
       ${productClause}
-    GROUP BY symbol, product
+    GROUP BY p.symbol, p.product
     HAVING COUNT(*) > 0
   `).all(...productParams) as Omit<SymbolStats, "thesis_count" | "volume_usd">[];
 
   const volumeBySymbol = new Map<string, number>();
+  const volumeProductClause = product ? "AND product = ?" : "";
   const volumeRows = db.prepare(`
     SELECT symbol, product, quantity, price_usd FROM posts
     WHERE parent_id IS NULL
       AND type IN ('trade_fill', 'trade_intent')
       AND symbol IS NOT NULL
       AND quantity IS NOT NULL AND price_usd IS NOT NULL
-      ${productClause}
+      ${volumeProductClause}
   `).all(...productParams) as {
     symbol: string;
     product: string | null;
@@ -72,6 +82,8 @@ export function getTickers(
 
   const stats: SymbolStats[] = rows.map((row) => ({
     ...row,
+    agent_count: Number(row.agent_count) || 0,
+    normie_count: Number(row.normie_count) || 0,
     thesis_count: countThesesForSymbol(db, row.symbol, row.product),
     volume_usd:
       volumeBySymbol.get(`${(row.product ?? "").toLowerCase()}:${row.symbol.toUpperCase()}`) ?? 0,
@@ -101,33 +113,40 @@ export function getSymbolStats(
   product?: "crypto" | "agentic" | "chain" | null,
 ): SymbolStats | null {
   const db = getDb();
-  const productClause = product ? "AND product = ?" : "";
   const params: string[] = [symbol.toUpperCase()];
   if (product) params.push(product);
 
   const row = db.prepare(`
     SELECT
-      symbol,
-      ${product ? "product" : "MAX(product) AS product"},
-      SUM(CASE WHEN type IN ('trade_fill', 'trade_intent') THEN 1 ELSE 0 END) AS trade_count,
-      SUM(CASE WHEN side = 'buy' THEN 1 ELSE 0 END) AS buy_count,
-      SUM(CASE WHEN side = 'sell' THEN 1 ELSE 0 END) AS sell_count,
-      COUNT(DISTINCT agent_id) AS agent_count,
-      MAX(created_at) AS last_trade_at
-    FROM posts
-    WHERE parent_id IS NULL
-      AND symbol = ?
+      p.symbol AS symbol,
+      ${product ? "p.product AS product" : "MAX(p.product) AS product"},
+      SUM(CASE WHEN p.type IN ('trade_fill', 'trade_intent') THEN 1 ELSE 0 END) AS trade_count,
+      SUM(CASE WHEN p.side = 'buy' THEN 1 ELSE 0 END) AS buy_count,
+      SUM(CASE WHEN p.side = 'sell' THEN 1 ELSE 0 END) AS sell_count,
+      COUNT(DISTINCT CASE
+        WHEN a.has_agentic = 1 OR a.has_crypto = 1 OR IFNULL(a.has_chain, 0) = 0
+        THEN p.agent_id END) AS agent_count,
+      COUNT(DISTINCT CASE
+        WHEN IFNULL(a.has_chain, 0) = 1 AND IFNULL(a.has_agentic, 0) = 0 AND IFNULL(a.has_crypto, 0) = 0
+        THEN p.agent_id END) AS normie_count,
+      MAX(p.created_at) AS last_trade_at
+    FROM posts p
+    JOIN agents a ON a.id = p.agent_id
+    WHERE p.parent_id IS NULL
+      AND p.symbol = ?
       AND (
-        type IN ('trade_fill', 'trade_intent')
-        OR type IN ('general', 'research')
+        p.type IN ('trade_fill', 'trade_intent')
+        OR p.type IN ('general', 'research')
       )
-      ${productClause}
-    GROUP BY symbol${product ? ", product" : ""}
-  `).get(...params) as Omit<SymbolStats, "thesis_count"> | undefined;
+      ${product ? "AND p.product = ?" : ""}
+    GROUP BY p.symbol${product ? ", p.product" : ""}
+  `).get(...params) as Omit<SymbolStats, "thesis_count" | "volume_usd"> | undefined;
   if (!row) return null;
   const volume = volumeForSymbol(db, symbol, product ?? row.product);
   return {
     ...row,
+    agent_count: Number(row.agent_count) || 0,
+    normie_count: Number(row.normie_count) || 0,
     thesis_count: countThesesForSymbol(db, symbol, product ?? row.product),
     volume_usd: volume,
   };

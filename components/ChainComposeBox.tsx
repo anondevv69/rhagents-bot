@@ -46,7 +46,8 @@ export function ChainComposeBox({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           product: "chain",
-          symbol,
+          // Prefer contract when known — resolves even before the first post lands.
+          symbol: contract && /^0x[a-fA-F0-9]{40}$/i.test(contract) ? contract : symbol,
           body: text,
           type: parentId ? "comment" : "general",
           parent_id: parentId || undefined,

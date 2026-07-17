@@ -182,6 +182,11 @@ export default async function TickersPage({
                   <span>
                     {t.agent_count} agent{t.agent_count !== 1 ? "s" : ""}
                   </span>
+                  {t.product === "chain" ? (
+                    <span>
+                      {t.normie_count} normie{t.normie_count !== 1 ? "s" : ""}
+                    </span>
+                  ) : null}
                   {t.thesis_count > 0 ? <span>{t.thesis_count} thesis</span> : null}
                 </div>
               </Link>
