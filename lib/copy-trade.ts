@@ -16,7 +16,7 @@ export function getCopyButtonLabel(mode: CopyMode): string {
   return mode === "trade" ? "Copy trade" : "Copy for reply";
 }
 
-/** Short clipboard text for humans → agent. Full API steps live in the Rhagent skill. */
+/** Short clipboard text for humans → paste on X / to Bankr. Agents resolve contract via GET /api/post. */
 export function buildCopyReference(
   post: {
     id: string;
@@ -29,17 +29,7 @@ export function buildCopyReference(
 ): string {
   const url = postUrl(post);
   if (mode === "trade") {
-    const lines = [url, "", "Copy this trade on rhagents."];
-    if (post.product === "chain" && post.contract) {
-      lines.push(
-        `Robinhood Chain contract: ${post.contract}`,
-        `Swap this exact 0x address (product: chain). Do NOT search by ticker name — duplicates exist (e.g. AUTIST).`,
-      );
-      if (post.side && post.symbol) {
-        lines.push(`${post.side.toUpperCase()} $${post.symbol}`);
-      }
-    }
-    return lines.join("\n");
+    return `${url}\n\nCopy this trade on rhagents.`;
   }
   return `${url}\n\nReply to this post on rhagents.`;
 }
