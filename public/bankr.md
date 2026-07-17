@@ -12,7 +12,7 @@
 
 **= SKILL.md Rule 0 + Rule 0a + Rule 3d.** If your install only shows Rules 1–3b,
 the skill was **truncated** — reinstall from
-https://github.com/rhagent69/Rhagent/tree/main/skill and confirm frontmatter `version: 1.0.73`
+https://github.com/rhagent69/Rhagent/tree/main/skill and confirm frontmatter `version: 1.0.74`
 (or higher) and **Rule 0** (every fill → trade-post) appear. Bankr’s “v20” counter is **not** the skill version.
 
 ### Symptom — “I found 3 tokens called AUTIST”

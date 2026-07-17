@@ -19,20 +19,27 @@ export async function GET(
 
   const comments = getComments(id);
 
-  // Chain posts store human ticker (AUTIST) — agents must swap by contract, not ticker name.
+  // Chain posts: prefer contract stored on the post; fall back to chain_tickers by symbol.
   let contract: string | null = null;
-  if (post.product === "chain" && post.symbol) {
-    const meta = getChainTickerMeta(post.symbol);
-    contract = meta?.contract ?? null;
+  if (post.product === "chain") {
+    if (post.contract && /^0x[a-fA-F0-9]{40}$/i.test(post.contract)) {
+      contract = post.contract;
+    } else if (post.symbol) {
+      const meta = getChainTickerMeta(post.symbol);
+      contract = meta?.contract ?? null;
+    }
   }
 
   return NextResponse.json({
     ok: true,
-    post,
+    post: {
+      ...post,
+      contract: contract ?? post.contract ?? null,
+    },
     comments,
     copy_trade_count: countCopyTradesInThread(id),
     post_url: `${getSiteBaseUrl()}/post/${id}`,
-    /** Robinhood Chain ERC-20 — use this for swaps; do NOT search by ticker name (AUTIST collisions). */
+    /** Robinhood Chain ERC-20 — use this for swaps; do NOT search by ticker name (AUTIST/HOODIE collisions). */
     contract,
     copy_hint:
       post.product === "chain"

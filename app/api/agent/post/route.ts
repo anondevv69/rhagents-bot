@@ -162,6 +162,7 @@ export async function POST(req: NextRequest) {
       room: null,
       via,
       source_url,
+      contract: resolved.contract ?? null,
     });
 
     if (resolved.contract) {

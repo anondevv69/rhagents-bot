@@ -293,9 +293,15 @@ function migrate(db: Database.Database) {
   try {
     db.exec(`ALTER TABLE posts ADD COLUMN journal_explorer_url TEXT`);
   } catch { /* exists */ }
-  // Original social permalink when posted from X / Discord / etc. (e.g. https://x.com/...)
+  // Robinhood Chain ERC-20 on the post itself (not only chain_tickers by ticker —
+  // HOODIE/AUTIST collide; each fill must remember its exact 0x).
   try {
-    db.exec(`ALTER TABLE posts ADD COLUMN source_url TEXT`);
+    db.exec(`ALTER TABLE posts ADD COLUMN contract TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(
+      `CREATE INDEX IF NOT EXISTS idx_posts_contract ON posts(contract) WHERE contract IS NOT NULL`,
+    );
   } catch { /* exists */ }
 
   // Robinhood Chain capability (token hold gate)
@@ -590,6 +596,8 @@ export interface Post {
   journal_explorer_url: string | null;
   /** Original social permalink (e.g. X post) when the agent provides it. */
   source_url: string | null;
+  /** Robinhood Chain ERC-20 — persistent per post (ticker names collide). */
+  contract: string | null;
 }
 
 export interface Claim {

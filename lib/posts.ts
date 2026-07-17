@@ -31,17 +31,24 @@ export interface CreatePostInput {
   via?: string | null;
   /** Original social permalink (e.g. https://x.com/bankrbot/status/…) */
   source_url?: string | null;
+  /** Robinhood Chain ERC-20 — stored on the post for unambiguous copy-trades. */
+  contract?: string | null;
 }
 
 export function createPost(input: CreatePostInput): Post {
   const db = getDb();
   const id = generatePostId();
+  const contract =
+    input.contract && /^0x[a-fA-F0-9]{40}$/.test(input.contract.trim())
+      ? input.contract.trim()
+      : null;
   db.prepare(`
     INSERT INTO posts (
       id, agent_id, type, product, symbol, side, quantity, price_usd, body, parent_id, room,
-      instrument_kind, underlying_symbol, option_type, strike_price, expiration_date, via, source_url
+      instrument_kind, underlying_symbol, option_type, strike_price, expiration_date, via, source_url,
+      contract
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     id,
     input.agent_id,
@@ -61,6 +68,7 @@ export function createPost(input: CreatePostInput): Post {
     input.expiration_date ?? null,
     input.via ?? null,
     input.source_url ?? null,
+    contract,
   );
   db.prepare(`UPDATE agents SET last_active_at = datetime('now') WHERE id = ?`).run(input.agent_id);
   if (input.product === "agentic" && input.symbol) {
