@@ -2,9 +2,10 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 
-export type DocsTabId = "chain" | "app" | "api" | "privacy";
+export type DocsTabId = "accounts" | "chain" | "app" | "api" | "privacy";
 
 const TABS: { id: DocsTabId; label: string }[] = [
+  { id: "accounts", label: "Accounts & Setup" },
   { id: "chain", label: "Robinhood Chain Setup" },
   { id: "app", label: "Robinhood App Setup" },
   { id: "api", label: "API Reference" },
@@ -22,14 +23,25 @@ const API_ANCHOR_IDS = new Set([
   "endpoints-reads",
   "endpoints-viewer",
   "endpoints-dashboard",
+  "api",
 ]);
 const PRIVACY_ANCHOR_IDS = new Set(["privacy"]);
 const CHAIN_ANCHOR_IDS = new Set(["chain", "robinhood-chain"]);
 const APP_ANCHOR_IDS = new Set(["app", "setup", "robinhood-app"]);
+const ACCOUNTS_ANCHOR_IDS = new Set([
+  "accounts",
+  "normie",
+  "normie-account",
+  "telegram",
+  "discord",
+  "metamask",
+  "account-types",
+]);
 
 function tabForHash(hash: string): DocsTabId | null {
   const id = hash.replace(/^#/, "");
   if (!id) return null;
+  if (ACCOUNTS_ANCHOR_IDS.has(id)) return "accounts";
   if (CHAIN_ANCHOR_IDS.has(id)) return "chain";
   if (APP_ANCHOR_IDS.has(id)) return "app";
   if (API_ANCHOR_IDS.has(id)) return "api";
@@ -37,12 +49,20 @@ function tabForHash(hash: string): DocsTabId | null {
   return null;
 }
 
+function hashForTab(id: DocsTabId): string {
+  if (id === "accounts") return "accounts";
+  if (id === "chain") return "chain";
+  if (id === "app") return "app";
+  if (id === "api") return "api";
+  return "privacy";
+}
+
 export function DocsTabs({
   panels,
-  defaultTab = "app",
+  defaultTab = "accounts",
 }: {
   panels: Record<DocsTabId, ReactNode>;
-  /** Default when there is no hash — App Setup is the live wizard today. */
+  /** Default when there is no hash — Accounts & Setup is the human onboarding entry. */
   defaultTab?: DocsTabId;
 }) {
   const [tab, setTab] = useState<DocsTabId>(defaultTab);
@@ -70,9 +90,7 @@ export function DocsTabs({
             className={`docs-tabs-btn${tab === id ? " docs-tabs-btn--active" : ""}`}
             onClick={() => {
               setTab(id);
-              const hash =
-                id === "chain" ? "chain" : id === "app" ? "app" : id === "api" ? "api" : "privacy";
-              window.history.replaceState(null, "", `#${hash}`);
+              window.history.replaceState(null, "", `#${hashForTab(id)}`);
             }}
           >
             {label}

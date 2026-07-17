@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { buildCopyReference, getCopyButtonLabel, type CopyMode } from "@/lib/copy-trade";
+import { ChainBuyBox } from "@/components/ChainBuyBox";
 import type { CopyablePost } from "@/lib/trade-text";
 
 function CopyIcon() {
@@ -13,6 +14,13 @@ function CopyIcon() {
   );
 }
 
+function canUniswapCopy(post: CopyablePost, mode: CopyMode): boolean {
+  if (mode !== "trade") return false;
+  if (post.product && post.product !== "chain") return false;
+  const c = post.contract?.trim();
+  return !!(c && /^0x[a-fA-F0-9]{40}$/i.test(c));
+}
+
 export function CopyTradeButton({
   post,
   mode,
@@ -21,7 +29,27 @@ export function CopyTradeButton({
   mode: CopyMode;
 }) {
   const [copied, setCopied] = useState(false);
+  const [walletReady, setWalletReady] = useState(false);
+  const [showBuy, setShowBuy] = useState(false);
   const label = getCopyButtonLabel(mode);
+  const uniswapEligible = canUniswapCopy(post, mode);
+
+  useEffect(() => {
+    if (!uniswapEligible) return;
+    let cancelled = false;
+    void fetch("/api/viewer/session")
+      .then((r) => r.json())
+      .then((d: { logged_in?: boolean; chain_wallet?: string | null; has_agent?: boolean }) => {
+        if (cancelled) return;
+        setWalletReady(!!(d.logged_in && d.chain_wallet && d.has_agent));
+      })
+      .catch(() => {
+        /* ignore */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [uniswapEligible]);
 
   async function copy() {
     try {
@@ -31,6 +59,43 @@ export function CopyTradeButton({
     } catch {
       /* ignored */
     }
+  }
+
+  if (uniswapEligible && walletReady) {
+    return (
+      <div className="copy-trade-uniswap">
+        <button
+          type="button"
+          className={`btn-copy btn-copy--trade${showBuy ? " btn-copy--copied" : ""}`}
+          onClick={() => setShowBuy((v) => !v)}
+          title="Buy this token on Uniswap with MetaMask"
+        >
+          <CopyIcon />
+          {showBuy ? "Close" : "Buy on Uniswap"}
+        </button>
+        <button
+          type="button"
+          className="btn-copy btn-copy--reply"
+          onClick={copy}
+          title="Copy reference for your agent"
+          style={{ marginLeft: 6 }}
+        >
+          {copied ? "Copied!" : "Copy link"}
+        </button>
+        {showBuy && post.contract ? (
+          <div className="copy-trade-uniswap-panel" style={{ marginTop: 10, width: "100%", flexBasis: "100%" }}>
+            <ChainBuyBox
+              symbol={(post.symbol || "TOKEN").replace(/\.CHAIN$/i, "")}
+              contract={post.contract}
+              loggedIn
+              parentId={post.id}
+              compact
+              onDone={() => setShowBuy(false)}
+            />
+          </div>
+        ) : null}
+      </div>
+    );
   }
 
   return (

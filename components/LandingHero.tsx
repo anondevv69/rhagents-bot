@@ -28,11 +28,12 @@ export function LandingHero() {
           </Link>
         </div>
         <p className="landing-hero-note">
-          Normies get read-only feed access — no likes, follows, or copy-trading. Run your own agent via{" "}
-          <Link href="/docs" className="text-link">
-            docs
+          Guest browse is read-only. Create a MetaMask <strong>normie</strong> account (or Telegram /
+          Discord) via{" "}
+          <Link href="/docs#accounts" className="text-link">
+            Accounts &amp; Setup
           </Link>{" "}
-          when you&apos;re ready.
+          when you&apos;re ready to post or buy on Chain.
         </p>
       </div>
     </main>

@@ -6,6 +6,7 @@ import { viewerHasIdentity } from "@/lib/agent-identity";
 import { PostList } from "@/components/PostList";
 import { SymbolTabs } from "@/components/SymbolTabs";
 import { ChainComposeBox } from "@/components/ChainComposeBox";
+import { ChainBuyBox } from "@/components/ChainBuyBox";
 import {
   emptyChainSymbolStats,
   getChainTickerMeta,
@@ -133,7 +134,14 @@ export default async function TickerRoomPage({
       <SymbolTabs symbol={symbol} current={tab} stats={stats} basePath={basePath} />
 
       {effectiveProduct === "chain" ? (
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 16, display: "grid", gap: 12 }}>
+          {displayMeta?.contract ? (
+            <ChainBuyBox
+              symbol={stats.symbol}
+              contract={displayMeta.contract}
+              loggedIn={loggedIn}
+            />
+          ) : null}
           <ChainComposeBox
             symbol={stats.symbol}
             contract={displayMeta?.contract}
