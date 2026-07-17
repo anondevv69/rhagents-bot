@@ -67,6 +67,8 @@ type RegistrationRow = {
 type ChainStatus = {
   has_chain: boolean;
   chain_wallet: string | null;
+  username: string | null;
+  display_name: string | null;
 };
 
 const TABS = [
@@ -151,10 +153,14 @@ export function TradingDashboard() {
         ok: boolean;
         has_chain?: boolean;
         chain_wallet?: string | null;
+        username?: string | null;
+        display_name?: string | null;
       };
       setChainStatus({
         has_chain: !!data.has_chain,
         chain_wallet: data.chain_wallet ?? null,
+        username: data.username ?? null,
+        display_name: data.display_name ?? null,
       });
     } catch {
       setChainStatus(null);
@@ -355,29 +361,79 @@ export function TradingDashboard() {
           </div>
 
           <div className="panel">
-            <h2 className="owner-settings-heading">Create account with MetaMask</h2>
-            <p className="owner-settings-note">
-              <strong>This creates your Chain profile</strong> — pick a username, connect MetaMask,
-              prove ≈$10 of $rhagent. No App Crypto or Agentic required. Save the agent key into your
-              <strong>Telegram or Discord</strong> Rhagent bot (this dashboard can link it too).
-            </p>
-            <WalletLoginButton
-              embed
-              next="/dashboard"
-              continueLabel="Done"
-              onSuccess={async (result) => {
-                if (result.api_key) {
-                  await api("/api/dashboard/proxy/connect/rhagents", {
-                    method: "POST",
-                    body: JSON.stringify({ key: result.api_key }),
-                  });
-                  showToast("rhagent.bot account created and linked.");
-                } else {
-                  showToast("Wallet signed in. Add RHAGENTS_AGENT_KEY to your Telegram/Discord bot if not linked.");
-                }
-                await Promise.all([loadAll(), loadChainStatus()]);
-              }}
-            />
+            {c.rhagents ? (
+              <>
+                <h2 className="owner-settings-heading">Your Chain profile</h2>
+                <div className="owner-settings-conn">
+                  <span className="owner-settings-conn-label">Account</span>
+                  <span className="owner-settings-conn-status is-on">
+                    {chainStatus?.username
+                      ? `@${chainStatus.username}`
+                      : chainStatus?.display_name || "Linked"}
+                    {chainStatus?.display_name && chainStatus?.username
+                      ? ` · ${chainStatus.display_name}`
+                      : ""}
+                  </span>
+                </div>
+                <p className="owner-settings-note">
+                  You already have an rhagent.bot account linked to this dashboard
+                  {chainStatus?.has_chain ? " with a verified Chain wallet" : ""}. The create form
+                  is hidden because a second MetaMask signup would make a different agent.
+                  {chainStatus?.username ? (
+                    <>
+                      {" "}
+                      Open{" "}
+                      <a href={`/agent/${encodeURIComponent(chainStatus.username)}`} className="text-link">
+                        /agent/{chainStatus.username}
+                      </a>{" "}
+                      or{" "}
+                      <a href="/account" className="text-link">
+                        /account
+                      </a>{" "}
+                      to edit display name and bio.
+                    </>
+                  ) : (
+                    <>
+                      {" "}
+                      Open{" "}
+                      <a href="/account" className="text-link">
+                        /account
+                      </a>{" "}
+                      for profile settings.
+                    </>
+                  )}
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="owner-settings-heading">Create account with MetaMask</h2>
+                <p className="owner-settings-note">
+                  <strong>This creates your Chain profile</strong> — pick a username, connect
+                  MetaMask, prove ≈$10 of $rhagent. No App Crypto or Agentic required. Save the agent
+                  key into your <strong>Telegram or Discord</strong> Rhagent bot (this dashboard can
+                  link it too).
+                </p>
+                <WalletLoginButton
+                  embed
+                  next="/dashboard"
+                  continueLabel="Done"
+                  onSuccess={async (result) => {
+                    if (result.api_key) {
+                      await api("/api/dashboard/proxy/connect/rhagents", {
+                        method: "POST",
+                        body: JSON.stringify({ key: result.api_key }),
+                      });
+                      showToast("rhagent.bot account created and linked.");
+                    } else {
+                      showToast(
+                        "Wallet signed in. Add RHAGENTS_AGENT_KEY to your Telegram/Discord bot if not linked.",
+                      );
+                    }
+                    await Promise.all([loadAll(), loadChainStatus()]);
+                  }}
+                />
+              </>
+            )}
           </div>
 
           <div className="panel">
@@ -454,8 +510,7 @@ export function TradingDashboard() {
               <>
                 <p className="owner-settings-note">
                   This panel only <strong>links / re-verifies</strong> a Chain wallet on your
-                  existing agent — it does not create a new account or pick a username. Use{" "}
-                  <strong>Create account with MetaMask</strong> above for that.
+                  existing agent — it does not create a new account or change your username.
                 </p>
                 <ChainWalletConnect
                   currentWallet={chainStatus?.chain_wallet}
