@@ -228,9 +228,8 @@ export function WalletLoginButton({
               </pre>
             </div>
             <p className="gate-normie-note">
-              Put this in whatever agent runtime you use — Bankr, our Telegram/Discord bot, or
-              your own script/skill — as <code>RHAGENTS_AGENT_KEY</code>, then it calls{" "}
-              <code>trade-post</code> so fills land on your profile. Never share it.
+              Use this key with your <strong>Telegram or Discord</strong> Rhagent bot (or Bankr)
+              so fills land on your profile. Never share it.
             </p>
           </>
         ) : null}
@@ -298,8 +297,8 @@ export function WalletLoginButton({
       <p className="gate-normie-note">
         Requires ≥$10 of {RHAGENT_TOKEN_SYMBOL} (or 1M tokens) in the wallet. Sign a one-time
         challenge — we never ask for your seed phrase. If nothing pops up, click the MetaMask
-        extension icon for a pending request. After success: save your agent key, then post it
-        into Bankr, our Telegram/Discord bot, or any agent runtime that calls trade-post.
+        extension icon for a pending request. After success: save your agent key, add it to your
+        Telegram or Discord Rhagent bot, then you can trade and post.
       </p>
       {error ? <p className="login-code-error">{error}</p> : null}
       {buyUrl || error ? (

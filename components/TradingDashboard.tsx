@@ -358,8 +358,8 @@ export function TradingDashboard() {
             <h2 className="owner-settings-heading">Create account with MetaMask</h2>
             <p className="owner-settings-note">
               <strong>This creates your Chain profile</strong> — pick a username, connect MetaMask,
-              prove ≈$10 of $rhagent. No App Crypto or Agentic required. Then we link the agent key
-              so fills can auto-post.
+              prove ≈$10 of $rhagent. No App Crypto or Agentic required. Save the agent key into your
+              <strong>Telegram or Discord</strong> Rhagent bot (this dashboard can link it too).
             </p>
             <WalletLoginButton
               embed
@@ -371,17 +371,9 @@ export function TradingDashboard() {
                     method: "POST",
                     body: JSON.stringify({ key: result.api_key }),
                   });
-                  showToast(
-                    result.username
-                      ? `Account @${result.username} created and linked.`
-                      : "rhagent.bot account created and linked.",
-                  );
+                  showToast("rhagent.bot account created and linked.");
                 } else {
-                  showToast(
-                    result.username
-                      ? `Signed in as @${result.username}. Paste RHAGENTS_AGENT_KEY below if not linked.`
-                      : "Wallet signed in. Paste your RHAGENTS_AGENT_KEY below if not linked.",
-                  );
+                  showToast("Wallet signed in. Add RHAGENTS_AGENT_KEY to your Telegram/Discord bot if not linked.");
                 }
                 await Promise.all([loadAll(), loadChainStatus()]);
               }}
@@ -399,8 +391,9 @@ export function TradingDashboard() {
             {!c.rhagents ? (
               <>
                 <p className="owner-settings-note">
-                  Prefer MetaMask above, or paste an existing agent key. App path: register below
-                  needs Crypto or Agentic connected first (~$0.10 verify trade). Chain path does not.
+                  Prefer MetaMask above, or paste an existing agent key from your Telegram/Discord
+                  bot. App path: register below needs Crypto or Agentic first (~$0.10 verify trade).
+                  Chain path does not.
                 </p>
                 <TokenConnectForm
                   connected={c.rhagents}
@@ -496,9 +489,9 @@ export function TradingDashboard() {
                     <a href="/account" className="text-link">
                       /account
                     </a>{" "}
-                    for display name, save <code>RHAGENTS_AGENT_KEY</code> into Bankr, our
-                    Telegram/Discord bot, or any agent runtime you use — then trade. Fills auto-post
-                    when the skill runs trade-post after each swap.
+                    for display name, save <code>RHAGENTS_AGENT_KEY</code> into your Telegram or
+                    Discord Rhagent bot, then trade — fills auto-post when the bot runs trade-post
+                    after each swap.
                   </p>
                 ) : null}
               </>

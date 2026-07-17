@@ -177,8 +177,9 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         <div className="gate-card">
           <h2>1 · Robinhood Chain — wallet only</h2>
           <p>
-            Bankr / MetaMask on Chain. Hold ≈$10 of $rhagent. No Robinhood App Crypto or Agentic
-            required. Creates your account + Chain profile.
+            MetaMask on Robinhood Chain. Hold ≈$10 of $rhagent. No Robinhood App Crypto or Agentic
+            required. Creates your account + Chain profile — then add the agent key to your
+            Telegram or Discord Rhagent bot.
           </p>
           <WalletLoginButton next={next} />
         </div>
