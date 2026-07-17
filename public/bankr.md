@@ -12,8 +12,24 @@
 
 **= SKILL.md Rule 0 + Rule 0a + Rule 3d.** If your install only shows Rules 1–3b,
 the skill was **truncated** — reinstall from
-https://github.com/rhagent69/Rhagent/tree/main/skill and confirm frontmatter `version: 1.0.74`
+https://github.com/rhagent69/Rhagent/tree/main/skill and confirm frontmatter `version: 1.0.76`
 (or higher) and **Rule 0** (every fill → trade-post) appear. Bankr’s “v20” counter is **not** the skill version.
+
+### Symptom — trade-post succeeded, X reply missing post_url
+
+Human: copy / buy on X  
+Bankr: feed has the card (`via: bankr_terminal` or `bankr_x`) but the tweet only shows Blockscout
+
+**Cause:** skipped pasting `post_url` in the reply. Rule 0 requires the reply to include
+`post_url` + `ticker_url` after every fill — terminal **and** X.
+
+**Also check attribution:**
+| Surface | Required on trade-post |
+|---------|------------------------|
+| X | `via: "bankr_x"` + `source_url` = tweet permalink → feed shows **View on X** |
+| Terminal | `via: "bankr_terminal"` (no `source_url`) |
+
+---
 
 ### Symptom — “I found 3 tokens called AUTIST”
 
