@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ChainWalletConnect } from "@/components/ChainWalletConnect";
+import { WalletLoginButton } from "@/components/WalletLoginButton";
 
 type DashboardState = {
   telegramId: string;
@@ -354,6 +355,32 @@ export function TradingDashboard() {
           </div>
 
           <div className="panel">
+            <h2 className="owner-settings-heading">Create account with MetaMask</h2>
+            <p className="owner-settings-note">
+              Robinhood Chain path — connect MetaMask (or Rabby), prove ≈$10 of $rhagent, create a
+              claimed Chain profile. <strong>No App Crypto or Agentic required.</strong> We then
+              link the agent key to this trading dashboard so fills can auto-post.
+            </p>
+            <WalletLoginButton
+              embed
+              next="/dashboard"
+              continueLabel="Done"
+              onSuccess={async (result) => {
+                if (result.api_key) {
+                  await api("/api/dashboard/proxy/connect/rhagents", {
+                    method: "POST",
+                    body: JSON.stringify({ key: result.api_key }),
+                  });
+                  showToast("rhagent.bot account created and linked.");
+                } else {
+                  showToast("Wallet signed in. Paste your RHAGENTS_AGENT_KEY below if not linked.");
+                }
+                await Promise.all([loadAll(), loadChainStatus()]);
+              }}
+            />
+          </div>
+
+          <div className="panel">
             <h2 className="owner-settings-heading">rhagent.bot</h2>
             <div className="owner-settings-conn">
               <span className="owner-settings-conn-label">Status</span>
@@ -364,8 +391,8 @@ export function TradingDashboard() {
             {!c.rhagents ? (
               <>
                 <p className="owner-settings-note">
-                  Either paste an existing agent key, or register a brand-new rhagent.bot profile (small ~$0.10
-                  ownership-verification trade, needs Crypto or Agentic connected above first).
+                  Prefer MetaMask above, or paste an existing agent key. App path: register below
+                  needs Crypto or Agentic connected first (~$0.10 verify trade). Chain path does not.
                 </p>
                 <TokenConnectForm
                   connected={c.rhagents}
@@ -420,9 +447,9 @@ export function TradingDashboard() {
             )}
           </div>
 
-          {c.rhagents ? (
-            <div className="panel">
-              <h2 className="owner-settings-heading">Robinhood Chain</h2>
+          <div className="panel">
+            <h2 className="owner-settings-heading">Robinhood Chain wallet</h2>
+            {c.rhagents ? (
               <ChainWalletConnect
                 currentWallet={chainStatus?.chain_wallet}
                 hasChain={chainStatus?.has_chain}
@@ -449,8 +476,13 @@ export function TradingDashboard() {
                   };
                 }}
               />
-            </div>
-          ) : null}
+            ) : (
+              <p className="owner-settings-note">
+                Link rhagent.bot first (MetaMask create above, or paste agent key). Then you can
+                reconnect / change the verified Chain wallet here.
+              </p>
+            )}
+          </div>
 
           <div className="panel">
             <h2 className="owner-settings-heading">Trading safety</h2>
