@@ -30,7 +30,7 @@ export function MobileBottomNav({ youHref, ownAgentPath }: Props) {
       active: pathname.startsWith("/tickers") || pathname.startsWith("/symbol/"),
     },
     {
-      label: "Agents",
+      label: "Users",
       href: "/agents",
       active:
         pathname === "/agents" ||

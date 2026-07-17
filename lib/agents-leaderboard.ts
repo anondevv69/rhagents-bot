@@ -4,6 +4,9 @@ import { getFollowerCount } from "./social";
 
 export type AgentSort = "pnl" | "trades" | "volume" | "followers";
 
+/** Agents = App Agentic/Crypto (or non–chain-only). Normies = MetaMask Chain-only. */
+export type LeaderboardKind = "agents" | "normies";
+
 export interface LeaderboardAgent {
   id: string;
   username: string | null;
@@ -13,6 +16,9 @@ export interface LeaderboardAgent {
   x_verified: number;
   has_agentic: number;
   has_crypto: number;
+  has_chain: number;
+  /** Chain-only MetaMask account vs App/agent account. */
+  kind: LeaderboardKind;
   trade_count: number;
   volume_usd: number;
   realized_pnl_usd: number;
@@ -20,11 +26,24 @@ export interface LeaderboardAgent {
   post_count: number;
 }
 
-export function getAgentLeaderboard(sort: AgentSort = "pnl", limit = 50): LeaderboardAgent[] {
+export function isLeaderboardNormie(row: {
+  has_chain: number;
+  has_agentic: number;
+  has_crypto: number;
+}): boolean {
+  return !!row.has_chain && !row.has_agentic && !row.has_crypto;
+}
+
+export function getAgentLeaderboard(
+  sort: AgentSort = "pnl",
+  limit = 50,
+  kind: LeaderboardKind | "all" = "all",
+): LeaderboardAgent[] {
   const db = getDb();
 
   const agents = db.prepare(`
-    SELECT id, username, display_name, x_handle, owner_x_handle, x_verified, has_agentic, has_crypto
+    SELECT id, username, display_name, x_handle, owner_x_handle, x_verified,
+           has_agentic, has_crypto, has_chain
     FROM agents
     WHERE claim_status = 'claimed' OR x_verified = 1
   `).all() as {
@@ -36,11 +55,12 @@ export function getAgentLeaderboard(sort: AgentSort = "pnl", limit = 50): Leader
     x_verified: number;
     has_agentic: number;
     has_crypto: number;
+    has_chain: number;
   }[];
 
   const postCounts = db.prepare(`
     SELECT agent_id, COUNT(*) AS n FROM posts
-    WHERE parent_id IS NULL AND type IN ('general','research')
+    WHERE parent_id IS NULL AND type IN ('general','research','trade_fill')
     GROUP BY agent_id
   `).all() as { agent_id: string; n: number }[];
   const postCountMap = new Map(postCounts.map((r) => [r.agent_id, r.n]));
@@ -50,6 +70,9 @@ export function getAgentLeaderboard(sort: AgentSort = "pnl", limit = 50): Leader
   for (const a of agents) {
     const trades = getAgentTradeRows(a.id);
     if (trades.length === 0 && (postCountMap.get(a.id) ?? 0) === 0) continue;
+
+    const rowKind: LeaderboardKind = isLeaderboardNormie(a) ? "normies" : "agents";
+    if (kind !== "all" && rowKind !== kind) continue;
 
     const pnl = computeAgentPnl(trades);
     let volume = 0;
@@ -68,6 +91,8 @@ export function getAgentLeaderboard(sort: AgentSort = "pnl", limit = 50): Leader
       x_verified: a.x_verified,
       has_agentic: a.has_agentic,
       has_crypto: a.has_crypto,
+      has_chain: a.has_chain,
+      kind: rowKind,
       trade_count: trades.length,
       volume_usd: volume,
       realized_pnl_usd: pnl.realizedPnlUsd,
