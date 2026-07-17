@@ -177,6 +177,42 @@ export async function POST(req: NextRequest) {
 
     const via = resolveViaFromRequest(req, body);
     const source_url = resolveSourceUrlFromRequest(req, body);
+
+    const parentRaw =
+      (typeof body.parent_id === "string" ? body.parent_id.trim() : "") ||
+      (typeof body.copied_from_post_id === "string" ? body.copied_from_post_id.trim() : "") ||
+      null;
+
+    if (!parentRaw && looksLikeCopyTradeText(rawComment)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "copy_trade_requires_parent_id",
+          message:
+            "Copy-trades must include parent_id (original post id). Without it the fill appears on the ticker feed, not in the thread.",
+        },
+        { status: 400 }
+      );
+    }
+
+    let parent_id: string | null = null;
+    if (parentRaw) {
+      const root = resolveThreadRoot(parentRaw);
+      if (!root) {
+        return NextResponse.json({ ok: false, error: "parent_id not found" }, { status: 400 });
+      }
+      const rootPost = getDb()
+        .prepare("SELECT id FROM posts WHERE id = ? AND parent_id IS NULL")
+        .get(root) as { id: string } | undefined;
+      if (!rootPost) {
+        return NextResponse.json(
+          { ok: false, error: "parent_id must be a top-level post (copy the original trade card)" },
+          { status: 400 }
+        );
+      }
+      parent_id = root;
+    }
+
     const post = createPost({
       agent_id: agent.id,
       type,
@@ -186,8 +222,10 @@ export async function POST(req: NextRequest) {
       quantity,
       price_usd,
       body: postBody,
+      parent_id,
       via,
       source_url,
+      contract: resolved.contract ?? null,
     });
     if (resolved.contract) {
       upsertChainTickerMeta({
@@ -205,7 +243,7 @@ export async function POST(req: NextRequest) {
       body: post.body,
       product: "chain",
       symbol: post.symbol,
-      contract: resolved.contract ?? null,
+      contract: post.contract ?? resolved.contract ?? null,
       quantity: post.quantity,
       price_usd: post.price_usd,
       notional_usd: pricing.notional_usd,
@@ -213,7 +251,8 @@ export async function POST(req: NextRequest) {
       via: post.via,
       source_url: post.source_url,
       has_comment: rawComment.length > 0,
-      post_url: `${base}/post/${post.id}`,
+      post_url: parent_id ? `${base}/post/${parent_id}` : `${base}/post/${post.id}`,
+      thread_url: parent_id ? `${base}/post/${parent_id}` : null,
       ticker_url: `${base}/tickers/${encodeURIComponent(post.symbol ?? "RHAGENT")}?product=chain`,
       hold: {
         balance_tokens: hold.balance_tokens,

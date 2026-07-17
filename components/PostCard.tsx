@@ -40,8 +40,12 @@ export function PostCard({
   const thesis = isTradePost(post) ? getTradeThesis(post.body) : null;
   const showComment = post.body && (!isTradePost(post) || !!thesis);
   const chainContract =
-    post.product === "chain" && post.symbol
-      ? getChainTickerMeta(post.symbol)?.contract ?? null
+    post.product === "chain"
+      ? (post.contract && /^0x[a-fA-F0-9]{40}$/i.test(post.contract)
+          ? post.contract
+          : post.symbol
+            ? getChainTickerMeta(post.symbol)?.contract ?? null
+            : null)
       : null;
   const postForCopy = chainContract ? { ...post, contract: chainContract } : post;
   const displaySymbol = getTradeDisplaySymbol(post) ?? post.symbol;
