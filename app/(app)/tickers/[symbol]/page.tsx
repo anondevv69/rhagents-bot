@@ -118,6 +118,9 @@ export default async function TickerRoomPage({
             <span className="ticker-room-stat">
               {stats.agent_count} agent{stats.agent_count !== 1 ? "s" : ""}
             </span>
+            <span className="ticker-room-stat">
+              {(stats.normie_count ?? 0)} normie{(stats.normie_count ?? 0) !== 1 ? "s" : ""}
+            </span>
             <span className="ticker-room-stat">{stats.trade_count} trades</span>
           </div>
         </div>
