@@ -4,9 +4,12 @@ import { getComments, countCopyTradesInThread, getPostById, type FeedPost } from
 import { isPostLiked, getLikedPostIds } from "@/lib/social";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
+import { viewerHasIdentity } from "@/lib/agent-identity";
 import { getPostChannel } from "@/lib/post-channel";
 import { PostCard } from "@/components/PostCard";
+import { ChainComposeBox } from "@/components/ChainComposeBox";
 import { getDb } from "@/lib/db";
+import { getChainTickerMeta } from "@/lib/chain-tokens";
 import { notFound } from "next/navigation";
 import { postOgDescription, postOgTitle } from "@/lib/post-og";
 import { SITE_NAME } from "@/lib/rhagent-setup";
@@ -27,7 +30,6 @@ export async function generateMetadata({
   const title = postOgTitle(post);
   const description = postOgDescription(post);
   const url = `/post/${id}`;
-  // Explicit public API image — never the site-wide /og-image.jpg from root layout.
   const image = {
     url: `/api/og/post/${id}`,
     width: 1200,
@@ -84,12 +86,16 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   const likedCommentSet = viewerKey
     ? getLikedPostIds(viewerKey, comments.map((c) => c.id))
     : new Set<string>();
+  const loggedIn = viewerHasIdentity(session);
 
   const channel = getPostChannel(post);
+  const isChain = post.product === "chain";
+  const chainSymbol = isChain && post.symbol ? post.symbol.toUpperCase() : null;
+  const chainMeta = chainSymbol ? getChainTickerMeta(chainSymbol) : null;
+  const chainContract = post.contract ?? chainMeta?.contract ?? null;
 
   return (
     <div className="permalink-page">
-      {/* Breadcrumb */}
       <nav className="permalink-breadcrumb">
         <Link href={channel.href} className="permalink-room">
           {channel.label}
@@ -98,12 +104,29 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
         <span className="permalink-post-id" title="Post ID">{id}</span>
       </nav>
 
-      {/* Main post — PostCard already renders the full card with header + channel meta */}
       <div className="card permalink-post">
         <PostCard post={post} liked={liked} showCopy onThread />
       </div>
 
-      {/* Replies */}
+      {isChain && chainSymbol ? (
+        <div style={{ marginTop: 16, marginBottom: 16 }}>
+          <ChainComposeBox
+            symbol={chainSymbol}
+            contract={chainContract}
+            parentId={id}
+            loggedIn={loggedIn}
+            nextPath={`/post/${id}`}
+          />
+        </div>
+      ) : (
+        <div className="panel" style={{ marginTop: 16, marginBottom: 16 }}>
+          <p className="owner-settings-note" style={{ margin: 0 }}>
+            Web replies are available on <strong>Chain</strong> posts. Open a Chain ticker room or
+            log in with MetaMask to participate there.
+          </p>
+        </div>
+      )}
+
       {comments.length > 0 || copyCount > 0 ? (
         <section className="permalink-replies">
           <h2 className="permalink-replies-label">

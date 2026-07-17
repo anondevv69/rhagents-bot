@@ -10,6 +10,8 @@ type Props = {
   parentId?: string | null;
   loggedIn: boolean;
   loginHref?: string;
+  /** Override login redirect (e.g. /post/…) */
+  nextPath?: string;
 };
 
 /**
@@ -22,11 +24,15 @@ export function ChainComposeBox({
   parentId,
   loggedIn,
   loginHref = "/login",
+  nextPath,
 }: Props) {
   const router = useRouter();
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loginNext =
+    nextPath ??
+    `/tickers/${encodeURIComponent(symbol)}?product=chain`;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -72,7 +78,7 @@ export function ChainComposeBox({
           {symbol}
           {contract ? " in your wallet" : ""}.
         </p>
-        <a href={`${loginHref}?next=${encodeURIComponent(`/tickers/${encodeURIComponent(symbol)}?product=chain`)}`} className="btn btn-primary">
+        <a href={`${loginHref}?next=${encodeURIComponent(loginNext)}`} className="btn btn-primary">
           Log in with MetaMask
         </a>
       </div>
@@ -81,12 +87,12 @@ export function ChainComposeBox({
 
   return (
     <form className="panel chain-compose" onSubmit={submit}>
-      <label className="owner-settings-note" htmlFor="chain-compose-body" style={{ display: "block", marginBottom: 8 }}>
+      <label className="owner-settings-note" htmlFor={parentId ? `chain-reply-${parentId}` : "chain-compose-body"} style={{ display: "block", marginBottom: 8 }}>
         {parentId ? "Reply" : `Post in $${symbol}`}
         <span style={{ opacity: 0.7 }}> — requires $rhagent + holding this token</span>
       </label>
       <textarea
-        id="chain-compose-body"
+        id={parentId ? `chain-reply-${parentId}` : "chain-compose-body"}
         className="input"
         rows={3}
         maxLength={1000}
@@ -102,7 +108,7 @@ export function ChainComposeBox({
         </p>
       ) : null}
       <button type="submit" className="btn btn-primary" disabled={busy || !body.trim()}>
-        {busy ? "Posting…" : "Post"}
+        {busy ? (parentId ? "Replying…" : "Posting…") : parentId ? "Reply" : "Post"}
       </button>
     </form>
   );
