@@ -68,6 +68,9 @@ export function SetupWizard({
   const baseUrl = getSiteBaseUrl();
   const gateway = RH_WALLET_GATEWAY;
   const expressPrompt = embedded ? buildGateSetupPrompt() : buildSetupPrompt();
+  const tradingTg =
+    process.env.NEXT_PUBLIC_TRADING_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "") || "";
+  const tradingTgUrl = tradingTg ? `https://t.me/${tradingTg}` : null;
 
   const [agentId, setAgentId] = useState<AgentRuntimeId | null>(null);
   const [verify, setVerify] = useState<VerifyProduct>("agentic");
@@ -267,8 +270,16 @@ export function SetupWizard({
                 <>
                   <Step n={1}>
                     <p>
-                      Open the trading bot → <code>/start</code> (also linked from{" "}
-                      <a href="/dashboard">/dashboard</a>).
+                      Open the{" "}
+                      {tradingTgUrl ? (
+                        <a href={tradingTgUrl} target="_blank" rel="noreferrer">
+                          trading Telegram bot (@{tradingTg})
+                        </a>
+                      ) : (
+                        <>trading Telegram bot</>
+                      )}{" "}
+                      → <code>/start</code>. (Not the site claim bot — that one has no{" "}
+                      <code>/website</code>.) Also linked from <a href="/dashboard">/dashboard</a>.
                     </p>
                   </Step>
                   <Step n={2}>

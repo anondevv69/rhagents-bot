@@ -57,7 +57,8 @@ export default async function AccountPage({
         </h2>
         <p className="owner-settings-note">
           Manage your trading agent (jobs, autotrade, pending orders). Open it with a one-time link —
-          send <code>/website</code> in Telegram or Discord.
+          send <code>/website</code> in the <strong>trading</strong> Telegram/Discord bot (not the
+          site claim bot).
         </p>
         <Link href="/dashboard" className="btn btn-outline profile-edit-btn">
           Open dashboard

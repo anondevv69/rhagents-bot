@@ -5,6 +5,11 @@ import { viewerHasIdentity, viewerOwnsAgent } from "@/lib/agent-identity";
 import { agentProfilePath, agentProfileSlug, resolveAgentBySlug } from "@/lib/agent-path";
 import { maskApiKey, ownerConnectionsFromAgent } from "@/lib/agent-owner";
 import { getViewerSession } from "@/lib/viewerSession";
+import {
+  siteTelegramBotUsername,
+  tradingTelegramBotUsername,
+  tradingTelegramDeepLink,
+} from "@/lib/telegram-bots";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +37,8 @@ export default async function AgentSettingsPage({
   }
 
   const name = agent.display_name ?? agent.username ?? agent.id.slice(0, 12);
+  const siteTg = siteTelegramBotUsername();
+  const tradingTg = tradingTelegramBotUsername();
 
   return (
     <div className="owner-settings-page">
@@ -55,6 +62,9 @@ export default async function AgentSettingsPage({
         displayName={name}
         apiKeyMasked={maskApiKey(agent.api_key)}
         connections={ownerConnectionsFromAgent(agent)}
+        siteTelegramBot={siteTg}
+        tradingTelegramBot={tradingTg}
+        tradingTelegramUrl={tradingTelegramDeepLink()}
       />
     </div>
   );
