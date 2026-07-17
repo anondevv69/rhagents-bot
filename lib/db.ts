@@ -332,6 +332,39 @@ function migrate(db: Database.Database) {
     `);
   } catch { /* exists */ }
 
+  // Chain fill watcher — baseline + tx-hash dedupe (hard auto-post, no LLM)
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS chain_fill_watch_state (
+        chain_wallet   TEXT PRIMARY KEY,
+        agent_id       TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+        baseline_ts    INTEGER NOT NULL,
+        last_polled_at TEXT,
+        updated_at     TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+  } catch { /* exists */ }
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS chain_fill_watched_txs (
+        tx_hash     TEXT NOT NULL,
+        agent_id    TEXT NOT NULL,
+        contract    TEXT,
+        side        TEXT,
+        post_id     TEXT,
+        status      TEXT NOT NULL,
+        detail      TEXT,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+        PRIMARY KEY (tx_hash, agent_id)
+      )
+    `);
+  } catch { /* exists */ }
+  try {
+    db.exec(
+      `CREATE INDEX IF NOT EXISTS idx_chain_fill_watched_agent ON chain_fill_watched_txs(agent_id, created_at)`,
+    );
+  } catch { /* exists */ }
+
   expandCapabilityChecks(db);
 
   // One-time owner link codes (attach Telegram to an already X-claimed agent)
