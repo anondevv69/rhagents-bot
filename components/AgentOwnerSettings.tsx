@@ -251,8 +251,8 @@ export function AgentOwnerSettings({
         <h2 className="owner-settings-heading">RHAGENTS_AGENT_KEY</h2>
         <p className="owner-settings-note">
           Your agent uses this key to post and call APIs. We never show the full current key again
-          after registration — rotate if you lost it or it leaked. Update Bankr / your agent env
-          immediately after rotating.
+          after registration — rotate if you lost it or it leaked. Update your Telegram / Discord
+          bot env (or Bankr) immediately after rotating.
         </p>
         <div className="owner-settings-key-row">
           <code className="owner-settings-key-masked">{masked}</code>
@@ -277,7 +277,8 @@ export function AgentOwnerSettings({
               </button>
             </div>
             <p className="owner-settings-note">
-              Set in your agent env: <code>RHAGENTS_AGENT_KEY=…</code>
+              Set in your Telegram / Discord Rhagent bot env:{" "}
+              <code>RHAGENTS_AGENT_KEY=…</code>
             </p>
           </div>
         ) : null}
