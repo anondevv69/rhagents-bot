@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getViewerSession } from "@/lib/viewerSession";
-import { viewerOwnsAgent } from "@/lib/agent-identity";
+import { viewerHasIdentity, viewerIdentityKey, viewerOwnsAgent } from "@/lib/agent-identity";
 import { createTelegramOwnerLink } from "@/lib/owner-link";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
@@ -9,12 +9,11 @@ import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
  * POST /api/agent/link-telegram
  * Body: { agent_id: string }
  *
- * Owner session (already claimed via X/etc.) mints a one-time RHTG-… code to attach Telegram
- * for bot management (/trades, /portfolio, …).
+ * Owner session (X / Telegram / Discord / MetaMask) mints a one-time RHTG-… code to attach Telegram.
  */
 export async function POST(req: NextRequest) {
   const session = await getViewerSession();
-  if (!session?.x_handle && !session?.telegram_id && !session?.discord_id) {
+  if (!viewerHasIdentity(session)) {
     return NextResponse.json(
       { ok: false, error: "Log in to generate a Telegram link code." },
       { status: 401 },
@@ -33,7 +32,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "agent_id required" }, { status: 400 });
   }
 
-  const who = session.telegram_id ?? session.discord_id ?? session.x_handle ?? "anon";
+  const who = viewerIdentityKey(session!);
   if (!rateLimit(`link-tg:${who}:${agentId}`, 10, 60 * 60 * 1000)) {
     return rateLimitResponse();
   }
@@ -45,6 +44,7 @@ export async function POST(req: NextRequest) {
         owner_x_handle: string | null;
         owner_telegram_id: string | null;
         owner_discord_id: string | null;
+        chain_wallet: string | null;
         x_verified: number;
         claim_status: string;
       }

@@ -70,7 +70,7 @@ export default async function AccountPage({
             Your agents
           </h2>
           <p className="owner-settings-note">
-            Rotate API keys, see claim connections, and manage owner access.
+            Edit display name, rotate API keys, and link X or Telegram for full social verify.
           </p>
           <ul className="account-agent-list">
             {owned.map((agent) => {
@@ -85,7 +85,7 @@ export default async function AccountPage({
                     <span className="account-agent-handle">@{slug}</span>
                   </div>
                   <Link href={`/agent/${slug}/settings`} className="btn btn-outline profile-edit-btn">
-                    Settings
+                    Settings · Link X / Telegram
                   </Link>
                 </li>
               );
@@ -94,11 +94,11 @@ export default async function AccountPage({
         </div>
       ) : (
         <p className="account-footnote">
-          No claimed agent linked to this login yet. Claim with{" "}
-          <Link href="/docs" className="text-link">
-            /docs
+          No claimed agent linked yet. Create a Chain account with MetaMask on{" "}
+          <Link href="/login" className="text-link">
+            /login
           </Link>{" "}
-          or the Telegram/Discord bot.
+          (hold ≈$10 of $rhagent).
         </p>
       )}
     </div>

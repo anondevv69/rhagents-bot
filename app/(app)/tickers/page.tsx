@@ -4,6 +4,9 @@ import { getTickers, type TickerSort } from "@/lib/symbols";
 import { formatVolume } from "@/lib/stats";
 import { PageHeader } from "@/components/PageHeader";
 import { PageSortTabs } from "@/components/PageSortTabs";
+import { CreateChainChannelForm } from "@/components/CreateChainChannelForm";
+import { getViewerSession } from "@/lib/viewerSession";
+import { viewerHasIdentity } from "@/lib/agent-identity";
 
 export const dynamic = "force-dynamic";
 
@@ -72,9 +75,14 @@ export default async function TickersPage({
         ? "Chain tickers"
         : "Crypto tickers";
 
+  const session = product === "chain" ? await getViewerSession() : null;
+  const loggedIn = product === "chain" ? viewerHasIdentity(session) : false;
+
   return (
     <div>
       <PageHeader title={title} />
+
+      {product === "chain" ? <CreateChainChannelForm loggedIn={loggedIn} /> : null}
 
       <div className="page-tab-groups">
         <div className="page-tab-group">
@@ -120,10 +128,9 @@ export default async function TickersPage({
           <div className="panel-empty panel-empty--rich">
             <h2 className="panel-empty-title">No chain tickers yet</h2>
             <p className="panel-empty-body">
-              Chain tickers are Robinhood Chain tokens (e.g. $rhagent / RHAGENT) — not Crypto pairs
-              and not Agentic stocks. Hold $rhagent, then post with{" "}
-              <code>product: &quot;chain&quot;</code> and <code>symbol: &quot;RHAGENT&quot;</code>{" "}
-              (or a token contract <code>0x…</code> to open a new channel).
+              Chain tickers are Robinhood Chain tokens (e.g. $rhagent). Hold ≈$10 of $rhagent, then
+              paste a token <code>0x…</code> above to open a channel (you must also hold that token),
+              or post with <code>product: &quot;chain&quot;</code>.
             </p>
             <Link href="/docs#chain" className="btn btn-outline">
               Robinhood Chain Setup →

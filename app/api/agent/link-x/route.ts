@@ -2,21 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerHasIdentity, viewerIdentityKey, viewerOwnsAgent } from "@/lib/agent-identity";
-import { maskApiKey, rotateAgentApiKey } from "@/lib/agent-owner";
+import { createXOwnerLink } from "@/lib/owner-link";
+import { PLATFORM_X_HANDLE } from "@/lib/claim";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 /**
- * POST /api/agent/rotate-key
- * Body: { agent_id: string, confirm: true }
+ * POST /api/agent/link-x
+ * Body: { agent_id }
  *
- * Human owner (viewer session) mints a new RHAGENTS_AGENT_KEY and invalidates the old one.
- * The new key is returned **once** in this response — save it immediately.
+ * Mint a one-time RHX-… code + tweet text so a wallet (or TG) owner can attach X.
  */
 export async function POST(req: NextRequest) {
   const session = await getViewerSession();
   if (!viewerHasIdentity(session)) {
     return NextResponse.json(
-      { ok: false, error: "Log in with MetaMask, X, Telegram, or Discord to rotate the agent key." },
+      { ok: false, error: "Log in to generate an X link code." },
       { status: 401 },
     );
   }
@@ -32,19 +32,9 @@ export async function POST(req: NextRequest) {
   if (!agentId) {
     return NextResponse.json({ ok: false, error: "agent_id required" }, { status: 400 });
   }
-  if (body.confirm !== true) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "confirm_required",
-        message: "Send { \"confirm\": true } to invalidate the current RHAGENTS_AGENT_KEY.",
-      },
-      { status: 400 },
-    );
-  }
 
   const who = viewerIdentityKey(session!);
-  if (!rateLimit(`rotate-key:${who}:${agentId}`, 5, 60 * 60 * 1000)) {
+  if (!rateLimit(`link-x:${who}:${agentId}`, 10, 60 * 60 * 1000)) {
     return rateLimitResponse();
   }
 
@@ -64,26 +54,34 @@ export async function POST(req: NextRequest) {
   if (!agent) {
     return NextResponse.json({ ok: false, error: "Agent not found" }, { status: 404 });
   }
-
   if (!viewerOwnsAgent(session, agent)) {
+    return NextResponse.json({ ok: false, error: "Only the verified owner can link X." }, { status: 403 });
+  }
+  if (agent.owner_x_handle && agent.x_verified) {
     return NextResponse.json(
-      { ok: false, error: "Only the verified human owner can rotate this agent's key." },
-      { status: 403 },
+      {
+        ok: false,
+        error: "already_linked",
+        message: `X is already linked as @${agent.owner_x_handle.replace(/^@/, "")}.`,
+      },
+      { status: 409 },
     );
   }
 
-  try {
-    const apiKey = rotateAgentApiKey(agentId);
-    return NextResponse.json({
-      ok: true,
-      agent_id: agentId,
-      api_key: apiKey,
-      api_key_masked: maskApiKey(apiKey),
-      message:
-        "New RHAGENTS_AGENT_KEY issued. The previous key no longer works. Copy it now — it will not be shown again.",
-      env_line: `RHAGENTS_AGENT_KEY=${apiKey}`,
-    });
-  } catch {
-    return NextResponse.json({ ok: false, error: "rotate_failed" }, { status: 500 });
-  }
+  const link = createXOwnerLink(agentId);
+  const intent = `https://x.com/intent/tweet?text=${encodeURIComponent(link.tweet_text)}`;
+
+  return NextResponse.json({
+    ok: true,
+    code: link.code,
+    tweet_text: link.tweet_text,
+    tweet_intent_url: intent,
+    expires_at: link.expires_at,
+    platform_x: `@${PLATFORM_X_HANDLE}`,
+    instructions: [
+      `1. Post this tweet (must tag @${PLATFORM_X_HANDLE} and include ${link.code})`,
+      "2. Copy the tweet URL",
+      "3. Submit it via POST /api/agent/link-x/verify { agent_id, code, tweet_url }",
+    ],
+  });
 }

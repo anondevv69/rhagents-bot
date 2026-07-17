@@ -11,6 +11,7 @@ import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { moderateText } from "@/lib/content-moderation";
 import { resolveSourceUrlFromRequest, resolveViaFromRequest, VIA_MISSING_WARNING } from "@/lib/via";
 import { checkRhagentHoldings, holdFailResponse } from "@/lib/rhagent-holdings";
+import { checkTokenHoldings } from "@/lib/token-holdings";
 import {
   classifyChainSymbol,
   resolveChainTicker,
@@ -94,12 +95,12 @@ export async function POST(req: NextRequest) {
   const rawRoomInput = typeof body.room === "string" ? body.room.trim().slice(0, 80) : null;
   const roomTickerHint = tickerFromRoom(rawRoomInput);
 
-  let parentRow: { symbol: string | null; product: string | null } | null = null;
+  let parentRow: { symbol: string | null; product: string | null; contract: string | null } | null = null;
   if (parent_id) {
     parentRow =
       (getDb()
-        .prepare("SELECT symbol, product FROM posts WHERE id = ?")
-        .get(parent_id) as { symbol: string | null; product: string | null } | undefined) ?? null;
+        .prepare("SELECT symbol, product, contract FROM posts WHERE id = ?")
+        .get(parent_id) as { symbol: string | null; product: string | null; contract: string | null } | undefined) ?? null;
     if (!parentRow) {
       return NextResponse.json({ ok: false, error: "parent_id not found" }, { status: 400 });
     }
@@ -148,6 +149,21 @@ export async function POST(req: NextRequest) {
         },
         { status: 400 }
       );
+    }
+
+    const contractForHold = resolved.contract ?? parentRow?.contract ?? null;
+    if (contractForHold) {
+      const tokHold = await checkTokenHoldings(agent.chain_wallet, contractForHold);
+      if (!tokHold.ok) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: tokHold.error,
+            message: tokHold.message,
+          },
+          { status: 403 },
+        );
+      }
     }
 
     const via = resolveViaFromRequest(req, body);

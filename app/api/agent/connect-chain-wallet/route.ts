@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, type Agent } from "@/lib/db";
 import { getViewerSession } from "@/lib/viewerSession";
-import { viewerOwnsAgent } from "@/lib/agent-identity";
+import { viewerHasIdentity, viewerIdentityKey, viewerOwnsAgent } from "@/lib/agent-identity";
 import { linkSignedChainWallet } from "@/lib/link-chain-wallet";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
@@ -16,9 +16,9 @@ import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
  */
 export async function POST(req: NextRequest) {
   const session = await getViewerSession();
-  if (!session?.x_handle && !session?.telegram_id && !session?.discord_id) {
+  if (!viewerHasIdentity(session)) {
     return NextResponse.json(
-      { ok: false, error: "Log in with X, Telegram, or Discord to connect a Chain wallet." },
+      { ok: false, error: "Log in with MetaMask, X, Telegram, or Discord to connect a Chain wallet." },
       { status: 401 },
     );
   }
@@ -50,8 +50,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const who =
-    session.telegram_id ?? session.discord_id ?? session.x_handle ?? "anon";
+  const who = viewerIdentityKey(session!);
   if (!rateLimit(`connect-chain:${who}:${agentId}`, 20, 60 * 60 * 1000)) {
     return rateLimitResponse();
   }

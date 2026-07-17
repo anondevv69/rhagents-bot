@@ -94,8 +94,8 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         <div className="gate-card">
           <h2>Connect Chain wallet</h2>
           <p>
-            Fastest path — MetaMask (or Rabby), hold ≈$10 of $rhagent, sign once. Creates your
-            account and Chain profile.
+            MetaMask (or Rabby) — hold ≈$10 of $rhagent, sign once. Creates a <strong>Chain-only</strong>{" "}
+            account: post and open ticker rooms on Robinhood Chain. Not for Agentic or App Crypto.
           </p>
           <WalletLoginButton next={next} />
         </div>

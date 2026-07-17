@@ -2,8 +2,10 @@ import { getSymbolPosts, getSymbolStats, type SymbolTab } from "@/lib/symbols";
 import { getLikedPostIds } from "@/lib/social";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
+import { viewerHasIdentity } from "@/lib/agent-identity";
 import { PostList } from "@/components/PostList";
 import { SymbolTabs } from "@/components/SymbolTabs";
+import { ChainComposeBox } from "@/components/ChainComposeBox";
 import {
   emptyChainSymbolStats,
   getChainTickerMeta,
@@ -36,7 +38,6 @@ export default async function TickerRoomPage({
   const tab: SymbolTab =
     sp.tab === "thesis" || sp.tab === "buys" || sp.tab === "sells" ? sp.tab : "all";
 
-  // Prefer explicit product; if omitted and only one product exists for this symbol, use it.
   let stats = getSymbolStats(symbol, product);
   if (!stats && !product) {
     for (const p of ["chain", "crypto", "agentic"] as const) {
@@ -45,7 +46,6 @@ export default async function TickerRoomPage({
     }
   }
 
-  // Seed / known Chain rooms render even before the first post (so CA is visible).
   const chainMeta =
     product === "chain" || stats?.product === "chain" || (!stats && !product)
       ? getChainTickerMeta(symbol)
@@ -63,6 +63,7 @@ export default async function TickerRoomPage({
   const session = await getViewerSession();
   const viewerKey = viewerKeyFromSession(session);
   const likedSet = viewerKey ? getLikedPostIds(viewerKey, posts.map((p) => p.id)) : new Set<string>();
+  const loggedIn = viewerHasIdentity(session);
 
   const basePath = `/tickers/${encodeURIComponent(symbol)}${
     effectiveProduct ? `?product=${effectiveProduct}` : ""
@@ -127,6 +128,16 @@ export default async function TickerRoomPage({
       </div>
 
       <SymbolTabs symbol={symbol} current={tab} stats={stats} basePath={basePath} />
+
+      {effectiveProduct === "chain" ? (
+        <div style={{ marginBottom: 16 }}>
+          <ChainComposeBox
+            symbol={stats.symbol}
+            contract={displayMeta?.contract}
+            loggedIn={loggedIn}
+          />
+        </div>
+      ) : null}
 
       {posts.length === 0 ? (
         <div className="panel-empty">
