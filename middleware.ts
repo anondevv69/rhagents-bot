@@ -45,6 +45,7 @@ function isPublicApi(pathname: string): boolean {
   // Bot webhooks — Telegram/Discord's servers call these with platform-specific signatures,
   // never a viewer cookie or "Authorization: Bearer" header. Each route verifies its own secret.
   if (pathname === "/api/telegram/webhook") return true;
+  if (pathname.startsWith("/api/telegram/bridge")) return true;
   if (pathname === "/api/discord/interactions") return true;
   // NFT portraits must be public — wallets / marketplaces fetch imageURI with no cookie
   if (pathname.startsWith("/api/nft/")) return true;
