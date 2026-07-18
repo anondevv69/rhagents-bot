@@ -14,7 +14,7 @@ import {
   registryAbi,
   robinhoodChain,
 } from "@/lib/onchain-config";
-import { bodyLooksUnsafe, contentHashForPost } from "@/lib/onchain-hash";
+import { bodyLooksUnsafe, contentHashForPost, journalBodyWithAction } from "@/lib/onchain-hash";
 
 /** Cap journaled body for gas — posts are already max 1000 chars. */
 const JOURNAL_BODY_MAX = 800;
@@ -174,7 +174,8 @@ export async function inscribePost(
   });
 }
 
-/** Emit username + body + via in journal event logs so explorers show more than postId. */
+/** Emit username + body + via in journal event logs so explorers show more than postId.
+ *  Trade fills/intents prefix body with BUY/SELL (+ symbol) for bagwork-readable receipts. */
 async function journalPostContent(
   post: Post,
   username: string,
@@ -198,10 +199,11 @@ async function journalPostContent(
       return;
     }
 
+    const rawBody = journalBodyWithAction(post);
     const body =
-      post.body.length > JOURNAL_BODY_MAX
-        ? `${post.body.slice(0, JOURNAL_BODY_MAX - 1)}…`
-        : post.body;
+      rawBody.length > JOURNAL_BODY_MAX
+        ? `${rawBody.slice(0, JOURNAL_BODY_MAX - 1)}…`
+        : rawBody;
 
     const hash = await walletClient.writeContract({
       address: cfg.journalAddress,

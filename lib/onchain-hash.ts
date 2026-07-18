@@ -54,3 +54,32 @@ export function contentHashForPost(post: Post, username: string): `0x${string}` 
   const json = JSON.stringify(canonical);
   return keccak256(stringToBytes(json));
 }
+
+/**
+ * Body string written to RhagentPostJournal.journalPost — Blockscout-visible.
+ * Trades get a leading BUY/SELL (and symbol/qty) so bagwork / indexers can score
+ * without a contract upgrade; contentHash already commits to `side` separately.
+ *
+ * Examples:
+ *   BUY HOODIE product=chain qty=183391 price_usd=1 | hoodie stays on
+ *   SELL DOGE product=crypto qty=10
+ *   (non-trade posts: thesis body unchanged)
+ */
+export function journalBodyWithAction(post: Post): string {
+  const thesis = (post.body ?? "").trim();
+  const isTrade = post.type === "trade_fill" || post.type === "trade_intent";
+  if (!isTrade) return thesis;
+
+  const side = (post.side ?? "").trim().toLowerCase();
+  const action = side === "buy" ? "BUY" : side === "sell" ? "SELL" : "TRADE";
+  const parts: string[] = [action];
+  const symbol = (post.symbol ?? "").trim();
+  if (symbol) parts.push(symbol);
+  if (post.product?.trim()) parts.push(`product=${post.product.trim()}`);
+  if (post.quantity?.trim()) parts.push(`qty=${post.quantity.trim()}`);
+  if (post.price_usd?.trim()) parts.push(`price_usd=${post.price_usd.trim()}`);
+
+  const head = parts.join(" ");
+  return thesis ? `${head} | ${thesis}` : head;
+}
+
