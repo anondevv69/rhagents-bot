@@ -12,8 +12,14 @@ export function telegramConfigured(): boolean {
 }
 
 export function telegramBotUsername(): string | null {
-  const u = process.env.TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "");
-  return u && u.length > 0 ? u : null;
+  // One bot: prefer trading/agent username, then legacy site username.
+  const u =
+    process.env.TRADING_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "") ||
+    process.env.NEXT_PUBLIC_TRADING_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "") ||
+    process.env.TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "") ||
+    process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "") ||
+    "";
+  return u.length > 0 ? u : null;
 }
 
 export function telegramDeepLink(startParam: string): string | null {

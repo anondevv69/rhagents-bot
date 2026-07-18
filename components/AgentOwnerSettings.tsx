@@ -300,8 +300,8 @@ export function AgentOwnerSettings({
         <ConnRow
           label={
             siteTelegramBot
-              ? `Site Telegram (@${siteTelegramBot})`
-              : "Site Telegram (rhagent.bot)"
+              ? `Telegram (@${siteTelegramBot})`
+              : "Telegram"
           }
           connected={connections.telegram.connected}
           detail={
@@ -309,16 +309,15 @@ export function AgentOwnerSettings({
               ? `@${connections.telegram.username.replace(/^@/, "")}`
               : connections.telegram.connected
                 ? "linked"
-                : "Claim/link bot — /status /portfolio /trades (not /website)"
+                : "Verify, claim, /website, skills & trading — one bot"
           }
         />
         {!connections.telegram.connected ? (
           <div className="owner-settings-link-tg">
             <p className="owner-settings-note" style={{ marginBottom: 8 }}>
-              This links your Telegram to this agent on the <strong>site bot</strong>
-              {siteTelegramBot ? ` (@${siteTelegramBot})` : ""}. It does{" "}
-              <strong>not</strong> open the trading bot — that one has{" "}
-              <code>/website</code> (see below).
+              Same bot for website login/claim and the hosted agent (/website, Crypto/Agentic,
+              skills, jobs). Optional — you can still run your own agent elsewhere and only link
+              here.
             </p>
             {!linkInfo ? (
               <button
@@ -327,16 +326,16 @@ export function AgentOwnerSettings({
                 onClick={createTelegramLink}
                 disabled={linkBusy}
               >
-                {linkBusy ? "Creating…" : "Link site Telegram"}
+                {linkBusy ? "Creating…" : "Link Telegram"}
               </button>
             ) : (
               <div className="owner-settings-newkey">
                 <p className="owner-settings-newkey-warn">
                   Send this to{" "}
                   <strong>
-                    @{linkInfo.bot_username || siteTelegramBot || "the site Telegram bot"}
+                    @{linkInfo.bot_username || siteTelegramBot || "the Telegram bot"}
                   </strong>{" "}
-                  (expires in 30 min) — not the trading bot:
+                  (expires in 30 min):
                 </p>
                 <pre className="owner-settings-newkey-value">/link {linkInfo.code}</pre>
                 {linkInfo.deep_link ? (
@@ -356,37 +355,26 @@ export function AgentOwnerSettings({
           </div>
         ) : null}
 
-        <div className="owner-settings-conn" style={{ marginTop: 8 }}>
-          <span className="owner-settings-conn-label">
-            {tradingTelegramBot
-              ? `Trading Telegram (@${tradingTelegramBot})`
-              : "Trading Telegram"}
-          </span>
-          <span className="owner-settings-conn-detail" style={{ gridColumn: "1 / -1" }}>
-            Separate bot for Robinhood Crypto/Agentic + dashboard. Use{" "}
-            <code>/website</code> there — not on the site bot above.
-          </span>
-          {tradingTelegramUrl ? (
-            <p style={{ gridColumn: "1 / -1", margin: "6px 0 0" }}>
-              <a
-                href={tradingTelegramUrl}
-                className="btn btn-outline owner-settings-rotate-btn"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Open trading bot
-              </a>{" "}
-              <a href="/dashboard" className="text-link" style={{ marginLeft: 8 }}>
-                Dashboard
-              </a>
-            </p>
-          ) : (
-            <p className="owner-settings-note" style={{ gridColumn: "1 / -1", marginTop: 6 }}>
-              Set <code>TRADING_TELEGRAM_BOT_USERNAME</code> on rhagent.bot to show the deep link.
-              Meanwhile: open your trading bot in Telegram → <code>/website</code>.
-            </p>
-          )}
-        </div>
+        {(tradingTelegramUrl || tradingTelegramBot) && (
+          <p className="owner-settings-note" style={{ marginTop: 8 }}>
+            {tradingTelegramUrl ? (
+              <>
+                <a
+                  href={tradingTelegramUrl}
+                  className="btn btn-outline owner-settings-rotate-btn"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open Telegram bot
+                </a>{" "}
+              </>
+            ) : null}
+            <a href="/dashboard" className="text-link">
+              Dashboard
+            </a>{" "}
+            — send <code>/website</code> in the bot for a magic link.
+          </p>
+        )}
         <ConnRow
           label="Discord bot"
           connected={connections.discord.connected}

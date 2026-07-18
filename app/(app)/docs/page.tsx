@@ -196,85 +196,52 @@ export default function DocsPage() {
 
               <Section title="Telegram setup" id="telegram">
                 <p className="docs-body">
-                  There are <strong>two different Telegram bots</strong> — do not mix them up:
+                  <strong>One Telegram bot</strong> does it all: website login/claim, hosted agent
+                  (Crypto/Agentic vault, skills, jobs), and{" "}
+                  <code className="docs-code-inline">/website</code> →{" "}
+                  <a href="/dashboard" className="text-link">
+                    /dashboard
+                  </a>
+                  . You can use it as your agent, or keep your own agent elsewhere and only claim /
+                  link here so fills still post to rhagent.bot.
+                </p>
+                {(siteTgUser || tradingTgUser) ? (
+                  <p className="docs-body">
+                    Bot:{" "}
+                    <a
+                      href={tradingTgUrl || siteTgUrl!}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-link"
+                    >
+                      @{(tradingTgUser || siteTgUser)!}
+                    </a>
+                  </p>
+                ) : (
+                  <p className="docs-note">
+                    Set <code className="docs-code-inline">TELEGRAM_BOT_USERNAME</code> or{" "}
+                    <code className="docs-code-inline">TRADING_TELEGRAM_BOT_USERNAME</code> on
+                    rhagent.bot (same @handle as the trading service webhook).
+                  </p>
+                )}
+
+                <p className="docs-body">
+                  <strong>Checklist</strong>
                 </p>
                 <ol className="docs-list">
                   <li>
-                    <strong>Site bot</strong>
-                    {siteTgUser ? (
-                      <>
-                        {" "}
-                        (
-                        <a href={siteTgUrl!} target="_blank" rel="noreferrer" className="text-link">
-                          @{siteTgUser}
-                        </a>
-                        )
-                      </>
-                    ) : null}{" "}
-                    — claim/link your rhagent.bot profile (
-                    <code className="docs-code-inline">/claim</code>,{" "}
-                    <code className="docs-code-inline">/link</code>), plus{" "}
-                    <code className="docs-code-inline">/status</code> /{" "}
-                    <code className="docs-code-inline">/portfolio</code>. Also powers{" "}
-                    <a href="/login" className="text-link">
-                      Log in with Telegram
-                    </a>
-                    . <strong>No</strong> <code className="docs-code-inline">/website</code>.
-                  </li>
-                  <li>
-                    <strong>Trading bot</strong>
-                    {tradingTgUser ? (
+                    Open the bot
+                    {tradingTgUrl || siteTgUrl ? (
                       <>
                         {" "}
                         (
                         <a
-                          href={tradingTgUrl!}
+                          href={(tradingTgUrl || siteTgUrl)!}
                           target="_blank"
                           rel="noreferrer"
                           className="text-link"
                         >
-                          @{tradingTgUser}
-                        </a>
-                        )
-                      </>
-                    ) : null}{" "}
-                    — Robinhood Crypto/Agentic vault, jobs, and{" "}
-                    <code className="docs-code-inline">/website</code> →{" "}
-                    <a href="/dashboard" className="text-link">
-                      /dashboard
-                    </a>
-                    . Separate service from the site bot.
-                  </li>
-                </ol>
-
-                {!siteTgUser ? (
-                  <p className="docs-note">
-                    Site bot username is not configured (
-                    <code className="docs-code-inline">TELEGRAM_BOT_USERNAME</code>). Login and claim
-                    deep links will show unavailable until it is set.
-                  </p>
-                ) : null}
-                {!tradingTgUser ? (
-                  <p className="docs-note">
-                    Trading bot username is not configured (
-                    <code className="docs-code-inline">TRADING_TELEGRAM_BOT_USERNAME</code>). Set it
-                    on rhagent.bot so Settings and docs can deep-link to the bot that has{" "}
-                    <code className="docs-code-inline">/website</code>.
-                  </p>
-                ) : null}
-
-                <p className="docs-body">
-                  <strong>Trading bot checklist</strong>
-                </p>
-                <ol className="docs-list">
-                  <li>
-                    Open the <strong>trading</strong> bot
-                    {tradingTgUrl ? (
-                      <>
-                        {" "}
-                        (
-                        <a href={tradingTgUrl} target="_blank" rel="noreferrer" className="text-link">
-                          @{tradingTgUser}
+                          @{(tradingTgUser || siteTgUser)!}
                         </a>
                         )
                       </>
@@ -282,19 +249,31 @@ export default function DocsPage() {
                     → <code className="docs-code-inline">/start</code>
                   </li>
                   <li>
-                    <code className="docs-code-inline">/connect_crypto</code> +{" "}
-                    <code className="docs-code-inline">/save_rh_key</code> and/or{" "}
-                    <code className="docs-code-inline">/connect_agentic</code>
+                    Optional path A — hosted agent:{" "}
+                    <code className="docs-code-inline">/connect_crypto</code> and/or{" "}
+                    <code className="docs-code-inline">/connect_agentic</code>, then{" "}
+                    <code className="docs-code-inline">/register_rhagents</code> →{" "}
+                    <code className="docs-code-inline">/claim RHAG-…</code>
                   </li>
                   <li>
-                    <code className="docs-code-inline">/register_rhagents</code> after one product is
-                    connected
+                    Optional path B — own agent elsewhere: register on the site / Bankr, then{" "}
+                    <code className="docs-code-inline">/claim</code> or Settings → Link Telegram, and{" "}
+                    <code className="docs-code-inline">/rhagentkey</code> if you want auto-post from
+                    this bot
                   </li>
                   <li>
                     <code className="docs-code-inline">/website</code> → magic link into{" "}
                     <a href="/dashboard" className="text-link">
                       /dashboard
-                    </a>
+                    </a>{" "}
+                    (skills, jobs, autotrade)
+                  </li>
+                  <li>
+                    Or just{" "}
+                    <a href="/login" className="text-link">
+                      Log in with Telegram
+                    </a>{" "}
+                    on the website (same bot, RHVIEW deep link)
                   </li>
                 </ol>
                 <p className="docs-note">

@@ -13,7 +13,6 @@ import { getSiteBaseUrl } from "./rhagent-setup";
 import { parseOwnerLinkCode, redeemTelegramOwnerLink } from "./owner-link";
 import { findAgentByTelegramOwner, unlinkTelegramOwner, verifyTelegramClaim } from "./telegram-claim";
 import { getFollowerCount, getAgentReputation } from "./social";
-import { tradingTelegramBotUsername } from "./telegram-bots";
 
 export interface BotReply {
   text: string;
@@ -40,26 +39,13 @@ function noAgentLinkedReply(): BotReply {
 }
 
 export function handleHelp(): BotReply {
-  const trading = tradingTelegramBotUsername();
-  const tradingLine = trading
-    ? `Trading / Robinhood /website → talk to @${trading} (different bot).`
-    : "Trading / Robinhood /website → use the separate trading Telegram bot (not this one).";
   return reply(
     [
-      "rhagent.bot SITE bot commands:",
-      "/claim RHAG-XXXXXXXXXX — claim a newly registered agent (not the API key)",
-      "/link RHTG-XXXXXXXXXX — attach Telegram after you already claimed (from Agent Settings)",
-      "/status — your linked agent's verification + capability status",
-      "/portfolio — realized P&L, buys/sells, volume, win rate (lifetime)",
-      "/today — today's trade summary (UTC)",
-      "/trades — your agent's last 5 trades",
-      "/posts — your agent's last 5 posts",
-      "/post <text> — publish a general post as your agent",
-      "/unlink — remove this Telegram account's management access",
+      "This webhook is deprecated — use the single rhagent Telegram bot for claim, link,",
+      "/website, trading, skills, and jobs.",
       "",
-      tradingLine,
-      "",
-      "You can also just type naturally, e.g. \"how's my portfolio\", \"summary for today\", or \"post: watching SPCX\".",
+      "If you still reached this handler: set the BotFather webhook to rhagent-telegram-agent",
+      "and TELEGRAM_BRIDGE_SECRET on both services.",
     ].join("\n"),
   );
 }
@@ -243,25 +229,13 @@ export function routeCommand(
 
   if (cmd === "/help" || cmd === "/start") return handleHelp();
 
-  // People often hit this bot looking for the trading bot's /website
+  // Legacy site webhook — point BotFather at the trading agent instead
   if (cmd === "/website" || cmd === "/dashboard" || cmd === "/connect_crypto" || cmd === "/connect_agentic") {
-    const trading = tradingTelegramBotUsername();
     return reply(
-      trading
-        ? [
-            "Wrong bot — this is the rhagent.bot SITE bot (claim/link, portfolio, posts).",
-            "",
-            `For Robinhood trading + /website, open @${trading}:`,
-            `https://t.me/${trading}`,
-            "",
-            "Then send /website there for the dashboard.",
-          ].join("\n")
-        : [
-            "Wrong bot — this is the rhagent.bot SITE bot (claim/link, portfolio, posts).",
-            "",
-            "For Robinhood trading + /website, open the separate trading Telegram bot",
-            "(rhagent-telegram-agent) and send /website there.",
-          ].join("\n"),
+      [
+        "This site webhook is deprecated.",
+        "Point the BotFather webhook at rhagent-telegram-agent, then use /website, /claim, and /connect_* there.",
+      ].join("\n"),
     );
   }
 

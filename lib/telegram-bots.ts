@@ -1,32 +1,35 @@
 /**
- * Two Telegram bots — do not conflate them in UI or deep links.
+ * One Telegram bot for rhagent — verify/claim on the site + hosted agent (vault, skills, jobs).
  *
- * 1) Site bot (TELEGRAM_BOT_*) — rhagentsite webhook: /claim, /link RHTG-…,
- *    /status, /portfolio, /trades, /posts. No Robinhood keys, no /website.
- *
- * 2) Trading bot (TRADING_TELEGRAM_BOT_USERNAME) — rhagent-telegram-agent:
- *    /website dashboard, /connect_crypto, /connect_agentic, vault + jobs.
+ * Deep links (login RHVIEW, link RHTG) open this bot. Webhook lives on rhagent-telegram-agent;
+ * rhagentsite exposes /api/telegram/bridge for claim/link/viewer-verify.
  */
 
-import { telegramBotUsername, telegramDeepLink } from "@/lib/telegram";
+import { telegramDeepLink } from "@/lib/telegram";
 
-export type TelegramBotKind = "site" | "trading";
-
-export function siteTelegramBotUsername(): string | null {
-  return telegramBotUsername();
-}
-
-/** @username of the trading agent bot (has /website). */
-export function tradingTelegramBotUsername(): string | null {
+/** Canonical @username (no @) for the single bot. */
+export function telegramBotUsernameUnified(): string | null {
   const u =
     process.env.TRADING_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "") ||
     process.env.NEXT_PUBLIC_TRADING_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "") ||
+    process.env.TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "") ||
+    process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "") ||
     "";
   return u.length > 0 ? u : null;
 }
 
-export function tradingTelegramDeepLink(startParam?: string): string | null {
-  const username = tradingTelegramBotUsername();
+/** @deprecated alias — same as telegramBotUsernameUnified */
+export function siteTelegramBotUsername(): string | null {
+  return telegramBotUsernameUnified();
+}
+
+/** @deprecated alias — same as telegramBotUsernameUnified */
+export function tradingTelegramBotUsername(): string | null {
+  return telegramBotUsernameUnified();
+}
+
+export function telegramDeepLinkUnified(startParam?: string): string | null {
+  const username = telegramBotUsernameUnified();
   if (!username) return null;
   if (startParam) {
     return `https://t.me/${username}?start=${encodeURIComponent(startParam)}`;
@@ -34,26 +37,10 @@ export function tradingTelegramDeepLink(startParam?: string): string | null {
   return `https://t.me/${username}`;
 }
 
-export function siteTelegramDeepLink(startParam: string): string | null {
-  return telegramDeepLink(startParam);
+export function tradingTelegramDeepLink(startParam?: string): string | null {
+  return telegramDeepLinkUnified(startParam);
 }
 
-export function telegramBotsPublicConfig(): {
-  site: { username: string | null; deep_link: string | null; purpose: string };
-  trading: { username: string | null; deep_link: string | null; purpose: string };
-} {
-  const siteUser = siteTelegramBotUsername();
-  const tradingUser = tradingTelegramBotUsername();
-  return {
-    site: {
-      username: siteUser,
-      deep_link: siteUser ? `https://t.me/${siteUser}` : null,
-      purpose: "Claim/link your rhagent.bot profile (/claim, /link). Portfolio & posts from chat.",
-    },
-    trading: {
-      username: tradingUser,
-      deep_link: tradingTelegramDeepLink(),
-      purpose: "Robinhood trading vault + /website dashboard (Crypto / Agentic).",
-    },
-  };
+export function siteTelegramDeepLink(startParam: string): string | null {
+  return telegramDeepLinkUnified(startParam) ?? telegramDeepLink(startParam);
 }
