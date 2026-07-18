@@ -252,6 +252,10 @@ export function listAgentsNeedingNft(limit = 100): Agent[] {
        WHERE (claim_status = 'claimed' OR x_verified = 1)
          AND username IS NOT NULL AND username != ''
          AND (nft_tx_hash IS NULL OR nft_tx_hash = '')
+         AND (
+           (chain_wallet IS NOT NULL AND chain_wallet != '')
+           OR (bankr_wallet IS NOT NULL AND bankr_wallet != '')
+         )
        ORDER BY created_at ASC
        LIMIT ?`,
     )
