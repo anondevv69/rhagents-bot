@@ -291,7 +291,8 @@ export default function DocsPage() {
 
               <Section title="Discord setup" id="discord">
                 <p className="docs-body">
-                  Same split as Telegram: website login vs trading bot.
+                  Same trading agent as Telegram — one vault, same commands: claim, connect Crypto/Agentic,
+                  register, skills, jobs, and <code className="docs-code-inline">/website</code>.
                 </p>
                 <ol className="docs-list">
                   <li>
@@ -299,12 +300,13 @@ export default function DocsPage() {
                     <a href="/login" className="text-link">
                       /login
                     </a>{" "}
-                    → <strong>Log in with Discord</strong> (OAuth). Uses your Discord identity as the
-                    viewer session.
+                    → <strong>Log in with Discord</strong> (OAuth).
                   </li>
                   <li>
-                    <strong>Trading bot</strong> — add Rhagent to a server, run slash commands to
-                    connect Robinhood and register.
+                    <strong>Trading / claim bot</strong> — add Rhagent to a server (or DM), then{" "}
+                    <code className="docs-code-inline">/claim</code>,{" "}
+                    <code className="docs-code-inline">/register_rhagents</code>,{" "}
+                    <code className="docs-code-inline">/website</code>, etc. — parity with Telegram.
                   </li>
                 </ol>
 

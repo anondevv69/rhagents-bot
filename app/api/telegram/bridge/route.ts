@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { bridgeSecretOk } from "@/lib/telegram-bridge-auth";
 import { markTelegramVerified } from "@/lib/telegram-viewer";
 import { findAgentByTelegramOwner, unlinkTelegramOwner, verifyTelegramClaim } from "@/lib/telegram-claim";
+import { findAgentByDiscordOwner, unlinkDiscordOwner, verifyDiscordClaim } from "@/lib/discord-claim";
 import { parseOwnerLinkCode, redeemTelegramOwnerLink } from "@/lib/owner-link";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { getFollowerCount, getAgentReputation } from "@/lib/social";
@@ -12,8 +13,12 @@ export const dynamic = "force-dynamic";
 
 type BridgeBody = {
   action?: string;
+  /** telegram (default) | discord — trading bot is source of truth for both channels */
+  platform?: string;
   telegram_id?: string;
   telegram_username?: string | null;
+  discord_id?: string;
+  discord_username?: string | null;
   code?: string;
 };
 
@@ -21,8 +26,8 @@ type BridgeBody = {
  * POST /api/telegram/bridge
  * Header: X-Telegram-Bridge-Secret (TELEGRAM_BRIDGE_SECRET on both services)
  *
- * Lets the single trading Telegram bot verify website login (RHVIEW), claim (RHAG),
- * and link ownership (RHTG) against rhagentsite's DB without owning a second BotFather bot.
+ * Channel bridge for the unified trading bot (Telegram + Discord):
+ * website login (RHVIEW, Telegram only), claim (RHAG), owner link (RHTG, Telegram), ownership status.
  */
 export async function POST(req: NextRequest) {
   if (!bridgeSecretOk(req.headers.get("x-telegram-bridge-secret"))) {
@@ -37,22 +42,38 @@ export async function POST(req: NextRequest) {
   }
 
   const action = typeof body.action === "string" ? body.action.trim() : "";
+  const platform = body.platform === "discord" ? "discord" : "telegram";
   const telegramId = typeof body.telegram_id === "string" ? body.telegram_id.trim() : "";
+  const discordId = typeof body.discord_id === "string" ? body.discord_id.trim() : "";
+  const platformUserId = platform === "discord" ? discordId : telegramId;
   const telegramUsername =
     typeof body.telegram_username === "string" && body.telegram_username.trim()
       ? body.telegram_username.trim().replace(/^@/, "")
       : null;
+  const discordUsername =
+    typeof body.discord_username === "string" && body.discord_username.trim()
+      ? body.discord_username.trim().replace(/^@/, "")
+      : null;
   const code = typeof body.code === "string" ? body.code.trim() : "";
 
-  if (!telegramId) {
-    return NextResponse.json({ ok: false, error: "telegram_id required" }, { status: 400 });
+  if (!platformUserId) {
+    return NextResponse.json(
+      { ok: false, error: platform === "discord" ? "discord_id required" : "telegram_id required" },
+      { status: 400 },
+    );
   }
-  if (!rateLimit(`tg-bridge:${action}:${telegramId}`, 30, 60 * 1000)) {
+  if (!rateLimit(`channel-bridge:${action}:${platform}:${platformUserId}`, 30, 60 * 1000)) {
     return rateLimitResponse();
   }
 
   switch (action) {
     case "viewer_verify": {
+      if (platform !== "telegram") {
+        return NextResponse.json(
+          { ok: false, error: "Website Telegram login (RHVIEW) is Telegram-only. Use Discord OAuth on /login." },
+          { status: 400 },
+        );
+      }
       if (!code.toUpperCase().startsWith("RHVIEW-")) {
         return NextResponse.json({ ok: false, error: "Expected RHVIEW-… code" }, { status: 400 });
       }
@@ -75,6 +96,21 @@ export async function POST(req: NextRequest) {
       if (!code) {
         return NextResponse.json({ ok: false, error: "Usage: /claim RHAG-XXXXXXXXXX" }, { status: 400 });
       }
+      if (platform === "discord") {
+        const result = verifyDiscordClaim(code, discordId, discordUsername);
+        if (!result.ok) {
+          return NextResponse.json({ ok: false, error: result.error ?? "claim failed" }, { status: 400 });
+        }
+        const name = result.agent_name ?? "Your agent";
+        return NextResponse.json({
+          ok: true,
+          already: Boolean(result.already),
+          agent_id: result.agent_id,
+          message: result.already
+            ? `${name} is already claimed by this Discord account.`
+            : `Claimed! ${name} is now linked to this Discord account.`,
+        });
+      }
       const result = verifyTelegramClaim(code, telegramId, telegramUsername);
       if (!result.ok) {
         return NextResponse.json({ ok: false, error: result.error ?? "claim failed" }, { status: 400 });
@@ -91,6 +127,16 @@ export async function POST(req: NextRequest) {
     }
 
     case "link": {
+      if (platform !== "telegram") {
+        return NextResponse.json(
+          {
+            ok: false,
+            error:
+              "RHTG owner-link codes are Telegram-only. On Discord use /claim RHAG-… (or Link Discord from the site when available).",
+          },
+          { status: 400 },
+        );
+      }
       const linkCode = parseOwnerLinkCode(code) ?? (code.toUpperCase().startsWith("RHTG-") ? code.toUpperCase() : null);
       if (!linkCode) {
         return NextResponse.json(
@@ -113,6 +159,15 @@ export async function POST(req: NextRequest) {
     }
 
     case "unlink": {
+      if (platform === "discord") {
+        const ok = unlinkDiscordOwner(discordId);
+        return NextResponse.json({
+          ok: true,
+          message: ok
+            ? "Unlinked. This Discord account no longer manages any rhagent on the site."
+            : "Nothing was linked to this Discord account on the site.",
+        });
+      }
       const ok = unlinkTelegramOwner(telegramId);
       return NextResponse.json({
         ok: true,
@@ -123,12 +178,13 @@ export async function POST(req: NextRequest) {
     }
 
     case "owner_status": {
-      const agent = findAgentByTelegramOwner(telegramId);
+      const agent =
+        platform === "discord" ? findAgentByDiscordOwner(discordId) : findAgentByTelegramOwner(telegramId);
       if (!agent) {
         return NextResponse.json({
           ok: true,
           linked: false,
-          message: "No rhagent.bot profile ownership linked to this Telegram yet.",
+          message: `No rhagent.bot profile ownership linked to this ${platform} account yet.`,
         });
       }
       const slug = agentProfileSlug(agent);
