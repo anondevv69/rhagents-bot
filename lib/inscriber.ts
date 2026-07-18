@@ -14,7 +14,7 @@ import {
   registryAbi,
   robinhoodChain,
 } from "@/lib/onchain-config";
-import { bodyLooksUnsafe, contentHashForPost, journalBodyWithAction } from "@/lib/onchain-hash";
+import { bodyLooksUnsafe, contentHashForPost, journalActionForPost, journalBodyWithAction } from "@/lib/onchain-hash";
 
 /** Cap journaled body for gas — posts are already max 1000 chars. */
 const JOURNAL_BODY_MAX = 800;
@@ -46,6 +46,13 @@ function clients() {
 
 function isAddress(v: string | null | undefined): v is `0x${string}` {
   return Boolean(v && /^0x[a-fA-F0-9]{40}$/.test(v));
+}
+
+/** Prefer verified Chain wallet, else Bankr wallet — NFT should land in the owner's wallet. */
+function ownerWalletForNft(agent: Agent): `0x${string}` | null {
+  if (isAddress(agent.chain_wallet)) return agent.chain_wallet.toLowerCase() as `0x${string}`;
+  if (isAddress(agent.bankr_wallet)) return agent.bankr_wallet.toLowerCase() as `0x${string}`;
+  return null;
 }
 
 function agentKeyOf(agent: Agent): string | null {
@@ -84,6 +91,12 @@ export async function inscribeAgent(agent: Agent): Promise<{ txHash: Hash; skipp
 
   if (agent.nft_tx_hash) return { txHash: agent.nft_tx_hash as Hash, skipped: "already_db" };
 
+  // Wait until a verified owner wallet exists — do not mint into escrow on the NFT contract.
+  const ownerWallet = ownerWalletForNft(agent);
+  if (!ownerWallet) {
+    return { txHash: "0x" as Hash, skipped: "no_owner_wallet" };
+  }
+
   return enqueue(async () => {
     const { publicClient, walletClient, registry } = clients();
 
@@ -103,15 +116,12 @@ export async function inscribeAgent(agent: Agent): Promise<{ txHash: Hash; skipp
     }
 
     const imageURI = agentPortraitMetadataUrl(agentKey);
-    const direct = isAddress(agent.bankr_wallet);
 
     const hash = await walletClient.writeContract({
       address: registry,
       abi: registryAbi,
-      functionName: direct ? "anchorAgentDirect" : "anchorAgent",
-      args: direct
-        ? [agentKey, agentKey, imageURI, agent.bankr_wallet as `0x${string}`]
-        : [agentKey, agentKey, imageURI],
+      functionName: "anchorAgentDirect",
+      args: [agentKey, agentKey, imageURI, ownerWallet],
     });
 
     await publicClient.waitForTransactionReceipt({ hash });
@@ -204,12 +214,13 @@ async function journalPostContent(
       rawBody.length > JOURNAL_BODY_MAX
         ? `${rawBody.slice(0, JOURNAL_BODY_MAX - 1)}…`
         : rawBody;
+    const action = journalActionForPost(post);
 
     const hash = await walletClient.writeContract({
       address: cfg.journalAddress,
       abi: journalAbi,
       functionName: "journalPost",
-      args: [post.id, username, body, post.via ?? "", contentHash],
+      args: [post.id, username, body, post.via ?? "", action, contentHash],
     });
     await publicClient.waitForTransactionReceipt({ hash });
     markPostJournaled(post.id, hash);
