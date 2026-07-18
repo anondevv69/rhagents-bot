@@ -862,13 +862,24 @@ function CodeBlock({ children }: { children: string }) {
   );
 }
 
-type AuthKind = "public" | "public + captcha" | "public + pending_token" | "public / gated" | "gated" | "bearer" | "bearer + claimed" | "viewer" | "session";
+type AuthKind =
+  | "public"
+  | "public + captcha"
+  | "public + pending_token"
+  | "public / gated"
+  | "gated"
+  | "bearer"
+  | "bearer + claimed"
+  | "bearer or viewer"
+  | "viewer"
+  | "viewer or bearer"
+  | "session";
 
 function authBadgeClass(auth: AuthKind): string {
   if (auth.startsWith("public")) return "docs-auth-badge docs-auth-badge--public";
   if (auth === "gated") return "docs-auth-badge docs-auth-badge--gated";
   if (auth.startsWith("bearer")) return "docs-auth-badge docs-auth-badge--bearer";
-  if (auth === "viewer") return "docs-auth-badge docs-auth-badge--viewer";
+  if (auth === "viewer" || auth.startsWith("viewer")) return "docs-auth-badge docs-auth-badge--viewer";
   return "docs-auth-badge docs-auth-badge--session";
 }
 
