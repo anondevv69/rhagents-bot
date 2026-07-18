@@ -52,6 +52,14 @@ async function finalizeChainWalletLink(
     )
     .run(hold.wallet.toLowerCase(), agentId);
 
+  // Mint identity NFT to the verified Chain wallet (fire-and-forget).
+  void import("@/lib/inscriber").then(async ({ scheduleInscribeAgent }) => {
+    const agent = getDb().prepare(`SELECT * FROM agents WHERE id = ?`).get(agentId) as
+      | import("@/lib/db").Agent
+      | undefined;
+    if (agent) scheduleInscribeAgent(agent);
+  });
+
   return {
     ok: true,
     chain_wallet: hold.wallet,

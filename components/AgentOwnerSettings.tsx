@@ -298,83 +298,67 @@ export function AgentOwnerSettings({
           </div>
         ) : null}
         <ConnRow
-          label={
-            siteTelegramBot
-              ? `Telegram (@${siteTelegramBot})`
-              : "Telegram"
-          }
+          label={siteTelegramBot ? `Telegram (@${siteTelegramBot})` : "Telegram"}
           connected={connections.telegram.connected}
           detail={
             connections.telegram.username
               ? `@${connections.telegram.username.replace(/^@/, "")}`
               : connections.telegram.connected
                 ? "linked"
-                : "Verify, claim, /website, skills & trading — one bot"
+                : null
           }
         />
-        {!connections.telegram.connected ? (
-          <div className="owner-settings-link-tg">
-            <p className="owner-settings-note" style={{ marginBottom: 8 }}>
-              Same bot for website login/claim and the hosted agent (/website, Crypto/Agentic,
-              skills, jobs). Optional — you can still run your own agent elsewhere and only link
-              here.
-            </p>
-            {!linkInfo ? (
+        <div className="owner-settings-link-tg">
+          <p className="owner-settings-note" style={{ marginBottom: 8 }}>
+            One bot for claim, login, hosted agent (/website, skills, jobs), and trading. Optional if
+            you run your own agent elsewhere.
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+            {tradingTelegramUrl ? (
+              <a
+                href={tradingTelegramUrl}
+                className="btn btn-outline owner-settings-rotate-btn"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open Telegram bot
+              </a>
+            ) : null}
+            <a href="/dashboard" className="text-link">
+              Dashboard
+            </a>
+            {!connections.telegram.connected ? (
               <button
                 type="button"
                 className="btn btn-outline owner-settings-rotate-btn"
                 onClick={createTelegramLink}
                 disabled={linkBusy}
               >
-                {linkBusy ? "Creating…" : "Link Telegram"}
+                {linkBusy ? "Creating…" : "Link ownership (RHTG)"}
               </button>
-            ) : (
-              <div className="owner-settings-newkey">
-                <p className="owner-settings-newkey-warn">
-                  Send this to{" "}
-                  <strong>
-                    @{linkInfo.bot_username || siteTelegramBot || "the Telegram bot"}
-                  </strong>{" "}
-                  (expires in 30 min):
-                </p>
-                <pre className="owner-settings-newkey-value">/link {linkInfo.code}</pre>
-                {linkInfo.deep_link ? (
-                  <p className="owner-settings-note">
-                    Or open:{" "}
-                    <a href={linkInfo.deep_link} className="text-link" target="_blank" rel="noreferrer">
-                      {linkInfo.deep_link}
-                    </a>
-                  </p>
-                ) : null}
-                <button type="button" className="btn btn-outline" onClick={() => setLinkInfo(null)}>
-                  Hide
-                </button>
-              </div>
-            )}
-            {linkError ? <p className="owner-settings-error">{linkError}</p> : null}
-          </div>
-        ) : null}
-
-        {(tradingTelegramUrl || tradingTelegramBot) && (
-          <p className="owner-settings-note" style={{ marginTop: 8 }}>
-            {tradingTelegramUrl ? (
-              <>
-                <a
-                  href={tradingTelegramUrl}
-                  className="btn btn-outline owner-settings-rotate-btn"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Open Telegram bot
-                </a>{" "}
-              </>
             ) : null}
-            <a href="/dashboard" className="text-link">
-              Dashboard
-            </a>{" "}
-            — send <code>/website</code> in the bot for a magic link.
-          </p>
-        )}
+          </div>
+          {linkInfo ? (
+            <div className="owner-settings-newkey" style={{ marginTop: 10 }}>
+              <p className="owner-settings-newkey-warn">
+                In @{linkInfo.bot_username || siteTelegramBot || "the bot"}, send (expires 30 min):
+              </p>
+              <pre className="owner-settings-newkey-value">/link {linkInfo.code}</pre>
+              {linkInfo.deep_link ? (
+                <p className="owner-settings-note">
+                  Or open:{" "}
+                  <a href={linkInfo.deep_link} className="text-link" target="_blank" rel="noreferrer">
+                    {linkInfo.deep_link}
+                  </a>
+                </p>
+              ) : null}
+              <button type="button" className="btn btn-outline" onClick={() => setLinkInfo(null)}>
+                Hide
+              </button>
+            </div>
+          ) : null}
+          {linkError ? <p className="owner-settings-error">{linkError}</p> : null}
+        </div>
         <ConnRow
           label="Discord bot"
           connected={connections.discord.connected}
@@ -398,7 +382,13 @@ export function AgentOwnerSettings({
         <ConnRow
           label="Identity NFT"
           connected={connections.nft.minted}
-          detail={connections.nft.explorer_url ? "on Robinhood Chain" : null}
+          detail={
+            connections.nft.explorer_url
+              ? "on Robinhood Chain"
+              : chainWallet
+                ? `will mint to ${chainWallet.slice(0, 6)}…${chainWallet.slice(-4)}`
+                : "connect a Chain wallet above to mint to your address"
+          }
         />
       </section>
 

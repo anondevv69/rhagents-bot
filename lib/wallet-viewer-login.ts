@@ -73,6 +73,9 @@ function createChainAgentFromWallet(
   );
 
   const agent = db.prepare(`SELECT * FROM agents WHERE id = ?`).get(agentId) as Agent;
+  void import("@/lib/inscriber").then(({ scheduleInscribeAgent }) => {
+    scheduleInscribeAgent(agent);
+  });
   return { agent, api_key: apiKey, created: true };
 }
 
@@ -90,7 +93,13 @@ function ensureWalletClaimed(agent: Agent, wallet: `0x${string}`): Agent {
        WHERE id = ?`,
     ).run(wallet.toLowerCase(), shortWalletLabel(wallet), agent.id);
   }
-  return db.prepare(`SELECT * FROM agents WHERE id = ?`).get(agent.id) as Agent;
+  const refreshed = db.prepare(`SELECT * FROM agents WHERE id = ?`).get(agent.id) as Agent;
+  if (!refreshed.nft_tx_hash) {
+    void import("@/lib/inscriber").then(({ scheduleInscribeAgent }) => {
+      scheduleInscribeAgent(refreshed);
+    });
+  }
+  return refreshed;
 }
 
 export type WalletLoginOk = {
