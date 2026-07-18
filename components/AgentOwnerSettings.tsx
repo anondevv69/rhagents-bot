@@ -72,6 +72,15 @@ export function AgentOwnerSettings({
   );
   const [chainWallet, setChainWallet] = useState<string | null>(connections.chain_wallet);
   const [hasChain, setHasChain] = useState(connections.capabilities.chain);
+  const [bankrWallet, setBankrWallet] = useState<string | null>(connections.bankr_wallet);
+  const [bankrKeyInput, setBankrKeyInput] = useState("");
+  const [bankrBusy, setBankrBusy] = useState(false);
+  const [bankrError, setBankrError] = useState<string | null>(null);
+  const [nftMinted, setNftMinted] = useState(connections.nft.minted);
+  const [nftExplorer, setNftExplorer] = useState<string | null>(connections.nft.explorer_url);
+  const [nftBusy, setNftBusy] = useState(false);
+  const [nftError, setNftError] = useState<string | null>(null);
+  const [nftInfo, setNftInfo] = useState<string | null>(null);
 
   async function createTelegramLink() {
     setLinkBusy(true);
@@ -172,6 +181,68 @@ export function AgentOwnerSettings({
       setXLinkError("Network error — try again");
     } finally {
       setXVerifyBusy(false);
+    }
+  }
+
+  async function linkBankr() {
+    if (!bankrKeyInput.trim()) return;
+    setBankrBusy(true);
+    setBankrError(null);
+    try {
+      const res = await fetch("/api/agent/link-bankr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_id: agentId, bankr_api_key: bankrKeyInput.trim() }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        message?: string;
+        bankr_wallet?: string;
+      };
+      if (!res.ok || !data.ok || !data.bankr_wallet) {
+        setBankrError(data.message ?? data.error ?? "Could not link Bankr wallet");
+        return;
+      }
+      setBankrWallet(data.bankr_wallet);
+      setBankrKeyInput("");
+    } catch {
+      setBankrError("Network error — try again");
+    } finally {
+      setBankrBusy(false);
+    }
+  }
+
+  async function mintNftToVerifiedWallet() {
+    setNftBusy(true);
+    setNftError(null);
+    setNftInfo(null);
+    try {
+      const res = await fetch("/api/agent/mint-nft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_id: agentId }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        message?: string;
+        nft_tx_hash?: string;
+        nft_explorer_url?: string | null;
+        minted_to?: string;
+        already_minted?: boolean;
+      };
+      if (!res.ok || !data.ok) {
+        setNftError(data.message ?? data.error ?? "Could not mint identity NFT");
+        return;
+      }
+      setNftMinted(true);
+      if (data.nft_explorer_url) setNftExplorer(data.nft_explorer_url);
+      setNftInfo(data.message ?? "Identity NFT minted to your verified Chain wallet.");
+    } catch {
+      setNftError("Network error — try again");
+    } finally {
+      setNftBusy(false);
     }
   }
 
@@ -372,24 +443,58 @@ export function AgentOwnerSettings({
         />
         <ConnRow
           label="Bankr wallet on profile"
-          connected={Boolean(connections.bankr_wallet)}
+          connected={Boolean(bankrWallet)}
           detail={
-            connections.bankr_wallet
-              ? `${connections.bankr_wallet.slice(0, 6)}…${connections.bankr_wallet.slice(-4)}`
-              : "optional — only if bankr_api_key was sent at registration (not “I use Bankr”)"
+            bankrWallet
+              ? `${bankrWallet.slice(0, 6)}…${bankrWallet.slice(-4)}`
+              : "optional — link with your Bankr API key (never stored)"
           }
         />
+        {!bankrWallet ? (
+          <div className="owner-settings-link-tg" style={{ marginBottom: 12 }}>
+            <p className="owner-settings-note" style={{ marginBottom: 8 }}>
+              Paste your Bankr API key once to attach the Bankr EVM wallet to this agent. We resolve
+              the address via Bankr and discard the key.
+            </p>
+            <input
+              type="password"
+              className="input"
+              placeholder="Bankr API key"
+              value={bankrKeyInput}
+              onChange={(e) => setBankrKeyInput(e.target.value)}
+              disabled={bankrBusy}
+              autoComplete="off"
+              style={{ width: "100%", marginBottom: 8 }}
+            />
+            <button
+              type="button"
+              className="btn btn-outline owner-settings-rotate-btn"
+              onClick={() => void linkBankr()}
+              disabled={bankrBusy || !bankrKeyInput.trim()}
+            >
+              {bankrBusy ? "Linking…" : "Link Bankr wallet"}
+            </button>
+            {bankrError ? <p className="owner-settings-error">{bankrError}</p> : null}
+          </div>
+        ) : null}
         <ConnRow
           label="Identity NFT"
-          connected={connections.nft.minted}
+          connected={nftMinted}
           detail={
-            connections.nft.explorer_url
+            nftExplorer
               ? "on Robinhood Chain"
               : chainWallet
-                ? `will mint to ${chainWallet.slice(0, 6)}…${chainWallet.slice(-4)}`
-                : "connect a Chain wallet above to mint to your address"
+                ? `ready to mint to ${chainWallet.slice(0, 6)}…${chainWallet.slice(-4)}`
+                : "verify a Chain wallet below, then mint"
           }
         />
+        {nftExplorer ? (
+          <p className="owner-settings-note" style={{ marginTop: 4 }}>
+            <a href={nftExplorer} className="text-link" target="_blank" rel="noreferrer">
+              View mint tx
+            </a>
+          </p>
+        ) : null}
       </section>
 
       <section className="panel owner-settings-panel">
@@ -397,7 +502,7 @@ export function AgentOwnerSettings({
         <ChainWalletConnect
           currentWallet={chainWallet}
           hasChain={hasChain}
-          disabled={busy}
+          disabled={busy || nftBusy}
           onLinked={(wallet) => {
             setChainWallet(wallet);
             setHasChain(true);
@@ -417,6 +522,46 @@ export function AgentOwnerSettings({
             };
           }}
         />
+        <div style={{ marginTop: 16 }}>
+          <h3 className="owner-settings-heading" style={{ fontSize: "1rem" }}>
+            Identity NFT
+          </h3>
+          <p className="owner-settings-note">
+            When you have a verified Chain wallet, mint the soulbound identity NFT to that address
+            (preferred over Bankr). Already-minted agents stay as-is — NFTs are not transferable.
+          </p>
+          {nftMinted ? (
+            <p className="owner-settings-meta">
+              Minted
+              {nftExplorer ? (
+                <>
+                  {" · "}
+                  <a href={nftExplorer} className="text-link" target="_blank" rel="noreferrer">
+                    explorer
+                  </a>
+                </>
+              ) : null}
+              {chainWallet
+                ? ` · target ${chainWallet.slice(0, 6)}…${chainWallet.slice(-4)}`
+                : null}
+            </p>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => void mintNftToVerifiedWallet()}
+              disabled={nftBusy || !chainWallet}
+            >
+              {nftBusy
+                ? "Minting…"
+                : chainWallet
+                  ? `Mint identity NFT to ${chainWallet.slice(0, 6)}…${chainWallet.slice(-4)}`
+                  : "Verify a Chain wallet first"}
+            </button>
+          )}
+          {nftInfo ? <p className="owner-settings-note">{nftInfo}</p> : null}
+          {nftError ? <p className="owner-settings-error">{nftError}</p> : null}
+        </div>
       </section>
 
       <section className="panel owner-settings-panel">
