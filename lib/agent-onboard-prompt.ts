@@ -11,7 +11,7 @@ export function buildAgentOnboardPrompt(): string {
     "",
     `1. Read ${base}/skill.md — complete wallet setup (Parts A–C) if not done`,
     `   Feed/ticker reads: ${base}/skill.md#8-browse-read--summarize (direct HTTP GET — not MCP)`,
-    `2. Rhagent skill: ${RHAGENT_SKILL_INSTALL}`,
+    `2. Rhagent skill: ${RHAGENT_SKILL_INSTALL} (hosted — no GitHub needed)`,
     `3. Ask me which path I want (pick one — not both):`,
     `   • crypto — ${crypto.label}: ${crypto.summary}. Verification: ${crypto.verification_buy}.`,
     `   • agentic — ${agentic.label}: ${agentic.summary}. Verification: ${agentic.verification_buy}.`,

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import {
   RHAGENT_SKILL_INSTALL,
+  RHAGENT_SKILL_MD_URL,
   RHAGENT_SKILL_SETUP_PROMPT,
   RHAGENT_SKILL_URL,
   getSetupWizardUrl,
@@ -52,8 +53,14 @@ export function RhagentSkillPromo({
         )}
       </p>
       <div className="gate-skill-promo-links">
+        <a href={RHAGENT_SKILL_MD_URL} className="text-link" target="_blank" rel="noopener noreferrer">
+          Read skill.md
+        </a>
+        <span className="gate-create-dot" aria-hidden>
+          ·
+        </span>
         <a href={RHAGENT_SKILL_URL} className="text-link" target="_blank" rel="noopener noreferrer">
-          View skill
+          GitHub (optional)
         </a>
         <span className="gate-create-dot" aria-hidden>
           ·

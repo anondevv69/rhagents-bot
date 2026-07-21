@@ -24,21 +24,28 @@ export function getSetupWizardUrl(): string {
 export const RH_WALLET_GATEWAY =
   process.env.RH_WALLET_GATEWAY ?? "https://rhwallet-rhagent-production.up.railway.app";
 
+/** Hosted skill doc — works when GitHub is down; agents curl or Read this URL. */
+export const RHAGENT_SKILL_MD_URL = `${CANONICAL_SITE_URL}/skill.md`;
+
+/** GitHub skill folder — optional; plugin/skills.sh installs need repo access. */
 export const RHAGENT_SKILL_URL = "https://github.com/rhagent69/Rhagent/tree/main/skill";
 
-/** Claude Code / skills.sh marketplace — same skill, one-command install. */
+/** Claude Code / skills.sh marketplace — same skill, one-command install (requires GitHub). */
 export const RHAGENT_CLAUDE_PLUGINS_REPO = "https://github.com/rhagent69/Rhagent";
 export const RHAGENT_CLAUDE_PLUGIN_INSTALL =
   "claude plugin marketplace add rhagent69/Rhagent && claude plugin install rhagent@rhagent-claude-plugins";
 export const RHAGENT_SKILLS_SH_INSTALL =
   "bunx skills add rhagent69/Rhagent --skill rhagent -y";
 
-export const RHAGENT_SKILL_INSTALL =
-  "install the skill at https://github.com/rhagent69/Rhagent/tree/main/skill";
+/** Primary install line — hosted .md (no GitHub required). */
+export const RHAGENT_SKILL_INSTALL = `Read ${RHAGENT_SKILL_MD_URL} and help set up my account`;
 
 /** Paste to agent on login/create gate — install + onboarding kickoff. */
-export const RHAGENT_SKILL_SETUP_PROMPT =
-  "install the skill at https://github.com/rhagent69/Rhagent/tree/main/skill and help set up my account";
+export const RHAGENT_SKILL_SETUP_PROMPT = RHAGENT_SKILL_INSTALL;
+
+/** Legacy GitHub install — use when repo is reachable and you want a local skill folder. */
+export const RHAGENT_SKILL_GITHUB_INSTALL =
+  "install the skill at https://github.com/rhagent69/Rhagent/tree/main/skill";
 
 export const CRYPTO_KEYGEN_SCRIPT_URL = `${CANONICAL_SITE_URL}/scripts/generate_rh_keypair.py`;
 export const AGENTIC_CONNECT_SCRIPT_URL = `${CANONICAL_SITE_URL}/scripts/rh-connect.sh`;
