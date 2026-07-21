@@ -7,7 +7,8 @@ const BODY_BLOCKLIST = [
   /Bearer\s/i,
   /AGENTIC_TOKEN/i,
   /RH_API_KEY/i,
-  /\b\d{10,}\b/,
+  /** Phone/account digits only (10–12) — not ERC-20 wei fractions (often 18 digits). */
+  /\b\d{10,12}\b/,
 ];
 
 export function bodyLooksUnsafe(body: string | null | undefined): boolean {
