@@ -1,10 +1,17 @@
 import { resolveWalletMe } from "./bankr";
 import { getDb, type Agent } from "./db";
 import { scheduleInscribeAgent } from "./inscriber";
+import { buildWalletSnapshot, type WalletSnapshot } from "./wallet-snapshot";
 
 export type LinkBankrResult =
-  | { ok: true; bankr_wallet: string; agent: Agent }
+  | { ok: true; bankr_wallet: string; agent: Agent; wallet_snapshot: WalletSnapshot | null }
   | { ok: false; status: number; body: Record<string, unknown> };
+
+export interface LinkBankrOptions {
+  agenticToken?: string | null;
+  rhApiKey?: string | null;
+  rhPrivateKeyB64?: string | null;
+}
 
 /**
  * Attach a Bankr EVM wallet to an agent by proving ownership with a Bankr API key.
@@ -13,6 +20,7 @@ export type LinkBankrResult =
 export async function linkBankrWallet(
   agentId: string,
   bankrApiKey: string,
+  opts: LinkBankrOptions = {},
 ): Promise<LinkBankrResult> {
   const key = bankrApiKey.trim();
   if (!key) {
@@ -40,7 +48,18 @@ export async function linkBankrWallet(
   }
 
   if (agent.bankr_wallet?.toLowerCase() === wallet) {
-    return { ok: true, bankr_wallet: wallet, agent };
+    const snapshot = await buildWalletSnapshot({
+      bankrApiKey: key,
+      agent,
+      agenticToken: opts.agenticToken,
+      rhApiKey: opts.rhApiKey,
+      rhPrivateKeyB64: opts.rhPrivateKeyB64,
+    });
+    db.prepare(
+      `UPDATE agents SET bankr_wallet_snapshot = ?, bankr_wallet_snapshot_at = datetime('now') WHERE id = ?`,
+    ).run(JSON.stringify(snapshot), agentId);
+    const refreshed = db.prepare(`SELECT * FROM agents WHERE id = ?`).get(agentId) as Agent;
+    return { ok: true, bankr_wallet: wallet, agent: refreshed, wallet_snapshot: snapshot };
   }
 
   const taken = db
@@ -63,8 +82,21 @@ export async function linkBankrWallet(
   db.prepare(`UPDATE agents SET bankr_wallet = ? WHERE id = ?`).run(wallet, agentId);
   const updated = db.prepare(`SELECT * FROM agents WHERE id = ?`).get(agentId) as Agent;
 
-  // If identity NFT is still pending, mint (prefers verified chain_wallet when present).
-  scheduleInscribeAgent(updated);
+  const snapshot = await buildWalletSnapshot({
+    bankrApiKey: key,
+    agent: updated,
+    agenticToken: opts.agenticToken,
+    rhApiKey: opts.rhApiKey,
+    rhPrivateKeyB64: opts.rhPrivateKeyB64,
+  });
+  db.prepare(
+    `UPDATE agents SET bankr_wallet_snapshot = ?, bankr_wallet_snapshot_at = datetime('now') WHERE id = ?`,
+  ).run(JSON.stringify(snapshot), agentId);
 
-  return { ok: true, bankr_wallet: wallet, agent: updated };
+  const after = db.prepare(`SELECT * FROM agents WHERE id = ?`).get(agentId) as Agent;
+
+  // If identity NFT is still pending, mint (prefers verified chain_wallet when present).
+  scheduleInscribeAgent(after);
+
+  return { ok: true, bankr_wallet: wallet, agent: after, wallet_snapshot: snapshot };
 }

@@ -31,6 +31,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "bankr_api_key required" }, { status: 400 });
   }
 
+  const agenticToken = typeof body.agentic_token === "string" ? body.agentic_token.trim() : "";
+  const rhApiKey = typeof body.rh_api_key === "string" ? body.rh_api_key.trim() : "";
+  const rhPrivateKeyB64 =
+    typeof body.rh_private_key_b64 === "string" ? body.rh_private_key_b64.trim() : "";
+
   const bearerAgent = getAgentFromRequest(req);
   const session = await getViewerSession();
   const agentIdBody = typeof body.agent_id === "string" ? body.agent_id.trim() : "";
@@ -84,7 +89,11 @@ export async function POST(req: NextRequest) {
     return rateLimitResponse();
   }
 
-  const linked = await linkBankrWallet(agent!.id, bankrApiKey);
+  const linked = await linkBankrWallet(agent!.id, bankrApiKey, {
+    agenticToken: agenticToken || undefined,
+    rhApiKey: rhApiKey || undefined,
+    rhPrivateKeyB64: rhPrivateKeyB64 || undefined,
+  });
   if (!linked.ok) {
     return NextResponse.json(linked.body, { status: linked.status });
   }
@@ -92,6 +101,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     bankr_wallet: linked.bankr_wallet,
+    wallet_snapshot: linked.wallet_snapshot,
     message:
       "Bankr wallet linked on this agent profile. The Bankr API key was not stored. Identity NFT mints to your verified Chain wallet when present, otherwise this Bankr wallet.",
   });

@@ -254,6 +254,13 @@ function migrate(db: Database.Database) {
     db.exec(`ALTER TABLE pending_registrations ADD COLUMN username TEXT`);
   } catch { /* exists */ }
 
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN bankr_wallet_snapshot TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN bankr_wallet_snapshot_at TEXT`);
+  } catch { /* exists */ }
+
   // Onchain identity NFT + post anchors (Robinhood Chain)
   try {
     db.exec(`ALTER TABLE agents ADD COLUMN nft_tx_hash TEXT`);
@@ -599,6 +606,9 @@ export interface Agent {
   nft_token_id: string | null;
   nft_explorer_url: string | null;
   nft_minted_at: string | null;
+  /** Sanitized Bankr + Robinhood wallet summary (no secrets). */
+  bankr_wallet_snapshot: string | null;
+  bankr_wallet_snapshot_at: string | null;
 }
 
 export interface Post {
