@@ -2,7 +2,78 @@
 
 import { useState } from "react";
 import type { OwnerConnections } from "@/lib/agent-owner";
+import type { WalletSnapshot } from "@/lib/wallet-snapshot";
 import { ChainWalletConnect } from "@/components/ChainWalletConnect";
+
+function WalletSnapshotPanel({ snapshot }: { snapshot: WalletSnapshot }) {
+  const bp = snapshot.bankr_portfolio;
+  const rh = snapshot.robinhood;
+  return (
+    <div className="owner-settings-newkey" style={{ marginTop: 10 }}>
+      {bp ? (
+        <>
+          <p className="owner-settings-note" style={{ marginBottom: 6 }}>
+            <strong>Bankr on-chain</strong>
+            {bp.total_usd != null ? ` · ~$${bp.total_usd.toFixed(2)} total` : ""}
+            {bp.robinhood_chain_usd != null
+              ? ` · Robinhood Chain ~$${bp.robinhood_chain_usd.toFixed(2)}`
+              : ""}
+          </p>
+          {bp.top_holdings.length ? (
+            <ul className="owner-settings-note" style={{ margin: "0 0 8px", paddingLeft: 18 }}>
+              {bp.top_holdings.slice(0, 5).map((h) => (
+                <li key={`${h.symbol}-${h.chain ?? ""}`}>
+                  {h.symbol} ~${h.usd.toFixed(2)}
+                  {h.chain ? ` (${h.chain})` : ""}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </>
+      ) : (
+        <p className="owner-settings-note">Bankr portfolio unavailable — check API key permissions.</p>
+      )}
+      <p className="owner-settings-note" style={{ marginBottom: 4 }}>
+        <strong>Robinhood Agentic</strong> (stocks / RWA):{" "}
+        {rh.agentic.summary ??
+          (rh.agentic.registered
+            ? rh.agentic.configured_in_bankr
+              ? "registered · AGENTIC_TOKEN in Bankr — paste token below to show live balance"
+              : "registered · run rh-connect.sh in Bankr"
+            : "not verified on rhagent.bot")}
+        {rh.agentic.error ? ` (${rh.agentic.error})` : ""}
+      </p>
+      <p className="owner-settings-note" style={{ marginBottom: 4 }}>
+        <strong>Robinhood Crypto</strong>:{" "}
+        {rh.crypto.summary ??
+          (rh.crypto.registered
+            ? rh.crypto.configured_in_bankr
+              ? "registered · RH_API_KEY in Bankr — paste keys below for live balance"
+              : "registered · add crypto keys to Bankr env"
+            : "not verified on rhagent.bot")}
+        {rh.crypto.error ? ` (${rh.crypto.error})` : ""}
+      </p>
+      <p className="owner-settings-note">
+        <strong>Robinhood Chain</strong> (profile):{" "}
+        {rh.chain.wallet
+          ? `${rh.chain.wallet.slice(0, 6)}…${rh.chain.wallet.slice(-4)}${
+              rh.chain.rhagent_value_usd != null
+                ? ` · $rhagent ~$${rh.chain.rhagent_value_usd.toFixed(2)}`
+                : ""
+            }`
+          : rh.chain.registered
+            ? "verified (wallet not linked here)"
+            : "not verified"}
+      </p>
+      <p className="owner-settings-note muted" style={{ marginTop: 8, marginBottom: 0 }}>
+        Updated {new Date(snapshot.fetched_at).toLocaleString()}
+        {snapshot.bankr_env_keys.length
+          ? ` · Bankr env: ${snapshot.bankr_env_keys.slice(0, 6).join(", ")}${snapshot.bankr_env_keys.length > 6 ? "…" : ""}`
+          : ""}
+      </p>
+    </div>
+  );
+}
 
 function ConnRow({
   label,
@@ -76,6 +147,12 @@ export function AgentOwnerSettings({
   const [bankrKeyInput, setBankrKeyInput] = useState("");
   const [bankrBusy, setBankrBusy] = useState(false);
   const [bankrError, setBankrError] = useState<string | null>(null);
+  const [walletSnapshot, setWalletSnapshot] = useState<WalletSnapshot | null>(
+    connections.wallet_snapshot,
+  );
+  const [agenticTokenInput, setAgenticTokenInput] = useState("");
+  const [rhApiKeyInput, setRhApiKeyInput] = useState("");
+  const [rhPrivateKeyInput, setRhPrivateKeyInput] = useState("");
   const [nftMinted, setNftMinted] = useState(connections.nft.minted);
   const [nftExplorer, setNftExplorer] = useState<string | null>(connections.nft.explorer_url);
   const [nftBusy, setNftBusy] = useState(false);
@@ -192,20 +269,31 @@ export function AgentOwnerSettings({
       const res = await fetch("/api/agent/link-bankr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agent_id: agentId, bankr_api_key: bankrKeyInput.trim() }),
+        body: JSON.stringify({
+          agent_id: agentId,
+          bankr_api_key: bankrKeyInput.trim(),
+          agentic_token: agenticTokenInput.trim() || undefined,
+          rh_api_key: rhApiKeyInput.trim() || undefined,
+          rh_private_key_b64: rhPrivateKeyInput.trim() || undefined,
+        }),
       });
       const data = (await res.json()) as {
         ok?: boolean;
         error?: string;
         message?: string;
         bankr_wallet?: string;
+        wallet_snapshot?: WalletSnapshot;
       };
       if (!res.ok || !data.ok || !data.bankr_wallet) {
         setBankrError(data.message ?? data.error ?? "Could not link Bankr wallet");
         return;
       }
       setBankrWallet(data.bankr_wallet);
+      if (data.wallet_snapshot) setWalletSnapshot(data.wallet_snapshot);
       setBankrKeyInput("");
+      setAgenticTokenInput("");
+      setRhApiKeyInput("");
+      setRhPrivateKeyInput("");
     } catch {
       setBankrError("Network error — try again");
     } finally {
@@ -453,15 +541,46 @@ export function AgentOwnerSettings({
         {!bankrWallet ? (
           <div className="owner-settings-link-tg" style={{ marginBottom: 12 }}>
             <p className="owner-settings-note" style={{ marginBottom: 8 }}>
-              Paste your Bankr API key once to attach the Bankr EVM wallet to this agent. We resolve
-              the address via Bankr and discard the key.
+              Paste your Bankr API key to attach the Bankr wallet and load portfolio balances. Keys
+              are never stored. Optional: add Agentic or Crypto creds once to show Robinhood App
+              balances (stocks/RWA + crypto).
             </p>
             <input
               type="password"
               className="input"
-              placeholder="Bankr API key"
+              placeholder="Bankr API key (required)"
               value={bankrKeyInput}
               onChange={(e) => setBankrKeyInput(e.target.value)}
+              disabled={bankrBusy}
+              autoComplete="off"
+              style={{ width: "100%", marginBottom: 8 }}
+            />
+            <input
+              type="password"
+              className="input"
+              placeholder="AGENTIC_TOKEN (optional — stocks/RWA live balance)"
+              value={agenticTokenInput}
+              onChange={(e) => setAgenticTokenInput(e.target.value)}
+              disabled={bankrBusy}
+              autoComplete="off"
+              style={{ width: "100%", marginBottom: 8 }}
+            />
+            <input
+              type="password"
+              className="input"
+              placeholder="RH_API_KEY (optional — crypto live balance)"
+              value={rhApiKeyInput}
+              onChange={(e) => setRhApiKeyInput(e.target.value)}
+              disabled={bankrBusy}
+              autoComplete="off"
+              style={{ width: "100%", marginBottom: 8 }}
+            />
+            <input
+              type="password"
+              className="input"
+              placeholder="RH_PRIVATE_KEY_BASE64 (optional)"
+              value={rhPrivateKeyInput}
+              onChange={(e) => setRhPrivateKeyInput(e.target.value)}
               disabled={bankrBusy}
               autoComplete="off"
               style={{ width: "100%", marginBottom: 8 }}
@@ -472,11 +591,75 @@ export function AgentOwnerSettings({
               onClick={() => void linkBankr()}
               disabled={bankrBusy || !bankrKeyInput.trim()}
             >
-              {bankrBusy ? "Linking…" : "Link Bankr wallet"}
+              {bankrBusy ? "Linking…" : "Link Bankr wallet & load balances"}
             </button>
             {bankrError ? <p className="owner-settings-error">{bankrError}</p> : null}
           </div>
-        ) : null}
+        ) : (
+          <div className="owner-settings-link-tg" style={{ marginBottom: 12 }}>
+            {walletSnapshot ? <WalletSnapshotPanel snapshot={walletSnapshot} /> : (
+              <p className="owner-settings-note">
+                Linked — refresh with your Bankr API key to load portfolio balances.
+              </p>
+            )}
+            <details style={{ marginTop: 10 }}>
+              <summary className="owner-settings-note text-link" style={{ cursor: "pointer" }}>
+                Refresh balances
+              </summary>
+              <div style={{ marginTop: 8 }}>
+                <input
+                  type="password"
+                  className="input"
+                  placeholder="Bankr API key"
+                  value={bankrKeyInput}
+                  onChange={(e) => setBankrKeyInput(e.target.value)}
+                  disabled={bankrBusy}
+                  autoComplete="off"
+                  style={{ width: "100%", marginBottom: 8 }}
+                />
+                <input
+                  type="password"
+                  className="input"
+                  placeholder="AGENTIC_TOKEN (optional)"
+                  value={agenticTokenInput}
+                  onChange={(e) => setAgenticTokenInput(e.target.value)}
+                  disabled={bankrBusy}
+                  autoComplete="off"
+                  style={{ width: "100%", marginBottom: 8 }}
+                />
+                <input
+                  type="password"
+                  className="input"
+                  placeholder="RH_API_KEY (optional)"
+                  value={rhApiKeyInput}
+                  onChange={(e) => setRhApiKeyInput(e.target.value)}
+                  disabled={bankrBusy}
+                  autoComplete="off"
+                  style={{ width: "100%", marginBottom: 8 }}
+                />
+                <input
+                  type="password"
+                  className="input"
+                  placeholder="RH_PRIVATE_KEY_BASE64 (optional)"
+                  value={rhPrivateKeyInput}
+                  onChange={(e) => setRhPrivateKeyInput(e.target.value)}
+                  disabled={bankrBusy}
+                  autoComplete="off"
+                  style={{ width: "100%", marginBottom: 8 }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline owner-settings-rotate-btn"
+                  onClick={() => void linkBankr()}
+                  disabled={bankrBusy || !bankrKeyInput.trim()}
+                >
+                  {bankrBusy ? "Refreshing…" : "Refresh snapshot"}
+                </button>
+              </div>
+            </details>
+            {bankrError ? <p className="owner-settings-error">{bankrError}</p> : null}
+          </div>
+        )}
         <ConnRow
           label="Identity NFT"
           connected={nftMinted}

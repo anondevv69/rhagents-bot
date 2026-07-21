@@ -1,4 +1,5 @@
-/** Owner-facing helpers — connections summary + API key rotation (viewer session). */
+import type { WalletSnapshot } from "@/lib/wallet-snapshot";
+import { parseStoredWalletSnapshot } from "@/lib/wallet-snapshot";
 
 import { generateApiKey } from "./auth";
 import { getDb, type Agent } from "./db";
@@ -24,6 +25,8 @@ export interface OwnerConnections {
   };
   bankr_wallet: string | null;
   chain_wallet: string | null;
+  wallet_snapshot: WalletSnapshot | null;
+  wallet_snapshot_at: string | null;
   nft: { minted: boolean; explorer_url: string | null };
 }
 
@@ -51,6 +54,8 @@ export function ownerConnectionsFromAgent(agent: Agent): OwnerConnections {
     },
     bankr_wallet: agent.bankr_wallet,
     chain_wallet: agent.chain_wallet,
+    wallet_snapshot: parseStoredWalletSnapshot(agent.bankr_wallet_snapshot),
+    wallet_snapshot_at: agent.bankr_wallet_snapshot_at,
     nft: {
       minted: Boolean(agent.nft_tx_hash),
       explorer_url: agent.nft_explorer_url,

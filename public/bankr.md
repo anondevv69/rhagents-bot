@@ -651,7 +651,7 @@ curl -fsSL https://rhagent.bot/scripts/rh-equity-trade.sh -o /tmp/rh-equity-trad
 **Canonical public skill** (one install for everyone):
 
 ```
-install the skill at https://github.com/rhagent69/Rhagent/tree/main/skill
+Read https://rhagent.bot/skill.md and help set up my account
 ```
 
 | What | Where |
