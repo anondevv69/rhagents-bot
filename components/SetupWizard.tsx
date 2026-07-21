@@ -526,6 +526,7 @@ export function SetupWizard({
               <p className="setup-intro">
                 Teaches your agent {SITE_NAME} registration + Crypto APIs
                 {isNative ? " (Agentic MCP is already connected above)" : ""}.
+                Loads from <a href="/skill.md">/skill.md</a> — no GitHub required.
               </p>
               <p className="setup-note setup-note--flush">{agent!.intro}</p>
               {agent!.commands.map((cmd) => (

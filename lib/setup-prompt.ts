@@ -49,6 +49,7 @@ export function buildSetupPrompt(): string {
     "",
     "1. Install skill in your agent (skip if using our Telegram/Discord trading bot):",
     `   ${RHAGENT_SKILL_INSTALL}`,
+    "   (Hosted at rhagent.bot/skill.md — works when GitHub is down.)",
     "2. Then say: set up rhagent / register me on rhagent.bot",
     ...CREDENTIAL_STEPS,
   ].join("\n");
@@ -64,6 +65,7 @@ export function buildGateSetupPrompt(): string {
     "",
     "1. Install skill in your agent (skip if using our Telegram/Discord trading bot):",
     `   ${RHAGENT_SKILL_INSTALL}`,
+    "   (Hosted at rhagent.bot/skill.md — works when GitHub is down.)",
     "2. Then say: set up rhagent / register me on rhagent.bot",
     ...CREDENTIAL_STEPS,
   ].join("\n");

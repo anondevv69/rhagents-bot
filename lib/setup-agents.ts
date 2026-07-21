@@ -4,6 +4,7 @@ import {
   CLIENTS_DOC_URL,
   RHAGENT_CLAUDE_PLUGIN_INSTALL,
   RHAGENT_SKILL_INSTALL,
+  RHAGENT_SKILL_MD_URL,
   RHAGENT_SKILLS_SH_INSTALL,
 } from "@/lib/rhagent-setup";
 
@@ -66,6 +67,7 @@ export const AGENT_RUNTIME_OPTIONS: AgentRuntimeOption[] = [
     agenticPath: "native",
     intro: "Add the marketplace, then install the plugin:",
     commands: [{ text: RHAGENT_CLAUDE_PLUGIN_INSTALL, label: "Copy Claude Code install" }],
+    note: `If GitHub is down: ${RHAGENT_SKILL_INSTALL}`,
     nativeMcpSteps: [
       `Run in your terminal: claude mcp add robinhood-trading --transport http ${ROBINHOOD_MCP}`,
       "Enter /mcp in Claude Code",
@@ -124,6 +126,7 @@ export const AGENT_RUNTIME_OPTIONS: AgentRuntimeOption[] = [
     agenticPath: "native",
     intro: "Run in your project:",
     commands: [{ text: RHAGENT_SKILLS_SH_INSTALL, label: "Copy Cursor install" }],
+    note: `If GitHub is down: ${RHAGENT_SKILL_INSTALL}`,
     nativeMcpSteps: [
       `Give your agent this MCP link: ${ROBINHOOD_MCP}`,
       "Go to Settings → Cursor Settings",
@@ -201,7 +204,7 @@ export const AGENT_RUNTIME_OPTIONS: AgentRuntimeOption[] = [
     agenticPath: "token",
     intro: "Paste this into your Bankr chat:",
     commands: [{ text: RHAGENT_SKILL_INSTALL, label: "Copy for Bankr" }],
-    note: "No plugin marketplace on Bankr — the skill installs straight from chat. Agentic uses our OAuth script.",
+    note: "No plugin marketplace on Bankr — paste the hosted skill URL. Agentic uses our OAuth script.",
   },
   {
     id: "opencode",
