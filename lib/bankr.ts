@@ -122,22 +122,26 @@ export function summarizeBankrPortfolio(raw: unknown): BankrPortfolioSummary {
   };
 }
 
-/** Read-only Bankr on-chain portfolio (key used ephemerally — never stored). */
-export async function fetchBankrPortfolio(bankrApiKey: string): Promise<BankrPortfolioSummary | null> {
+/** Read-only Bankr portfolio — Robinhood Chain only (default for rhagent.bot link flow). */
+export async function fetchBankrRobinhoodChainPortfolio(
+  bankrApiKey: string,
+): Promise<BankrPortfolioSummary | null> {
   try {
-    const res = await fetch(
-      `${BANKR_API}/wallet/portfolio?chains=robinhood,base,ethereum,polygon,arbitrum`,
-      {
-        headers: { "X-API-Key": bankrApiKey },
-        signal: AbortSignal.timeout(12000),
-      },
-    );
+    const res = await fetch(`${BANKR_API}/wallet/portfolio?chains=robinhood`, {
+      headers: { "X-API-Key": bankrApiKey },
+      signal: AbortSignal.timeout(12000),
+    });
     if (!res.ok) return null;
     const data = await res.json();
     return summarizeBankrPortfolio(data);
   } catch {
     return null;
   }
+}
+
+/** @deprecated Prefer fetchBankrRobinhoodChainPortfolio for owner settings. */
+export async function fetchBankrPortfolio(bankrApiKey: string): Promise<BankrPortfolioSummary | null> {
+  return fetchBankrRobinhoodChainPortfolio(bankrApiKey);
 }
 
 /** Resolve an X handle from a Bankr EVM wallet address */

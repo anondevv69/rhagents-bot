@@ -1,20 +1,21 @@
 import type { Agent } from "@/lib/db";
+import { listBankrEnvKeys } from "@/lib/bankr";
 import {
-  fetchBankrPortfolio,
-  listBankrEnvKeys,
-  type BankrPortfolioSummary,
-} from "@/lib/bankr";
+  buildRobinhoodChainWalletView,
+  type RobinhoodChainWalletView,
+} from "@/lib/robinhood-chain-balance";
 import {
   fetchAgenticBalanceSummary,
   fetchCryptoBalanceSummary,
 } from "@/lib/capability-balances";
-import { checkRhagentHoldings } from "@/lib/rhagent-holdings";
 
 export interface WalletSnapshot {
   fetched_at: string;
-  bankr_portfolio: BankrPortfolioSummary | null;
+  /** Primary view — Robinhood Chain wallet tied to Bankr. */
+  robinhood_chain: RobinhoodChainWalletView | null;
   bankr_env_keys: string[];
-  robinhood: {
+  /** Optional Robinhood App products — only when owner pasted extra creds. */
+  robinhood_app?: {
     agentic: {
       registered: boolean;
       configured_in_bankr: boolean;
@@ -30,13 +31,13 @@ export interface WalletSnapshot {
       summary: string | null;
       error: string | null;
     };
-    chain: {
-      registered: boolean;
-      wallet: string | null;
-      rhagent_value_usd: number | null;
-      passed_gate: boolean;
-    };
   };
+}
+
+/** @deprecated Legacy snapshot field — use robinhood_chain. */
+export interface WalletSnapshotLegacy extends WalletSnapshot {
+  bankr_portfolio?: unknown;
+  robinhood?: WalletSnapshot["robinhood_app"];
 }
 
 export interface WalletSnapshotInput {
@@ -53,7 +54,11 @@ export async function buildWalletSnapshot(input: WalletSnapshotInput): Promise<W
   const { bankrApiKey, agent } = input;
   const envKeys = await listBankrEnvKeys(bankrApiKey);
   const envSet = new Set(envKeys.map((k) => k.toUpperCase()));
-  const bankrPortfolio = await fetchBankrPortfolio(bankrApiKey);
+
+  const walletForChain = agent.bankr_wallet ?? null;
+  const robinhood_chain = walletForChain
+    ? await buildRobinhoodChainWalletView(walletForChain, bankrApiKey)
+    : null;
 
   let agenticLive: Awaited<ReturnType<typeof fetchAgenticBalanceSummary>> | null = null;
   const agenticToken = input.agenticToken?.trim();
@@ -68,45 +73,35 @@ export async function buildWalletSnapshot(input: WalletSnapshotInput): Promise<W
     cryptoLive = await fetchCryptoBalanceSummary(rhKey, rhPk);
   }
 
-  let chainHold: Awaited<ReturnType<typeof checkRhagentHoldings>> | null = null;
-  if (agent.chain_wallet) {
-    try {
-      chainHold = await checkRhagentHoldings(agent.chain_wallet);
-    } catch {
-      chainHold = null;
-    }
-  }
-
   const agenticConfigured = envSet.has("AGENTIC_TOKEN");
   const cryptoConfigured = envSet.has("RH_API_KEY");
+  const showAppSection = Boolean(agenticToken || (rhKey && rhPk));
 
   return {
     fetched_at: new Date().toISOString(),
-    bankr_portfolio: bankrPortfolio,
+    robinhood_chain,
     bankr_env_keys: envKeys.sort(),
-    robinhood: {
-      agentic: {
-        registered: !!agent.has_agentic,
-        configured_in_bankr: agenticConfigured,
-        portfolio_usd: agenticLive?.portfolio_usd ?? null,
-        buying_power_usd: agenticLive?.buying_power_usd ?? null,
-        summary: agenticLive?.summary ?? null,
-        error: agenticLive?.error ?? null,
-      },
-      crypto: {
-        registered: !!agent.has_crypto,
-        configured_in_bankr: cryptoConfigured,
-        buying_power_usd: cryptoLive?.buying_power_usd ?? null,
-        summary: cryptoLive?.summary ?? null,
-        error: cryptoLive?.error ?? null,
-      },
-      chain: {
-        registered: !!agent.has_chain,
-        wallet: agent.chain_wallet,
-        rhagent_value_usd: chainHold?.ok ? chainHold.value_usd : null,
-        passed_gate: chainHold?.ok ? chainHold.passed_via != null : false,
-      },
-    },
+    ...(showAppSection
+      ? {
+          robinhood_app: {
+            agentic: {
+              registered: !!agent.has_agentic,
+              configured_in_bankr: agenticConfigured,
+              portfolio_usd: agenticLive?.portfolio_usd ?? null,
+              buying_power_usd: agenticLive?.buying_power_usd ?? null,
+              summary: agenticLive?.summary ?? null,
+              error: agenticLive?.error ?? null,
+            },
+            crypto: {
+              registered: !!agent.has_crypto,
+              configured_in_bankr: cryptoConfigured,
+              buying_power_usd: cryptoLive?.buying_power_usd ?? null,
+              summary: cryptoLive?.summary ?? null,
+              error: cryptoLive?.error ?? null,
+            },
+          },
+        }
+      : {}),
   };
 }
 
