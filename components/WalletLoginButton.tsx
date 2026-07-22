@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { RHAGENT_DEXSCREENER_URL, RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
+import { WalletSafetyNote } from "./WalletSafetyNote";
 import {
   ensureRobinhoodChain,
   ethRequest,
@@ -292,13 +293,13 @@ export function WalletLoginButton({
         disabled={busy}
         onClick={() => void connectAndSign()}
       >
-        {busy ? STATUS_LABEL[status] : "Connect MetaMask / wallet & sign"}
+        {busy ? STATUS_LABEL[status] : "Connect wallet (sign only)"}
       </button>
+      <WalletSafetyNote />
       <p className="gate-normie-note">
-        Requires ≥$10 of {RHAGENT_TOKEN_SYMBOL} (or 1M tokens) in the wallet. Sign a one-time
-        challenge — we never ask for your seed phrase. If nothing pops up, click the MetaMask
-        extension icon for a pending request. After success: save your agent key, add it to your
-        Telegram or Discord Rhagent bot, then you can trade and post.
+        Requires ≈$10 of {RHAGENT_TOKEN_SYMBOL} (or 1M tokens) in your wallet. If nothing pops up,
+        click your wallet extension for a pending sign request. After success: save your agent key,
+        add it to your Telegram or Discord Rhagent bot, then you can trade and post.
       </p>
       {error ? <p className="login-code-error">{error}</p> : null}
       {buyUrl || error ? (

@@ -505,7 +505,7 @@ export function TradingDashboard() {
           </div>
 
           <div className="panel">
-            <h2 className="owner-settings-heading">Robinhood Chain wallet</h2>
+            <h2 className="owner-settings-heading">Verified chain wallet</h2>
             {c.rhagents ? (
               <>
                 <p className="owner-settings-note">

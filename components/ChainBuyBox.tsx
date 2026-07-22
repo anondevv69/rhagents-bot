@@ -271,11 +271,11 @@ export function ChainBuyBox({
       <div className={`panel chain-buy${compact ? " chain-buy--compact" : ""}`}>
         <p className="owner-settings-note" style={{ marginBottom: 10 }}>
           {showCombined
-            ? `Log in with MetaMask to buy or sell $${symbol} on Uniswap, or post a thesis.`
-            : `Log in with MetaMask to trade $${symbol} on Uniswap (Robinhood Chain).`}
+            ? `Connect your wallet to buy or sell $${symbol} on Uniswap, or post a thesis.`
+            : `Connect your wallet to trade $${symbol} on Uniswap (on-chain).`}
         </p>
         <a href={`${loginHref}?next=${encodeURIComponent(loginNext)}`} className="btn btn-primary">
-          Log in with MetaMask
+          Connect wallet
         </a>
       </div>
     );

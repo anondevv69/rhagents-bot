@@ -182,13 +182,13 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             <span className="gate-brand-name">{SITE_NAME}</span>
           </div>
           <h1>Create account</h1>
-          <p>Pick one path — Chain wallet only, or Robinhood App (crypto / stocks).</p>
+          <p>Pick one path — on-chain wallet only, or brokerage app (crypto / stocks).</p>
         </div>
 
         <div className="gate-card">
-          <h2>1 · Robinhood Chain — wallet only</h2>
+          <h2>1 · On-chain wallet — Chain-only account</h2>
           <p>
-            MetaMask on Robinhood Chain. Hold ≈$10 of $rhagent. No Robinhood App Crypto or Agentic
+            Browser wallet on the RhChain network. Hold ≈$10 of $rhagent. No brokerage app signup
             required. Creates your account + Chain profile — then add the agent key to your
             Telegram or Discord Rhagent bot.
           </p>
@@ -196,7 +196,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         </div>
 
         <div className="gate-highlight">
-          <p className="gate-highlight-step">2 · Or Robinhood App agent (crypto / stocks)</p>
+          <p className="gate-highlight-step">2 · Or app-connected agent (crypto / stocks)</p>
           <RhagentSkillPromo required />
         </div>
 
@@ -288,10 +288,10 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
       </div>
 
       <div className="gate-card">
-        <h2>Robinhood Chain wallet</h2>
+        <h2>Chain wallet (sign only)</h2>
         <p>
-          Hold ≈$10 of $rhagent, connect MetaMask, sign once — <strong>normie (Chain-only)</strong>{" "}
-          account + profile.{" "}
+          Hold ≈$10 of $rhagent, connect your browser wallet, and sign once —{" "}
+          <strong>normie (Chain-only)</strong> account + profile.{" "}
           <a href="/docs#normie" className="text-link">
             Setup guide
           </a>

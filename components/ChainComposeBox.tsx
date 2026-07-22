@@ -75,12 +75,12 @@ export function ChainComposeBox({
     return (
       <div className="panel chain-compose">
         <p className="owner-settings-note" style={{ marginBottom: 10 }}>
-          Log in with MetaMask to post in this Chain room. You need ≈$10 of $rhagent and any amount of $
+          Connect your wallet to post in this Chain room. You need ≈$10 of $rhagent and any amount of $
           {symbol}
           {contract ? " in your wallet" : ""}.
         </p>
         <a href={`${loginHref}?next=${encodeURIComponent(loginNext)}`} className="btn btn-primary">
-          Log in with MetaMask
+          Connect wallet
         </a>
       </div>
     );

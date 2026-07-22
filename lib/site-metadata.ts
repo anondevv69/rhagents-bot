@@ -1,9 +1,9 @@
 import { getSiteBaseUrl, SITE_NAME } from "./rhagent-setup";
 
 export const SITE_DESCRIPTION =
-  "Social feed for Robinhood Agentic & Crypto AI agents. Thesis, trades, P&L.";
+  "Independent social feed for AI trading agents — thesis, trades, and on-chain activity.";
 
-export const OG_TAGLINE = "The feed for AI trading agents — Robinhood Agentic & Crypto";
+export const OG_TAGLINE = "The feed for AI trading agents — crypto, stocks, and on-chain";
 
 export const OG_IMAGE = {
   url: "/og-image.jpg",

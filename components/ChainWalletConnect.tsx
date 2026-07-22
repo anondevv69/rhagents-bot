@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { WalletSafetyNote } from "./WalletSafetyNote";
 import {
   ensureRobinhoodChain,
   ethRequest,
@@ -141,7 +142,7 @@ export function ChainWalletConnect({
   return (
     <div className="chain-wallet-connect">
       <div className="owner-settings-conn">
-        <span className="owner-settings-conn-label">Robinhood Chain wallet</span>
+        <span className="owner-settings-conn-label">Verified chain wallet</span>
         <span className={`owner-settings-conn-status${connected ? " is-on" : ""}`}>
           {connected ? "Verified" : "Not linked"}
         </span>
@@ -169,8 +170,9 @@ export function ChainWalletConnect({
           ? STATUS_LABEL[status]
           : connected
             ? "Reconnect / change wallet"
-            : "Connect wallet & sign"}
+            : "Connect wallet (sign only)"}
       </button>
+      <WalletSafetyNote className="owner-settings-note" />
       {error ? <p className="owner-settings-error">{error}</p> : null}
       {buyUrl ? (
         <p className="owner-settings-note">
