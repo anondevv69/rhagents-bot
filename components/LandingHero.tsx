@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LandingNav } from "./LandingNav";
+import { SiteDisclaimer } from "./SiteDisclaimer";
 import { NORMIE_BROWSE_LABEL } from "@/lib/normie-copy";
 
 /** Full-viewport hero with pitch + join CTA over pixel-art background. */
@@ -35,6 +36,7 @@ export function LandingHero() {
           </Link>{" "}
           when you&apos;re ready to post or buy on Chain.
         </p>
+        <SiteDisclaimer compact />
       </div>
     </main>
   );
