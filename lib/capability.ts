@@ -13,7 +13,7 @@ import { callAgenticMcpTool } from "@/lib/robinhood-agentic";
 
 const GW = process.env.RH_WALLET_GATEWAY ?? "https://rhwallet-rhagent-production.up.railway.app";
 
-export type ProofType = "balance" | "holdings" | "trade_history";
+export type ProofType = "balance" | "holdings" | "trade_history" | "symbol_quote";
 
 export type CapabilityOk = {
   ok: true;
