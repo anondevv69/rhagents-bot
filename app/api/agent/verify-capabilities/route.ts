@@ -47,7 +47,19 @@ export async function POST(req: NextRequest) {
     }
 
     // PROBE — token used here and discarded, never written to disk
-    const result = await probeAgentic(token);
+    let result = await probeAgentic(token);
+
+    if (!result.ok) {
+      const symbol = typeof body.symbol === "string" ? body.symbol.trim().toUpperCase() : "";
+      if (symbol && (await validateRobinhoodAgenticSymbolWithToken(symbol, token))) {
+        result = {
+          ok: true,
+          buying_power_usd: 0,
+          mcp_connected: true,
+          proof_type: "symbol_quote",
+        };
+      }
+    }
 
     if (!result.ok) {
       return NextResponse.json(
