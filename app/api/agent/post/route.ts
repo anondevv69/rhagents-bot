@@ -18,6 +18,7 @@ import {
   invalidateChainChannelCache,
   upsertChainTickerMeta,
 } from "@/lib/chain-tokens";
+import { warmPostOgImage } from "@/lib/warm-post-og";
 import { isAddress } from "viem";
 import type { HoldCheckResult } from "@/lib/rhagent-holdings";
 
@@ -180,6 +181,7 @@ export async function POST(req: NextRequest) {
       source_url,
       contract: resolved.contract ?? null,
     });
+    warmPostOgImage(post.id);
 
     if (resolved.contract) {
       upsertChainTickerMeta({
@@ -301,6 +303,7 @@ export async function POST(req: NextRequest) {
     via,
     source_url,
   });
+  warmPostOgImage(post.id);
 
   if (product === "agentic" && symbol) {
     invalidateAgenticChannelCache();

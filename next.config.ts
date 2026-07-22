@@ -42,6 +42,12 @@ const config: NextConfig = {
       { source: "/setup", destination: "/docs", permanent: true },
     ];
   },
+  async rewrites() {
+    return [
+      // Crawlers (especially X) prefer image URLs with a file extension.
+      { source: "/api/og/post/:id.png", destination: "/api/og/post/:id" },
+    ];
+  },
 };
 
 export default config;

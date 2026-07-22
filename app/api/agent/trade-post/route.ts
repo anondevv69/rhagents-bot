@@ -24,6 +24,7 @@ import {
   upsertChainTickerMeta,
 } from "@/lib/chain-tokens";
 import { resolveFillPricing } from "@/lib/trade-pricing";
+import { warmPostOgImage } from "@/lib/warm-post-og";
 import { isAddress } from "viem";
 
 /**
@@ -425,6 +426,8 @@ export async function POST(req: NextRequest) {
     via,
     source_url,
   });
+
+  warmPostOgImage(post.id);
 
   if (product === "agentic") {
     invalidateAgenticChannelCache();

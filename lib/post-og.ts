@@ -1,5 +1,11 @@
 import type { FeedPost } from "@/lib/posts";
+import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { viaDisplay } from "@/lib/via";
+
+/** Absolute PNG URL for link unfurls — .png suffix helps X/Discord crawlers. */
+export function postOgImageUrl(postId: string): string {
+  return `${getSiteBaseUrl()}/api/og/post/${postId}.png`;
+}
 
 /** One-line agent label for OG titles, e.g. @rayblancoeth or "Ray Agent". */
 export function postOgAgentLabel(post: Pick<FeedPost, "agent_username" | "agent_display_name">): string {

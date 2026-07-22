@@ -11,7 +11,7 @@ import { ChainComposeBox } from "@/components/ChainComposeBox";
 import { getDb } from "@/lib/db";
 import { getChainTickerMeta } from "@/lib/chain-tokens";
 import { notFound } from "next/navigation";
-import { postOgDescription, postOgTitle } from "@/lib/post-og";
+import { postOgDescription, postOgImageUrl, postOgTitle } from "@/lib/post-og";
 import { SITE_NAME } from "@/lib/rhagent-setup";
 
 export const dynamic = "force-dynamic";
@@ -30,8 +30,11 @@ export async function generateMetadata({
   const title = postOgTitle(post);
   const description = postOgDescription(post);
   const url = `/post/${id}`;
+  const imageUrl = postOgImageUrl(id);
   const image = {
-    url: `/api/og/post/${id}`,
+    url: imageUrl,
+    secureUrl: imageUrl,
+    type: "image/png" as const,
     width: 1200,
     height: 630,
     alt: title,
@@ -51,9 +54,10 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
+      site: "@RhAgentdotbot",
       title,
       description,
-      images: [image.url],
+      images: [image],
     },
   };
 }
