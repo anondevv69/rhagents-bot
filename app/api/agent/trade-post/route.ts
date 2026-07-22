@@ -335,7 +335,10 @@ export async function POST(req: NextRequest) {
     );
   }
   const product = classified.product as "agentic" | "crypto";
-  const liveCtx = extractLiveProductContext(req, body);
+  const liveCtx = {
+    ...extractLiveProductContext(req, body),
+    agenticSymbol: symbol ?? classifyTicker,
+  };
   const productErr = await assertCanPostProduct(agent, product, liveCtx);
   if (productErr) {
     return NextResponse.json(

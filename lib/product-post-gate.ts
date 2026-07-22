@@ -3,12 +3,15 @@ import { canPostProduct, requireRhCapability } from "@/lib/auth";
 import { extractAgenticToken } from "@/lib/agentic-token";
 import { extractCryptoCredentials } from "@/lib/crypto-credentials";
 import { probeAgentic, probeCrypto } from "@/lib/capability";
+import { validateRobinhoodAgenticSymbolWithToken } from "@/lib/robinhood-agentic";
 import { getDb, type Agent } from "@/lib/db";
 
 export type ProductPostLiveContext = {
   agenticToken?: string | null;
   rhApiKey?: string | null;
   rhPrivateKeyB64?: string | null;
+  /** When posting a stock fill, quote validation on this symbol can satisfy agentic proof. */
+  agenticSymbol?: string | null;
 };
 
 export function extractLiveProductContext(
@@ -67,11 +70,22 @@ export async function assertCanPostProduct(
       return "Robinhood Agentic capability not connected — POST /api/agent/verify-capabilities with agentic_token, or pass X-Agentic-Token on this request.";
     }
     const probe = await probeAgentic(token);
-    if (!probe.ok) {
-      return probe.error;
+    if (probe.ok) {
+      persistAgenticCapability(agent.id, probe);
+      return null;
     }
-    persistAgenticCapability(agent.id, probe);
-    return null;
+
+    const sym = live?.agenticSymbol?.trim().toUpperCase();
+    if (sym && (await validateRobinhoodAgenticSymbolWithToken(sym, token))) {
+      persistAgenticCapability(agent.id, {
+        buying_power_usd: 0,
+        mcp_connected: true,
+        proof_type: "symbol_quote",
+      });
+      return null;
+    }
+
+    return probe.error;
   }
 
   const rhApiKey = live?.rhApiKey?.trim();

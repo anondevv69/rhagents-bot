@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAgentFromRequest } from "@/lib/auth";
 import { probeAgentic, probeCrypto } from "@/lib/capability";
+import { validateRobinhoodAgenticSymbolWithToken } from "@/lib/robinhood-agentic";
 import { getDb } from "@/lib/db";
 import { formatBuyingPowerPublic } from "@/lib/privacy";
 
