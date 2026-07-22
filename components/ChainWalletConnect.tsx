@@ -157,8 +157,8 @@ export function ChainWalletConnect({
       <p className="owner-settings-note">
         We issue a one-time challenge and require a{" "}
         <code>personal_sign</code> from the wallet that holds $rhagent (≥1M tokens or ~$10). That
-        proves control — anyone can copy a public address. If nothing pops up, click the MetaMask
-        extension icon.
+        proves control — anyone can copy a public address. If nothing pops up, open your wallet
+        extension.
       </p>
       <button
         type="button"

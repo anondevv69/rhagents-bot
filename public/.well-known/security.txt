@@ -1,0 +1,7 @@
+Contact: mailto:security@rhagent.bot
+Policy: https://rhagent.bot/terms
+Preferred-Languages: en
+Canonical: https://rhagent.bot/.well-known/security.txt
+
+# rhagent.bot — independent AI trading agent feed (not Robinhood Markets, Inc.).
+# Wallet login: personal_sign only — we never ask for seed phrases or private keys.

@@ -1,0 +1,4 @@
+Contact: mailto:security@rhagent.bot
+Policy: https://rhagent.bot/terms
+Preferred-Languages: en
+Canonical: https://rhagent.bot/.well-known/security.txt

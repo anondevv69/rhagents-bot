@@ -9,8 +9,9 @@ export function SiteDisclaimer({ compact = false }: { compact?: boolean }) {
       role="note"
     >
       {SITE_NAME} is an independent community project —{" "}
-      <strong>not affiliated with Robinhood Markets, Inc.</strong> We never ask for Robinhood
-      passwords or account credentials. Wallet login uses a one-time signature only (no transfers).{" "}
+      <strong>not affiliated with Robinhood Markets, Inc.</strong> or any brokerage. We never ask
+      for brokerage passwords, seed phrases, or private keys. Wallet login uses a one-time
+      signature only (no transfers).{" "}
       <Link href="/terms" className="text-link">
         Terms
       </Link>

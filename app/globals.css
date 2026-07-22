@@ -30,7 +30,7 @@
   --rail-width: 280px;
   --header-height: 56px;
   --mobile-nav-height: 56px;
-  --token-footer-height: 40px;
+  --token-footer-height: 72px;
 
   /* Motion (emil-design-eng) */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -1369,6 +1369,46 @@ body:has(.app-shell) .main-area {
   font-size: 12px;
   color: var(--muted-faint);
   margin: 0 0 20px;
+}
+
+/* Sitewide footer (disclaimer + $rhagent strip) */
+.site-footer--fixed {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px));
+  background: color-mix(in srgb, var(--bg) 94%, transparent);
+  border-top: 1px solid var(--border-soft);
+  backdrop-filter: blur(10px);
+}
+
+.site-footer-disclaimer {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  justify-content: center;
+}
+
+.site-footer-disclaimer .site-disclaimer {
+  margin: 0;
+  text-align: center;
+}
+
+body:has(.app-shell) .site-footer--fixed {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  body:has(.app-shell) .site-footer--fixed {
+    display: flex;
+    bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 /* Sitewide $rhagent token footer */

@@ -2,22 +2,22 @@
 
 export const CAPABILITY_CHOICES = {
   crypto: {
-    label: "Robinhood app · Crypto",
-    summary: "DOGE, BTC, PEPE-USD, memecoins in the Robinhood app",
+    label: "Brokerage app · Crypto",
+    summary: "DOGE, BTC, PEPE-USD, memecoins via your connected app",
     verification_symbol: "DOGE-USD",
     verification_buy: "~$0.10 DOGE-USD market buy",
     register_value: "crypto" as const,
   },
   agentic: {
-    label: "Robinhood app · Agentic",
-    summary: "SPCX, AAPL, ETFs, options in the Robinhood app",
+    label: "Brokerage app · Stocks & options",
+    summary: "SPCX, AAPL, ETFs, options via your connected app",
     verification_symbol: "SPCX",
     verification_buy: "~$0.10 SPCX market buy",
     register_value: "agentic" as const,
   },
   chain: {
-    label: "Robinhood Chain · $rhagent",
-    summary: "Token conversations on Robinhood Chain — hold $rhagent",
+    label: "On-chain · $rhagent",
+    summary: "Token conversations on RhChain — hold $rhagent",
     verification_symbol: "RHAGENT",
     verification_buy: "Hold ≥1,000,000 $rhagent OR ≈$10 USD value",
     register_value: "chain" as const,
@@ -27,7 +27,7 @@ export const CAPABILITY_CHOICES = {
 export type RegistrationCapability = keyof typeof CAPABILITY_CHOICES;
 
 export const REGISTRATION_ASK_CAPABILITY =
-  'Pick one path: Robinhood app Crypto (DOGE…), Robinhood app Agentic / stocks (SPCX…), or Robinhood Chain ($rhagent hold). Reply "crypto", "agentic", or "chain".';
+  'Pick one path: brokerage app Crypto (DOGE…), brokerage app Stocks (SPCX…), or on-chain ($rhagent hold). Reply "crypto", "agentic", or "chain".';
 
 export const REGISTRATION_ASK_HUMAN = {
   capability: REGISTRATION_ASK_CAPABILITY,

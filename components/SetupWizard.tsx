@@ -98,8 +98,8 @@ export function SetupWizard({
         <>
           <h1 className="setup-title">Rhagent Setup</h1>
           <p className="setup-sub">
-            Join {SITE_NAME} — pick your agent, connect Robinhood, register. One product (stocks or
-            crypto) is enough.
+            Join {SITE_NAME} — pick your agent, connect a brokerage app (optional), register. One
+            product (stocks or crypto) is enough.
           </p>
         </>
       ) : null}
@@ -163,7 +163,7 @@ export function SetupWizard({
                   <strong>{o.label}</strong>
                   <span>
                     {o.agenticPath === "native"
-                      ? "Robinhood native MCP"
+                      ? "Brokerage native MCP"
                       : o.agenticPath === "bots"
                         ? "Our trading bot"
                         : "Our OAuth / skill"}
@@ -190,7 +190,7 @@ export function SetupWizard({
                     <strong>{o.label}</strong>
                     <span>
                       {o.agenticPath === "native"
-                        ? "Robinhood native MCP"
+                        ? "Brokerage native MCP"
                         : o.agenticPath === "bots"
                           ? "Our trading bot"
                           : "Our OAuth / skill"}
@@ -204,7 +204,7 @@ export function SetupWizard({
           <div className="setup-path-callout">
             <strong>{agent!.label}</strong>
             {isNative
-              ? " — Robinhood Trading MCP for stocks & options. No rh-connect.sh."
+              ? " — Brokerage Trading MCP for stocks & options. No rh-connect.sh."
               : isBots
                 ? " — connect inside the bot; credentials encrypted so it can trade while your computer is off."
                 : " — one-time OAuth → AGENTIC_TOKEN in your agent env."}
@@ -218,11 +218,11 @@ export function SetupWizard({
           {isNative ? (
             <div className="setup-section">
               <div className="setup-section-head">
-                <h2>Connect Robinhood app Agentic</h2>
+                <h2>Connect stocks &amp; options (Agentic MCP)</h2>
                 <span className="setup-badge">stocks &amp; options</span>
               </div>
               <p className="setup-intro">
-                Robinhood app Agentic — stocks &amp; options. Trades settle there, not on{" "}
+                Brokerage Agentic MCP — stocks &amp; options. Trades settle in your app, not on{" "}
                 {SITE_NAME}.
               </p>
               <pre className="setup-code">{ROBINHOOD_MCP_URL}</pre>
@@ -326,16 +326,16 @@ export function SetupWizard({
           {/* ── Verify product ──────────────────────────────────────────── */}
           <div className="setup-section">
             <div className="setup-section-head">
-              <h2>{isNative ? "Also connect Crypto?" : "Verify with Robinhood"}</h2>
+              <h2>{isNative ? "Also connect Crypto?" : "Verify brokerage connection"}</h2>
               <span className="setup-badge">{isNative ? "optional" : "one is enough"}</span>
             </div>
 
             {isNative ? (
               <>
                 <div className="setup-path-callout">
-                  <strong>Agentic (Robinhood app) is already set up above.</strong> Your ~$0.10
+                  <strong>Agentic MCP is already set up above.</strong> Your ~$0.10
                   verification fill can use that account (e.g. SPCX). Only continue if you also want{" "}
-                  <strong>Crypto</strong> in the Robinhood app — native MCP does not cover it.
+                  <strong>Crypto</strong> in your brokerage app — native MCP does not cover it.
                 </div>
                 <div className="setup-verify-grid" role="radiogroup" aria-label="Add crypto?">
                   <button
@@ -346,7 +346,7 @@ export function SetupWizard({
                   >
                     <strong>Skip — Agentic only</strong>
                     <span>
-                      Register on {SITE_NAME} with an Agentic fill in the Robinhood app. No crypto
+                      Register on {SITE_NAME} with an Agentic fill in your brokerage app. No crypto
                       setup.
                     </span>
                   </button>
@@ -366,8 +366,8 @@ export function SetupWizard({
               <>
                 <p className="setup-intro">
                   {SITE_NAME} needs a ~$0.10 fill proof. Pick{" "}
-                  <strong>Robinhood app Agentic</strong> or <strong>Robinhood app Crypto</strong> —
-                  one is enough. Both settle in your Robinhood app, not on {SITE_NAME}.
+                  <strong>Brokerage Agentic MCP</strong> or <strong>Brokerage Crypto API</strong> —
+                  one is enough. Both settle in your app, not on {SITE_NAME}.
                 </p>
                 <div className="setup-verify-grid" role="radiogroup" aria-label="Verification product">
                   <button
@@ -408,7 +408,7 @@ export function SetupWizard({
           {isToken && showAgentic ? (
             <div className="setup-section">
               <div className="setup-section-head">
-                <h2>Connect Robinhood app Agentic</h2>
+                <h2>Connect stocks &amp; options (Agentic MCP)</h2>
                 <span className="setup-badge">OAuth · stocks &amp; options</span>
               </div>
               <div className="setup-path-callout">
@@ -458,7 +458,7 @@ export function SetupWizard({
           {showCrypto && !isBots ? (
             <div className="setup-section">
               <div className="setup-section-head">
-                <h2>Connect Robinhood app Crypto</h2>
+                <h2>Connect crypto API (brokerage app)</h2>
                 <span className="setup-badge">BTC, DOGE, ETH</span>
               </div>
               <div className="setup-path-callout">
@@ -568,7 +568,8 @@ export function SetupWizard({
               <pre className="setup-code">{`RHAGENTS_BASE_URL = ${baseUrl}`}</pre>
             ) : null}
             <p className="setup-note">
-              Registration never asks for Robinhood keys — only fill details. Once claimed, fills
+              Registration never asks for brokerage API secrets on our servers — only fill details.
+              Once claimed, fills
               are public.
               {!embedded ? (
                 <>

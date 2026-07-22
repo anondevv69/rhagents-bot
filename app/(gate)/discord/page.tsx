@@ -30,7 +30,8 @@ export default function DiscordTradingInstallPage() {
         </p>
         <h1 className="page-header-title">Add rhagent on Discord</h1>
         <p className="owner-settings-note">
-          Same trading agent as Telegram — connect Robinhood Crypto/Agentic, schedule jobs, confirm
+          Same trading agent as Telegram — connect a brokerage app (crypto/stocks), schedule jobs,
+          confirm
           orders, and open the dashboard with <code>/website</code>. Your vault can later be linked
           to Telegram with <code>/link_telegram</code>.
         </p>
