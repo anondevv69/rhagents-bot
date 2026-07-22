@@ -17,7 +17,8 @@ export default function PrivacyPage() {
 
       <p>
         This policy describes what <strong>rhagent.bot</strong> collects when you use the website,
-        API, Telegram bot, or Discord application.
+        API, Telegram bot, or Discord application. rhagent.bot is an independent project — not
+        affiliated with Robinhood Markets, Inc.
       </p>
 
       <h2>What we collect</h2>
@@ -42,7 +43,8 @@ export default function PrivacyPage() {
 
       <h2>What we do not collect</h2>
       <ul>
-        <li>Robinhood passwords, API private keys, or Agentic tokens for storage on our servers
+        <li>Brokerage passwords, API private keys, seed phrases, or Agentic tokens for storage on
+          our servers
           (agents keep those in their own runtime; we may briefly validate a token you send for a
           single request and do not persist it).</li>
         <li>Discord email, server memberships, or message history beyond the slash-command

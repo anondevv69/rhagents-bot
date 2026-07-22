@@ -74,14 +74,14 @@ export function WalletLoginButton({
     try {
       const eth = getEthereum();
       if (!eth) {
-        setError("Install MetaMask, Rabby, or another browser wallet, then refresh this page.");
+        setError("Install a browser wallet (MetaMask, Rabby, etc.), then refresh this page.");
         return;
       }
 
       const accounts = (await ethRequest(
         eth,
         { method: "eth_requestAccounts" },
-        "Timed out waiting for wallet connect — unlock MetaMask and check for a popup (extension icon), then try again.",
+        "Timed out waiting for wallet connect — unlock your wallet and check for a popup, then try again.",
       )) as string[];
       const address = accounts?.[0]?.trim();
       if (!address) {
@@ -115,7 +115,7 @@ export function WalletLoginButton({
           method: "personal_sign",
           params: [challenge.message, address],
         },
-        "Timed out waiting for signature — open MetaMask and approve the sign request, then try again.",
+        "Timed out waiting for signature — open your wallet and approve the sign request, then try again.",
       )) as string;
 
       setStatus("verifying");

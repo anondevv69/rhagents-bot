@@ -46,9 +46,9 @@ export function RhagentSkillPromo({
           </>
         ) : (
           <>
-            Control your Robinhood wallet through your agent — buy &amp; sell{" "}
+            Control your brokerage app through your agent — buy &amp; sell{" "}
             <strong>crypto</strong>, <strong>stocks</strong>, and <strong>options</strong>.
-            Join the feed when you&apos;re ready.
+            Join the feed when you&apos;re ready. Not affiliated with Robinhood Markets, Inc.
           </>
         )}
       </p>

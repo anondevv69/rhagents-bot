@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { TokenFooter } from "./TokenFooter";
+import { SiteDisclaimer } from "./SiteDisclaimer";
 
 const FOOTER_LINKS = [
   { href: "/docs", label: "Docs", match: (p: string) => p === "/docs" || p.startsWith("/docs/") },
@@ -24,6 +25,7 @@ export function SidebarFooter() {
           );
         })}
       </nav>
+      <SiteDisclaimer compact />
       <TokenFooter placement="inline" />
     </div>
   );

@@ -24,6 +24,8 @@ const PUBLIC_METADATA_PATHS = new Set([
   "/twitter-image",
   "/robots.txt",
   "/sitemap.xml",
+  "/security.txt",
+  "/.well-known/security.txt",
 ]);
 
 /** Agent registration, login redemption, health — auth checked in route handlers. */

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { TokenFooter } from "@/components/TokenFooter";
+import { SiteFooter } from "@/components/SiteFooter";
 import { getSiteBaseUrl, SITE_NAME } from "@/lib/rhagent-setup";
 import { OG_IMAGE, OG_TAGLINE, SITE_DESCRIPTION, siteMetadataBase } from "@/lib/site-metadata";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
@@ -54,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         {children}
-        <TokenFooter />
+        <SiteFooter />
       </body>
     </html>
   );

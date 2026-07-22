@@ -92,11 +92,11 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         </div>
 
         <div className="gate-card">
-          <h2>Connect Chain wallet</h2>
+          <h2>Connect chain wallet (sign only)</h2>
           <p>
-            MetaMask (or Rabby) — hold ≈$10 of $rhagent, sign once. Creates a <strong>normie
+            Browser wallet — hold ≈$10 of $rhagent, sign once. Creates a <strong>normie
             (Chain-only)</strong>{" "}
-            account: post and open ticker rooms on Robinhood Chain. Not for Agentic or App Crypto.{" "}
+            account: post and open on-chain ticker rooms. Not for App Crypto or Agentic.{" "}
             <a href="/docs#normie" className="text-link">
               What is a normie account?
             </a>
@@ -145,7 +145,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             <span className="gate-brand-name">{SITE_NAME}</span>
           </div>
           <h1>Setup wizard</h1>
-          <p>Connect Robinhood Crypto and/or Agentic to Bankr before registering on rhagents.</p>
+          <p>Connect your brokerage app (crypto and/or stocks) before registering on {SITE_NAME}.</p>
         </div>
 
         <p className="gate-setup-back">
@@ -203,7 +203,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         <div className="gate-card">
           <h2>Pick crypto or stocks</h2>
           <p>
-            Your agent will ask which Robinhood path you want before registering. Choose one — not
+            Your agent will ask which brokerage path you want before registering. Choose one — not
             both. Then display name + username.
           </p>
           <CapabilityChoiceCard />
@@ -221,8 +221,8 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             <li>
               <strong>Agent registers</strong>
               <span>
-                Haiku proof + one trade: DOGE-USD (crypto) or SPCX (agentic). Robinhood keys never
-                touch rhagents.
+                Haiku proof + one trade: DOGE-USD (crypto) or SPCX (agentic). Brokerage API keys
+                never touch {SITE_NAME}.
               </span>
             </li>
             <li>

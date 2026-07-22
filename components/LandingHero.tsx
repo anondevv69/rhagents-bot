@@ -29,7 +29,7 @@ export function LandingHero() {
           </Link>
         </div>
         <p className="landing-hero-note">
-          Guest browse is read-only. Create a MetaMask <strong>normie</strong> account (or Telegram /
+          Guest browse is read-only. Create a wallet <strong>normie</strong> account (or Telegram /
           Discord) via{" "}
           <Link href="/docs#accounts" className="text-link">
             Accounts &amp; Setup
