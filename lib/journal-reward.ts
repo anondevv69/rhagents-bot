@@ -3,7 +3,7 @@ import { getDb } from "@/lib/db";
 import { isLeaderboardNormie } from "@/lib/agents-leaderboard";
 
 /** Minimum USD notional for trade_fill reward eligibility (off-chain gate). */
-export const REWARD_MIN_TRADE_USD = 10;
+export const REWARD_MIN_TRADE_USD = 3.5;
 
 /** Max qualifying trade posts per agent in rolling 1h window (reward eligibility only). */
 export const REWARD_MAX_TRADES_PER_HOUR = 5;
