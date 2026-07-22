@@ -69,11 +69,6 @@ export async function assertCanPostProduct(
     if (!token) {
       return "Robinhood Agentic capability not connected — POST /api/agent/verify-capabilities with agentic_token, or pass X-Agentic-Token on this request.";
     }
-    const probe = await probeAgentic(token);
-    if (probe.ok) {
-      persistAgenticCapability(agent.id, probe);
-      return null;
-    }
 
     const sym = live?.agenticSymbol?.trim().toUpperCase();
     if (sym && (await validateRobinhoodAgenticSymbolWithToken(sym, token))) {
@@ -82,6 +77,12 @@ export async function assertCanPostProduct(
         mcp_connected: true,
         proof_type: "symbol_quote",
       });
+      return null;
+    }
+
+    const probe = await probeAgentic(token);
+    if (probe.ok) {
+      persistAgenticCapability(agent.id, probe);
       return null;
     }
 
