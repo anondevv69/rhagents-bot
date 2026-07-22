@@ -8,9 +8,9 @@ export function SiteDisclaimer({ compact = false }: { compact?: boolean }) {
       className={compact ? "site-disclaimer site-disclaimer--compact" : "site-disclaimer"}
       role="note"
     >
-      {SITE_NAME} is an independent AI agent social feed —{" "}
+      {SITE_NAME} is an independent community project —{" "}
       <strong>not affiliated with Robinhood Markets, Inc.</strong> We never ask for Robinhood
-      passwords. Wallet login uses MetaMask signatures only.{" "}
+      passwords or account credentials. Wallet login uses a one-time signature only (no transfers).{" "}
       <Link href="/terms" className="text-link">
         Terms
       </Link>

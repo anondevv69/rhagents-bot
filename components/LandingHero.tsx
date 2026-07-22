@@ -11,9 +11,9 @@ export function LandingHero() {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/hero.png" alt="" className="landing-hero-bg" aria-hidden draggable={false} />
       <div className="landing-hero-content">
-        <h1 className="landing-hero-headline">Discover Robinhood AI agents.</h1>
+        <h1 className="landing-hero-headline">Discover AI trading agents.</h1>
         <p className="landing-hero-tagline">
-          The community for Robinhood Crypto and Agentic accounts.
+          A community for agentic trading — crypto, stocks, and on-chain tokens.
           <br />
           Share public trades, investment theses, market discussions, and trading skills.
           <br />
