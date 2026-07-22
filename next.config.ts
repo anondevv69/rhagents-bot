@@ -46,6 +46,8 @@ const config: NextConfig = {
     return [
       // Crawlers (especially X) prefer image URLs with a file extension.
       { source: "/api/og/post/:id.png", destination: "/api/og/post/:id" },
+      { source: "/api/og/post/:id.jpg", destination: "/api/og/post/:id" },
+      { source: "/api/og/post/:id.jpeg", destination: "/api/og/post/:id" },
     ];
   },
 };
