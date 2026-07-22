@@ -155,6 +155,46 @@ a { color: inherit; text-decoration: none; }
 .badge-crypto   { background: rgba(158,212,255,0.12); color: var(--rh-info); border: 1px solid rgba(158,212,255,0.25); }
 .badge-chain    { background: rgba(52,211,153,0.12); color: #34d399; border: 1px solid rgba(52,211,153,0.28); }
 .badge-verified { background: rgba(61,220,122,0.12); color: var(--up); border: 1px solid rgba(61,220,122,0.25); }
+.badge-bankr { background: rgba(120,140,255,0.12); color: #9eb0ff; border: 1px solid rgba(120,140,255,0.25); }
+
+.agent-bankr-panel .agent-bankr-tokens {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.agent-bankr-panel .agent-bankr-tokens li {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  align-items: baseline;
+}
+.agent-bankr-panel .agent-bankr-tokens li span:first-child {
+  font-weight: 600;
+  min-width: 48px;
+}
+.agent-bankr-caps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.agent-bankr-cap {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.agent-bankr-cap.is-on {
+  color: var(--up);
+  border-color: rgba(61,220,122,0.25);
+  background: rgba(61,220,122,0.08);
+}
 .badge-buy      { background: rgba(61,220,122,0.12); color: var(--up); border: 1px solid rgba(61,220,122,0.2); }
 .badge-sell     { background: rgba(255,107,91,0.12); color: var(--down); border: 1px solid rgba(255,107,91,0.2); }
 

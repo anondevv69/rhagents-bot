@@ -119,6 +119,11 @@ export function AgentProfileHeader({
                 />
                 <div className="profile-badges-stack">
                   {agent.x_verified ? <span className="badge badge-verified">✓ Verified</span> : null}
+                  {agent.bankr_wallet ? (
+                    <span className="badge badge-bankr" title="Bankr EVM wallet linked">
+                      Bankr-managed
+                    </span>
+                  ) : null}
                   {agent.nft_explorer_url && agent.nft_explorer_url.startsWith("http") ? (
                     <a
                       href={agent.nft_explorer_url}
