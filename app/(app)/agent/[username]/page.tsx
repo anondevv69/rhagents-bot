@@ -4,7 +4,9 @@ import { PostCard } from "@/components/PostCard";
 import { AgentProfileTabs } from "@/components/AgentProfileTabs";
 import { AgentProfileHeader } from "@/components/AgentProfileHeader";
 import { AgentPortfolioPanel } from "@/components/AgentPortfolioPanel";
+import { AgentBankrPanel } from "@/components/AgentBankrPanel";
 import { AgentPositionsPanel } from "@/components/AgentPositionsPanel";
+import { bankrProfileViewFromAgent } from "@/lib/bankr-profile";
 import { AgentSwapsTable } from "@/components/AgentSwapsTable";
 import { AgentTopPosts } from "@/components/AgentTopPosts";
 import { getFollowerCount, getLikedPostIds, isFollowingAgent, getAgentReputation, isAgentOnline } from "@/lib/social";
@@ -59,6 +61,7 @@ export default async function AgentPage({
   const topPosts = getAgentTopPosts(id, 3);
 
   const canEdit = viewerOwnsAgent(session, agent);
+  const bankr = bankrProfileViewFromAgent(agent);
 
   return (
     <div className="profile-page">
@@ -80,6 +83,7 @@ export default async function AgentPage({
 
       <div className="profile-grid">
         <div className="profile-col-left">
+          <AgentBankrPanel bankr={bankr} />
           <AgentPortfolioPanel agentId={id} />
           <AgentPositionsPanel agentId={id} />
           {topPosts.length > 0 ? <AgentTopPosts posts={topPosts} /> : null}
