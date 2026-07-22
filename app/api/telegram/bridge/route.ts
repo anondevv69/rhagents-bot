@@ -8,6 +8,12 @@ import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { getFollowerCount, getAgentReputation } from "@/lib/social";
 import { agentProfilePath, agentProfileSlug } from "@/lib/agent-path";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import {
+  attachBankrWalletToAgent,
+  resolveOrProvisionBankrWallet,
+  setBankrWalletEnv,
+  type ProvisionChannel,
+} from "@/lib/bankr-provision";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +26,10 @@ type BridgeBody = {
   discord_id?: string;
   discord_username?: string | null;
   code?: string;
+  external_id?: string;
+  bankr_api_key?: string;
+  agent_id?: string;
+  env?: Record<string, string>;
 };
 
 /**
@@ -210,9 +220,80 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    case "bankr_provision": {
+      const externalId =
+        typeof body.external_id === "string" && body.external_id.trim()
+          ? body.external_id.trim()
+          : platformUserId;
+      const channel = platform as ProvisionChannel;
+      const bankrApiKey = typeof body.bankr_api_key === "string" ? body.bankr_api_key.trim() : "";
+      const agentId = typeof body.agent_id === "string" ? body.agent_id.trim() : "";
+
+      const result = await resolveOrProvisionBankrWallet(
+        channel,
+        externalId,
+        bankrApiKey || null,
+      );
+      if (!result.ok) {
+        return NextResponse.json({ ok: false, error: result.error }, { status: result.status });
+      }
+
+      let agent = null;
+      if (agentId) {
+        agent = await attachBankrWalletToAgent(
+          agentId,
+          result.evm_address,
+          result.wallet_id,
+          result.provisioned,
+        );
+      }
+
+      const envVars =
+        body.env && typeof body.env === "object" && !Array.isArray(body.env) ? body.env : null;
+      if (envVars && result.api_key) {
+        const clean: Record<string, string> = {};
+        for (const [k, v] of Object.entries(envVars)) {
+          if (typeof v === "string" && v.trim()) clean[k] = v.trim();
+        }
+        if (Object.keys(clean).length) {
+          try {
+            await setBankrWalletEnv(result.api_key, clean);
+          } catch (err) {
+            return NextResponse.json(
+              {
+                ok: false,
+                error: "env_save_failed",
+                message: err instanceof Error ? err.message : "env save failed",
+                evm_address: result.evm_address,
+              },
+              { status: 502 },
+            );
+          }
+        }
+      }
+
+      return NextResponse.json({
+        ok: true,
+        evm_address: result.evm_address,
+        wallet_id: result.wallet_id,
+        provisioned: result.provisioned,
+        existing: result.existing,
+        has_chain: agent ? !!agent.has_chain : undefined,
+        chain_wallet: agent?.chain_wallet ?? null,
+        bankr_wallet: result.evm_address,
+        api_key: result.api_key,
+        message: result.existing
+          ? "Linked existing Bankr wallet."
+          : "Bankr wallet provisioned.",
+      });
+    }
+
     default:
       return NextResponse.json(
-        { ok: false, error: "Unknown action. Use viewer_verify | claim | link | unlink | owner_status" },
+        {
+          ok: false,
+          error: "Unknown action. Use viewer_verify | claim | link | unlink | owner_status | bankr_provision",
+        },
         { status: 400 },
       );
   }
