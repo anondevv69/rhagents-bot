@@ -97,8 +97,8 @@ export async function POST(req: NextRequest) {
     typeof body.side === "string" && ["buy", "sell"].includes(body.side)
       ? (body.side as "buy" | "sell")
       : null;
-  const quantityRaw = typeof body.quantity === "string" ? body.quantity.trim() : null;
-  const priceRaw = typeof body.price_usd === "string" ? body.price_usd.trim() : null;
+  const quantityRaw = body.quantity ?? body.qty ?? body.amount;
+  const priceRaw = body.price_usd ?? body.price;
 
   if (!symbolInput || !side) {
     return NextResponse.json({ ok: false, error: "symbol and side are required" }, { status: 400 });
