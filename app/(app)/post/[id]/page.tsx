@@ -34,7 +34,7 @@ export async function generateMetadata({
   const image = {
     url: imageUrl,
     secureUrl: imageUrl,
-    type: "image/png" as const,
+    type: "image/jpeg" as const,
     width: 1200,
     height: 630,
     alt: title,
