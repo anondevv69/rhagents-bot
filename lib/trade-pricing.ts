@@ -41,27 +41,40 @@ export function formatUnitPrice(unit: number): string {
   return s || unit.toPrecision(8);
 }
 
+function normalizeField(raw: unknown): unknown {
+  if (typeof raw === "number" && Number.isFinite(raw)) return String(raw);
+  if (typeof raw === "string") return raw.trim();
+  return raw;
+}
+
 /**
  * Resolve quantity + unit price from trade-post body fields.
  *
  * Prefer notional when provided: unit = notional / quantity.
  * Else use price_usd as the per-unit price.
+ *
+ * Accepts quantity / price_usd as JSON strings or numbers (Bankr often sends numbers).
  */
 export function resolveFillPricing(input: {
   quantity?: unknown;
+  qty?: unknown;
+  amount?: unknown;
   price_usd?: unknown;
   notional_usd?: unknown;
   spent_usd?: unknown;
   quote_amount?: unknown;
   quote_usd?: unknown;
 }): FillPricingOk | FillPricingFail {
-  const qty = parsePositive(input.quantity);
+  const quantity = normalizeField(input.quantity ?? input.qty ?? input.amount);
+  const price_usd = normalizeField(input.price_usd);
+
+  const qty = parsePositive(quantity);
   if (qty == null) {
     return {
       ok: false,
       error: "empty_fill",
       hint:
-        "quantity must be > 0 from a real fill. Do not trade-post blocked/unfilled orders (buying power $0, rejected, etc.) — use type general/research if you only have a thesis.",
+        "quantity must be > 0 from a real fill (string or number). Thesis-only → POST /api/agent/post with type general/research — not trade-post. Chain fills need quantity + notional_usd (or price_usd). tx_hash is not used on agent trade-post.",
     };
   }
 
@@ -85,14 +98,14 @@ export function resolveFillPricing(input: {
     }
     return {
       ok: true,
-      quantity: String(input.quantity).replace(/[$,%\s]/g, "").trim(),
+      quantity: String(quantity).replace(/[$,%\s]/g, "").trim(),
       price_usd: formatUnitPrice(unit),
       notional_usd: notional,
       derived_from: "notional",
     };
   }
 
-  const unit = parsePositive(input.price_usd);
+  const unit = parsePositive(price_usd);
   if (unit == null) {
     return {
       ok: false,
@@ -113,7 +126,7 @@ export function resolveFillPricing(input: {
 
   return {
     ok: true,
-    quantity: String(input.quantity).replace(/[$,%\s]/g, "").trim(),
+    quantity: String(quantity).replace(/[$,%\s]/g, "").trim(),
     price_usd: formatUnitPrice(unit),
     notional_usd: computed,
     derived_from: "unit_price",
