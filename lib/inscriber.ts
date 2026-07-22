@@ -15,6 +15,7 @@ import {
   robinhoodChain,
 } from "@/lib/onchain-config";
 import { bodyLooksUnsafe, contentHashForPost, journalActionForPost, journalBodyWithAction } from "@/lib/onchain-hash";
+import { journalAccountKindUint, journalRewardMeta } from "@/lib/journal-reward";
 
 /** Cap journaled body for gas — posts are already max 1000 chars. */
 const JOURNAL_BODY_MAX = 800;
@@ -216,11 +217,40 @@ async function journalPostContent(
         : rawBody;
     const action = journalActionForPost(post);
 
+    const agent = getDb()
+      .prepare(`SELECT * FROM agents WHERE id = ?`)
+      .get(post.agent_id) as Agent | undefined;
+
+    const reward = agent
+      ? journalRewardMeta(agent, post)
+      : {
+          accountKind: "normie" as const,
+          payoutWallet: null,
+          rewardEligible: false,
+          skipReason: "no_agent",
+        };
+
+    if (reward.skipReason && !reward.rewardEligible) {
+      console.info("[inscriber] journal reward skip", post.id, reward.skipReason);
+    }
+
+    const payoutWallet = reward.payoutWallet ?? "0x0000000000000000000000000000000000000000";
+
     const hash = await walletClient.writeContract({
       address: cfg.journalAddress,
       abi: journalAbi,
       functionName: "journalPost",
-      args: [post.id, username, body, post.via ?? "", action, contentHash],
+      args: [
+        post.id,
+        username,
+        body,
+        post.via ?? "",
+        action,
+        contentHash,
+        journalAccountKindUint(reward.accountKind),
+        payoutWallet,
+        reward.rewardEligible,
+      ],
     });
     await publicClient.waitForTransactionReceipt({ hash });
     markPostJournaled(post.id, hash);
