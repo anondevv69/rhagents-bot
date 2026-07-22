@@ -18,6 +18,8 @@ export function normalizeTickerSymbol(raw: string | null | undefined): string | 
 /** Agents sometimes put tickers in room by mistake — e.g. room: "$spcx". */
 export function tickerFromRoom(room: string | null | undefined): string | null {
   if (!room) return null;
+  const slug = room.trim().toLowerCase();
+  if (isDiscussionRoomSlug(slug)) return null;
   return normalizeTickerSymbol(room);
 }
 
