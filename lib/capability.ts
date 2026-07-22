@@ -9,6 +9,8 @@
  * ZERO CUSTODY: credentials used for probe only, then discarded.
  */
 
+import { callAgenticMcpTool } from "@/lib/robinhood-agentic";
+
 const GW = process.env.RH_WALLET_GATEWAY ?? "https://rhwallet-rhagent-production.up.railway.app";
 
 export type ProofType = "balance" | "holdings" | "trade_history";
@@ -30,23 +32,10 @@ function cryptoHeaders(rh_api_key: string, rh_private_key_b64: string) {
   };
 }
 
-async function agenticMcp(token: string, method: string, params: Record<string, unknown> = {}) {
-  return fetch(`${GW}/v1/agentic/mcp`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params }),
-    signal: AbortSignal.timeout(12000),
-  });
-}
-
 async function agenticTool(token: string, name: string, args: Record<string, unknown> = {}) {
-  const res = await agenticMcp(token, "tools/call", { name, arguments: args });
-  if (!res.ok) return null;
-  try {
-    return await res.json();
-  } catch {
-    return null;
-  }
+  const result = await callAgenticMcpTool(token, name, args);
+  if (!result.ok) return null;
+  return result.body;
 }
 
 function parseUsd(value: unknown): number {
@@ -97,6 +86,13 @@ function analyzeMcpActivity(body: unknown): {
 
     if (typeof v === "object") {
       const o = v as Record<string, unknown>;
+      if ("content" in o && Array.isArray(o.content)) {
+        for (const block of o.content) {
+          if (block && typeof block === "object" && "text" in block) {
+            walk((block as { text: string }).text, keyHint);
+          }
+        }
+      }
       if ("buying_power" in o || "buyingPower" in o) {
         buyingPower = Math.max(buyingPower, parseUsd(o.buying_power ?? o.buyingPower));
       }
@@ -165,17 +161,17 @@ export async function probeAgentic(agentic_token: string): Promise<CapabilityRes
   }
 
   try {
-    const init = await agenticMcp(agentic_token, "initialize", {
-      protocolVersion: "2024-11-05",
-      capabilities: {},
-      clientInfo: { name: "rhagents-probe", version: "1" },
-    });
-
-    if (init.status === 401 || init.status === 403) {
-      return { ok: false, error: "AGENTIC_TOKEN rejected — invalid or expired. Re-run rh-connect.sh" };
-    }
-    if (init.status >= 500) {
-      return { ok: false, error: `Agentic gateway error: ${init.status}` };
+    const sessionProbe = await callAgenticMcpTool(agentic_token, "get_portfolio", {});
+    if (!sessionProbe.ok) {
+      if (sessionProbe.status === 401 || sessionProbe.status === 403) {
+        return {
+          ok: false,
+          error: "AGENTIC_TOKEN rejected — invalid or expired. Re-run rh-connect.sh",
+        };
+      }
+      if (sessionProbe.status >= 500) {
+        return { ok: false, error: `Agentic gateway error: ${sessionProbe.status}` };
+      }
     }
 
     const merged: ReturnType<typeof analyzeMcpActivity> = {

@@ -153,6 +153,33 @@ async function agenticMcpRaw(
   return { status: res.status, body, sessionId: nextSession };
 }
 
+/** MCP tool call with session + SSE parsing (shared by validate + capability probe). */
+export async function callAgenticMcpTool(
+  token: string,
+  name: string,
+  args: Record<string, unknown> = {},
+): Promise<{ ok: true; body: unknown } | { ok: false; status: number; body: unknown }> {
+  if (!token || token.length < 10) {
+    return { ok: false, status: 401, body: { error: "token_missing" } };
+  }
+
+  const sessionId = await openAgenticSession(token);
+  const call = await agenticMcpRaw(
+    token,
+    "tools/call",
+    { name, arguments: args },
+    sessionId,
+  );
+
+  if (call.status === 401 || call.status === 403) {
+    return { ok: false, status: call.status, body: call.body };
+  }
+  if (call.status >= 400) {
+    return { ok: false, status: call.status, body: call.body };
+  }
+  return { ok: true, body: call.body };
+}
+
 async function openAgenticSession(token: string): Promise<string | null> {
   const init = await agenticMcpRaw(token, "initialize", {
     protocolVersion: "2024-11-05",
@@ -171,21 +198,14 @@ async function openAgenticSession(token: string): Promise<string | null> {
 }
 
 async function agenticQuoteCall(token: string, symbol: string): Promise<unknown> {
-  const sessionId = await openAgenticSession(token);
-
-  const call = await agenticMcpRaw(
-    token,
-    "tools/call",
-    { name: "get_equity_quotes", arguments: { symbols: [symbol] } },
-    sessionId,
-  );
-
-  if (call.status === 401 || call.status === 403) {
-    return { error: "token_rejected", status: call.status, detail: call.body };
+  const result = await callAgenticMcpTool(token, "get_equity_quotes", { symbols: [symbol] });
+  if (!result.ok) {
+    if (result.status === 401 || result.status === 403) {
+      return { error: "token_rejected", status: result.status, detail: result.body };
+    }
+    return null;
   }
-
-  if (call.status >= 400) return null;
-  return call.body;
+  return result.body;
 }
 
 /** True if Robinhood MCP confirms a real equity quote for this ticker using the agent's token. */
