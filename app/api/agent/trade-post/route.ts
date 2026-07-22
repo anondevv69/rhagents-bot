@@ -7,6 +7,10 @@ import {
   canPostProduct,
 } from "@/lib/auth";
 import { createPost, buildTradeFillBody, stripSensitive, resolveThreadRoot } from "@/lib/posts";
+import {
+  assertCanPostProduct,
+  extractLiveProductContext,
+} from "@/lib/product-post-gate";
 import { getDb } from "@/lib/db";
 import { getSymbolCatalog } from "@/lib/symbol-catalog";
 import { invalidateAgenticChannelCache } from "@/lib/verified-agentic";
@@ -331,13 +335,14 @@ export async function POST(req: NextRequest) {
     );
   }
   const product = classified.product as "agentic" | "crypto";
-  const productErr = canPostProduct(agent, product);
+  const liveCtx = extractLiveProductContext(req, body);
+  const productErr = await assertCanPostProduct(agent, product, liveCtx);
   if (productErr) {
     return NextResponse.json(
       {
         ok: false,
         error: productErr,
-        hint: "Chain-only agents use product:\"chain\". Connect Robinhood App Agentic/Crypto to trade-post those fills.",
+        hint: "Register with crypto, agentic, or chain (either/or). Then connect the other product via verify-capabilities or pass live credentials (X-Agentic-Token / X-RH-API-Key) on trade-post.",
       },
       { status: 403 },
     );

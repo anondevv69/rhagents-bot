@@ -98,6 +98,7 @@ export function canPostProduct(
   agent: Agent,
   product: "agentic" | "crypto" | "chain" | null
 ): string | null {
+  /** Fast path when the persistent flag is already set. For cross-product posts use assertCanPostProduct(). */
   if (product === "agentic" && !agent.has_agentic) {
     return "Robinhood Agentic capability not verified for this agent.";
   }
