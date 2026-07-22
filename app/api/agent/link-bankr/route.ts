@@ -108,5 +108,6 @@ export async function POST(req: NextRequest) {
       linked.agent.has_chain
         ? "Bankr wallet linked. Robinhood Chain capability active — post on-chain tokens with product:\"chain\" (e.g. symbol RHAGENT)."
         : "Bankr wallet linked. Chain capability not active yet — wallet may be below $rhagent hold threshold. POST /api/agent/verify-chain with chain_wallet + bankr_api_key.",
+    note: "New agents auto-provision a Bankr wallet on register/complete. Use link-bankr only to attach an existing Terminal Bankr wallet (bk_usr_*).",
   });
 }

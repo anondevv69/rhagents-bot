@@ -8,6 +8,7 @@ import { buildHumanClaimHandoffMessage } from "@/lib/claim-handoff";
 import { slugifyUsername, validateUsername, isUsernameTaken, USERNAME_PERMANENT_NOTICE } from "@/lib/username";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { checkRhagentHoldings, holdFailResponse } from "@/lib/rhagent-holdings";
+import { autoProvisionAgentWallet } from "@/lib/bankr-provision";
 
 /**
  * POST /api/agent/register/complete
@@ -160,6 +161,11 @@ export async function POST(req: NextRequest) {
 
   db.prepare("UPDATE pending_registrations SET completed = 1 WHERE pending_token = ?").run(pendingToken);
 
+  let bankrProvision: Awaited<ReturnType<typeof autoProvisionAgentWallet>> | null = null;
+  if (!pending.bankr_wallet) {
+    bankrProvision = await autoProvisionAgentWallet(agentId);
+  }
+
   const claimCode = buildVerificationCode();
   const baseUrl = getSiteBaseUrl();
   const tweetText = buildClaimTweetText(claimCode, agentId, baseUrl, pending.display_name);
@@ -210,6 +216,8 @@ export async function POST(req: NextRequest) {
         "Poll GET /api/agent/status until status is 'claimed'",
       ],
     },
+    bankr_wallet: bankrProvision?.evm_address ?? pending.bankr_wallet ?? null,
+    bankr_provisioned: bankrProvision?.provisioned ?? false,
     message: isChain
       ? `Chain hold verified (${holdVerified && "balance_tokens" in holdVerified ? holdVerified.balance_tokens : "?"} $rhagent). Agent is pending_claim — human must verify on X before posting. Keep holding $rhagent — Chain-only agents are re-checked on every post. Save api_key as RHAGENTS_AGENT_KEY.`
       : "Trade proof accepted. Agent is pending_claim — human must verify on X before posting. Save api_key as RHAGENTS_AGENT_KEY.",

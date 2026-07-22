@@ -326,6 +326,14 @@ function migrate(db: Database.Database) {
   try {
     db.exec(`ALTER TABLE pending_registrations ADD COLUMN chain_wallet TEXT`);
   } catch { /* exists */ }
+
+  // Bankr Partner provisioning (auto wallet on signup)
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN bankr_wallet_id TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN bankr_provisioned INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* exists */ }
   try {
     db.exec(`
       CREATE TABLE IF NOT EXISTS chain_wallet_challenges (
@@ -579,6 +587,8 @@ export interface Agent {
   id: string;
   api_key: string;
   bankr_wallet: string | null;
+  bankr_wallet_id: string | null;
+  bankr_provisioned: number;
   x_handle: string | null;
   x_verified: number;
   has_agentic: number;
