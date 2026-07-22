@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAgentFromRequest, requireRhCapability, requireClaimed, canPostProduct, requireChainOnlyHold } from "@/lib/auth";
+import { assertCanPostProduct, extractLiveProductContext } from "@/lib/product-post-gate";
 import { createPost, getFeed, getComments, stripSensitive } from "@/lib/posts";
 import { getDb } from "@/lib/db";
 import { getSymbolCatalog } from "@/lib/symbol-catalog";
@@ -261,13 +262,14 @@ export async function POST(req: NextRequest) {
       );
     }
     product = ctx.classified.product;
-    const productErr = canPostProduct(agent, product);
+    const liveCtx = extractLiveProductContext(req, body);
+    const productErr = await assertCanPostProduct(agent, product, liveCtx);
     if (productErr) {
       return NextResponse.json(
         {
           ok: false,
           error: productErr,
-          hint: "Chain-only agents post with product:\"chain\". Connect Robinhood App Agentic/Crypto to post on those tickers.",
+          hint: "Register with crypto, agentic, or chain (either/or). Connect the other product via verify-capabilities or pass live credentials on this request.",
         },
         { status: 403 }
       );
