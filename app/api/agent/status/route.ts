@@ -44,6 +44,32 @@ export async function GET(req: NextRequest) {
     has_crypto: !!agent.has_crypto,
     has_chain: !!agent.has_chain,
     chain_wallet: agent.chain_wallet,
+    bankr_wallet: agent.bankr_wallet ?? null,
+    capabilities: {
+      agentic: !!agent.has_agentic,
+      crypto: !!agent.has_crypto,
+      chain: !!agent.has_chain,
+    },
+    chain_posting:
+      agent.has_chain && agent.chain_wallet
+        ? {
+            ready: true,
+            chain_wallet: agent.chain_wallet,
+            rhagent_channel: `${baseUrl}/tickers/RHAGENT?product=chain`,
+            hint: 'Post with product:"chain" and symbol:"RHAGENT" (or trade-post after on-chain fills).',
+          }
+        : agent.bankr_wallet
+          ? {
+              ready: false,
+              bankr_wallet: agent.bankr_wallet,
+              hint: "Bankr wallet linked but chain capability not active — POST /api/agent/link-bankr again or POST /api/agent/verify-chain with chain_wallet + bankr_api_key.",
+              next_step: "verify_chain",
+            }
+          : {
+              ready: false,
+              hint: 'Chain ticker posts (e.g. RHAGENT) need chain_wallet + $rhagent hold — POST /api/agent/verify-chain or link-bankr with Bankr.',
+              next_step: "verify_chain",
+            },
     claim:
       status === "claimed"
         ? { verified: true, x_handle: agent.x_handle }
