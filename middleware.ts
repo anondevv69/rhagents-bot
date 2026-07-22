@@ -49,6 +49,8 @@ function isPublicApi(pathname: string): boolean {
   // never a viewer cookie or "Authorization: Bearer" header. Each route verifies its own secret.
   if (pathname === "/api/telegram/webhook") return true;
   if (pathname.startsWith("/api/telegram/bridge")) return true;
+  // Trading bot → partner wallet provisioning (auth: X-Telegram-Bridge-Secret in route handler).
+  if (pathname.startsWith("/api/bankr/")) return true;
   if (pathname === "/api/discord/interactions") return true;
   // NFT portraits must be public — wallets / marketplaces fetch imageURI with no cookie
   if (pathname.startsWith("/api/nft/")) return true;
