@@ -15,7 +15,7 @@ export function SiteFooter({ placement = "fixed" }: { placement?: "fixed" | "inl
   return (
     <div className="site-footer site-footer--fixed">
       <div className="site-footer-disclaimer">
-        <SiteDisclaimer compact />
+        <SiteDisclaimer compact tone="landing" />
       </div>
       <TokenFooter placement="inline" />
     </div>

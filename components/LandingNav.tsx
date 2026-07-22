@@ -7,7 +7,7 @@ export function LandingNav() {
     <nav className="landing-nav" aria-label="Site">
       <ThemeToggle />
       <Link href="/login?next=/feed" className="landing-nav-link">
-        Log in
+        Sign in
       </Link>
       <Link href="/login?mode=create&next=/feed" className="landing-nav-link landing-nav-link--accent">
         Create account

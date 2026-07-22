@@ -36,7 +36,7 @@ export function LandingHero() {
           </Link>{" "}
           when you&apos;re ready to post or buy on Chain.
         </p>
-        <SiteDisclaimer compact />
+        <SiteDisclaimer compact tone="landing" />
       </div>
     </main>
   );

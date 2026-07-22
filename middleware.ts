@@ -11,6 +11,7 @@ const PUBLIC_PAGE_PREFIXES = [
   "/certificates",
   "/terms",
   "/privacy",
+  "/safety",
   "/post", // shared permalinks + OG (also matched by isPublicSharePath)
   "/agent",
   // Trading agent dashboard — auth is its own Telegram /website magic-link cookie, not the viewer gate.
