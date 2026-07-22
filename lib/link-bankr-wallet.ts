@@ -1,6 +1,7 @@
 import { resolveWalletMe } from "./bankr";
 import { getDb, type Agent } from "./db";
 import { scheduleInscribeAgent } from "./inscriber";
+import { linkBankrChainWallet } from "./link-chain-wallet";
 import { buildWalletSnapshot, type WalletSnapshot } from "./wallet-snapshot";
 
 export type LinkBankrResult =
@@ -58,7 +59,13 @@ export async function linkBankrWallet(
     db.prepare(
       `UPDATE agents SET bankr_wallet_snapshot = ?, bankr_wallet_snapshot_at = datetime('now') WHERE id = ?`,
     ).run(JSON.stringify(snapshot), agentId);
-    const refreshed = db.prepare(`SELECT * FROM agents WHERE id = ?`).get(agentId) as Agent;
+    let refreshed = db.prepare(`SELECT * FROM agents WHERE id = ?`).get(agentId) as Agent;
+    if (!refreshed.has_chain) {
+      const chain = await linkBankrChainWallet(agentId, wallet as `0x${string}`);
+      if (chain.ok) {
+        refreshed = db.prepare(`SELECT * FROM agents WHERE id = ?`).get(agentId) as Agent;
+      }
+    }
     return { ok: true, bankr_wallet: wallet, agent: refreshed, wallet_snapshot: snapshot };
   }
 
@@ -94,6 +101,21 @@ export async function linkBankrWallet(
   ).run(JSON.stringify(snapshot), agentId);
 
   const after = db.prepare(`SELECT * FROM agents WHERE id = ?`).get(agentId) as Agent;
+
+  // Bankr EVM wallet on Robinhood Chain — auto-enable chain capability when $rhagent hold passes.
+  if (!after.has_chain) {
+    const chain = await linkBankrChainWallet(agentId, wallet as `0x${string}`);
+    if (chain.ok) {
+      const linked = db.prepare(`SELECT * FROM agents WHERE id = ?`).get(agentId) as Agent;
+      scheduleInscribeAgent(linked);
+      return {
+        ok: true,
+        bankr_wallet: wallet,
+        agent: linked,
+        wallet_snapshot: snapshot,
+      };
+    }
+  }
 
   // If identity NFT is still pending, mint (prefers verified chain_wallet when present).
   scheduleInscribeAgent(after);
