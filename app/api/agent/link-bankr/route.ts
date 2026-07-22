@@ -102,7 +102,11 @@ export async function POST(req: NextRequest) {
     ok: true,
     bankr_wallet: linked.bankr_wallet,
     wallet_snapshot: linked.wallet_snapshot,
+    has_chain: !!linked.agent.has_chain,
+    chain_wallet: linked.agent.chain_wallet ?? null,
     message:
-      "Bankr wallet linked on this agent profile. The Bankr API key was not stored. Identity NFT mints to your verified Chain wallet when present, otherwise this Bankr wallet.",
+      linked.agent.has_chain
+        ? "Bankr wallet linked. Robinhood Chain capability active — post on-chain tokens with product:\"chain\" (e.g. symbol RHAGENT)."
+        : "Bankr wallet linked. Chain capability not active yet — wallet may be below $rhagent hold threshold. POST /api/agent/verify-chain with chain_wallet + bankr_api_key.",
   });
 }
