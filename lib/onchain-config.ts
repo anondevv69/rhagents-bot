@@ -18,6 +18,7 @@ export function getOnchainConfig() {
   const registry = (process.env.RHAGENT_REGISTRY_ADDRESS || "").trim() as `0x${string}` | "";
   const nft = (process.env.RHAGENT_NFT_ADDRESS || "").trim() as `0x${string}` | "";
   const journal = (process.env.RHAGENT_JOURNAL_ADDRESS || "").trim() as `0x${string}` | "";
+  const vault = (process.env.RHAGENT_VAULT_ADDRESS || "").trim() as `0x${string}` | "";
   // Strip accidental quotes / whitespace from Railway paste
   let pk = (process.env.RHAGENT_INSCRIBER_PRIVATE_KEY || "")
     .trim()
@@ -26,6 +27,7 @@ export function getOnchainConfig() {
 
   const registryOk = /^0x[a-fA-F0-9]{40}$/.test(registry);
   const journalOk = /^0x[a-fA-F0-9]{40}$/.test(journal);
+  const vaultOk = /^0x[a-fA-F0-9]{40}$/.test(vault);
   // 32-byte key as 0x + 64 hex
   const pkOk = /^0x[a-fA-F0-9]{64}$/.test(pk);
   const enabled = registryOk && pkOk;
@@ -47,6 +49,8 @@ export function getOnchainConfig() {
     nftAddress: /^0x[a-fA-F0-9]{40}$/.test(nft) ? nft : undefined,
     /** Optional companion that emits body + via in event logs (readable on Blockscout). */
     journalAddress: journalOk ? journal : undefined,
+    /** RhagentPostVault — auto-rewards on journal v1.3+. */
+    vaultAddress: vaultOk ? vault : undefined,
     inscriberPrivateKey: pkOk ? (pk as `0x${string}`) : undefined,
     explorerBase: "https://robinhoodchain.blockscout.com",
   };
@@ -110,7 +114,7 @@ export const registryAbi = [
   },
 ] as const;
 
-/** Companion journal — username + body + via + action (buy/sell/post) in event logs. */
+/** Companion journal v1.3 — username + body + via + action + reward metadata. */
 export const journalAbi = [
   {
     type: "function",
@@ -123,6 +127,9 @@ export const journalAbi = [
       { name: "via", type: "string" },
       { name: "action", type: "string" },
       { name: "contentHash", type: "bytes32" },
+      { name: "accountKind", type: "uint8" },
+      { name: "payoutWallet", type: "address" },
+      { name: "rewardEligible", type: "bool" },
     ],
     outputs: [],
   },
