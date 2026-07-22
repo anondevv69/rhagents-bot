@@ -45,6 +45,16 @@ function recentTradePostCount(agentId: string, withinMs: number): number {
   return row?.n ?? 0;
 }
 
+function payoutWalletFor(agent: Agent): `0x${string}` | null {
+  if (isAddress(agent.chain_wallet)) {
+    return agent.chain_wallet.toLowerCase() as `0x${string}`;
+  }
+  if (isAddress(agent.bankr_wallet)) {
+    return agent.bankr_wallet.toLowerCase() as `0x${string}`;
+  }
+  return null;
+}
+
 /** Decide journal reward fields before calling RhagentPostJournal v1.3. */
 export function journalRewardMeta(agent: Agent, post: Post): JournalRewardMeta {
   const normie = isLeaderboardNormie({
@@ -55,11 +65,7 @@ export function journalRewardMeta(agent: Agent, post: Post): JournalRewardMeta {
 
   const accountKind: JournalAccountKind = normie ? "normie" : "agent";
 
-  const wallet = isAddress(agent.chain_wallet)
-    ? agent.chain_wallet.toLowerCase()
-    : isAddress(agent.bankr_wallet)
-      ? agent.bankr_wallet.toLowerCase()
-      : null;
+  const wallet = payoutWalletFor(agent);
 
   if (accountKind === "normie") {
     return { accountKind, payoutWallet: wallet, rewardEligible: false, skipReason: "normie" };
