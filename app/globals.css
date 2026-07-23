@@ -26,7 +26,7 @@
 
   --sidebar-width: 240px;
   --layout-gutter: 32px;
-  --content-max: 720px;
+  --content-max: 1120px;
   --rail-width: 280px;
   --header-height: 56px;
   --mobile-nav-height: 56px;
@@ -6849,6 +6849,62 @@ a.post-via--link:hover {
 
 .ia-preview-right-rail {
   top: calc(72px + 16px);
+}
+
+.ia-concept-card--reply {
+  margin-left: 12px;
+  border-style: dashed;
+}
+
+.ia-concept-post-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ia-concept-handle {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.ia-concept-handle:hover {
+  color: var(--text);
+}
+
+.ia-concept-lb-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ia-concept-ticker-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.ia-concept-ticker-row--selected {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+
+.ia-concept-card .post-side-badge {
+  display: inline-block;
+  margin: 6px 0;
+}
+
+.ia-concept-card .trade-pill {
+  margin: 8px 0;
+}
+
+.ia-concept-card .post-action-bar {
+  margin-top: 10px;
+}
+
+.ia-concept-card .post-channel-meta {
+  margin-bottom: 4px;
 }
 
 /* IA concept layout (mock structure, site tokens) */

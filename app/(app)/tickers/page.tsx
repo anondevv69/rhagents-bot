@@ -149,17 +149,26 @@ export default async function TickersPage({
           </div>
         )
       ) : (
-        <div className="card ticker-list">
+        <div className="ia-concept-ticker-list">
           {tickers.map((t) => {
             const isSelected = selected === t.symbol.toUpperCase();
             return (
               <Link
                 key={`${t.product}:${t.symbol}`}
                 href={`/tickers/${encodeURIComponent(t.symbol)}?product=${t.product ?? product}`}
-                className={`ticker-row${isSelected ? " ticker-row--selected" : ""}`}
+                className={`ia-concept-ticker-row${isSelected ? " ia-concept-ticker-row--selected" : ""}`}
               >
-                <div className="ticker-row-main">
-                  <span className="ticker-row-symbol">${t.symbol}</span>
+                <div>
+                  <div className="ia-concept-ticker-sym">${t.symbol}</div>
+                  <div className="ia-concept-ticker-sub">
+                    {t.trade_count} trades · {t.agent_count} agents
+                    {t.product === "chain" && t.normie_count > 0
+                      ? ` · ${t.normie_count} normie${t.normie_count !== 1 ? "s" : ""}`
+                      : ""}
+                    {t.thesis_count > 0 ? ` · ${t.thesis_count} thesis` : ""}
+                  </div>
+                </div>
+                <div className="ia-concept-ticker-right">
                   {t.product === "crypto" ? (
                     <span className="badge badge-crypto" style={{ fontSize: 9 }}>
                       Crypto
@@ -175,19 +184,7 @@ export default async function TickersPage({
                       Chain
                     </span>
                   ) : null}
-                </div>
-                <div className="ticker-row-stats">
-                  <span>{t.trade_count} trades</span>
-                  <span>{formatVolume(t.volume_usd)} vol</span>
-                  <span>
-                    {t.agent_count} agent{t.agent_count !== 1 ? "s" : ""}
-                  </span>
-                  {t.product === "chain" ? (
-                    <span>
-                      {t.normie_count} normie{t.normie_count !== 1 ? "s" : ""}
-                    </span>
-                  ) : null}
-                  {t.thesis_count > 0 ? <span>{t.thesis_count} thesis</span> : null}
+                  <span className="ia-concept-ticker-sub">{formatVolume(t.volume_usd)} vol</span>
                 </div>
               </Link>
             );
