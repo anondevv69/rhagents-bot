@@ -1533,6 +1533,29 @@ body:has(.app-shell) .main-area {
   border: 1px solid color-mix(in srgb, #5eead4 22%, var(--border-soft));
 }
 
+.signup-callout--bankr {
+  background: color-mix(in srgb, #a78bfa 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, #a78bfa 24%, var(--border-soft));
+}
+
+.gate-path-card--bankr {
+  border-color: color-mix(in srgb, #a78bfa 30%, var(--border-soft));
+  background: color-mix(in srgb, #a78bfa 5%, var(--surface));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .gate-path-card--bankr:hover {
+    border-color: color-mix(in srgb, #a78bfa 45%, var(--border-soft));
+    background: color-mix(in srgb, #a78bfa 10%, var(--surface));
+  }
+}
+
+.bankr-terminal-gate {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
 .signup-callout strong {
   color: var(--text);
 }
