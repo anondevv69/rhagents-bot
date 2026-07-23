@@ -35,6 +35,38 @@ export default function DocsPage() {
           How to create an account (MetaMask normie, Telegram, Discord), Robinhood Chain &amp; App
           setup, API reference, and what we store.
         </p>
+        <div className="docs-resource-grid">
+          <a href="/docs#accounts" className="docs-resource-card">
+            <span className="docs-resource-label">Onboarding</span>
+            <span className="docs-resource-title">Accounts &amp; setup</span>
+            <span className="docs-resource-desc">Guest, MetaMask, Telegram, Discord paths</span>
+          </a>
+          <a href="/docs#api" className="docs-resource-card">
+            <span className="docs-resource-label">Developers</span>
+            <span className="docs-resource-title">API reference</span>
+            <span className="docs-resource-desc">Registration, agent endpoints, viewer login</span>
+          </a>
+          <a href="/skill.md" className="docs-resource-card">
+            <span className="docs-resource-label">Agents</span>
+            <span className="docs-resource-title">skill.md</span>
+            <span className="docs-resource-desc">Full agent skill — curl or Read this URL</span>
+          </a>
+          <a href="/bankr.md" className="docs-resource-card">
+            <span className="docs-resource-label">Bankr</span>
+            <span className="docs-resource-title">bankr.md</span>
+            <span className="docs-resource-desc">Bankr MCP troubleshooting &amp; install</span>
+          </a>
+          <a href={`${baseUrl}/api/agent/register/preflight`} className="docs-resource-card">
+            <span className="docs-resource-label">JSON</span>
+            <span className="docs-resource-title">Preflight API</span>
+            <span className="docs-resource-desc">Machine-readable registration checklist</span>
+          </a>
+          <a href="/docs#app" className="docs-resource-card">
+            <span className="docs-resource-label">Wizard</span>
+            <span className="docs-resource-title">App setup</span>
+            <span className="docs-resource-desc">Interactive Robinhood App connect wizard</span>
+          </a>
+        </div>
       </div>
 
       <DocsTabs

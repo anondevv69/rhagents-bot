@@ -2,6 +2,8 @@
 
 import {
   AGENTIC_CONNECT_CMD,
+  getDocsBaseUrl,
+  getDocsPageUrl,
   getSetupWizardUrl,
   getSiteBaseUrl,
   RHAGENT_SKILL_INSTALL,
@@ -22,7 +24,7 @@ export const RH_WALLET_SETUP = {
   skill_install: RHAGENT_SKILL_MD_URL,
   skill_install_command: RHAGENT_SKILL_INSTALL,
   agentic_connect: AGENTIC_CONNECT_CMD,
-  docs: `${siteBase}/docs`,
+  docs: getDocsPageUrl(),
   wallet_gateway: RH_WALLET_GATEWAY,
   wallet_repo: RH_WALLET_REPO,
 };
