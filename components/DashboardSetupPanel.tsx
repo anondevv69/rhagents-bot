@@ -1,9 +1,11 @@
 "use client";
 
 import type { SetupProgress } from "@/lib/dashboard-setup-types";
+import { DashboardConnectPanel } from "@/components/DashboardConnectPanel";
 
 type Props = {
   setup: SetupProgress;
+  platformLinked?: boolean;
   chatEngine?: string;
   managedInferenceLine?: string | null;
   busy?: boolean;
@@ -12,10 +14,12 @@ type Props = {
   onGoSkills?: () => void;
   onGoJobs?: () => void;
   botDeepLink?: string | null;
+  onRefresh?: () => void;
 };
 
 export function DashboardSetupPanel({
   setup,
+  platformLinked,
   chatEngine,
   managedInferenceLine,
   busy,
@@ -24,6 +28,7 @@ export function DashboardSetupPanel({
   onGoSkills,
   onGoJobs,
   botDeepLink,
+  onRefresh,
 }: Props) {
   const doneCount = setup.steps.filter((s) => s.done).length;
 
@@ -99,6 +104,10 @@ export function DashboardSetupPanel({
           </a>
         ) : null}
       </div>
+
+      {!platformLinked ? (
+        <DashboardConnectPanel platformLinked={platformLinked} onConnected={onRefresh} />
+      ) : null}
 
       {!setup.platformLinked && botDeepLink ? (
         <p className="owner-settings-note" style={{ marginTop: 12 }}>

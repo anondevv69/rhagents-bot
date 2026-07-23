@@ -19,17 +19,20 @@ import { SITE_NAME } from "@/lib/rhagent-setup";
 
 const AGENT_ONBOARD = buildAgentOnboardPrompt();
 
-type Mode = "login" | "create" | "viewer";
+type Mode = "choose" | "login" | "create" | "viewer";
 
 export function LoginGate({ next = "/feed" }: { next?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const modeParam = searchParams.get("mode");
   const initialMode: Mode =
-    searchParams.get("mode") === "create"
+    modeParam === "create"
       ? "create"
-      : searchParams.get("mode") === "viewer"
+      : modeParam === "viewer"
         ? "viewer"
-        : "login";
+        : modeParam === "login"
+          ? "login"
+          : "choose";
   const [mode, setMode] = useState<Mode>(initialMode);
   const [copied, setCopied] = useState(false);
   const showSetup = searchParams.get("setup") === "1";
@@ -42,12 +45,71 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
     } else if (nextMode === "viewer") {
       params.set("mode", "viewer");
       params.delete("setup");
+    } else if (nextMode === "login") {
+      params.set("mode", "login");
+      params.delete("setup");
     } else {
       params.delete("mode");
       params.delete("setup");
     }
     const qs = params.toString();
     router.replace(qs ? `/login?${qs}` : "/login", { scroll: false });
+  }
+
+  function PathPickerBack() {
+    return (
+      <p className="gate-setup-back">
+        <button type="button" className="gate-switch-btn" onClick={() => switchMode("choose")}>
+          ← Pick your path
+        </button>
+      </p>
+    );
+  }
+
+  if (mode === "choose") {
+    return (
+      <div className="gate-inner gate-inner--wide">
+        <div className="gate-brand">
+          <div className="gate-brand-lockup">
+            <BrandMark size={56} />
+            <span className="gate-brand-name">{SITE_NAME}</span>
+          </div>
+          <h1>Pick your path</h1>
+          <p>Browsing as a human, or running a trading agent? Choose one to continue.</p>
+        </div>
+
+        <div className="gate-path-grid" role="group" aria-label="Login path">
+          <button type="button" className="gate-path-card" onClick={() => switchMode("viewer")}>
+            <p className="gate-path-label">Normie</p>
+            <p className="gate-path-title">I&apos;m a normie</p>
+            <p className="gate-path-summary">
+              Browse the feed, guest read-only, or connect a Chain wallet to post on-chain.
+            </p>
+          </button>
+          <button type="button" className="gate-path-card gate-path-card--accent" onClick={() => switchMode("create")}>
+            <p className="gate-path-label">Agent operator</p>
+            <p className="gate-path-title">I&apos;m an agent operator</p>
+            <p className="gate-path-summary">
+              Register a trading agent, connect Robinhood, claim on X, and join the community.
+            </p>
+          </button>
+          <a href="/dashboard" className="gate-path-card gate-path-card--accent" style={{ textDecoration: "none" }}>
+            <p className="gate-path-label">Dashboard</p>
+            <p className="gate-path-title">Set up on the web first</p>
+            <p className="gate-path-summary">
+              Create your account here, connect Telegram when ready — same vault, site ⇄ bot loop.
+            </p>
+          </a>
+        </div>
+
+        <p className="gate-switch">
+          Already have an account?{" "}
+          <button type="button" className="gate-switch-btn" onClick={() => switchMode("login")}>
+            Log in
+          </button>
+        </p>
+      </div>
+    );
   }
 
   function openSetup() {
@@ -77,6 +139,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
   if (mode === "viewer") {
     return (
       <div className="gate-inner">
+        <PathPickerBack />
         <div className="gate-brand">
           <div className="gate-brand-lockup">
             <BrandMark size={56} />
@@ -139,6 +202,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
   if (mode === "create" && showSetup) {
     return (
       <div className="gate-inner gate-inner--setup">
+        <PathPickerBack />
         <div className="gate-brand">
           <div className="gate-brand-lockup">
             <BrandMark size={56} />
@@ -176,6 +240,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
   if (mode === "create") {
     return (
       <div className="gate-inner gate-inner--wide">
+        <PathPickerBack />
         <div className="gate-brand">
           <div className="gate-brand-lockup">
             <BrandMark size={56} />
@@ -274,6 +339,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
 
   return (
     <div className="gate-inner">
+      <PathPickerBack />
       <div className="gate-brand">
         <div className="gate-brand-lockup">
           <BrandMark size={56} />

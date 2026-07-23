@@ -1,11 +1,25 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ChainWalletConnect } from "@/components/ChainWalletConnect";
 import { WalletLoginButton } from "@/components/WalletLoginButton";
 import { DashboardSetupPanel } from "@/components/DashboardSetupPanel";
+import { CopyBlock, Step } from "@/components/setup-ui";
 import type { SetupProgress } from "@/lib/dashboard-setup-types";
 import { isSetupIncomplete } from "@/lib/dashboard-setup-types";
+import {
+  AGENTIC_ALREADY_VIA_BOT,
+  AGENTIC_CONNECT_INTRO,
+  AGENTIC_CONNECT_TELEGRAM_CMD,
+  AGENTIC_MCP_PATH,
+  AGENTIC_SETUP_URL,
+  AGENTIC_TELEGRAM_PATH,
+  CRYPTO_CONNECT_INTRO,
+  CRYPTO_PENDING_NOTE,
+  RH_CRYPTO_API_PATH,
+  SETUP_WIZARD_URL,
+} from "@/lib/dashboard-connect-copy";
 import { tradingTelegramDeepLink } from "@/lib/telegram-bots";
 
 type DashboardState = {
@@ -13,6 +27,7 @@ type DashboardState = {
   connections: {
     crypto: boolean;
     cryptoPending?: boolean;
+    cryptoPendingPublicKey?: string | null;
     agentic: boolean;
     rhagents: boolean;
     bankr?: boolean;
@@ -112,6 +127,7 @@ async function api(path: string, options: RequestInit = {}) {
 }
 
 export function TradingDashboard({ initialTab }: { initialTab?: string | null }) {
+  const searchParams = useSearchParams();
   const [state, setState] = useState<DashboardState | null>(null);
   const [skills, setSkills] = useState<SkillsState | null>(null);
   const [registrations, setRegistrations] = useState<RegistrationRow[]>([]);
@@ -202,6 +218,12 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
   }, [loadAll, loadSkills, loadRegistrations]);
 
   useEffect(() => {
+    if (searchParams.get("saved") === "1") {
+      showToast("Your Telegram/Discord account is saved on rhagent.bot.");
+    }
+  }, [searchParams, showToast]);
+
+  useEffect(() => {
     if (state?.connections.rhagents) {
       void loadChainStatus();
     } else {
@@ -228,8 +250,25 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
         <div className="panel">
           <h1 className="page-header-title">Trading dashboard</h1>
           <p className="owner-settings-note">{error}</p>
-          <p className="owner-settings-note">
-            Send <code>/website</code> in Telegram or Discord for a fresh login link.
+          <div className="trading-dash-actions" style={{ marginTop: 16 }}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={busy}
+              onClick={() =>
+                run(async () => {
+                  const res = await fetch("/api/dashboard/account/create", { method: "POST" });
+                  const body = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+                  if (!res.ok || !body.ok) throw new Error(body.error || "Could not create account");
+                  window.location.href = "/dashboard?tab=setup";
+                }, "Account created.")
+              }
+            >
+              Start on web — connect Telegram next
+            </button>
+          </div>
+          <p className="owner-settings-note" style={{ marginTop: 16 }}>
+            Already use the bot? Send <code>/website</code> in Telegram or Discord for a login link.
           </p>
         </div>
       </div>
@@ -292,6 +331,7 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
       {tab === "setup" && state?.setup && (
         <DashboardSetupPanel
           setup={state.setup}
+          platformLinked={state.platformLinked}
           chatEngine={state.chatEngine}
           managedInferenceLine={state.managedInferenceLine}
           busy={busy}
@@ -300,6 +340,7 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
           onGoSkills={() => setTab("skills")}
           onGoJobs={() => setTab("jobs")}
           botDeepLink={tradingTelegramDeepLink("start") ?? undefined}
+          onRefresh={() => void loadAll()}
         />
       )}
 
@@ -325,16 +366,27 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
 
       {tab === "connections" && (
         <div className="trading-dash-stack">
+          <p className="owner-settings-note">
+            Step-by-step guides:{" "}
+            <a href={SETUP_WIZARD_URL} className="text-link" target="_blank" rel="noreferrer">
+              Setup wizard
+            </a>
+            {" · "}
+            <a href="/docs#accounts" className="text-link">
+              Accounts docs
+            </a>
+          </p>
           <div className="panel">
             <h2 className="owner-settings-heading">Robinhood Crypto</h2>
             <div className="owner-settings-conn">
               <span className="owner-settings-conn-label">Status</span>
               <span className={`owner-settings-conn-status${c.crypto ? " is-on" : ""}`}>
-                {c.crypto ? "Connected" : c.cryptoPending ? "Pending — paste the rh-api-... key below" : "Not connected"}
+                {c.crypto ? "Connected" : c.cryptoPending ? "Pending — finish in Robinhood, then paste rh-api-… below" : "Not connected"}
               </span>
             </div>
             <CryptoConnectForm
               pending={!!c.cryptoPending}
+              pendingPublicKey={c.cryptoPendingPublicKey ?? null}
               connected={c.crypto}
               busy={busy}
               onGenerate={() =>
@@ -381,15 +433,34 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
                 {c.agentic ? "Connected" : "Not connected"}
               </span>
             </div>
-            <p className="owner-settings-note">
-              Robinhood requires OAuth on a desktop browser or an MCP client — that step can&apos;t be skipped. Once
-              you have a token (from the desktop Connect app, a direct MCP client, or the setup wizard), paste it
-              below.
-            </p>
+            <p className="owner-settings-note">{AGENTIC_CONNECT_INTRO}</p>
+            {!c.agentic ? (
+              <div className="trading-dash-stack-tight" style={{ marginBottom: 16 }}>
+                <div className="gate-card" style={{ margin: 0 }}>
+                  <h2 style={{ fontSize: 14, marginBottom: 8 }}>Option A — Telegram bot (recommended)</h2>
+                  <p className="owner-settings-note">{AGENTIC_TELEGRAM_PATH}</p>
+                  <CopyBlock text={AGENTIC_CONNECT_TELEGRAM_CMD} label="Copy command" />
+                  <p className="owner-settings-note muted" style={{ marginTop: 10 }}>
+                    Or open the{" "}
+                    <a href={AGENTIC_SETUP_URL} className="text-link" target="_blank" rel="noreferrer">
+                      guided setup page
+                    </a>{" "}
+                    (same OAuth flow, step-by-step).
+                  </p>
+                </div>
+                <div className="gate-card" style={{ margin: 0 }}>
+                  <h2 style={{ fontSize: 14, marginBottom: 8 }}>Option B — Already on MCP (Claude, Cursor, Bankr)</h2>
+                  <p className="owner-settings-note">{AGENTIC_MCP_PATH}</p>
+                </div>
+                <p className="owner-settings-note muted">{AGENTIC_ALREADY_VIA_BOT}</p>
+              </div>
+            ) : (
+              <p className="owner-settings-note muted">{AGENTIC_ALREADY_VIA_BOT}</p>
+            )}
             <TokenConnectForm
               connected={c.agentic}
               busy={busy}
-              placeholder="Agentic token"
+              placeholder="AGENTIC_TOKEN (paste only if script/MCP did not auto-save)"
               onSave={(token) =>
                 run(
                   () => api("/api/dashboard/proxy/connect/agentic", { method: "POST", body: JSON.stringify({ token }) }).then(() => undefined),
@@ -1265,6 +1336,7 @@ function downloadMarkdown(filename: string, markdown: string) {
 
 function CryptoConnectForm({
   pending,
+  pendingPublicKey,
   connected,
   busy,
   onGenerate,
@@ -1273,6 +1345,7 @@ function CryptoConnectForm({
   onDisconnect,
 }: {
   pending: boolean;
+  pendingPublicKey: string | null;
   connected: boolean;
   busy: boolean;
   onGenerate: () => Promise<string>;
@@ -1282,6 +1355,9 @@ function CryptoConnectForm({
 }) {
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [advanced, setAdvanced] = useState(false);
+
+  const displayPublicKey = publicKey ?? pendingPublicKey;
+  const showFinishSteps = pending || Boolean(displayPublicKey);
 
   if (connected) {
     return (
@@ -1295,7 +1371,9 @@ function CryptoConnectForm({
 
   return (
     <div className="trading-dash-stack-tight">
-      {!pending ? (
+      <p className="owner-settings-note">{CRYPTO_CONNECT_INTRO}</p>
+
+      {!showFinishSteps ? (
         <div className="trading-dash-actions">
           <button
             type="button"
@@ -1310,20 +1388,42 @@ function CryptoConnectForm({
           </button>
         </div>
       ) : null}
-      {publicKey || pending ? (
-        <div className="owner-settings-note">
-          {publicKey ? (
-            <>
-              Public key (paste into Robinhood → Account → Settings → Crypto → API Trading → + Add key):
-              <br />
-              <code>{publicKey}</code>
-            </>
-          ) : (
-            "Keypair already generated — paste the rh-api-... key Robinhood gave you below."
-          )}
+
+      {showFinishSteps ? (
+        <div className="setup-section" style={{ marginTop: 8 }}>
+          {!pending ? (
+            <Step n={1}>
+              <p>
+                <strong>Keypair generated.</strong> Private key is encrypted in this bot — never share it.
+              </p>
+            </Step>
+          ) : null}
+          <Step n={pending ? 1 : 2}>
+            <p>
+              On a <strong>desktop browser</strong> (Robinhood blocks mobile): open{" "}
+              <strong>{RH_CRYPTO_API_PATH}</strong>.
+            </p>
+          </Step>
+          <Step n={pending ? 2 : 3}>
+            <p>
+              Paste this <strong>public key</strong> into Robinhood (safe — cannot move funds):
+            </p>
+            {displayPublicKey ? <CopyBlock text={displayPublicKey} label="Copy public key" /> : null}
+          </Step>
+          <Step n={pending ? 3 : 4}>
+            <p>
+              Click Save in Robinhood. They show a key starting with <code>rh-api-…</code> — copy it from{" "}
+              <em>their</em> page.
+            </p>
+            <p className="setup-note">{CRYPTO_PENDING_NOTE}</p>
+          </Step>
+          <Step n={pending ? 4 : 5}>
+            <p>Paste the rh-api-… key below and click Save key.</p>
+          </Step>
         </div>
       ) : null}
-      {pending || publicKey ? (
+
+      {showFinishSteps ? (
         <form
           className="trading-dash-form"
           onSubmit={(e) => {
@@ -1333,14 +1433,15 @@ function CryptoConnectForm({
           }}
         >
           <label>
-            rh-api-... key
-            <input name="apiKey" type="text" placeholder="rh-api-..." required disabled={busy} />
+            rh-api-… key (from Robinhood after you save the public key)
+            <input name="apiKey" type="text" placeholder="rh-api-..." required disabled={busy} autoComplete="off" />
           </label>
           <button type="submit" className="btn btn-primary" disabled={busy}>
             Save key
           </button>
         </form>
       ) : null}
+
       {advanced ? (
         <form
           className="trading-dash-form"
@@ -1351,13 +1452,16 @@ function CryptoConnectForm({
             e.currentTarget.reset();
           }}
         >
+          <p className="owner-settings-note muted">
+            Already generated keys elsewhere? Paste both — skips the generate step above.
+          </p>
           <label>
-            rh-api-... key
-            <input name="apiKey" type="text" placeholder="rh-api-..." required disabled={busy} />
+            rh-api-… key
+            <input name="apiKey" type="text" placeholder="rh-api-..." required disabled={busy} autoComplete="off" />
           </label>
           <label>
             Private key (base64)
-            <input name="privateKeyBase64" type="password" required disabled={busy} />
+            <input name="privateKeyBase64" type="password" required disabled={busy} autoComplete="off" />
           </label>
           <button type="submit" className="btn btn-outline" disabled={busy}>
             Save pair

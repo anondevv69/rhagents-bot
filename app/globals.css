@@ -1302,6 +1302,72 @@ body:has(.app-shell) .main-area {
   }
 }
 
+.gate-path-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 4px 0 8px;
+}
+
+.gate-path-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.gate-path-card:hover {
+  border-color: color-mix(in srgb, var(--accent-blue) 45%, var(--border-soft));
+  background: color-mix(in srgb, var(--accent-blue) 4%, var(--bg));
+}
+
+.gate-path-card--accent {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border-soft));
+}
+
+.gate-path-card--accent:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border-soft));
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg));
+}
+
+.gate-path-label {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.gate-path-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.gate-path-summary {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+@media (max-width: 560px) {
+  .gate-path-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .gate-skill-promo--embedded {
   margin-top: 20px;
   padding-top: 18px;

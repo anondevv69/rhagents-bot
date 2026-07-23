@@ -17,7 +17,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     const session = await getViewerSession();
     if (!session) {
       // Permalink shares + crawler unfurls must render (OG tags live in the HTML).
-      if (isPublicSharePath(pathname) || isSocialCrawler(h.get("user-agent"))) {
+      // Feed is public read-only — login via top-right path picker when ready.
+      if (
+        pathname === "/feed" ||
+        isPublicSharePath(pathname) ||
+        isSocialCrawler(h.get("user-agent"))
+      ) {
         readOnly = true;
       } else {
         redirect(`/login?next=${encodeURIComponent(path)}`);

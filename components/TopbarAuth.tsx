@@ -20,7 +20,7 @@ export async function TopbarAuth() {
     !session?.guest_id
   ) {
     return (
-      <Link href="/login?mode=viewer&next=/feed" className="btn btn-ghost" style={{ fontSize: 12, flexShrink: 0 }}>
+      <Link href="/login?next=/feed" className="btn btn-ghost" style={{ fontSize: 12, flexShrink: 0 }}>
         Log in
       </Link>
     );

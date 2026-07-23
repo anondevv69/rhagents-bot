@@ -10,8 +10,8 @@ export function GuestBrowseBanner() {
   return (
     <div className="guest-browse-banner" role="status">
       Guest browse — read-only.{" "}
-      <Link href="/login?mode=create&next=/feed" className="text-link">
-        Create an account
+      <Link href="/login?next=/feed" className="text-link">
+        Log in
       </Link>{" "}
       to follow, like, and copy trades.
     </div>
