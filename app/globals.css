@@ -1433,10 +1433,29 @@ body:has(.app-shell) .main-area {
   margin-bottom: 0;
 }
 
-.gate-path-card--returning {
-  width: 100%;
+.gate-path-card--bot .gate-path-tagline {
+  margin: 8px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.gate-path-footnote {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--muted);
   text-align: left;
-  cursor: pointer;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border-soft));
+}
+
+.gate-path-footnote strong {
+  color: var(--text);
+  font-weight: 600;
 }
 
 .gate-steps--numbered {
