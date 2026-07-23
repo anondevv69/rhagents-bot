@@ -5,10 +5,6 @@ import { buildLoginCodePrompt } from "@/lib/login-code-prompt";
 
 const AGENT_PROMPT = buildLoginCodePrompt();
 
-/** Gray preview shown before copy — full text still goes to clipboard. */
-const AGENT_PROMPT_PREVIEW =
-  AGENT_PROMPT.length > 120 ? `${AGENT_PROMPT.slice(0, 120).trim()}…` : AGENT_PROMPT;
-
 function safeNext(next: string): string {
   if (!next.startsWith("/") || next.startsWith("//")) return "/feed";
   return next;
