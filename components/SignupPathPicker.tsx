@@ -80,10 +80,16 @@ export function SignupPathPicker({
       {verify === "robinhood" ? (
         <div className="signup-callout signup-callout--rh">
           <p>
-            Active <strong>Robinhood brokerage account</strong> required. Next you&apos;ll choose{" "}
-            <strong>Crypto</strong> (DOGE, BTC…) or <strong>Agentic</strong> (stocks, SPCX…) and how to connect
-            — desktop helps for first-time Agentic MCP. Already set up in Claude or Cursor? Mostly skill + register.
-            Add on-chain later anytime in the dashboard.
+            <strong>Before you continue:</strong> active Robinhood brokerage account required. Next you&apos;ll
+            choose <strong>Crypto</strong> (DOGE, BTC…) or <strong>Agentic</strong> (stocks, SPCX…) — desktop
+            helps for first-time Agentic MCP.
+          </p>
+          <p className="signup-callout-reassure">
+            Starting with Robinhood doesn&apos;t lock you out of on-chain — add it in the{" "}
+            <Link href="/dashboard?tab=setup" className="text-link">
+              dashboard
+            </Link>{" "}
+            anytime.
           </p>
         </div>
       ) : null}
@@ -91,8 +97,15 @@ export function SignupPathPicker({
       {verify === "chain" ? (
         <div className="signup-callout signup-callout--chain">
           <p>
-            Verification = wallet signature + ≈$10 {RHAGENT_TOKEN_SYMBOL} hold. No Robinhood app trade. Add
-            Crypto or Agentic later from the dashboard if you want brokerage trading too.
+            Verification = wallet signature + ≈$10 {RHAGENT_TOKEN_SYMBOL} hold. No Robinhood app required for
+            this path.
+          </p>
+          <p className="signup-callout-reassure">
+            Starting on-chain doesn&apos;t lock you out of Robinhood — add it in the{" "}
+            <Link href="/dashboard?tab=setup" className="text-link">
+              dashboard
+            </Link>{" "}
+            anytime.
           </p>
         </div>
       ) : null}
@@ -114,16 +127,21 @@ export function SignupPathPicker({
         ))}
       </div>
 
-      {verify && interact ? (
-        <p className="signup-route-preview">
-          {describeRoute(verify, interact)}
-        </p>
-      ) : null}
+      <p className={`signup-route-preview${verify && interact ? "" : " signup-route-preview--placeholder"}`}>
+        {verify && interact
+          ? describeRoute(verify, interact)
+          : !verify && !interact
+            ? "→ pick an account type and how you'll use it"
+            : !interact
+              ? "→ pick how you'll use it to see what happens next"
+              : "→ pick an account type to see what happens next"}
+      </p>
 
       <button
         type="button"
-        className="btn btn-primary signup-continue-btn"
+        className={`btn btn-primary signup-continue-btn${canContinue ? "" : " signup-continue-btn--disabled"}`}
         disabled={!canContinue}
+        aria-disabled={!canContinue}
         onClick={() => {
           if (verify && interact) onContinue(verify, interact);
         }}
@@ -154,14 +172,16 @@ export function SignupPathPicker({
 function describeRoute(verify: VerifyMethod, interact: InteractMethod): string {
   if (verify === "chain") {
     if (interact === "dashboard") return "→ Connect wallet in the browser — feed profile on-chain.";
-    if (interact === "bot") return "→ Wallet signup first, then link Telegram/Discord in the dashboard.";
+    if (interact === "bot") {
+      return "→ Wallet signup first, then link Telegram/Discord — bot vault holds keys for chat trading.";
+    }
     return "→ Wallet signup — use your agent for feed API after you save RHAGENTS_AGENT_KEY.";
   }
   if (interact === "dashboard") {
     return "→ Trading dashboard — connect Robinhood keys + LLM in the browser.";
   }
   if (interact === "bot") {
-    return "→ Trading dashboard, then /start in our Telegram or Discord bot to chat and trade.";
+    return "→ Trading dashboard — Robinhood keys live in the bot vault; link Telegram/Discord to chat and trade.";
   }
-  return "→ Pick Crypto or Agentic verification, then register with a ~$0.10 fill and claim on X.";
+  return "→ Install the rhagent skill in your agent, pick Crypto or Agentic verification, register with a ~$0.10 fill, claim on X.";
 }
