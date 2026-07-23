@@ -10,6 +10,7 @@ import { agentProfilePath, agentProfileSlug } from "@/lib/agent-path";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import {
   attachBankrWalletToAgent,
+  enableLlmGatewayOnWallet,
   resolveOrProvisionBankrWallet,
   setBankrWalletEnv,
   type ProvisionChannel,
@@ -29,6 +30,7 @@ type BridgeBody = {
   external_id?: string;
   bankr_api_key?: string;
   agent_id?: string;
+  wallet_id?: string;
   env?: Record<string, string>;
 };
 
@@ -297,11 +299,27 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    case "bankr_enable_llm": {
+      const walletId = typeof body.wallet_id === "string" ? body.wallet_id.trim() : "";
+      if (!walletId) {
+        return NextResponse.json({ ok: false, error: "wallet_id required" }, { status: 400 });
+      }
+      try {
+        const { updated } = await enableLlmGatewayOnWallet(walletId);
+        return NextResponse.json({ ok: true, updated });
+      } catch (err) {
+        return NextResponse.json(
+          { ok: false, error: err instanceof Error ? err.message : "enable_llm_failed" },
+          { status: 502 },
+        );
+      }
+    }
+
     default:
       return NextResponse.json(
         {
           ok: false,
-          error: "Unknown action. Use viewer_verify | claim | link | unlink | owner_status | bankr_provision",
+          error: "Unknown action. Use viewer_verify | claim | link | unlink | owner_status | bankr_provision | bankr_enable_llm",
         },
         { status: 400 },
       );
