@@ -10,7 +10,7 @@ import { ConceptSiteFooter } from "./ConceptSiteFooter";
 export function AppShell({ children, readOnly = false }: { children: React.ReactNode; readOnly?: boolean }) {
   return (
     <ViewerModeProvider readOnly={readOnly}>
-      <div className="concept-app-shell">
+      <div className={`concept-app-shell${readOnly ? " concept-app-shell--read-only" : ""}`}>
         <ConceptTopbar />
         <GuestBrowseBanner readOnly={readOnly} />
         <AppPageBody rail={<RightRail />}>{children}</AppPageBody>

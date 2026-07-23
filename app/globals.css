@@ -6859,6 +6859,109 @@ a.post-via--link:hover {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  min-width: 0;
+}
+
+.auth-label-short {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .concept-app-shell {
+    overflow-x: clip;
+  }
+
+  .concept-app-shell .ia-preview-nav-tabs {
+    display: none;
+  }
+
+  .concept-app-shell .ia-preview-nav-inner {
+    padding: 10px 14px;
+    gap: 10px;
+  }
+
+  .concept-app-shell .page-body {
+    padding: 16px 14px 24px;
+  }
+
+  /* Bottom nav covers primary sections — hide duplicate auth when guest banner is shown */
+  .concept-app-shell--read-only .ia-preview-nav-actions .auth-entry-buttons {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --layout-gutter: 16px;
+  }
+
+  .auth-label-full {
+    display: none;
+  }
+
+  .auth-label-short {
+    display: inline;
+  }
+
+  .concept-app-shell .ia-preview-logo-name {
+    display: none;
+  }
+
+  .concept-app-shell .ia-preview-nav-inner {
+    padding: 8px 12px;
+    gap: 6px;
+  }
+
+  .concept-app-shell .ia-preview-nav-actions {
+    gap: 6px;
+  }
+
+  .concept-app-shell .ia-preview-nav-actions .btn {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+
+  .concept-app-shell .ia-preview-search-btn,
+  .concept-app-shell .theme-toggle {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+  }
+
+  .guest-browse-banner {
+    font-size: 11px;
+    padding: 6px 12px;
+    line-height: 1.45;
+  }
+
+  .ia-concept-page-header {
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .ia-concept-page-header .page-sort-tabs {
+    gap: 12px;
+  }
+
+  .ia-concept-vote-row {
+    gap: 10px;
+  }
+
+  .ia-concept-vote {
+    width: 24px;
+  }
+
+  .ia-concept-card {
+    padding: 12px 14px;
+  }
+
+  .concept-site-footer {
+    padding-bottom: calc(var(--mobile-nav-height) + 12px);
+  }
+
+  .concept-app-shell .topbar-user-label {
+    display: none;
+  }
 }
 
 .ia-preview-search-btn {

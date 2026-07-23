@@ -32,7 +32,8 @@ export function AuthEntryButtons({
         Log in
       </Link>
       <Link href={createHref} className="btn btn-primary" style={btnStyle}>
-        Create account
+        <span className="auth-label-full">Create account</span>
+        <span className="auth-label-short">Sign up</span>
       </Link>
     </div>
   );
