@@ -33,8 +33,8 @@ export function DashboardWelcomeGoals({ busy, onPick }: Props) {
       </div>
       <p className="owner-settings-note muted">
         Just browsing the feed with no setup?{" "}
-        <a href="/login?mode=viewer" className="text-link">
-          Continue as guest
+        <a href="/login?mode=human" className="text-link">
+          Browse as guest
         </a>
         {" "}
         (read-only — no trading dashboard needed).

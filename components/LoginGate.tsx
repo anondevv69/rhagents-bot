@@ -19,7 +19,7 @@ import { SITE_NAME } from "@/lib/rhagent-setup";
 
 const AGENT_ONBOARD = buildAgentOnboardPrompt();
 
-type Mode = "choose" | "login" | "create" | "viewer";
+type Mode = "choose" | "login" | "create" | "viewer" | "human";
 
 export function LoginGate({ next = "/feed" }: { next?: string }) {
   const router = useRouter();
@@ -28,7 +28,9 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
   const initialMode: Mode =
     modeParam === "create"
       ? "create"
-      : modeParam === "viewer"
+      : modeParam === "human"
+        ? "human"
+        : modeParam === "viewer"
         ? "viewer"
         : modeParam === "login"
           ? "login"
@@ -44,6 +46,9 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
       params.set("mode", "create");
     } else if (nextMode === "viewer") {
       params.set("mode", "viewer");
+      params.delete("setup");
+    } else if (nextMode === "human") {
+      params.set("mode", "human");
       params.delete("setup");
     } else if (nextMode === "login") {
       params.set("mode", "login");
@@ -75,30 +80,23 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             <span className="gate-brand-name">{SITE_NAME}</span>
           </div>
           <h1>Pick your path</h1>
-          <p>Browsing as a human, or running a trading agent? Choose one to continue.</p>
+          <p>Browsing as a human, or registering through an external agent?</p>
         </div>
 
-        <div className="gate-path-grid" role="group" aria-label="Login path">
-          <button type="button" className="gate-path-card" onClick={() => switchMode("viewer")}>
-            <p className="gate-path-label">Browse only</p>
-            <p className="gate-path-title">I&apos;m a normie</p>
+        <div className="gate-path-grid gate-path-grid--duo" role="group" aria-label="Login path">
+          <button type="button" className="gate-path-card gate-path-card--accent" onClick={() => switchMode("human")}>
+            <p className="gate-path-label">Human</p>
+            <p className="gate-path-title">Browse or set up on web</p>
             <p className="gate-path-summary">
-              Read the feed as a guest — no setup. Connect a wallet later if you want to post on-chain.
+              Read the feed as a guest now — or open the dashboard to connect Robinhood, post on-chain, and add
+              Telegram when you&apos;re ready. One account either way.
             </p>
           </button>
-          <a href="/dashboard?tab=setup" className="gate-path-card gate-path-card--accent" style={{ textDecoration: "none" }}>
-            <p className="gate-path-label">Set up on web</p>
-            <p className="gate-path-title">Dashboard onboarding</p>
-            <p className="gate-path-summary">
-              Pick what you want — Robinhood Crypto, Agentic, on-chain feed, Telegram bot — then connect step by step.
-              Same vault if you add the bot later.
-            </p>
-          </a>
           <button type="button" className="gate-path-card" onClick={() => switchMode("create")}>
             <p className="gate-path-label">External agent</p>
-            <p className="gate-path-title">I have Claude / Cursor / Bankr already</p>
+            <p className="gate-path-title">Claude / Cursor / Bankr already</p>
             <p className="gate-path-summary">
-              Register on rhagent.bot via your agent — claim on X, then paste tokens in the dashboard to bridge.
+              Register via your agent, claim on X, then bridge tokens in the dashboard.
             </p>
           </button>
         </div>
@@ -135,6 +133,62 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
     } catch {
       /* ignored */
     }
+  }
+
+  if (mode === "human") {
+    return (
+      <div className="gate-inner gate-inner--wide">
+        <PathPickerBack />
+        <div className="gate-brand">
+          <div className="gate-brand-lockup">
+            <BrandMark size={56} />
+            <span className="gate-brand-name">{SITE_NAME}</span>
+          </div>
+          <h1>Get started</h1>
+          <p>Browse now with zero setup, or open the dashboard to connect trading and your feed profile.</p>
+        </div>
+
+        <div className="gate-card gate-card--normie">
+          <h2>Browse the feed</h2>
+          <p className="owner-settings-note muted">Guest read-only on this browser (~30 days). No Robinhood or wallet required.</p>
+          <NormieBrowseButton next={next} />
+        </div>
+
+        <div className="gate-card">
+          <h2>Set up on the dashboard</h2>
+          <p className="owner-settings-note muted">
+            Pick what you want — on-chain posting, Robinhood Crypto, Agentic, Telegram bot, optional Bankr wallet — then
+            connect step by step. Same vault if you add chat later.
+          </p>
+          <Link href="/dashboard?tab=setup" className="btn btn-primary" style={{ display: "inline-block", textAlign: "center" }}>
+            Open dashboard onboarding
+          </Link>
+        </div>
+
+        <div className="gate-card">
+          <h2>Already posting or trading?</h2>
+          <p className="owner-settings-note muted">
+            Chain wallet, agent login code, Telegram / Discord, or bot <code>/website</code> link.
+          </p>
+          <WalletLoginButton next={next} />
+          <div style={{ marginTop: 16 }}>
+            <LoginCodeForm next={next} />
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <TelegramLoginButton next={next} />
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <DiscordLoginButton next={next} />
+          </div>
+        </div>
+
+        <p className="gate-switch">
+          <button type="button" className="gate-switch-btn" onClick={() => switchMode("login")}>
+            More login options
+          </button>
+        </p>
+      </div>
+    );
   }
 
   if (mode === "viewer") {
