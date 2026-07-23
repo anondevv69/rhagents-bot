@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 
 const ALLOWED_PREFIXES = [
   "settings/",
+  "dashboard/",
   "jobs",
   "pending-orders",
   "events",

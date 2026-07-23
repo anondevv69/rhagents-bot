@@ -94,7 +94,7 @@ export async function claimTradingSaveToken(
   if (opts.sessionId) {
     headers.Cookie = `rhagent_session=${encodeURIComponent(opts.sessionId)}`;
   }
-  const res = await fetch(`${telegramAgentBaseUrl()}/api/dashboard/save/claim`, {
+  const res = await fetch(`${telegramAgentBaseUrl()}/api/dashboard/save/try`, {
     method: "POST",
     headers,
     body: JSON.stringify({ token, force: opts.force ?? false }),

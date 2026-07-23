@@ -6,8 +6,8 @@ import { ChainWalletConnect } from "@/components/ChainWalletConnect";
 import { WalletLoginButton } from "@/components/WalletLoginButton";
 import { DashboardSetupPanel } from "@/components/DashboardSetupPanel";
 import { CopyBlock, Step } from "@/components/setup-ui";
-import type { SetupProgress } from "@/lib/dashboard-setup-types";
-import { isSetupIncomplete } from "@/lib/dashboard-setup-types";
+import type { AccountCapabilities, SetupProgress, UiDefaultSurface } from "@/lib/dashboard-setup-types";
+import { SKILLS_BOT_ONLY_DISCLAIMER, isSetupIncomplete } from "@/lib/dashboard-setup-types";
 import {
   AGENTIC_ALREADY_VIA_BOT,
   AGENTIC_CONNECT_INTRO,
@@ -34,6 +34,7 @@ type DashboardState = {
     bankrWallet?: string | null;
   };
   setup?: SetupProgress;
+  capabilities?: AccountCapabilities;
   chatEngine?: string;
   managedInferenceLine?: string | null;
   platformLinked?: boolean;
@@ -158,10 +159,21 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
     }
   }, [validInitial]);
 
-  const bootstrapSetup = useCallback(async () => {
-    await api("/api/dashboard/proxy/setup/bootstrap", { method: "POST" });
+  const addWallet = useCallback(async () => {
+    await api("/api/dashboard/proxy/setup/wallet", { method: "POST" });
     await loadAll();
   }, [loadAll]);
+
+  const setSurfacePreference = useCallback(
+    async (surface: UiDefaultSurface) => {
+      await api("/api/dashboard/proxy/dashboard/ui-preference", {
+        method: "PATCH",
+        body: JSON.stringify({ ui_default_surface: surface }),
+      });
+      await loadAll();
+    },
+    [loadAll],
+  );
 
   const loadSkills = useCallback(async () => {
     try {
@@ -328,14 +340,16 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
         ))}
       </nav>
 
-      {tab === "setup" && state?.setup && (
+      {tab === "setup" && state?.setup && state.capabilities && (
         <DashboardSetupPanel
           setup={state.setup}
+          capabilities={state.capabilities}
           platformLinked={state.platformLinked}
           chatEngine={state.chatEngine}
           managedInferenceLine={state.managedInferenceLine}
           busy={busy}
-          onBootstrap={() => run(() => bootstrapSetup(), "Ready.")}
+          onAddWallet={() => run(() => addWallet(), "Bankr wallet ready.")}
+          onSurfacePreference={(surface) => run(() => setSurfacePreference(surface), "Preference saved.")}
           onGoConnections={() => setTab("connections")}
           onGoSkills={() => setTab("skills")}
           onGoJobs={() => setTab("jobs")}
@@ -437,7 +451,7 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
             {!c.agentic ? (
               <div className="trading-dash-stack-tight" style={{ marginBottom: 16 }}>
                 <div className="gate-card" style={{ margin: 0 }}>
-                  <h2 style={{ fontSize: 14, marginBottom: 8 }}>Option A — Telegram bot (recommended)</h2>
+                  <h2 style={{ fontSize: 14, marginBottom: 8 }}>Option A — Telegram bot (recommended for chat)</h2>
                   <p className="owner-settings-note">{AGENTIC_TELEGRAM_PATH}</p>
                   <CopyBlock text={AGENTIC_CONNECT_TELEGRAM_CMD} label="Copy command" />
                   <p className="owner-settings-note muted" style={{ marginTop: 10 }}>
@@ -451,11 +465,23 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
                 <div className="gate-card" style={{ margin: 0 }}>
                   <h2 style={{ fontSize: 14, marginBottom: 8 }}>Option B — Already on MCP (Claude, Cursor, Bankr)</h2>
                   <p className="owner-settings-note">{AGENTIC_MCP_PATH}</p>
+                  <p className="owner-settings-note muted">
+                    Your primary skills stay in Claude/Cursor — this only copies the token into your rhagent vault for
+                    bot trading and feed auto-post.
+                  </p>
                 </div>
                 <p className="owner-settings-note muted">{AGENTIC_ALREADY_VIA_BOT}</p>
               </div>
             ) : (
-              <p className="owner-settings-note muted">{AGENTIC_ALREADY_VIA_BOT}</p>
+              <div className="gate-card" style={{ marginBottom: 16 }}>
+                <p className="owner-settings-note">
+                  <strong>✓ Agentic connected</strong>
+                  {state.capabilities?.has_platform_link
+                    ? " — token in vault; bot and MCP can share it."
+                    : " — via MCP token or OAuth. Link Telegram/Discord only if you want chat + dashboard skills."}
+                </p>
+                <p className="owner-settings-note muted">{AGENTIC_ALREADY_VIA_BOT}</p>
+              </div>
             )}
             <TokenConnectForm
               connected={c.agentic}
@@ -703,10 +729,13 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
         <div className="trading-dash-stack">
           <div className="panel">
             <h2 className="owner-settings-heading">Your skills</h2>
+            {!state?.platformLinked ? (
+              <p className="owner-settings-note">{SKILLS_BOT_ONLY_DISCLAIMER}</p>
+            ) : null}
             <p className="owner-settings-note">
-              Skills are instructions layered onto your assistant. <strong>rhagent core</strong> and{" "}
-              <strong>Social posting</strong> are always on. Add built-ins, write your own, or import one from a
-              URL / pasted markdown.
+              Skills are instructions layered onto your Telegram/Discord assistant. <strong>rhagent core</strong> and{" "}
+              <strong>Social posting</strong> are always on. Add built-ins, write your own, or import one from a URL /
+              pasted markdown.
             </p>
             {!skills ? (
               <p className="owner-settings-note">Loading…</p>
@@ -850,6 +879,9 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
                 {state.jobLimit.active}/{state.jobLimit.max} active
               </span>
             </h2>
+            {!state?.platformLinked ? (
+              <p className="owner-settings-note">{SKILLS_BOT_ONLY_DISCLAIMER}</p>
+            ) : null}
             {!state.jobs.length ? (
               <p className="owner-settings-note">No jobs yet.</p>
             ) : (

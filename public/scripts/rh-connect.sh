@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # RH Wallet Connect — one-command Robinhood Agentic OAuth for Bankr
-# Usage: curl -fsSL https://rhagent.bot/scripts/rh-connect.sh | bash
+#
+# Usage:
+#   curl -fsSL https://rhagent.bot/scripts/rh-connect.sh | bash
+#
+# Telegram auto-save (env var must be on the *bash* side of the pipe, not curl):
+#   curl -fsSL https://rhagent.bot/scripts/rh-connect.sh | RH_CONNECT_FOR=telegram bash
 
 set -euo pipefail
 
@@ -25,8 +30,7 @@ echo "→ Downloading RH Wallet connect tool..."
 git clone --depth 1 --branch "$BRANCH" "$REPO" "$WORKDIR" >/dev/null 2>&1
 
 echo "→ Starting Robinhood Agentic OAuth (localhost)..."
-EXTRA_ARGS=()
 if [ "${RH_CONNECT_FOR:-}" = "telegram" ]; then
-  EXTRA_ARGS+=(--for-telegram --no-bankr)
+  exec node "$WORKDIR/skill/connect/bin/cli.js" --for-telegram --no-bankr "$@"
 fi
-node "$WORKDIR/skill/connect/bin/cli.js" "${EXTRA_ARGS[@]}" "$@"
+exec node "$WORKDIR/skill/connect/bin/cli.js" "$@"
