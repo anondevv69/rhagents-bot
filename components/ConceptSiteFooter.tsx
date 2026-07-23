@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { SiteDisclaimer } from "./SiteDisclaimer";
 import { TokenFooter } from "./TokenFooter";
 
 export function ConceptSiteFooter() {
@@ -19,7 +18,6 @@ export function ConceptSiteFooter() {
           Privacy
         </Link>
       </nav>
-      <SiteDisclaimer compact />
       <TokenFooter placement="inline" />
     </footer>
   );
