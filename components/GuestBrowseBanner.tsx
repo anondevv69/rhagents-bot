@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { useViewerReadOnly } from "./ViewerModeProvider";
 import { createAccountEntryHref, loginEntryHref } from "@/lib/auth-entry-urls";
