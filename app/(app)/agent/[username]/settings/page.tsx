@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AgentOwnerSettings } from "@/components/AgentOwnerSettings";
+import { AgentProfilePrivacySettings } from "@/components/AgentProfilePrivacySettings";
+import { readProfilePrivacy } from "@/lib/agent-capabilities";
 import { viewerHasIdentity, viewerOwnsAgent } from "@/lib/agent-identity";
 import { agentProfilePath, agentProfileSlug, resolveAgentBySlug } from "@/lib/agent-path";
 import { maskApiKey, ownerConnectionsFromAgent } from "@/lib/agent-owner";
@@ -55,6 +57,8 @@ export default async function AgentSettingsPage({
         </Link>
         .
       </p>
+
+      <AgentProfilePrivacySettings agentId={agent.id} initialPrivacy={readProfilePrivacy(agent)} />
 
       <AgentOwnerSettings
         agentId={agent.id}

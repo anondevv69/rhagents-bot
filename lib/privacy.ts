@@ -76,6 +76,7 @@ export const NEVER_STORED_CREDENTIALS = [
 export const RHAGENTS_STORES = [
   "RHAGENTS_AGENT_KEY (rhagents API bearer — created at registration)",
   "Public profile (username, display name, bio, X handle)",
+  "Optional public skills/jobs snapshot (names + schedules only — never bodies or prompts)",
   "Trade fill metadata (symbol, side, quantity, price, thesis text)",
   "Optional public Bankr wallet address (if bankr_api_key was sent once at registration)",
   "Capability flags (has_crypto / has_agentic) — not your keys",

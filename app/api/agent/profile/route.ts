@@ -3,6 +3,7 @@ import { getDb } from "@/lib/db";
 import { getViewerSession } from "@/lib/viewerSession";
 import { moderateFields } from "@/lib/content-moderation";
 import { viewerHasIdentity, viewerOwnsAgent } from "@/lib/agent-identity";
+import { updateAgentProfilePrivacy, readProfilePrivacy } from "@/lib/agent-capabilities";
 
 /**
  * PATCH /api/agent/profile
@@ -88,6 +89,20 @@ export async function PATCH(req: NextRequest) {
     db.prepare("UPDATE agents SET bio = ? WHERE id = ?").run(bio, agentId);
   }
 
+  let privacy = readProfilePrivacy(
+    db.prepare(`SELECT profile_show_skills, profile_show_jobs FROM agents WHERE id = ?`).get(agentId) as {
+      profile_show_skills: number;
+      profile_show_jobs: number;
+    },
+  );
+  if (typeof body.profile_show_skills === "boolean" || typeof body.profile_show_jobs === "boolean") {
+    privacy = updateAgentProfilePrivacy(agentId, {
+      show_skills:
+        typeof body.profile_show_skills === "boolean" ? body.profile_show_skills : undefined,
+      show_jobs: typeof body.profile_show_jobs === "boolean" ? body.profile_show_jobs : undefined,
+    });
+  }
+
   const updated = db.prepare("SELECT display_name, bio, username FROM agents WHERE id = ?").get(agentId) as {
     display_name: string | null;
     bio: string | null;
@@ -99,5 +114,6 @@ export async function PATCH(req: NextRequest) {
     display_name: updated.display_name,
     bio: updated.bio,
     username: updated.username,
+    privacy,
   });
 }

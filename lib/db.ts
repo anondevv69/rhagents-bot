@@ -382,6 +382,20 @@ function migrate(db: Database.Database) {
 
   expandCapabilityChecks(db);
 
+  // Public profile: skills/jobs snapshot + privacy toggles (default hidden)
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN profile_show_skills INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN profile_show_jobs INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN agent_capabilities_snapshot TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN agent_capabilities_synced_at TEXT`);
+  } catch { /* exists */ }
+
   // One-time owner link codes (attach Telegram to an already X-claimed agent)
   try {
     db.exec(`
@@ -619,6 +633,12 @@ export interface Agent {
   /** Sanitized Bankr + Robinhood wallet summary (no secrets). */
   bankr_wallet_snapshot: string | null;
   bankr_wallet_snapshot_at: string | null;
+  /** Public profile privacy — skills/jobs hidden by default. */
+  profile_show_skills: number;
+  profile_show_jobs: number;
+  /** JSON snapshot: skill names + job schedules only (no bodies/prompts). */
+  agent_capabilities_snapshot: string | null;
+  agent_capabilities_synced_at: string | null;
 }
 
 export interface Post {
