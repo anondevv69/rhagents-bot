@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { TradingDashboard } from "@/components/TradingDashboard";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,9 @@ export default async function TradingDashboardPage({
   const { tab } = await searchParams;
   return (
     <div className="gate-inner gate-inner--dashboard">
-      <TradingDashboard initialTab={tab ?? null} />
+      <Suspense fallback={<div className="owner-settings-note">Loading dashboard…</div>}>
+        <TradingDashboard initialTab={tab ?? null} />
+      </Suspense>
     </div>
   );
 }
