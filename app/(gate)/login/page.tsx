@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import { LoginGate } from "@/components/LoginGate";
 import { viewerGateEnabled } from "@/lib/viewer";
 
+export const dynamic = "force-dynamic";
+
 export default async function LoginPage({
   searchParams,
 }: {
