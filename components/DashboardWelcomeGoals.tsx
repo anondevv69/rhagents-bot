@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ONBOARDING_GOALS, expandedFromGoal, type OnboardingGoal } from "@/lib/dashboard-onboarding-goals";
 import type { UiDefaultSurface } from "@/lib/dashboard-setup-types";
 
@@ -32,10 +33,10 @@ export function DashboardWelcomeGoals({ busy, onPick }: Props) {
         ))}
       </div>
       <p className="owner-settings-note muted">
-        Just browsing the feed with no setup?{" "}
-        <a href="/login?mode=human" className="text-link">
-          Browse as guest
-        </a>
+        Just browsing?{" "}
+        <Link href={`/api/viewer/guest?next=/feed`} className="text-link">
+          Read the feed as a guest
+        </Link>
         {" "}
         (read-only — no trading dashboard needed).
       </p>
