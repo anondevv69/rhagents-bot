@@ -54,3 +54,19 @@ export function deriveExpandedSections(
     skillsJobs: caps.has_platform_link,
   };
 }
+
+/** Client fallback when agent API has not returned capabilities yet. */
+export function capabilitiesFromSetup(
+  setup: SetupProgress,
+  connections: { crypto: boolean; agentic: boolean; bankr?: boolean; rhagents?: boolean },
+  platformLinked?: boolean,
+  existing?: AccountCapabilities | null,
+): AccountCapabilities {
+  return {
+    has_agentic_token: connections.agentic,
+    has_platform_link: platformLinked ?? setup.platformLinked,
+    has_wallet: connections.bankr ?? setup.bankr,
+    has_rh_keys: connections.crypto || connections.agentic || setup.robinhood,
+    ui_default_surface: existing?.ui_default_surface ?? "unset",
+  };
+}

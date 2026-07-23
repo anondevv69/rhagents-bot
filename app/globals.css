@@ -5566,6 +5566,158 @@ a.post-via--link:hover {
   gap: 8px;
 }
 
+.trading-dash-setup-header {
+  margin-bottom: 12px;
+}
+
+.trading-dash-setup-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.trading-dash-setup-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--border-soft);
+  color: var(--muted);
+  background: var(--surface-2, rgba(255, 255, 255, 0.03));
+}
+
+.trading-dash-setup-chip.is-done {
+  border-color: rgba(200, 255, 0, 0.35);
+  color: var(--rh-neon);
+}
+
+.trading-dash-setup-meta {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.trading-dash-setup-surface {
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+  background: var(--surface-2, rgba(255, 255, 255, 0.03));
+  margin-bottom: 16px;
+}
+
+.trading-dash-setup-surface-label {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.trading-dash-setup-surface-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.trading-dash-setup-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trading-dash-setup-section {
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface-2, rgba(255, 255, 255, 0.02));
+}
+
+.trading-dash-setup-section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.trading-dash-setup-section-head:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.trading-dash-setup-section-chevron {
+  font-weight: 700;
+  min-width: 1rem;
+  color: var(--rh-neon);
+}
+
+.trading-dash-setup-section-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.trading-dash-setup-section-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.trading-dash-setup-section-sub {
+  font-size: 12px;
+}
+
+.trading-dash-setup-section-body {
+  padding: 0 16px 16px 42px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trading-dash-setup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trading-dash-connect-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.trading-dash-connect-card {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-soft);
+  background: rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.trading-dash-connect-card-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.trading-dash-connect-embedded .trading-dash-connect-grid {
+  margin-top: 0;
+}
+
+.trading-dash-error {
+  color: var(--down, #e55);
+}
+
 .trading-dash-setup-steps {
   list-style: none;
   margin: 16px 0 0;

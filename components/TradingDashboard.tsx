@@ -7,7 +7,7 @@ import { WalletLoginButton } from "@/components/WalletLoginButton";
 import { DashboardSetupPanel } from "@/components/DashboardSetupPanel";
 import { CopyBlock, Step } from "@/components/setup-ui";
 import type { AccountCapabilities, SetupProgress, UiDefaultSurface } from "@/lib/dashboard-setup-types";
-import { SKILLS_BOT_ONLY_DISCLAIMER, isSetupIncomplete } from "@/lib/dashboard-setup-types";
+import { SKILLS_BOT_ONLY_DISCLAIMER, capabilitiesFromSetup, isSetupIncomplete } from "@/lib/dashboard-setup-types";
 import {
   AGENTIC_ALREADY_VIA_BOT,
   AGENTIC_CONNECT_INTRO,
@@ -340,10 +340,13 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
         ))}
       </nav>
 
-      {tab === "setup" && state?.setup && state.capabilities && (
+      {tab === "setup" && state?.setup && (
         <DashboardSetupPanel
           setup={state.setup}
-          capabilities={state.capabilities}
+          capabilities={
+            state.capabilities ??
+            capabilitiesFromSetup(state.setup, state.connections, state.platformLinked, state.capabilities)
+          }
           platformLinked={state.platformLinked}
           chatEngine={state.chatEngine}
           managedInferenceLine={state.managedInferenceLine}
