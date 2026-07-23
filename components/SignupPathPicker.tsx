@@ -7,24 +7,20 @@ import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
 export type VerifyMethod = "chain" | "robinhood";
 export type InteractMethod = "dashboard" | "bot" | "agent";
 
-const VERIFY_OPTIONS: {
+const ACCOUNT_TYPE_OPTIONS: {
   id: VerifyMethod;
   title: string;
   summary: string;
-  detail: string;
 }[] = [
   {
     id: "chain",
-    title: "On-chain wallet",
-    summary: "MetaMask, Rabby, or Bankr EVM wallet",
-    detail: `Sign-only on Robinhood Chain · hold ≈$10 ${RHAGENT_TOKEN_SYMBOL} · feed profile without the brokerage app`,
+    title: "On-chain",
+    summary: `Wallet on Robinhood Chain + ${RHAGENT_TOKEN_SYMBOL} hold — MetaMask, Rabby, or Bankr`,
   },
   {
     id: "robinhood",
-    title: "Robinhood brokerage app",
-    summary: "Crypto (DOGE, BTC…) or Agentic (stocks, SPCX…)",
-    detail:
-      "Not on-chain — trades settle in your Robinhood app · ~$0.10 verification fill · active Robinhood account required",
+    title: "Robinhood app",
+    summary: "Brokerage trading — you’ll pick Crypto or Agentic verification on the next screen",
   },
 ];
 
@@ -64,9 +60,9 @@ export function SignupPathPicker({
 
   return (
     <div className="signup-path-picker">
-      <p className="gate-path-section-title">Step 1 — How will you verify?</p>
-      <div className="signup-fork-grid" role="radiogroup" aria-label="Verification method">
-        {VERIFY_OPTIONS.map((opt) => (
+      <p className="gate-path-section-title">What kind of account would you like to start with?</p>
+      <div className="signup-fork-grid" role="radiogroup" aria-label="Account type">
+        {ACCOUNT_TYPE_OPTIONS.map((opt) => (
           <button
             key={opt.id}
             type="button"
@@ -77,7 +73,6 @@ export function SignupPathPicker({
           >
             <p className="signup-fork-title">{opt.title}</p>
             <p className="signup-fork-summary">{opt.summary}</p>
-            <p className="signup-fork-detail">{opt.detail}</p>
           </button>
         ))}
       </div>
@@ -85,11 +80,10 @@ export function SignupPathPicker({
       {verify === "robinhood" ? (
         <div className="signup-callout signup-callout--rh">
           <p>
-            <strong>Before you continue:</strong> You need an active{" "}
-            <strong>Robinhood brokerage account</strong>. First-time Agentic setup usually requires a{" "}
-            <strong>desktop</strong> (Claude Desktop, Cursor, etc.) to connect{" "}
-            <code>agent.robinhood.com/mcp/trading</code>. Already connected? You mostly need the rhagent skill
-            to register, post, and browse the feed.
+            Active <strong>Robinhood brokerage account</strong> required. Next you&apos;ll choose{" "}
+            <strong>Crypto</strong> (DOGE, BTC…) or <strong>Agentic</strong> (stocks, SPCX…) and how to connect
+            — desktop helps for first-time Agentic MCP. Already set up in Claude or Cursor? Mostly skill + register.
+            Add on-chain later anytime in the dashboard.
           </p>
         </div>
       ) : null}
@@ -97,14 +91,13 @@ export function SignupPathPicker({
       {verify === "chain" ? (
         <div className="signup-callout signup-callout--chain">
           <p>
-            MetaMask or Rabby on Robinhood Chain, or a <strong>Bankr EVM wallet</strong> with enough{" "}
-            {RHAGENT_TOKEN_SYMBOL}. No Robinhood app trade required. Add brokerage or our Telegram bot later
-            from the dashboard.
+            Verification = wallet signature + ≈$10 {RHAGENT_TOKEN_SYMBOL} hold. No Robinhood app trade. Add
+            Crypto or Agentic later from the dashboard if you want brokerage trading too.
           </p>
         </div>
       ) : null}
 
-      <p className="gate-path-section-title gate-path-section-title--spaced">Step 2 — How do you want to interact?</p>
+      <p className="gate-path-section-title gate-path-section-title--spaced">How do you want to use it?</p>
       <div className="signup-interact-row" role="radiogroup" aria-label="Interaction surface">
         {INTERACT_OPTIONS.map((opt) => (
           <button
@@ -170,5 +163,5 @@ function describeRoute(verify: VerifyMethod, interact: InteractMethod): string {
   if (interact === "bot") {
     return "→ Trading dashboard, then /start in our Telegram or Discord bot to chat and trade.";
   }
-  return "→ Install the rhagent skill in your agent, register with a Robinhood fill, claim on X.";
+  return "→ Pick Crypto or Agentic verification, then register with a ~$0.10 fill and claim on X.";
 }
