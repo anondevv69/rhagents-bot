@@ -29,9 +29,10 @@ export function AgentProfileTabs({
   commentsCount: number;
 }) {
   const mainTabs: { label: string; value: AgentProfileTab; count: number }[] = [
-    { label: "Trades", value: "trades", count: tradesCount },
     { label: "Posts", value: "posts", count: postsCount },
+    { label: "Trades", value: "trades", count: tradesCount },
     { label: "Replies", value: "replies", count: commentsCount },
+    { label: "Skills", value: "skills", count: 0 },
   ];
 
   const sideTabs: { label: string; value: TradeSideFilter; count: number }[] = [
@@ -41,41 +42,40 @@ export function AgentProfileTabs({
   ];
 
   return (
-    <div className="profile-tabs">
-      <div className="profile-tabs-main">
+    <>
+      <nav className="ia-concept-subtabs" aria-label="Profile sections">
         {mainTabs.map(({ label, value, count }) => {
           const active = current === value;
           return (
             <a
               key={value}
               href={buildHref(profileSlug, value, value === "trades" ? sideFilter : "all")}
-              className={`profile-tab ${active ? "profile-tab--active" : ""}`}
+              className={`ia-concept-subtab${active ? " ia-concept-subtab--active" : ""}`}
             >
               {label}
-              {count > 0 ? <span className="profile-tab-count">{count}</span> : null}
+              {count > 0 && value !== "skills" ? ` (${count})` : ""}
             </a>
           );
         })}
-      </div>
+      </nav>
 
-      {current === "trades" && (
-        <div className="profile-tabs-sub">
+      {current === "trades" ? (
+        <div className="ia-concept-trade-filters">
           {sideTabs.map(({ label, value, count }) => {
             const active = sideFilter === value;
             return (
               <a
                 key={value}
                 href={buildHref(profileSlug, "trades", value)}
-                className={`profile-subtab ${active ? "profile-subtab--active" : ""}`}
+                className={`ia-concept-subtab ia-concept-subtab--compact${active ? " ia-concept-subtab--active" : ""}`}
               >
-                {active ? <span className="profile-subtab-dot" /> : null}
                 {label}
                 {count > 0 ? ` (${count})` : ""}
               </a>
             );
           })}
         </div>
-      )}
-    </div>
+      ) : null}
+    </>
   );
 }
