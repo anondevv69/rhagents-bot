@@ -15,6 +15,13 @@ import {
   setBankrWalletEnv,
   type ProvisionChannel,
 } from "@/lib/bankr-provision";
+import {
+  sanitizeCapabilitiesInput,
+  saveAgentCapabilitiesSnapshot,
+  updateAgentProfilePrivacy,
+  readProfilePrivacy,
+} from "@/lib/agent-capabilities";
+import { getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +39,9 @@ type BridgeBody = {
   agent_id?: string;
   wallet_id?: string;
   evm_address?: string;
+  capabilities?: unknown;
+  profile_show_skills?: boolean;
+  profile_show_jobs?: boolean;
   env?: Record<string, string>;
 };
 
@@ -332,11 +342,65 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    case "sync_capabilities": {
+      const agentIdBody = typeof body.agent_id === "string" ? body.agent_id.trim() : "";
+      const agent =
+        (agentIdBody
+          ? (getDb().prepare(`SELECT * FROM agents WHERE id = ?`).get(agentIdBody) as import("@/lib/db").Agent | undefined)
+          : undefined) ??
+        (platform === "discord" ? findAgentByDiscordOwner(discordId) : findAgentByTelegramOwner(telegramId));
+      if (!agent) {
+        return NextResponse.json(
+          { ok: false, error: "agent_not_registered — /register_rhagents first" },
+          { status: 404 },
+        );
+      }
+      const snapshot = sanitizeCapabilitiesInput(body.capabilities);
+      if (!snapshot) {
+        return NextResponse.json({ ok: false, error: "invalid capabilities payload" }, { status: 400 });
+      }
+      saveAgentCapabilitiesSnapshot(agent.id, snapshot);
+      return NextResponse.json({
+        ok: true,
+        agent_id: agent.id,
+        synced_at: snapshot.synced_at,
+        skill_count: snapshot.skills.length,
+        job_count: snapshot.jobs.length,
+      });
+    }
+
+    case "profile_privacy": {
+      const agentIdBody = typeof body.agent_id === "string" ? body.agent_id.trim() : "";
+      const agent =
+        (agentIdBody
+          ? (getDb().prepare(`SELECT * FROM agents WHERE id = ?`).get(agentIdBody) as import("@/lib/db").Agent | undefined)
+          : undefined) ??
+        (platform === "discord" ? findAgentByDiscordOwner(discordId) : findAgentByTelegramOwner(telegramId));
+      if (!agent) {
+        return NextResponse.json(
+          { ok: false, error: "agent_not_registered — /register_rhagents first" },
+          { status: 404 },
+        );
+      }
+      const patch: { show_skills?: boolean; show_jobs?: boolean } = {};
+      if (typeof body.profile_show_skills === "boolean") patch.show_skills = body.profile_show_skills;
+      if (typeof body.profile_show_jobs === "boolean") patch.show_jobs = body.profile_show_jobs;
+      if (patch.show_skills === undefined && patch.show_jobs === undefined) {
+        return NextResponse.json({
+          ok: true,
+          privacy: readProfilePrivacy(agent),
+        });
+      }
+      const privacy = updateAgentProfilePrivacy(agent.id, patch);
+      return NextResponse.json({ ok: true, privacy });
+    }
+
     default:
       return NextResponse.json(
         {
           ok: false,
-          error: "Unknown action. Use viewer_verify | claim | link | unlink | owner_status | bankr_provision | bankr_enable_llm",
+          error:
+            "Unknown action. Use viewer_verify | claim | link | unlink | owner_status | bankr_provision | bankr_enable_llm | sync_capabilities | profile_privacy",
         },
         { status: 400 },
       );
