@@ -14,40 +14,40 @@ export function DashboardConnectPanel({
   platformLinked,
   busy,
   onConnected,
+  embedded = false,
 }: {
   platformLinked?: boolean;
   busy?: boolean;
   onConnected?: () => void;
+  /** Inside Setup section — no outer panel wrapper */
+  embedded?: boolean;
 }) {
   const [telegram, setTelegram] = useState<ConnectPayload | null>(null);
   const [discordCode, setDiscordCode] = useState<ConnectPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
 
-  const issueCode = useCallback(
-    async (platform: "telegram" | "discord") => {
-      setLoading(platform);
-      setError(null);
-      try {
-        const res = await fetch("/api/dashboard/connect-code", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ platform }),
-        });
-        const body = (await res.json().catch(() => ({}))) as ConnectPayload & { ok?: boolean; error?: string };
-        if (!res.ok || !body.ok || !body.startParam) {
-          throw new Error(body.error || "Could not create connect code.");
-        }
-        if (platform === "telegram") setTelegram(body);
-        else setDiscordCode(body);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed");
-      } finally {
-        setLoading(null);
+  const issueCode = useCallback(async (platform: "telegram" | "discord") => {
+    setLoading(platform);
+    setError(null);
+    try {
+      const res = await fetch("/api/dashboard/connect-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platform }),
+      });
+      const body = (await res.json().catch(() => ({}))) as ConnectPayload & { ok?: boolean; error?: string };
+      if (!res.ok || !body.ok || !body.startParam) {
+        throw new Error(body.error || "Could not create connect code.");
       }
-    },
-    [],
-  );
+      if (platform === "telegram") setTelegram(body);
+      else setDiscordCode(body);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed");
+    } finally {
+      setLoading(null);
+    }
+  }, []);
 
   if (platformLinked) {
     return (
@@ -58,20 +58,23 @@ export function DashboardConnectPanel({
   }
 
   const tgLink =
-    telegram?.deepLinkTelegram ??
-    (telegram?.startParam ? tradingTelegramDeepLink(telegram.startParam) : null);
+    telegram?.deepLinkTelegram ?? (telegram?.startParam ? tradingTelegramDeepLink(telegram.startParam) : null);
 
-  return (
-    <div className="panel trading-dash-connect">
-      <h2 className="owner-settings-heading">Connect Telegram or Discord</h2>
-      <p className="owner-settings-note">
-        Chat with your agent in Telegram or Discord. Connect here so it links to <em>this</em> dashboard
-        account — not a second vault.
-      </p>
+  const inner = (
+    <>
+      {!embedded ? (
+        <>
+          <h2 className="owner-settings-heading">Connect Telegram or Discord</h2>
+          <p className="owner-settings-note">
+            Chat with your agent in Telegram or Discord. Connect here so it links to <em>this</em> dashboard account
+            — not a second vault.
+          </p>
+        </>
+      ) : null}
 
-      <div className="trading-dash-stack-tight">
-        <div className="gate-card" style={{ margin: 0 }}>
-          <h3 style={{ fontSize: 14, marginBottom: 8 }}>Telegram</h3>
+      <div className="trading-dash-connect-grid">
+        <div className="trading-dash-connect-card">
+          <h3 className="trading-dash-connect-card-title">Telegram</h3>
           {!telegram ? (
             <button
               type="button"
@@ -83,24 +86,22 @@ export function DashboardConnectPanel({
             </button>
           ) : (
             <>
-              <p className="owner-settings-note">
-                Tap the link (expires in {telegram.ttlMinutes} min). Telegram opens with{" "}
-                <code>/start {telegram.startParam}</code> — send it if prompted.
+              <p className="owner-settings-note muted">
+                Expires in {telegram.ttlMinutes} min — tap the link or send{" "}
+                <code className="docs-code-inline">/start {telegram.startParam}</code>
               </p>
               {tgLink ? (
-                <p className="owner-settings-note">
-                  <a href={tgLink} className="text-link" target="_blank" rel="noreferrer">
-                    Open Telegram →
-                  </a>
-                </p>
+                <a href={tgLink} className="btn btn-outline" target="_blank" rel="noreferrer">
+                  Open Telegram
+                </a>
               ) : null}
               <CopyBlock text={telegram.startParam} label="Copy start code" />
             </>
           )}
         </div>
 
-        <div className="gate-card" style={{ margin: 0 }}>
-          <h3 style={{ fontSize: 14, marginBottom: 8 }}>Discord</h3>
+        <div className="trading-dash-connect-card">
+          <h3 className="trading-dash-connect-card-title">Discord</h3>
           {!discordCode ? (
             <button
               type="button"
@@ -112,16 +113,14 @@ export function DashboardConnectPanel({
             </button>
           ) : (
             <>
-              <p className="owner-settings-note">
-                In the Rhagent Discord bot, send (expires in {discordCode.ttlMinutes} min):
-              </p>
+              <p className="owner-settings-note muted">In the Rhagent Discord bot (expires in {discordCode.ttlMinutes} min):</p>
               <CopyBlock text={`/link ${discordCode.startParam}`} label="Copy command" />
             </>
           )}
         </div>
       </div>
 
-      {error ? <p className="owner-settings-note" style={{ color: "var(--danger, #e55)" }}>{error}</p> : null}
+      {error ? <p className="owner-settings-note trading-dash-error">{error}</p> : null}
 
       {onConnected ? (
         <button type="button" className="btn btn-ghost" disabled={busy} onClick={onConnected} style={{ marginTop: 12 }}>
@@ -129,9 +128,12 @@ export function DashboardConnectPanel({
         </button>
       ) : null}
 
-      <p className="owner-settings-note muted" style={{ marginTop: 12 }}>
-        Already chatting with the bot? Send <code>/website</code> there for a login link instead.
+      <p className="owner-settings-note muted" style={{ marginTop: 8 }}>
+        Already chatting with the bot? Send <code className="docs-code-inline">/website</code> there for a login link.
       </p>
-    </div>
+    </>
   );
+
+  if (embedded) return <div className="trading-dash-connect-embedded">{inner}</div>;
+  return <div className="panel trading-dash-connect">{inner}</div>;
 }
