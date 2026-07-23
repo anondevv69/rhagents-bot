@@ -1,5 +1,10 @@
-/** Default skills installed on every newly provisioned Bankr wallet. */
+import { RHAGENT_BANKR_SKILL_INSTALL, RHAGENT_SKILL_MD_URL } from "@/lib/rhagent-setup";
+
+/**
+ * Default skills queued on every newly provisioned Bankr wallet.
+ * Primary: official BankrBot/skills folder. Fallback: hosted skill.md if GitHub is unreachable.
+ */
 export const DEFAULT_BANKR_SKILL_INSTALLS = [
-  "install the skill at https://github.com/rhagent69/rhwallet-rhagent/tree/main/skill",
-  "install the skill at https://github.com/rhagent69/rhagentdotbotskill/tree/main/skill",
+  RHAGENT_BANKR_SKILL_INSTALL,
+  `Read ${RHAGENT_SKILL_MD_URL} and follow it as your rhagent skill`,
 ] as const;
