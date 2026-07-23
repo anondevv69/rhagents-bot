@@ -3,7 +3,6 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { buildAgentOnboardPrompt } from "@/lib/agent-onboard-prompt";
 import { BrandMark } from "./BrandMark";
 import { ClaimCodeLoginForm } from "./ClaimCodeLoginForm";
 import { LoginCodeForm } from "./LoginCodeForm";
@@ -15,10 +14,8 @@ import { BankrTerminalGate } from "./BankrTerminalGate";
 import { SignupPathPicker } from "./SignupPathPicker";
 import { WelcomeLanding } from "./WelcomeLanding";
 import { signupDestination } from "@/lib/signup-route";
-import { SITE_NAME } from "@/lib/rhagent-setup";
+import { RHAGENT_SKILL_INSTALL, SITE_NAME } from "@/lib/rhagent-setup";
 import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
-
-const AGENT_ONBOARD = buildAgentOnboardPrompt();
 
 type Mode = "choose" | "login" | "create" | "chain" | "bankr";
 type LoginChannel = "agent" | "bot";
@@ -233,7 +230,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
 
   async function copyOnboard() {
     try {
-      await navigator.clipboard.writeText(AGENT_ONBOARD);
+      await navigator.clipboard.writeText(RHAGENT_SKILL_INSTALL);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -333,17 +330,20 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         ) : null}
 
         <div className="gate-card">
-          <p className="login-code-step-label">Copy setup message to your agent</p>
+          <p className="login-code-step-label">Send this to your agent</p>
           <p className="login-code-step-hint">
-            Full instructions — not shown here. Your agent handles crypto vs agentic and registration.
+            Same line as the welcome page — skill.md has the full walkthrough.
           </p>
+          <pre className="welcome-agent-copy-pre" style={{ marginBottom: 12 }}>
+            {RHAGENT_SKILL_INSTALL}
+          </pre>
           <button
             type="button"
-            className={`btn btn-outline login-code-copy-btn${copied ? " login-code-copy-btn--copied" : ""}`}
+            className={`btn btn-primary login-code-copy-btn${copied ? " login-code-copy-btn--copied" : ""}`}
             style={{ width: "100%" }}
             onClick={copyOnboard}
           >
-            {copied ? "Copied!" : "Copy setup message"}
+            {copied ? "Copied!" : "Copy to your agent"}
           </button>
           <button type="button" className="btn btn-ghost" style={{ width: "100%", marginTop: 8 }} onClick={openSetup}>
             Robinhood not connected yet? Setup wizard →

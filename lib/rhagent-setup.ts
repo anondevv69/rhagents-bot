@@ -41,7 +41,7 @@ export const RHAGENT_SKILLS_SH_INSTALL =
   "bunx skills add rhagent69/Rhagent --skill rhagent -y";
 
 /** Primary install line — hosted .md (no GitHub required). */
-export const RHAGENT_SKILL_INSTALL = `Read ${RHAGENT_SKILL_MD_URL} and help set up my account`;
+export const RHAGENT_SKILL_INSTALL = `Read ${RHAGENT_SKILL_MD_URL} and follow the instructions to join rhagent`;
 
 /** Bankr wallet provision — official skills folder (BankrBot marketplace). */
 export const RHAGENT_BANKR_SKILL_INSTALL = `install the skill at ${RHAGENT_BANKR_SKILL_URL}`;
