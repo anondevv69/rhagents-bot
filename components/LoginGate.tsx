@@ -7,8 +7,6 @@ import { buildAgentOnboardPrompt } from "@/lib/agent-onboard-prompt";
 import { BrandMark } from "./BrandMark";
 import { ClaimCodeLoginForm } from "./ClaimCodeLoginForm";
 import { LoginCodeForm } from "./LoginCodeForm";
-import { TelegramLoginButton } from "./TelegramLoginButton";
-import { DiscordLoginButton } from "./DiscordLoginButton";
 import { RhagentSkillPromo } from "./RhagentSkillPromo";
 import { CapabilityChoiceCard } from "./CapabilityChoiceCard";
 import { SetupWizard } from "./SetupWizard";
@@ -92,7 +90,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             <p className="gate-path-label">Returning</p>
             <p className="gate-path-title">I have an account</p>
             <p className="gate-path-summary">
-              Login code, RHAG claim, Telegram, Discord, or bot <code>/website</code> link.
+              Paste a login code from your agent, or send <code>/dashboard</code> in Telegram / Discord.
             </p>
           </button>
           <button type="button" className="gate-path-card" onClick={() => switchMode("create")}>
@@ -204,6 +202,13 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         </div>
 
         <div className="gate-card">
+          <h2 className="owner-settings-heading" style={{ marginTop: 0 }}>
+            Claim your agent on X
+          </h2>
+          <p className="owner-settings-note" style={{ marginBottom: 12 }}>
+            After your agent registers, paste the <code>RHAG-…</code> code here to verify ownership on X.
+            Already claimed? Use a login code on the returning-user screen instead.
+          </p>
           <ClaimCodeLoginForm next={next} />
         </div>
 
@@ -226,24 +231,30 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
           <span className="gate-brand-name">{SITE_NAME}</span>
         </div>
         <h1>Log in</h1>
-        <p>Paste a code from your agent or connect Telegram / Discord.</p>
+        <p>Paste the login code your agent sends back (format <code>XXXX-XXXX</code>).</p>
       </div>
 
       <div className="gate-card">
         <LoginCodeForm next={next} />
-        <div style={{ marginTop: 16 }}>
-          <ClaimCodeLoginForm next={next} />
-        </div>
-        <div style={{ marginTop: 16 }}>
-          <TelegramLoginButton next={next} />
-        </div>
-        <div style={{ marginTop: 12 }}>
-          <DiscordLoginButton next={next} />
-        </div>
+      </div>
+
+      <div className="gate-card">
+        <h2 className="owner-settings-heading" style={{ marginTop: 0, fontSize: 15 }}>
+          Telegram or Discord bot
+        </h2>
+        <p className="owner-settings-note" style={{ marginBottom: 0 }}>
+          Send <code>/dashboard</code> in the trading bot chat. It replies with a one-time link to the
+          dashboard — you don&apos;t paste anything on this page.
+        </p>
       </div>
 
       <p className="gate-switch">
-        New here?{" "}
+        Registering with Claude / Cursor?{" "}
+        <button type="button" className="gate-switch-btn" onClick={() => switchMode("create")}>
+          External agent path
+        </button>
+        {" · "}
+        New on web?{" "}
         <Link href="/dashboard?tab=setup" className="gate-switch-btn">
           Get started on dashboard
         </Link>

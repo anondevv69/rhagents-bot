@@ -7,7 +7,7 @@ import { WalletLoginButton } from "@/components/WalletLoginButton";
 import { DashboardSetupPanel } from "@/components/DashboardSetupPanel";
 import { CopyBlock, Step } from "@/components/setup-ui";
 import type { AccountCapabilities, SetupProgress, UiDefaultSurface } from "@/lib/dashboard-setup-types";
-import { SKILLS_BOT_ONLY_DISCLAIMER, capabilitiesFromSetup, isSetupIncomplete } from "@/lib/dashboard-setup-types";
+import { SKILLS_BOT_ONLY_DISCLAIMER, capabilitiesFromSetup, isSetupIncomplete, usesBotRuntime, visibleDashboardTabs, DASHBOARD_TAB_LABELS, type DashboardTabId } from "@/lib/dashboard-setup-types";
 import {
   AGENTIC_ALREADY_VIA_BOT,
   AGENTIC_CONNECT_INTRO,
@@ -97,19 +97,19 @@ type ChainStatus = {
   display_name: string | null;
 };
 
-const TABS = [
-  { id: "setup", label: "Setup" },
-  { id: "overview", label: "Overview" },
-  { id: "connections", label: "Connections" },
-  { id: "skills", label: "Skills" },
-  { id: "jobs", label: "Jobs" },
-  { id: "orders", label: "Pending orders" },
-  { id: "autotrade", label: "Autotrade" },
-  { id: "activity", label: "Activity" },
-  { id: "llm", label: "Assistant" },
-] as const;
+const ALL_TAB_IDS = [
+  "setup",
+  "overview",
+  "connections",
+  "skills",
+  "jobs",
+  "orders",
+  "autotrade",
+  "activity",
+  "llm",
+] as const satisfies readonly DashboardTabId[];
 
-type TabId = (typeof TABS)[number]["id"];
+type TabId = DashboardTabId;
 
 async function api(path: string, options: RequestInit = {}) {
   const res = await fetch(path, {
@@ -134,7 +134,7 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
   const [registrations, setRegistrations] = useState<RegistrationRow[]>([]);
   const [chainStatus, setChainStatus] = useState<ChainStatus | null>(null);
   const validInitial =
-    initialTab && TABS.some((t) => t.id === initialTab) ? (initialTab as TabId) : null;
+    initialTab && ALL_TAB_IDS.includes(initialTab as TabId) ? (initialTab as TabId) : null;
   const [tab, setTab] = useState<TabId>(validInitial ?? "setup");
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; isError?: boolean } | null>(null);
@@ -243,6 +243,50 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
     }
   }, [state?.connections.rhagents, loadChainStatus]);
 
+  const capabilities: AccountCapabilities | null = state
+    ? (state.capabilities ??
+      (state.setup
+        ? capabilitiesFromSetup(
+            state.setup,
+            state.connections,
+            state.platformLinked,
+            state.capabilities,
+          )
+        : {
+            has_agentic_token: state.connections.agentic,
+            has_platform_link: !!state.platformLinked,
+            has_wallet: !!state.connections.bankr,
+            has_rh_keys: state.connections.crypto || state.connections.agentic,
+            ui_default_surface: "unset",
+          }))
+    : null;
+  const dashboardTabs = capabilities ? visibleDashboardTabs(capabilities) : (["setup"] as DashboardTabId[]);
+  const botRuntime = capabilities ? usesBotRuntime(capabilities) : false;
+
+  useEffect(() => {
+    if (!state) return;
+    const caps =
+      state.capabilities ??
+      (state.setup
+        ? capabilitiesFromSetup(
+            state.setup,
+            state.connections,
+            state.platformLinked,
+            state.capabilities,
+          )
+        : {
+            has_agentic_token: state.connections.agentic,
+            has_platform_link: !!state.platformLinked,
+            has_wallet: !!state.connections.bankr,
+            has_rh_keys: state.connections.crypto || state.connections.agentic,
+            ui_default_surface: "unset" as const,
+          });
+    const visible = visibleDashboardTabs(caps);
+    if (!visible.includes(tab)) {
+      setTab(visible[0] ?? "setup");
+    }
+  }, [state, tab]);
+
   async function run(action: () => Promise<void>, okMsg: string) {
     setBusy(true);
     try {
@@ -280,7 +324,7 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
             </button>
           </div>
           <p className="owner-settings-note" style={{ marginTop: 16 }}>
-            Already use the bot? Send <code>/website</code> in Telegram or Discord for a login link.
+            Already use the bot? Send <code>/dashboard</code> in Telegram or Discord for a login link.
           </p>
         </div>
       </div>
@@ -306,10 +350,17 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
         <div>
           <h1 className="page-header-title">Trading dashboard</h1>
           <p className="page-header-subtitle">
-            Onboarding + control panel — Robinhood, feed profile, chat bot, optional Bankr wallet
+            {botRuntime
+              ? "Robinhood keys, chat bot skills/jobs, optional Bankr wallet"
+              : "Robinhood keys & MCP bridge — link Telegram/Discord to unlock bot tabs"}
           </p>
         </div>
         <div className="trading-dash-header-actions">
+          {!botRuntime ? (
+            <a href="/account" className="btn btn-outline">
+              Feed profile
+            </a>
+          ) : null}
           <span className={`trading-dash-pill trading-dash-pill--${state.trading.state}`}>
             Trading: {state.trading.state}
           </span>
@@ -329,15 +380,27 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
         </div>
       </header>
 
+      {!botRuntime ? (
+        <p className="owner-settings-note" style={{ marginBottom: 12 }}>
+          External-agent path: Claude/Cursor skills stay in your client. Skills, jobs, pending orders,
+          autotrade, activity, and Assistant appear here after you link Telegram or Discord. Social
+          profile (display name, avatar) lives on{" "}
+          <a href="/account" className="text-link">
+            Your account
+          </a>
+          .
+        </p>
+      ) : null}
+
       <nav className="trading-dash-tabs" aria-label="Dashboard sections">
-        {TABS.map((t) => (
+        {dashboardTabs.map((id) => (
           <button
-            key={t.id}
+            key={id}
             type="button"
-            className={`trading-dash-tab${tab === t.id ? " is-active" : ""}`}
-            onClick={() => setTab(t.id)}
+            className={`trading-dash-tab${tab === id ? " is-active" : ""}`}
+            onClick={() => setTab(id)}
           >
-            {t.label}
+            {DASHBOARD_TAB_LABELS[id]}
           </button>
         ))}
       </nav>
@@ -365,16 +428,26 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
 
       {tab === "overview" && (
         <div className="trading-dash-grid">
-          {[
-            ["Crypto", c.crypto ? "connected" : c.cryptoPending ? "pending" : "not connected"],
-            ["Agentic", c.agentic ? "connected" : "not connected"],
-            ["rhagent.bot", c.rhagents ? "connected" : "required"],
-            ["Trading state", state.trading.state],
-            ["Autotrade", state.autotrade.enabled ? "ON" : "off"],
-            ["Active jobs", `${state.jobLimit.active}/${state.jobLimit.max}`],
-            ["Pending orders", String(state.pendingOrders.length)],
-            ["LLM provider", state.llm.provider],
-          ].map(([label, value]) => (
+          {(
+            [
+              ["Crypto", c.crypto ? "connected" : c.cryptoPending ? "pending" : "not connected"],
+              ["Agentic", c.agentic ? "connected" : "not connected"],
+              ["rhagent.bot", c.rhagents ? "connected" : "required"],
+              [
+                "Telegram / Discord",
+                state.platformLinked ? "linked" : "not linked — unlocks Skills, Jobs, Assistant",
+              ],
+              ...(botRuntime
+                ? ([
+                    ["Trading state", state.trading.state],
+                    ["Autotrade", state.autotrade.enabled ? "ON" : "off"],
+                    ["Active jobs", `${state.jobLimit.active}/${state.jobLimit.max}`],
+                    ["Pending orders", String(state.pendingOrders.length)],
+                    ["LLM provider", state.llm.provider],
+                  ] as const)
+                : []),
+            ] as const
+          ).map(([label, value]) => (
             <div key={label} className="panel trading-dash-stat">
               <div className="panel-label">{label}</div>
               <div className="trading-dash-stat-value">{value}</div>

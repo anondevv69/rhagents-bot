@@ -70,3 +70,39 @@ export function capabilitiesFromSetup(
     ui_default_surface: existing?.ui_default_surface ?? "unset",
   };
 }
+
+export type DashboardTabId =
+  | "setup"
+  | "overview"
+  | "connections"
+  | "skills"
+  | "jobs"
+  | "orders"
+  | "autotrade"
+  | "activity"
+  | "llm";
+
+/** Bot runtime = Telegram/Discord linked — skills, jobs, chat LLM live there. */
+export function usesBotRuntime(caps: AccountCapabilities): boolean {
+  return caps.has_platform_link;
+}
+
+export function visibleDashboardTabs(caps: AccountCapabilities): DashboardTabId[] {
+  const core: DashboardTabId[] = ["setup", "overview", "connections"];
+  if (!usesBotRuntime(caps)) {
+    return core;
+  }
+  return [...core, "skills", "jobs", "orders", "autotrade", "activity", "llm"];
+}
+
+export const DASHBOARD_TAB_LABELS: Record<DashboardTabId, string> = {
+  setup: "Setup",
+  overview: "Overview",
+  connections: "Connections",
+  skills: "Skills",
+  jobs: "Jobs",
+  orders: "Pending orders",
+  autotrade: "Autotrade",
+  activity: "Activity",
+  llm: "Assistant",
+};

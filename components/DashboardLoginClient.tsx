@@ -9,7 +9,7 @@ export function DashboardLoginClient({ code }: { code: string }) {
 
   useEffect(() => {
     if (!code) {
-      setError("Missing login code. Send /website in Telegram or Discord for a fresh link.");
+      setError("Missing login code. Send /dashboard in Telegram or Discord for a fresh link.");
       return;
     }
     let cancelled = false;
@@ -27,7 +27,7 @@ export function DashboardLoginClient({ code }: { code: string }) {
         }
         router.replace("/dashboard?tab=setup");
       } catch {
-        if (!cancelled) setError("Network error — try again with /website in Telegram or Discord.");
+        if (!cancelled) setError("Network error — try again with /dashboard in Telegram or Discord.");
       }
     })();
     return () => {
@@ -43,7 +43,7 @@ export function DashboardLoginClient({ code }: { code: string }) {
           <>
             <p className="owner-settings-note">{error}</p>
             <p className="owner-settings-note">
-              Send <code>/website</code> in Telegram or Discord to get a new one-time link.
+              Send <code>/dashboard</code> in Telegram or Discord to get a new one-time link.
             </p>
           </>
         ) : (

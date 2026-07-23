@@ -42,7 +42,7 @@ export function handleHelp(): BotReply {
   return reply(
     [
       "This webhook is deprecated — use the single rhagent Telegram bot for claim, link,",
-      "/website, trading, skills, and jobs.",
+      "/dashboard, trading, skills, and jobs.",
       "",
       "If you still reached this handler: set the BotFather webhook to rhagent-telegram-agent",
       "and TELEGRAM_BRIDGE_SECRET on both services.",
@@ -234,7 +234,7 @@ export function routeCommand(
     return reply(
       [
         "This site webhook is deprecated.",
-        "Point the BotFather webhook at rhagent-telegram-agent, then use /website, /claim, and /connect_* there.",
+        "Point the BotFather webhook at rhagent-telegram-agent, then use /dashboard, /claim, and /connect_* there.",
       ].join("\n"),
     );
   }

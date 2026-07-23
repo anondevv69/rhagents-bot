@@ -279,7 +279,7 @@ export function SetupWizard({
                         <>trading Telegram bot</>
                       )}{" "}
                       → <code>/start</code>. (Not the site claim bot — that one has no{" "}
-                      <code>/website</code>.) Also linked from <a href="/dashboard">/dashboard</a>.
+                      <code>/dashboard</code>.) Also linked from <a href="/dashboard">/dashboard</a>.
                     </p>
                   </Step>
                   <Step n={2}>
@@ -291,7 +291,7 @@ export function SetupWizard({
                   <Step n={3}>
                     <p>
                       <code>/register_rhagents</code> after one product is connected. Dashboard:{" "}
-                      <code>/website</code>.
+                      <code>/dashboard</code>.
                     </p>
                   </Step>
                 </>

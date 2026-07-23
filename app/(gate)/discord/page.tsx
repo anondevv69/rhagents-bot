@@ -32,7 +32,7 @@ export default function DiscordTradingInstallPage() {
         <p className="owner-settings-note">
           Same trading agent as Telegram — connect a brokerage app (crypto/stocks), schedule jobs,
           confirm
-          orders, and open the dashboard with <code>/website</code>. Your vault can later be linked
+          orders, and open the dashboard with <code>/dashboard</code>. Your vault can later be linked
           to Telegram with <code>/link_telegram</code>.
         </p>
 
@@ -56,7 +56,7 @@ export default function DiscordTradingInstallPage() {
             In Discord, run <code>/start</code> or <code>/help</code>.
           </li>
           <li>
-            When ready, <code>/website</code> opens your settings on rhagent.bot.
+            When ready, <code>/dashboard</code> opens your settings on rhagent.bot.
           </li>
         </ol>
 
@@ -68,12 +68,12 @@ export default function DiscordTradingInstallPage() {
               <a href={tradingTgUrl} className="text-link" target="_blank" rel="noreferrer">
                 @{tradingTg}
               </a>
-              , then use <code>/website</code> the same way.
+              , then use <code>/dashboard</code> the same way.
             </>
           ) : (
             <>
               Talk to the trading Telegram bot (not the site claim bot), then use{" "}
-              <code>/website</code> the same way.
+              <code>/dashboard</code> the same way.
             </>
           )}{" "}
           <Link href="/dashboard" className="text-link">

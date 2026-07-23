@@ -27,7 +27,7 @@ async function handle(req: NextRequest, pathParts: string[]) {
   const sessionId = req.cookies.get(TRADING_SESSION_COOKIE)?.value;
   if (!sessionId) {
     return NextResponse.json(
-      { ok: false, error: "Not logged in — send /website in Telegram for a fresh login link." },
+      { ok: false, error: "Not logged in — send /dashboard in Telegram for a fresh login link." },
       { status: 401 },
     );
   }

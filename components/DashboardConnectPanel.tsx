@@ -129,7 +129,7 @@ export function DashboardConnectPanel({
       ) : null}
 
       <p className="owner-settings-note muted" style={{ marginTop: 8 }}>
-        Already chatting with the bot? Send <code className="docs-code-inline">/website</code> there for a login link.
+        Already chatting with the bot? Send <code className="docs-code-inline">/dashboard</code> there for a login link.
       </p>
     </>
   );
