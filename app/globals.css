@@ -1433,29 +1433,165 @@ body:has(.app-shell) .main-area {
   margin-bottom: 0;
 }
 
-.gate-path-card--bot .gate-path-tagline {
-  margin: 8px 0 0;
-  font-size: 11px;
-  line-height: 1.4;
-  color: var(--muted);
-  font-style: italic;
+.gate-path-card--returning {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
 }
 
-.gate-path-footnote {
-  margin: 14px 0 0;
+.signup-path-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.signup-fork-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 560px) {
+  .signup-fork-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.signup-fork-card {
+  appearance: none;
+  text-align: left;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: var(--bg);
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.signup-fork-card:hover {
+  border-color: var(--border-light);
+}
+
+.signup-fork-card.is-selected {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border-soft));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.signup-fork-card--chain.is-selected {
+  border-color: color-mix(in srgb, #5eead4 40%, var(--border-soft));
+}
+
+.signup-fork-card--robinhood.is-selected {
+  border-color: color-mix(in srgb, #fb923c 45%, var(--border-soft));
+}
+
+.signup-fork-title {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.signup-fork-summary {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.signup-fork-detail {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.signup-callout {
+  margin: 0 0 16px;
   padding: 12px 14px;
+  border-radius: 10px;
   font-size: 12px;
   line-height: 1.55;
   color: var(--muted);
-  text-align: left;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border-soft));
 }
 
-.gate-path-footnote strong {
+.signup-callout--rh {
+  background: color-mix(in srgb, #fb923c 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, #fb923c 25%, var(--border-soft));
+}
+
+.signup-callout--chain {
+  background: color-mix(in srgb, #5eead4 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, #5eead4 22%, var(--border-soft));
+}
+
+.signup-callout strong {
   color: var(--text);
+}
+
+.signup-interact-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 560px) {
+  .signup-interact-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.signup-interact-chip {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+  background: var(--surface);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s;
+}
+
+.signup-interact-chip.is-selected {
+  border-color: color-mix(in srgb, var(--accent-blue) 50%, var(--border-soft));
+  background: var(--bg);
+}
+
+.signup-interact-chip-title {
+  font-size: 13px;
   font-weight: 600;
+  color: var(--text);
+}
+
+.signup-interact-chip-summary {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.signup-route-preview {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.signup-continue-btn {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.signup-vault-note {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--muted);
+  text-align: center;
 }
 
 .gate-steps--numbered {

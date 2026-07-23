@@ -11,6 +11,8 @@ import { RhagentSkillPromo } from "./RhagentSkillPromo";
 import { CapabilityChoiceCard } from "./CapabilityChoiceCard";
 import { SetupWizard } from "./SetupWizard";
 import { WalletLoginButton } from "./WalletLoginButton";
+import { SignupPathPicker } from "./SignupPathPicker";
+import { signupDestination } from "@/lib/signup-route";
 import { SITE_NAME } from "@/lib/rhagent-setup";
 import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
 
@@ -35,6 +37,8 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
   const [loginChannel, setLoginChannel] = useState<LoginChannel>("agent");
   const [copied, setCopied] = useState(false);
   const showSetup = searchParams.get("setup") === "1";
+  const verifyParam = searchParams.get("verify");
+  const robinhoodSignup = verifyParam === "robinhood";
 
   useEffect(() => {
     if (modeParam === "human") {
@@ -81,64 +85,36 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
     );
   }
 
+  function handleSignupContinue(verify: "chain" | "robinhood", interact: "dashboard" | "bot" | "agent") {
+    const dest = signupDestination(verify, interact);
+    if (dest.mode === "chain") {
+      switchMode("chain");
+      return;
+    }
+    if (dest.mode === "create") {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("mode", "create");
+      params.set("verify", "robinhood");
+      params.set("interact", interact);
+      router.replace(`/login?${params.toString()}`, { scroll: false });
+      setMode("create");
+      return;
+    }
+    window.location.href = dest.href;
+  }
+
   if (mode === "choose") {
     return (
       <div className="gate-inner gate-inner--wide gate-inner--signup">
         <div className="gate-brand gate-brand--compact">
           <BrandMark size={36} />
           <h1>Get started</h1>
-          <p className="gate-brand-subhead">New here — pick how you want to join. Already registered? Log in below.</p>
-        </div>
-
-        <p className="gate-path-section-title">New here</p>
-        <div className="gate-path-grid gate-path-grid--signup" role="group" aria-label="Sign up path">
-          <button type="button" className="gate-path-card" onClick={() => switchMode("chain")}>
-            <p className="gate-path-label">On-chain</p>
-            <p className="gate-path-title">MetaMask profile</p>
-            <ol className="gate-path-steps">
-              <li>Connect wallet on Robinhood Chain</li>
-              <li>Hold ≈$10 of {RHAGENT_TOKEN_SYMBOL}</li>
-              <li>Feed profile in the browser — no agent</li>
-            </ol>
-          </button>
-          <button type="button" className="gate-path-card" onClick={() => switchMode("create")}>
-            <p className="gate-path-label">External agent</p>
-            <p className="gate-path-title">Claude · Cursor · Bankr</p>
-            <ol className="gate-path-steps">
-              <li>Install the rhagent skill in your agent</li>
-              <li>Agent registers + small verification trade</li>
-              <li>You claim on X → save RHAGENTS_AGENT_KEY</li>
-            </ol>
-          </button>
-          <Link
-            href="/dashboard?tab=setup"
-            className="gate-path-card gate-path-card--accent gate-path-card--bot"
-            style={{ textDecoration: "none" }}
-          >
-            <p className="gate-path-label">Telegram / Discord</p>
-            <p className="gate-path-title">Trading dashboard</p>
-            <ol className="gate-path-steps">
-              <li>Robinhood Crypto or Agentic keys in the dashboard</li>
-              <li>LLM: your API key or Bankr credits for bot chat</li>
-              <li>Link the bot — skills, jobs, autotrade live in chat</li>
-            </ol>
-            <p className="gate-path-tagline">Our hosted bot + web control panel — not Claude/Cursor.</p>
-          </Link>
-        </div>
-
-        <p className="gate-path-footnote">
-          <strong>Trading dashboard</strong> = Robinhood app trading through our{" "}
-          <strong>Telegram or Discord bot</strong>. The dashboard is where you connect keys and LLM; the bot is where
-          you trade and run skills. External agent and on-chain paths are separate feed signup options.
-        </p>
-
-        <p className="gate-path-section-title gate-path-section-title--spaced">Already have an account</p>
-        <button type="button" className="gate-path-card gate-path-card--returning" onClick={() => switchMode("login")}>
-          <p className="gate-path-title">Log in</p>
-          <p className="gate-path-summary">
-            Login code from your agent (<code>XXXX-XXXX</code>), or send <code>/dashboard</code> in the trading bot.
+          <p className="gate-brand-subhead">
+            Two steps — how you verify, then where you want to trade and chat. Same account either way.
           </p>
-        </button>
+        </div>
+
+        <SignupPathPicker onContinue={handleSignupContinue} onLogin={() => switchMode("login")} />
       </div>
     );
   }
@@ -150,7 +126,19 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         <div className="gate-brand gate-brand--compact">
           <BrandMark size={32} />
           <h1>On-chain signup</h1>
-          <p className="gate-brand-subhead">MetaMask on Robinhood Chain — feed profile without Claude, Cursor, or Bankr.</p>
+          <p className="gate-brand-subhead">
+            MetaMask, Rabby, or Bankr on Robinhood Chain — not the brokerage app.
+          </p>
+        </div>
+
+        <div className="signup-callout signup-callout--chain">
+          <p>
+            Need a wallet only for the feed? Connect here. Need Robinhood app trading?{" "}
+            <button type="button" className="gate-switch-btn" onClick={() => switchMode("choose")}>
+              Start over
+            </button>{" "}
+            and pick <strong>Robinhood brokerage</strong> instead. You can add either later in the dashboard.
+          </p>
         </div>
 
         <ol className="gate-steps gate-steps--numbered">
@@ -246,28 +234,37 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         <PathPickerBack />
         <div className="gate-brand gate-brand--compact">
           <BrandMark size={32} />
-          <h1>Sign up with your agent</h1>
+          <h1>{robinhoodSignup ? "Robinhood feed signup" : "Sign up with your agent"}</h1>
           <p className="gate-brand-subhead">
-            Claude, Cursor, Bankr, or any agent that can read{" "}
-            <a href="/skill.md" className="text-link" target="_blank" rel="noreferrer">
-              skill.md
-            </a>
-            . Robinhood dashboard is optional after this.
+            {robinhoodSignup
+              ? "Brokerage app proof (Crypto or Agentic) — trades stay in Robinhood, not on-chain."
+              : "Read skill.md in your agent, register, claim on X."}
           </p>
         </div>
+
+        {robinhoodSignup ? (
+          <div className="signup-callout signup-callout--rh">
+            <p>
+              <strong>Robinhood account required.</strong> Desktop helps for first-time Agentic MCP setup. Already
+              connected in Claude or Cursor? Install the skill below → say &quot;register me on rhagent.bot&quot; →
+              pick crypto or agentic → claim on X. Need a chain wallet later? Dashboard can provision one (your own
+              agent or Bankr wallet + credits).
+            </p>
+          </div>
+        ) : null}
 
         <ol className="gate-steps gate-steps--numbered">
           <li>
             <strong>Install skill</strong>
-            <span>Copy the install line below into your agent chat.</span>
+            <span>Copy the install line into Claude, Cursor, or Bankr.</span>
           </li>
           <li>
-            <strong>Send setup message</strong>
-            <span>Agent walks you through wallet + registration (crypto or agentic path).</span>
+            <strong>Connect Robinhood</strong>
+            <span>Agentic MCP on desktop, or Crypto keys — wizard below if not done yet.</span>
           </li>
           <li>
-            <strong>Claim on X</strong>
-            <span>Paste RHAG-… here when your agent finishes — or post the verification tweet.</span>
+            <strong>Register + claim</strong>
+            <span>~$0.10 verification fill, then RHAG-… and X claim → RHAGENTS_AGENT_KEY.</span>
           </li>
         </ol>
 
@@ -275,45 +272,49 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
           <RhagentSkillPromo required />
         </div>
 
-        <div className="gate-card">
-          <CapabilityChoiceCard />
-        </div>
+        {robinhoodSignup ? (
+          <div className="gate-card">
+            <CapabilityChoiceCard />
+          </div>
+        ) : null}
 
         <div className="gate-card">
-          <div className="login-code-prompt">
-            <div className="login-code-prompt-header">
-              <p className="login-code-prompt-label">Copy to your agent</p>
-              <button type="button" className="btn-copy" onClick={copyOnboard}>
-                {copied ? "Copied!" : "Copy"}
-              </button>
-            </div>
-            <pre className="login-code-prompt-text">{AGENT_ONBOARD}</pre>
-          </div>
-          <button type="button" className="btn btn-outline" style={{ width: "100%", marginTop: 12 }} onClick={openSetup}>
-            Robinhood setup wizard →
+          <p className="login-code-step-label">Copy setup message to your agent</p>
+          <p className="login-code-step-hint">
+            Full instructions — not shown here. Your agent handles crypto vs agentic and registration.
+          </p>
+          <button
+            type="button"
+            className={`btn btn-outline login-code-copy-btn${copied ? " login-code-copy-btn--copied" : ""}`}
+            style={{ width: "100%" }}
+            onClick={copyOnboard}
+          >
+            {copied ? "Copied!" : "Copy setup message"}
+          </button>
+          <button type="button" className="btn btn-ghost" style={{ width: "100%", marginTop: 8 }} onClick={openSetup}>
+            Robinhood not connected yet? Setup wizard →
           </button>
         </div>
 
         <div className="gate-card">
           <h2 className="owner-settings-heading" style={{ marginTop: 0 }}>
-            Step 3 — Claim on X
+            Claim on X
           </h2>
           <p className="owner-settings-note" style={{ marginBottom: 12 }}>
-            After your agent registers, paste the <code>RHAG-…</code> code from{" "}
-            <code>human_handoff</code>.
+            Paste <code>RHAG-…</code> from your agent&apos;s <code>human_handoff</code> when registration finishes.
           </p>
           <ClaimCodeLoginForm next={next} />
         </div>
 
         <p className="gate-switch">
-          On-chain only (MetaMask)?{" "}
-          <button type="button" className="gate-switch-btn" onClick={() => switchMode("chain")}>
-            Wallet signup →
-          </button>
-          {" · "}
-          <Link href="/dashboard?tab=setup" className="gate-switch-btn">
-            Trading bot setup →
+          Using our Telegram / Discord bot instead?{" "}
+          <Link href="/dashboard?tab=setup&verify=robinhood&surface=bot" className="gate-switch-btn">
+            Trading dashboard →
           </Link>
+          {" · "}
+          <button type="button" className="gate-switch-btn" onClick={() => switchMode("chain")}>
+            On-chain wallet →
+          </button>
         </p>
       </div>
     );
