@@ -1641,6 +1641,219 @@ body:has(.app-shell) .main-area {
   text-align: center;
 }
 
+.signup-vault-note--hidden {
+  display: none;
+}
+
+/* ── Moltbook-style welcome landing ───────────────────────────────────────── */
+
+.welcome-landing {
+  width: 100%;
+}
+
+.welcome-landing-tagline {
+  margin: 0 0 20px;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.welcome-landing-tagline-sub {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.welcome-path-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 560px) {
+  .welcome-path-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.welcome-path-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: var(--bg);
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.welcome-path-card.is-active {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border-soft));
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .welcome-path-card:hover {
+    border-color: color-mix(in srgb, var(--accent-blue) 40%, var(--border-soft));
+  }
+}
+
+.welcome-path-emoji {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.welcome-path-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.welcome-path-summary {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.welcome-agent-hero {
+  margin-bottom: 20px;
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--surface) 90%, var(--bg));
+}
+
+.welcome-agent-heading {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.welcome-agent-lead {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--muted);
+}
+
+.welcome-agent-steps {
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.welcome-agent-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.welcome-agent-step-num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+.welcome-agent-copy-block {
+  margin-bottom: 12px;
+}
+
+.welcome-agent-copy-pre {
+  margin: 8px 0 12px;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text);
+}
+
+.welcome-agent-copy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.welcome-agent-copy-actions .btn {
+  flex: 1;
+  min-width: 140px;
+}
+
+.welcome-agent-note {
+  margin: 12px 0 0;
+}
+
+.welcome-agent-continue {
+  width: 100%;
+}
+
+.welcome-path-detail {
+  margin-bottom: 20px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.welcome-advanced {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.welcome-advanced-toggle {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+.welcome-advanced-toggle:hover {
+  color: var(--text);
+}
+
+.welcome-advanced-panel {
+  margin-top: 16px;
+}
+
+.gate-inner--welcome .gate-brand h1 {
+  text-align: center;
+  margin-bottom: 4px;
+}
+
 .gate-steps--numbered {
   margin-bottom: 20px;
 }

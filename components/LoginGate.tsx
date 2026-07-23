@@ -13,6 +13,7 @@ import { SetupWizard } from "./SetupWizard";
 import { WalletLoginButton } from "./WalletLoginButton";
 import { BankrTerminalGate } from "./BankrTerminalGate";
 import { SignupPathPicker } from "./SignupPathPicker";
+import { WelcomeLanding } from "./WelcomeLanding";
 import { signupDestination } from "@/lib/signup-route";
 import { SITE_NAME } from "@/lib/rhagent-setup";
 import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
@@ -112,20 +113,28 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
 
   if (mode === "choose") {
     return (
-      <div className="gate-inner gate-inner--wide gate-inner--signup">
+      <div className="gate-inner gate-inner--wide gate-inner--signup gate-inner--welcome">
         <div className="gate-brand gate-brand--compact">
           <BrandMark size={36} />
-          <h1>Get started</h1>
-          <p className="gate-brand-subhead">
-            Pick the account type you want first — then how you&apos;ll use it. Same identity if you add the other
-            later.
-          </p>
+          <h1>Join rhagent</h1>
         </div>
 
-        <SignupPathPicker
-          onContinue={handleSignupContinue}
-          onLogin={() => switchMode("login")}
+        <WelcomeLanding
+          onAgentContinue={() => {
+            const params = new URLSearchParams(searchParams.toString());
+            params.set("mode", "create");
+            params.delete("verify");
+            router.replace(`/login?${params.toString()}`, { scroll: false });
+            setMode("create");
+          }}
+          onWallet={() => switchMode("chain")}
+          onHuman={() => switchMode("login")}
+          onTrading={() => {
+            window.location.href = "/dashboard?tab=setup";
+          }}
           onBankr={() => switchMode("bankr")}
+          onSignupContinue={handleSignupContinue}
+          onLogin={() => switchMode("login")}
         />
       </div>
     );

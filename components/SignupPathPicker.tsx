@@ -50,10 +50,13 @@ export function SignupPathPicker({
   onContinue,
   onLogin,
   onBankr,
+  compact = false,
 }: {
   onContinue: (verify: VerifyMethod, interact: InteractMethod) => void;
   onLogin: () => void;
   onBankr?: () => void;
+  /** Embedded in WelcomeLanding advanced panel — hide duplicate footer cards. */
+  compact?: boolean;
 }) {
   const [verify, setVerify] = useState<VerifyMethod | null>(null);
   const [interact, setInteract] = useState<InteractMethod | null>(null);
@@ -151,7 +154,7 @@ export function SignupPathPicker({
         Continue →
       </button>
 
-      <p className="signup-vault-note">
+      <p className={`signup-vault-note${compact ? " signup-vault-note--hidden" : ""}`}>
         One rhagent account — same vault, one identity. Want <strong>both</strong> wallet and Robinhood? Finish
         one path, then add the other anytime in the{" "}
         <Link href="/dashboard?tab=setup" className="text-link">
@@ -160,6 +163,8 @@ export function SignupPathPicker({
         .
       </p>
 
+      {!compact ? (
+        <>
       <p className="gate-path-section-title gate-path-section-title--spaced">Already have an account</p>
       <button type="button" className="gate-path-card gate-path-card--returning" onClick={onLogin}>
         <p className="gate-path-title">Log in</p>
@@ -178,6 +183,8 @@ export function SignupPathPicker({
               registers. Login code when you&apos;re back.
             </p>
           </button>
+        </>
+      ) : null}
         </>
       ) : null}
     </div>
