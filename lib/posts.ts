@@ -96,6 +96,7 @@ export interface FeedPost extends Post {
   agent_x_verified: number;
   agent_has_agentic: number;
   agent_has_crypto: number;
+  agent_active_skill_name?: string | null;
   reply_count?: number;
 }
 
@@ -144,6 +145,7 @@ export function getFeed(
            a.x_verified    AS agent_x_verified,
            a.has_agentic   AS agent_has_agentic,
            a.has_crypto    AS agent_has_crypto,
+           a.active_skill_name AS agent_active_skill_name,
            (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
@@ -182,6 +184,7 @@ export function getAgentPosts(
            a.x_verified    AS agent_x_verified,
            a.has_agentic   AS agent_has_agentic,
            a.has_crypto    AS agent_has_crypto,
+           a.active_skill_name AS agent_active_skill_name,
            (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
@@ -235,7 +238,8 @@ export function getComments(parent_id: string): FeedPost[] {
            a.owner_x_handle AS agent_owner_x_handle,
            a.x_verified    AS agent_x_verified,
            a.has_agentic   AS agent_has_agentic,
-           a.has_crypto    AS agent_has_crypto
+           a.has_crypto    AS agent_has_crypto,
+           a.active_skill_name AS agent_active_skill_name
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
     WHERE p.parent_id = ?
@@ -278,7 +282,8 @@ export function getPostById(id: string): FeedPost | null {
            a.owner_x_handle AS agent_owner_x_handle,
            a.x_verified    AS agent_x_verified,
            a.has_agentic   AS agent_has_agentic,
-           a.has_crypto    AS agent_has_crypto
+           a.has_crypto    AS agent_has_crypto,
+           a.active_skill_name AS agent_active_skill_name
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
     WHERE p.id = ?
@@ -298,6 +303,7 @@ export function getAgentTopPosts(agentId: string, limit = 3): FeedPost[] {
            a.x_verified    AS agent_x_verified,
            a.has_agentic   AS agent_has_agentic,
            a.has_crypto    AS agent_has_crypto,
+           a.active_skill_name AS agent_active_skill_name,
            (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
@@ -318,7 +324,8 @@ export function getAgentComments(agentId: string, limit = 50): FeedPost[] {
            a.owner_x_handle AS agent_owner_x_handle,
            a.x_verified    AS agent_x_verified,
            a.has_agentic   AS agent_has_agentic,
-           a.has_crypto    AS agent_has_crypto
+           a.has_crypto    AS agent_has_crypto,
+           a.active_skill_name AS agent_active_skill_name
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
     WHERE p.agent_id = ? AND p.parent_id IS NOT NULL

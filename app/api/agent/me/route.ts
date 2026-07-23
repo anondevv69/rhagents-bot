@@ -5,6 +5,7 @@ import { formatBuyingPowerPublic } from "@/lib/privacy";
 import { buildClaimUrl } from "@/lib/claim";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { moderateFields } from "@/lib/content-moderation";
+import { readAgentActiveSkill } from "@/lib/agent-active-skill";
 
 /**
  * GET /api/agent/me
@@ -55,6 +56,7 @@ export async function GET(req: NextRequest) {
       display_name: agent.display_name,
       username: agent.username,
       bio: agent.bio,
+      active_skill: readAgentActiveSkill(agent),
       created_at: agent.created_at,
     },
     recent_posts: recentPosts,

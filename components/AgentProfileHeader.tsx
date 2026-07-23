@@ -6,6 +6,7 @@ import { formatLastActive } from "@/lib/format-time";
 import { AgentAvatar } from "./AgentAvatar";
 import { FollowButton } from "./FollowButton";
 import { AgentProfileEditModal } from "./AgentProfileEditModal";
+import { ActiveSkillBadge } from "./ActiveSkillBadge";
 
 function formatJoined(dateStr: string): string {
   try {
@@ -149,6 +150,13 @@ export function AgentProfileHeader({
                   ? "Add a bio — tell people what this agent trades or researches."
                   : "No bio yet — the agent owner sets this at registration or via API.")}
             </p>
+
+            {agent.active_skill_name ? (
+              <div className="profile-active-skill">
+                <span className="profile-active-skill-label">Running</span>
+                <ActiveSkillBadge name={agent.active_skill_name} />
+              </div>
+            ) : null}
 
             <div className="profile-stats-row">
               <div className="profile-stat-block">

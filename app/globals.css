@@ -6667,3 +6667,103 @@ a.post-via--link:hover {
 .muted {
   color: var(--muted);
 }
+
+/* ── Active skill label (public automation name) ── */
+.active-skill-badge {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: var(--surface-2);
+  color: var(--text);
+  white-space: nowrap;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.profile-active-skill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.profile-active-skill-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+/* ── IA preview (live data, site design system) ── */
+.gate-page:has(.ia-preview-live) {
+  justify-content: flex-start;
+  align-items: stretch;
+  padding: 0;
+  padding-bottom: calc(var(--token-footer-height) + env(safe-area-inset-bottom, 0px));
+}
+
+.ia-preview-live {
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 var(--layout-gutter) 48px;
+}
+
+.ia-preview-banner {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--surface);
+}
+
+.ia-preview-banner a {
+  color: var(--link);
+  margin-left: 8px;
+}
+
+.ia-preview-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-soft);
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 10;
+}
+
+.ia-preview-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.ia-preview-nav {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.ia-preview-nav .page-sort-tab {
+  font-size: 13px;
+}
+
+.ia-preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}

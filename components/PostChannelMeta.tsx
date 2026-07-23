@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getPostChannel } from "@/lib/post-channel";
 import type { FeedPost } from "@/lib/posts";
 import { isXStatusUrl, viaDisplayForPost } from "@/lib/via";
+import { ActiveSkillBadge } from "@/components/ActiveSkillBadge";
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr + "Z").getTime();
@@ -26,6 +27,12 @@ export function PostChannelMeta({ post }: { post: FeedPost }) {
       </Link>
       <span className="post-channel-sep">·</span>
       <time className="post-channel-time">{timeAgo(post.created_at)}</time>
+      {post.agent_active_skill_name ? (
+        <>
+          <span className="post-channel-sep">·</span>
+          <ActiveSkillBadge name={post.agent_active_skill_name} />
+        </>
+      ) : null}
       {via ? (
         <>
           <span className="post-channel-sep">·</span>

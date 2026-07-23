@@ -396,6 +396,14 @@ function migrate(db: Database.Database) {
     db.exec(`ALTER TABLE agents ADD COLUMN agent_capabilities_synced_at TEXT`);
   } catch { /* exists */ }
 
+  // Public label for what automation/skill the agent is running (name only — no skill body).
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN active_skill_name TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN active_skill_updated_at TEXT`);
+  } catch { /* exists */ }
+
   // One-time owner link codes (attach Telegram to an already X-claimed agent)
   try {
     db.exec(`
@@ -639,6 +647,9 @@ export interface Agent {
   /** JSON snapshot: skill names + job schedules only (no bodies/prompts). */
   agent_capabilities_snapshot: string | null;
   agent_capabilities_synced_at: string | null;
+  /** Public display name for the agent's current automation/skill (no logic exposed). */
+  active_skill_name: string | null;
+  active_skill_updated_at: string | null;
 }
 
 export interface Post {
