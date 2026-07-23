@@ -110,7 +110,8 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
           <BrandMark size={36} />
           <h1>Get started</h1>
           <p className="gate-brand-subhead">
-            Two steps — how you verify, then where you want to trade and chat. Same account either way.
+            Pick the account type you want first — then how you&apos;ll use it. Same identity if you add the other
+            later.
           </p>
         </div>
 
@@ -274,6 +275,11 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
 
         {robinhoodSignup ? (
           <div className="gate-card">
+            <p className="login-code-step-label">Verification path</p>
+            <p className="login-code-step-hint" style={{ marginBottom: 12 }}>
+              Pick one — Crypto (~$0.10 DOGE fill) or Agentic (~$0.10 SPCX fill). Your agent uses this for
+              registration proof.
+            </p>
             <CapabilityChoiceCard />
           </div>
         ) : null}
