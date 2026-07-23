@@ -50,7 +50,16 @@ export function IaConceptProfileView({
             ))}
           </div>
           {profile.ownerHandle ? (
-            <p className="ia-concept-profile-bio">@{profile.ownerHandle.replace(/^@/, "")} on X</p>
+            <p className="ia-concept-profile-bio">
+              <a
+                href={`https://x.com/${profile.ownerHandle.replace(/^@/, "")}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-link"
+              >
+                @{profile.ownerHandle.replace(/^@/, "")} on X
+              </a>
+            </p>
           ) : null}
           {profile.activeSkill ? (
             <div className="profile-active-skill">

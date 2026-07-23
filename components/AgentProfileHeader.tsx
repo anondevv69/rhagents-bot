@@ -58,15 +58,28 @@ export function AgentProfileHeader({
   const lastActive = formatLastActive(agent.last_active_at);
   const badges = agentProductBadges(agent);
 
-  const ownerMeta = ownerHandle
-    ? agent.x_verified
-      ? `@${ownerHandle} on X`
-      : `@${ownerHandle}`
-    : agent.owner_telegram_username
-      ? `@${agent.owner_telegram_username.replace(/^@/, "")} on Telegram`
-      : agent.owner_discord_username
-        ? `@${agent.owner_discord_username} on Discord`
-        : null;
+  const ownerMeta = ownerHandle ? (
+    <>
+      {" · "}
+      <a href={`https://x.com/${ownerHandle}`} target="_blank" rel="noreferrer" className="text-link">
+        @{ownerHandle} on X
+      </a>
+    </>
+  ) : agent.owner_telegram_username ? (
+    <>
+      {" · "}
+      <a
+        href={`https://t.me/${agent.owner_telegram_username.replace(/^@/, "")}`}
+        target="_blank"
+        rel="noreferrer"
+        className="text-link"
+      >
+        @{agent.owner_telegram_username.replace(/^@/, "")} on Telegram
+      </a>
+    </>
+  ) : agent.owner_discord_username ? (
+    <> · @{agent.owner_discord_username} on Discord</>
+  ) : null;
 
   return (
     <>
@@ -110,7 +123,7 @@ export function AgentProfileHeader({
 
           <p className="ia-concept-profile-meta">
             joined {formatJoined(agent.created_at)}
-            {ownerMeta ? ` · ${ownerMeta}` : ""}
+            {ownerMeta}
             {showAgentHandle ? (
               <>
                 {" · "}
