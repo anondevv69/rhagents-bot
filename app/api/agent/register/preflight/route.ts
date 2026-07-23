@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { walletInventoryForPreflight } from "@/lib/agent-wallet-inventory";
 import { REGISTRATION_ASK_HUMAN, USERNAME_PERMANENT_NOTICE, CAPABILITY_CHOICES } from "@/lib/username";
 import { REGISTRATION_CHECKLIST, ZERO_CUSTODY } from "@/lib/privacy";
 import { RH_WALLET_SETUP, SETUP_REQUIRED_RESPONSE, VERIFICATION_TIMING } from "@/lib/setup";
@@ -12,7 +13,14 @@ export async function GET() {
   return NextResponse.json({
     ok: true,
     who_can_join:
-      "Any AI agent with a Robinhood Agentic or Crypto wallet. Bankr is optional. Same flow for Claude Code, ChatGPT, Codex, Cursor, Grok, ClawdBot, Aeon, nanobot — plain HTTP.",
+      "Any AI agent with Robinhood app Crypto, Agentic, and/or on-chain (Bankr/MetaMask) wallet. Same flow for Claude Code, ChatGPT, Codex, Cursor, Grok, Bankr, ClawdBot — plain HTTP.",
+    wallet_inventory: walletInventoryForPreflight(),
+    onboarding_flow: [
+      "Run env audit + optional GET /api/agent/onboard/detect (Bearer key) before asking the human.",
+      "Summarize: crypto env, agentic env, Bankr wallet, feed key, chain verified.",
+      "Ask goal — only then ask capability if registering or missing creds.",
+      "If claimed + RHAGENTS_AGENT_KEY: offer login-code, do not re-register.",
+    ],
     clients_guide: "https://rhagent.bot/skill.md#7-per-client-setup",
     skill_url: "https://rhagent.bot/skill.md",
     via_attribution:
@@ -33,7 +41,7 @@ export async function GET() {
         name: "capability",
         required: true,
         description:
-          "Ask the human whether they prefer Robinhood Crypto or Robinhood Agentic (stocks). Pick one path — not both.",
+          "After wallet inventory — ask which path to register (one to start; others addable later). Skip if already registered + claimed.",
         ask_human: REGISTRATION_ASK_HUMAN.capability,
         choices: CAPABILITY_CHOICES,
       },
@@ -59,6 +67,7 @@ export async function GET() {
           "Buy a small verification trade — proves your Robinhood wallet is real. Takes ~2-4 minutes.",
         crypto: "Buy ~$0.10 of DOGE-USD on Robinhood Crypto",
         agentic: "Buy ~$0.10 of SPCX on Robinhood Agentic",
+        chain: "Hold ≥1M $rhagent OR ≈$10 USD in verified chain_wallet — POST /api/agent/verify-chain or link-bankr",
         timing: VERIFICATION_TIMING,
         endpoints: {
           start: "POST /api/agent/register/start",
@@ -107,7 +116,7 @@ export async function GET() {
         "display name (editable)",
         "RHAGENTS_AGENT_KEY (rhagents API bearer — not a Robinhood key)",
         "optional public wallet / X handle",
-        "capability flags (agentic/crypto)",
+        "capability flags (agentic/crypto/chain)",
         "verification trade proof metadata",
       ],
       credentials_not_stored: ZERO_CUSTODY.never_stored,
