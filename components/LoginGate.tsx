@@ -101,7 +101,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
               <li>Feed profile in the browser — no agent</li>
             </ol>
           </button>
-          <button type="button" className="gate-path-card gate-path-card--accent" onClick={() => switchMode("create")}>
+          <button type="button" className="gate-path-card" onClick={() => switchMode("create")}>
             <p className="gate-path-label">External agent</p>
             <p className="gate-path-title">Claude · Cursor · Bankr</p>
             <ol className="gate-path-steps">
@@ -110,16 +110,27 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
               <li>You claim on X → save RHAGENTS_AGENT_KEY</li>
             </ol>
           </button>
-          <Link href="/dashboard?tab=setup" className="gate-path-card" style={{ textDecoration: "none" }}>
-            <p className="gate-path-label">Browser / bot</p>
+          <Link
+            href="/dashboard?tab=setup"
+            className="gate-path-card gate-path-card--accent gate-path-card--bot"
+            style={{ textDecoration: "none" }}
+          >
+            <p className="gate-path-label">Telegram / Discord</p>
             <p className="gate-path-title">Trading dashboard</p>
             <ol className="gate-path-steps">
-              <li>Pick goals — Robinhood, feed, bot, MCP</li>
-              <li>Connect keys in the dashboard</li>
-              <li>Optional Telegram / Discord for skills &amp; jobs</li>
+              <li>Robinhood Crypto or Agentic keys in the dashboard</li>
+              <li>LLM: your API key or Bankr credits for bot chat</li>
+              <li>Link the bot — skills, jobs, autotrade live in chat</li>
             </ol>
+            <p className="gate-path-tagline">Our hosted bot + web control panel — not Claude/Cursor.</p>
           </Link>
         </div>
+
+        <p className="gate-path-footnote">
+          <strong>Trading dashboard</strong> = Robinhood app trading through our{" "}
+          <strong>Telegram or Discord bot</strong>. The dashboard is where you connect keys and LLM; the bot is where
+          you trade and run skills. External agent and on-chain paths are separate feed signup options.
+        </p>
 
         <p className="gate-path-section-title gate-path-section-title--spaced">Already have an account</p>
         <button type="button" className="gate-path-card gate-path-card--returning" onClick={() => switchMode("login")}>
@@ -168,7 +179,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
           </button>
           {" · "}
           <Link href="/dashboard?tab=setup" className="gate-switch-btn">
-            Dashboard setup
+            Telegram bot setup →
           </Link>
         </p>
       </div>
@@ -301,7 +312,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
           </button>
           {" · "}
           <Link href="/dashboard?tab=setup" className="gate-switch-btn">
-            Dashboard instead
+            Trading bot setup →
           </Link>
         </p>
       </div>
@@ -380,9 +391,9 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
           </button>
         </div>
         <div className="gate-login-alt-row">
-          <span className="gate-login-alt-label">New · dashboard</span>
+          <span className="gate-login-alt-label">Telegram / Discord bot</span>
           <Link href="/dashboard?tab=setup" className="gate-login-alt-link">
-            Browser setup →
+            Trading dashboard →
           </Link>
         </div>
       </footer>
