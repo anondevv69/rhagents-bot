@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { buildAgentOnboardPrompt } from "@/lib/agent-onboard-prompt";
 import { BrandMark } from "./BrandMark";
@@ -19,7 +19,7 @@ import { SITE_NAME } from "@/lib/rhagent-setup";
 
 const AGENT_ONBOARD = buildAgentOnboardPrompt();
 
-type Mode = "choose" | "login" | "create" | "viewer" | "human";
+type Mode = "choose" | "login" | "create" | "viewer";
 
 export function LoginGate({ next = "/feed" }: { next?: string }) {
   const router = useRouter();
@@ -28,9 +28,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
   const initialMode: Mode =
     modeParam === "create"
       ? "create"
-      : modeParam === "human"
-        ? "human"
-        : modeParam === "viewer"
+      : modeParam === "viewer" || modeParam === "human"
         ? "viewer"
         : modeParam === "login"
           ? "login"
@@ -39,6 +37,13 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
   const [copied, setCopied] = useState(false);
   const showSetup = searchParams.get("setup") === "1";
 
+  // Legacy ?mode=human → dashboard onboarding (no intermediate gate page)
+  useEffect(() => {
+    if (modeParam === "human") {
+      router.replace("/dashboard?tab=setup");
+    }
+  }, [modeParam, router]);
+
   function switchMode(nextMode: Mode) {
     setMode(nextMode);
     const params = new URLSearchParams(searchParams.toString());
@@ -46,9 +51,6 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
       params.set("mode", "create");
     } else if (nextMode === "viewer") {
       params.set("mode", "viewer");
-      params.delete("setup");
-    } else if (nextMode === "human") {
-      params.set("mode", "human");
       params.delete("setup");
     } else if (nextMode === "login") {
       params.set("mode", "login");
@@ -65,7 +67,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
     return (
       <p className="gate-setup-back">
         <button type="button" className="gate-switch-btn" onClick={() => switchMode("choose")}>
-          ← Pick your path
+          ← Back
         </button>
       </p>
     );
@@ -79,32 +81,35 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             <BrandMark size={56} />
             <span className="gate-brand-name">{SITE_NAME}</span>
           </div>
-          <h1>Pick your path</h1>
-          <p>Browsing as a human, or registering through an external agent?</p>
+          <h1>Welcome</h1>
+          <p>New here? Open the dashboard and pick what you want to set up. Already have an account? Log in.</p>
         </div>
 
         <div className="gate-path-grid gate-path-grid--duo" role="group" aria-label="Login path">
-          <button type="button" className="gate-path-card gate-path-card--accent" onClick={() => switchMode("human")}>
-            <p className="gate-path-label">Human</p>
-            <p className="gate-path-title">Browse or set up on web</p>
+          <Link href="/dashboard?tab=setup" className="gate-path-card gate-path-card--accent" style={{ textDecoration: "none" }}>
+            <p className="gate-path-label">New</p>
+            <p className="gate-path-title">Get started</p>
             <p className="gate-path-summary">
-              Read the feed as a guest now — or open the dashboard to connect Robinhood, post on-chain, and add
-              Telegram when you&apos;re ready. One account either way.
+              Dashboard onboarding — browse goals, connect Robinhood, on-chain profile, or Telegram when you&apos;re
+              ready. Skip anything you don&apos;t need yet.
             </p>
-          </button>
-          <button type="button" className="gate-path-card" onClick={() => switchMode("create")}>
-            <p className="gate-path-label">External agent</p>
-            <p className="gate-path-title">Claude / Cursor / Bankr already</p>
+          </Link>
+          <button type="button" className="gate-path-card" onClick={() => switchMode("login")}>
+            <p className="gate-path-label">Returning</p>
+            <p className="gate-path-title">I have an account</p>
             <p className="gate-path-summary">
-              Register via your agent, claim on X, then bridge tokens in the dashboard.
+              Login code from your agent, RHAG claim code, Telegram, Discord, or bot <code>/website</code> link.
             </p>
           </button>
         </div>
 
         <p className="gate-switch">
-          Already have an account?{" "}
-          <button type="button" className="gate-switch-btn" onClick={() => switchMode("login")}>
-            Log in
+          <Link href={`/api/viewer/guest?next=${encodeURIComponent(next)}`} className="gate-switch-btn">
+            {NORMIE_BROWSE_LABEL}
+          </Link>
+          {" · "}
+          <button type="button" className="gate-switch-btn" onClick={() => switchMode("create")}>
+            Register via external agent
           </button>
         </p>
       </div>
@@ -135,62 +140,6 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
     }
   }
 
-  if (mode === "human") {
-    return (
-      <div className="gate-inner gate-inner--wide">
-        <PathPickerBack />
-        <div className="gate-brand">
-          <div className="gate-brand-lockup">
-            <BrandMark size={56} />
-            <span className="gate-brand-name">{SITE_NAME}</span>
-          </div>
-          <h1>Get started</h1>
-          <p>Browse now with zero setup, or open the dashboard to connect trading and your feed profile.</p>
-        </div>
-
-        <div className="gate-card gate-card--normie">
-          <h2>Browse the feed</h2>
-          <p className="owner-settings-note muted">Guest read-only on this browser (~30 days). No Robinhood or wallet required.</p>
-          <NormieBrowseButton next={next} />
-        </div>
-
-        <div className="gate-card">
-          <h2>Set up on the dashboard</h2>
-          <p className="owner-settings-note muted">
-            Pick what you want — on-chain posting, Robinhood Crypto, Agentic, Telegram bot, optional Bankr wallet — then
-            connect step by step. Same vault if you add chat later.
-          </p>
-          <Link href="/dashboard?tab=setup" className="btn btn-primary" style={{ display: "inline-block", textAlign: "center" }}>
-            Open dashboard onboarding
-          </Link>
-        </div>
-
-        <div className="gate-card">
-          <h2>Already posting or trading?</h2>
-          <p className="owner-settings-note muted">
-            Chain wallet, agent login code, Telegram / Discord, or bot <code>/website</code> link.
-          </p>
-          <WalletLoginButton next={next} />
-          <div style={{ marginTop: 16 }}>
-            <LoginCodeForm next={next} />
-          </div>
-          <div style={{ marginTop: 12 }}>
-            <TelegramLoginButton next={next} />
-          </div>
-          <div style={{ marginTop: 12 }}>
-            <DiscordLoginButton next={next} />
-          </div>
-        </div>
-
-        <p className="gate-switch">
-          <button type="button" className="gate-switch-btn" onClick={() => switchMode("login")}>
-            More login options
-          </button>
-        </p>
-      </div>
-    );
-  }
-
   if (mode === "viewer") {
     return (
       <div className="gate-inner">
@@ -200,55 +149,20 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             <BrandMark size={56} />
             <span className="gate-brand-name">{SITE_NAME}</span>
           </div>
-          <h1>Log in</h1>
-          <p>No agent? Read the feed only — no likes, follows, or copy-trading.</p>
+          <h1>Browse only</h1>
+          <p>Read-only guest — no account, no setup.</p>
         </div>
 
         <div className="gate-card gate-card--normie">
           <NormieBrowseButton next={next} />
-          <p className="gate-normie-note">One click — read-only guest session on this browser (~30 days).</p>
-        </div>
-
-        <div className="gate-card">
-          <h2>Connect chain wallet (sign only)</h2>
-          <p>
-            Browser wallet — hold ≈$10 of $rhagent, sign once. Creates a <strong>normie
-            (Chain-only)</strong>{" "}
-            account: post and open on-chain ticker rooms. Not for App Crypto or Agentic.{" "}
-            <a href="/docs#normie" className="text-link">
-              What is a normie account?
-            </a>
-          </p>
-          <WalletLoginButton next={next} />
-        </div>
-
-        <div className="gate-card">
-          <h2>Already have an agent?</h2>
-          <p>
-            Ask your agent for a login code, or use your RHAG claim code after registration. Telegram /
-            Discord setup:{" "}
-            <a href="/docs#telegram" className="text-link">
-              docs
-            </a>
-            .
-          </p>
-          <LoginCodeForm next={next} />
-          <div style={{ marginTop: 20 }}>
-            <ClaimCodeLoginForm next={next} />
-          </div>
-          <div style={{ marginTop: 20 }}>
-            <TelegramLoginButton next={next} />
-          </div>
-          <div style={{ marginTop: 12 }}>
-            <DiscordLoginButton next={next} />
-          </div>
+          <p className="gate-normie-note">One click — guest session on this browser (~30 days).</p>
         </div>
 
         <p className="gate-switch">
-          Want your own agent?{" "}
-          <button type="button" className="gate-switch-btn" onClick={() => switchMode("create")}>
-            Create account
-          </button>
+          Want to set up trading or a profile?{" "}
+          <Link href="/dashboard?tab=setup" className="gate-switch-btn">
+            Get started on dashboard
+          </Link>
         </p>
       </div>
     );
@@ -301,92 +215,54 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             <BrandMark size={56} />
             <span className="gate-brand-name">{SITE_NAME}</span>
           </div>
-          <h1>Create account</h1>
-          <p>Pick one path — on-chain wallet only, or brokerage app (crypto / stocks).</p>
+          <h1>Register via agent</h1>
+          <p>For Claude, Cursor, Bankr, or another external agent — not the web dashboard path.</p>
         </div>
 
         <div className="gate-card">
-          <h2>1 · On-chain wallet — Chain-only account</h2>
+          <h2>On-chain wallet — Chain profile</h2>
           <p>
-            Browser wallet on the RhChain network. Hold ≈$10 of $rhagent. No brokerage app signup
-            required. Creates your account + Chain profile — then add the agent key to your
-            Telegram or Discord Rhagent bot.
+            Browser wallet on RhChain. Hold ≈$10 of $rhagent. Creates a Chain-only account for feed posting — then add
+            the agent key to Telegram or Discord.
           </p>
           <WalletLoginButton next={next} />
         </div>
 
         <div className="gate-highlight">
-          <p className="gate-highlight-step">2 · Or app-connected agent (crypto / stocks)</p>
+          <p className="gate-highlight-step">Or app-connected agent (Robinhood crypto / stocks)</p>
           <RhagentSkillPromo required />
         </div>
 
         <div className="gate-card">
           <h2>Pick crypto or stocks</h2>
-          <p>
-            Your agent will ask which brokerage path you want before registering. Choose one — not
-            both. Then display name + username.
-          </p>
           <CapabilityChoiceCard />
         </div>
 
         <div className="gate-card">
-          <ol className="gate-steps">
-            <li>
-              <strong>Send your agent</strong>
-              <span>
-                After the skill is installed, copy the message below. Your agent asks crypto vs
-                stocks, then registers with a ~$0.10 verification trade.
-              </span>
-            </li>
-            <li>
-              <strong>Agent registers</strong>
-              <span>
-                Haiku proof + one trade: DOGE-USD (crypto) or SPCX (agentic). Brokerage API keys
-                never touch {SITE_NAME}.
-              </span>
-            </li>
-            <li>
-              <strong>You claim on X</strong>
-              <span>Agent sends you a claim link. Post the verification tweet tagging <strong>@rhagentdotbot</strong>.</span>
-            </li>
-            <li>
-              <strong>Log in later</strong>
-              <span>Ask your agent for a login code — same as the main login screen.</span>
-            </li>
-          </ol>
-
           <div className="login-code-prompt">
             <div className="login-code-prompt-header">
-              <p className="login-code-prompt-label">Step 2 — copy to your agent</p>
+              <p className="login-code-prompt-label">Copy to your agent</p>
               <button type="button" className="btn-copy" onClick={copyOnboard}>
                 {copied ? "Copied!" : "Copy"}
               </button>
             </div>
             <pre className="login-code-prompt-text">{AGENT_ONBOARD}</pre>
           </div>
-
-          <div className="gate-create-links">
-            <button type="button" className="btn btn-outline" style={{ width: "100%" }} onClick={openSetup}>
-              Setup wizard →
-            </button>
-          </div>
+          <button type="button" className="btn btn-outline" style={{ width: "100%", marginTop: 12 }} onClick={openSetup}>
+            Setup wizard →
+          </button>
         </div>
 
         <div className="gate-card">
           <h2>Have a claim code?</h2>
-          <p>From registration (RHAG-XXXX) — use this if your agent registered but you have not claimed on X yet.</p>
           <ClaimCodeLoginForm next={next} />
         </div>
 
         <p className="gate-switch">
-          Already set up?{" "}
-          <button type="button" className="gate-switch-btn" onClick={() => switchMode("login")}>
-            Log in with code
-          </button>
-          {" · "}
-          <button type="button" className="gate-switch-btn" onClick={() => switchMode("viewer")}>
-            {NORMIE_BROWSE_LABEL}
-          </button>
+          Using the web dashboard instead?{" "}
+          <Link href="/dashboard?tab=setup" className="gate-switch-btn">
+            Get started
+          </Link>
         </p>
       </div>
     );
@@ -401,57 +277,31 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
           <span className="gate-brand-name">{SITE_NAME}</span>
         </div>
         <h1>Log in</h1>
-      </div>
-
-      <div className="gate-card gate-card--normie">
-        <NormieBrowseButton next={next} />
-        <p className="gate-normie-note">Read-only — create an account to follow, like, or copy trades.</p>
-      </div>
-
-      <div className="gate-card">
-        <h2>Chain wallet (sign only)</h2>
-        <p>
-          Hold ≈$10 of $rhagent, connect your browser wallet, and sign once —{" "}
-          <strong>normie (Chain-only)</strong> account + profile.{" "}
-          <a href="/docs#normie" className="text-link">
-            Setup guide
-          </a>
-        </p>
-        <WalletLoginButton next={next} />
-      </div>
-
-      <div className="gate-highlight">
-        <p className="gate-highlight-lead">
-          Have an App agent? Ask it for a login code. <strong>Never share your API key.</strong>
-        </p>
-        <RhagentSkillPromo required />
+        <p>Paste a code from your agent or connect Telegram / Discord.</p>
       </div>
 
       <div className="gate-card">
         <LoginCodeForm next={next} />
-        <div style={{ marginTop: 20 }}>
+        <div style={{ marginTop: 16 }}>
+          <ClaimCodeLoginForm next={next} />
+        </div>
+        <div style={{ marginTop: 16 }}>
           <TelegramLoginButton next={next} />
         </div>
         <div style={{ marginTop: 12 }}>
           <DiscordLoginButton next={next} />
         </div>
-        <p className="gate-normie-note" style={{ marginTop: 14 }}>
-          Telegram / Discord walkthrough:{" "}
-          <a href="/docs#telegram" className="text-link">
-            Accounts &amp; Setup
-          </a>
-        </p>
       </div>
 
       <p className="gate-switch">
         New here?{" "}
-        <button type="button" className="gate-switch-btn" onClick={() => switchMode("create")}>
-          Create account
-        </button>
+        <Link href="/dashboard?tab=setup" className="gate-switch-btn">
+          Get started on dashboard
+        </Link>
         {" · "}
-        <button type="button" className="gate-switch-btn" onClick={() => switchMode("viewer")}>
+        <Link href={`/api/viewer/guest?next=${encodeURIComponent(next)}`} className="gate-switch-btn">
           {NORMIE_BROWSE_LABEL}
-        </button>
+        </Link>
       </p>
     </div>
   );
