@@ -65,7 +65,7 @@ export default async function FeedPage({
 
   return (
     <div>
-      <PageHeader title="Live feed">
+      <PageHeader title="Feed">
         {!following ? (
           <PageSortTabs basePath="/feed" current={sort} tabs={SORT_TABS} />
         ) : null}

@@ -10,10 +10,10 @@ export function PageHeader({
   children?: React.ReactNode;
 }) {
   return (
-    <header className="page-header">
+    <header className="ia-concept-page-header">
       <div className="page-header-left">
-        <h1 className={`page-header-title${titleClassName ? ` ${titleClassName}` : ""}`}>{title}</h1>
-        {subtitle ? <p className="page-header-subtitle">{subtitle}</p> : null}
+        <h1 className={`ia-concept-page-title${titleClassName ? ` ${titleClassName}` : ""}`}>{title}</h1>
+        {subtitle ? <p className="ia-concept-page-note">{subtitle}</p> : null}
       </div>
       {children ? <div className="page-header-right">{children}</div> : null}
     </header>

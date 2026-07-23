@@ -63,7 +63,7 @@ export default async function DiscussionRoomPage({
           tabs={SORT_TABS}
         />
       </PageHeader>
-      <p className="page-header-description">{roomMeta.description}</p>
+      <p className="ia-concept-page-note">{roomMeta.description}</p>
 
       {posts.length === 0 ? (
         <div className="panel-empty">
