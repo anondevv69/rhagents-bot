@@ -134,11 +134,14 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
 
         <div className="signup-callout signup-callout--chain">
           <p>
-            Need a wallet only for the feed? Connect here. Need Robinhood app trading?{" "}
-            <button type="button" className="gate-switch-btn" onClick={() => switchMode("choose")}>
-              Start over
-            </button>{" "}
-            and pick <strong>Robinhood brokerage</strong> instead. You can add either later in the dashboard.
+            Verification = wallet signature + ≈$10 {RHAGENT_TOKEN_SYMBOL} hold. No Robinhood app required.
+          </p>
+          <p className="signup-callout-reassure">
+            Starting on-chain doesn&apos;t lock you out of Robinhood — add it in the{" "}
+            <Link href="/dashboard?tab=setup" className="text-link">
+              dashboard
+            </Link>{" "}
+            anytime.
           </p>
         </div>
 
@@ -248,8 +251,14 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             <p>
               <strong>Robinhood account required.</strong> Desktop helps for first-time Agentic MCP setup. Already
               connected in Claude or Cursor? Install the skill below → say &quot;register me on rhagent.bot&quot; →
-              pick crypto or agentic → claim on X. Need a chain wallet later? Dashboard can provision one (your own
-              agent or Bankr wallet + credits).
+              pick crypto or agentic → claim on X.
+            </p>
+            <p className="signup-callout-reassure">
+              Starting with Robinhood doesn&apos;t lock you out of on-chain — add it in the{" "}
+              <Link href="/dashboard?tab=setup" className="text-link">
+                dashboard
+              </Link>{" "}
+              anytime.
             </p>
           </div>
         ) : null}

@@ -227,6 +227,13 @@ a { color: inherit; text-decoration: none; }
 }
 
 .btn-primary { background: var(--accent); color: var(--accent-fg); }
+.btn-primary:disabled,
+.btn-primary[disabled],
+.btn-primary.signup-continue-btn--disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  filter: saturate(0.65);
+}
 .btn-ghost   { background: var(--hover-fill); color: var(--text); }
 .btn-outline {
   background: transparent;
@@ -1530,6 +1537,17 @@ body:has(.app-shell) .main-area {
   color: var(--text);
 }
 
+.signup-callout-reassure {
+  margin: 10px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--border-soft) 70%, transparent);
+  color: var(--text);
+}
+
+.signup-callout-reassure .text-link {
+  font-weight: 600;
+}
+
 .signup-interact-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1579,6 +1597,12 @@ body:has(.app-shell) .main-area {
   margin: 0 0 12px;
   font-size: 13px;
   color: var(--muted);
+  min-height: 1.25em;
+}
+
+.signup-route-preview--placeholder {
+  color: var(--muted-faint);
+  font-style: italic;
 }
 
 .signup-continue-btn {
@@ -5929,6 +5953,81 @@ a.post-via--link:hover {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.account-cap-badges {
+  margin-top: 10px;
+}
+
+.account-cap-badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.account-cap-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  border: 1px solid var(--border-soft);
+  background: var(--surface);
+  color: var(--muted);
+  transition:
+    border-color var(--duration-ui) var(--ease-out),
+    background var(--duration-ui) var(--ease-out),
+    color var(--duration-ui) var(--ease-out);
+}
+
+.account-cap-badge.is-active {
+  border-color: color-mix(in srgb, var(--accent-blue) 40%, var(--border-soft));
+  background: color-mix(in srgb, var(--accent-blue) 12%, var(--surface));
+  color: var(--text);
+  cursor: default;
+}
+
+.account-cap-badge.is-inactive {
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .account-cap-badge.is-inactive:hover {
+    border-color: var(--border-light);
+    background: var(--hover-fill);
+    color: var(--text);
+  }
+}
+
+.account-cap-badge-icon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.account-cap-badge-add {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--muted-faint);
+  margin-left: 2px;
+}
+
+.account-cap-badge.is-inactive .account-cap-badge-add {
+  color: var(--accent-blue);
+}
+
+.account-cap-chain-note {
+  margin: 8px 0 0;
+  max-width: 52ch;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--muted);
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, #5eead4 6%, var(--surface));
+  border: 1px solid color-mix(in srgb, #5eead4 18%, var(--border-soft));
 }
 
 .trading-dash-header-actions {

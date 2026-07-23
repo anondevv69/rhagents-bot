@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChainWalletConnect } from "@/components/ChainWalletConnect";
+import { AccountCapabilityBadges } from "@/components/AccountCapabilityBadges";
 import { WalletLoginButton } from "@/components/WalletLoginButton";
 import { DashboardSetupPanel } from "@/components/DashboardSetupPanel";
 import { CopyBlock, Step } from "@/components/setup-ui";
@@ -343,17 +344,40 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
 
   const atCap = state.jobLimit.active >= state.jobLimit.max;
   const c = state.connections;
+  const capabilityFlags = {
+    has_chain: !!chainStatus?.has_chain,
+    has_crypto: c.crypto,
+    has_agentic: c.agentic,
+  };
+
+  function goAddCapability(cap: "has_chain" | "has_crypto" | "has_agentic") {
+    setTab("connections");
+    if (cap === "has_chain" && !c.rhagents) {
+      setTab("setup");
+    }
+  }
 
   return (
     <div className="trading-dash">
       <header className="trading-dash-header">
         <div>
-          <h1 className="page-header-title">Trading dashboard</h1>
-          <p className="page-header-subtitle">
-            {botRuntime
-              ? "Robinhood keys, chat bot skills/jobs, optional Bankr wallet"
-              : "Robinhood keys & MCP bridge — link Telegram/Discord to unlock bot tabs"}
-          </p>
+          <h1 className="page-header-title">
+            {chainStatus?.username ? `@${chainStatus.username}` : "Trading dashboard"}
+          </h1>
+          {chainStatus?.display_name && chainStatus.username ? (
+            <p className="page-header-subtitle">{chainStatus.display_name}</p>
+          ) : (
+            <p className="page-header-subtitle">
+              {botRuntime
+                ? "Robinhood keys, chat bot skills/jobs, optional Bankr wallet"
+                : "Robinhood keys & MCP bridge — link Telegram/Discord to unlock bot tabs"}
+            </p>
+          )}
+          <AccountCapabilityBadges
+            caps={capabilityFlags}
+            onAdd={goAddCapability}
+            showChainHoldNote
+          />
         </div>
         <div className="trading-dash-header-actions">
           {!botRuntime ? (
@@ -756,15 +780,21 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
                   }}
                 />
                 {chainStatus?.has_chain ? (
-                  <p className="owner-settings-note" style={{ marginTop: 12 }}>
-                    Wallet verified. Next: open{" "}
-                    <a href="/account" className="text-link">
-                      /account
-                    </a>{" "}
-                    for display name, save <code>RHAGENTS_AGENT_KEY</code> into your Telegram or
-                    Discord Rhagent bot, then trade — fills auto-post when the bot runs trade-post
-                    after each swap.
-                  </p>
+                  <>
+                    <p className="account-cap-chain-note" style={{ marginTop: 12 }}>
+                      Chain posting requires holding ≈$10 of $rhagent, independent of your Robinhood status — keep
+                      the balance in your verified wallet.
+                    </p>
+                    <p className="owner-settings-note" style={{ marginTop: 12 }}>
+                      Wallet verified. Next: open{" "}
+                      <a href="/account" className="text-link">
+                        /account
+                      </a>{" "}
+                      for display name, save <code>RHAGENTS_AGENT_KEY</code> into your Telegram or
+                      Discord Rhagent bot, then trade — fills auto-post when the bot runs trade-post
+                      after each swap.
+                    </p>
+                  </>
                 ) : null}
               </>
             ) : (
