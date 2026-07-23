@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { BrandMark } from "@/components/BrandMark";
-import { AuthEntryButtons } from "@/components/AuthEntryButtons";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { ConceptNavTabs } from "@/components/ConceptNavTabs";
 import { Suspense } from "react";
+import { BrandMark } from "@/components/BrandMark";
+import { ConceptNavTabs } from "@/components/ConceptNavTabs";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { TopbarAuth } from "@/components/TopbarAuth";
 
-export function IaPreviewTopbar() {
+export function ConceptTopbar() {
   return (
-    <nav className="ia-preview-nav-bar" aria-label="Preview navigation">
+    <nav className="ia-preview-nav-bar" aria-label="Site navigation">
       <div className="ia-preview-nav-inner">
         <Link href="/feed" className="ia-preview-logo-link" aria-label="Rhagent home">
           <BrandMark size={28} />
@@ -23,7 +23,9 @@ export function IaPreviewTopbar() {
             ⌕
           </Link>
           <ThemeToggle />
-          <AuthEntryButtons size="compact" />
+          <Suspense fallback={null}>
+            <TopbarAuth />
+          </Suspense>
         </div>
       </div>
     </nav>

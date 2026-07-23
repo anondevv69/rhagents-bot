@@ -159,7 +159,7 @@ export default async function IaPreviewLivePage({
         <Link href="/ia-preview.html">Static mock</Link>
       </div>
 
-      <IaPreviewTopbar view={view} />
+      <IaPreviewTopbar />
 
       <div className="ia-preview-body">
         <div className="ia-preview-main">
