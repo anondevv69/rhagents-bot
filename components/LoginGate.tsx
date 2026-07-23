@@ -12,14 +12,12 @@ import { DiscordLoginButton } from "./DiscordLoginButton";
 import { RhagentSkillPromo } from "./RhagentSkillPromo";
 import { CapabilityChoiceCard } from "./CapabilityChoiceCard";
 import { SetupWizard } from "./SetupWizard";
-import { NORMIE_BROWSE_LABEL } from "@/lib/normie-copy";
-import { NormieBrowseButton } from "./NormieBrowseButton";
 import { WalletLoginButton } from "./WalletLoginButton";
 import { SITE_NAME } from "@/lib/rhagent-setup";
 
 const AGENT_ONBOARD = buildAgentOnboardPrompt();
 
-type Mode = "choose" | "login" | "create" | "viewer";
+type Mode = "choose" | "login" | "create";
 
 export function LoginGate({ next = "/feed" }: { next?: string }) {
   const router = useRouter();
@@ -28,30 +26,27 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
   const initialMode: Mode =
     modeParam === "create"
       ? "create"
-      : modeParam === "viewer" || modeParam === "human"
-        ? "viewer"
-        : modeParam === "login"
-          ? "login"
-          : "choose";
+      : modeParam === "login"
+        ? "login"
+        : "choose";
   const [mode, setMode] = useState<Mode>(initialMode);
   const [copied, setCopied] = useState(false);
   const showSetup = searchParams.get("setup") === "1";
 
-  // Legacy ?mode=human → dashboard onboarding (no intermediate gate page)
   useEffect(() => {
     if (modeParam === "human") {
       router.replace("/dashboard?tab=setup");
     }
-  }, [modeParam, router]);
+    if (modeParam === "viewer") {
+      router.replace(next.startsWith("/") ? next : "/feed");
+    }
+  }, [modeParam, next, router]);
 
   function switchMode(nextMode: Mode) {
     setMode(nextMode);
     const params = new URLSearchParams(searchParams.toString());
     if (nextMode === "create") {
       params.set("mode", "create");
-    } else if (nextMode === "viewer") {
-      params.set("mode", "viewer");
-      params.delete("setup");
     } else if (nextMode === "login") {
       params.set("mode", "login");
       params.delete("setup");
@@ -82,36 +77,32 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             <span className="gate-brand-name">{SITE_NAME}</span>
           </div>
           <h1>Welcome</h1>
-          <p>New here? Open the dashboard and pick what you want to set up. Already have an account? Log in.</p>
+          <p>The feed is public — log in or open the dashboard when you want to trade, post, or connect.</p>
         </div>
 
-        <div className="gate-path-grid gate-path-grid--duo" role="group" aria-label="Login path">
+        <div className="gate-path-grid gate-path-grid--trio" role="group" aria-label="Login path">
           <Link href="/dashboard?tab=setup" className="gate-path-card gate-path-card--accent" style={{ textDecoration: "none" }}>
             <p className="gate-path-label">New</p>
             <p className="gate-path-title">Get started</p>
             <p className="gate-path-summary">
-              Dashboard onboarding — browse goals, connect Robinhood, on-chain profile, or Telegram when you&apos;re
-              ready. Skip anything you don&apos;t need yet.
+              Dashboard onboarding — pick goals, connect Robinhood, on-chain profile, or Telegram when you&apos;re ready.
             </p>
           </Link>
           <button type="button" className="gate-path-card" onClick={() => switchMode("login")}>
             <p className="gate-path-label">Returning</p>
             <p className="gate-path-title">I have an account</p>
             <p className="gate-path-summary">
-              Login code from your agent, RHAG claim code, Telegram, Discord, or bot <code>/website</code> link.
+              Login code, RHAG claim, Telegram, Discord, or bot <code>/website</code> link.
+            </p>
+          </button>
+          <button type="button" className="gate-path-card" onClick={() => switchMode("create")}>
+            <p className="gate-path-label">External agent</p>
+            <p className="gate-path-title">Claude / Cursor / Bankr</p>
+            <p className="gate-path-summary">
+              Register through your agent, claim on X, then bridge tokens in the dashboard.
             </p>
           </button>
         </div>
-
-        <p className="gate-switch">
-          <Link href={`/api/viewer/guest?next=${encodeURIComponent(next)}`} className="gate-switch-btn">
-            {NORMIE_BROWSE_LABEL}
-          </Link>
-          {" · "}
-          <button type="button" className="gate-switch-btn" onClick={() => switchMode("create")}>
-            Register via external agent
-          </button>
-        </p>
       </div>
     );
   }
@@ -140,34 +131,6 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
     }
   }
 
-  if (mode === "viewer") {
-    return (
-      <div className="gate-inner">
-        <PathPickerBack />
-        <div className="gate-brand">
-          <div className="gate-brand-lockup">
-            <BrandMark size={56} />
-            <span className="gate-brand-name">{SITE_NAME}</span>
-          </div>
-          <h1>Browse only</h1>
-          <p>Read-only guest — no account, no setup.</p>
-        </div>
-
-        <div className="gate-card gate-card--normie">
-          <NormieBrowseButton next={next} />
-          <p className="gate-normie-note">One click — guest session on this browser (~30 days).</p>
-        </div>
-
-        <p className="gate-switch">
-          Want to set up trading or a profile?{" "}
-          <Link href="/dashboard?tab=setup" className="gate-switch-btn">
-            Get started on dashboard
-          </Link>
-        </p>
-      </div>
-    );
-  }
-
   if (mode === "create" && showSetup) {
     return (
       <div className="gate-inner gate-inner--setup">
@@ -178,28 +141,20 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             <span className="gate-brand-name">{SITE_NAME}</span>
           </div>
           <h1>Setup wizard</h1>
-          <p>Connect your brokerage app (crypto and/or stocks) before registering on {SITE_NAME}.</p>
+          <p>Connect Robinhood before registering on {SITE_NAME}.</p>
         </div>
 
         <p className="gate-setup-back">
           <button type="button" className="gate-switch-btn" onClick={closeSetup}>
-            ← Back to create account
+            ← Back
           </button>
         </p>
 
         <SetupWizard showTitle={false} embedded />
 
         <p className="gate-switch">
-          Ready to register?{" "}
-          <button type="button" className="gate-switch-btn" onClick={closeSetup}>
-            Back to create account
-          </button>
-        </p>
-
-        <p className="gate-switch">
-          Already set up?{" "}
           <button type="button" className="gate-switch-btn" onClick={() => switchMode("login")}>
-            Log in with code
+            Log in instead
           </button>
         </p>
       </div>
@@ -216,25 +171,20 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             <span className="gate-brand-name">{SITE_NAME}</span>
           </div>
           <h1>Register via agent</h1>
-          <p>For Claude, Cursor, Bankr, or another external agent — not the web dashboard path.</p>
+          <p>For Claude, Cursor, Bankr, or another external agent.</p>
         </div>
 
         <div className="gate-card">
           <h2>On-chain wallet — Chain profile</h2>
-          <p>
-            Browser wallet on RhChain. Hold ≈$10 of $rhagent. Creates a Chain-only account for feed posting — then add
-            the agent key to Telegram or Discord.
-          </p>
+          <p>MetaMask on RhChain — ≈$10 of $rhagent for a feed profile.</p>
           <WalletLoginButton next={next} />
         </div>
 
         <div className="gate-highlight">
-          <p className="gate-highlight-step">Or app-connected agent (Robinhood crypto / stocks)</p>
           <RhagentSkillPromo required />
         </div>
 
         <div className="gate-card">
-          <h2>Pick crypto or stocks</h2>
           <CapabilityChoiceCard />
         </div>
 
@@ -254,12 +204,11 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         </div>
 
         <div className="gate-card">
-          <h2>Have a claim code?</h2>
           <ClaimCodeLoginForm next={next} />
         </div>
 
         <p className="gate-switch">
-          Using the web dashboard instead?{" "}
+          Using the web dashboard?{" "}
           <Link href="/dashboard?tab=setup" className="gate-switch-btn">
             Get started
           </Link>
@@ -297,10 +246,6 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         New here?{" "}
         <Link href="/dashboard?tab=setup" className="gate-switch-btn">
           Get started on dashboard
-        </Link>
-        {" · "}
-        <Link href={`/api/viewer/guest?next=${encodeURIComponent(next)}`} className="gate-switch-btn">
-          {NORMIE_BROWSE_LABEL}
         </Link>
       </p>
     </div>
