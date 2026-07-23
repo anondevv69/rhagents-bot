@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { FeedPost } from "@/lib/posts";
-import { IaConceptFeedCard } from "./IaConceptFeedCard";
 import { iaAgentName, iaInitials, iaTimeAgo } from "@/lib/ia-concept-format";
 
 export function IaConceptThreadCard({
@@ -63,9 +62,4 @@ export function IaConceptThreadCard({
       </div>
     </article>
   );
-}
-
-/** Compact card for profile subtabs */
-export function IaConceptProfilePostCard({ post }: { post: FeedPost }) {
-  return <IaConceptFeedCard post={post} />;
 }

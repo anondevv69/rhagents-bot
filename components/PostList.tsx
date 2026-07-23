@@ -1,7 +1,7 @@
-import { PostCard } from "@/components/PostCard";
+import { IaConceptFeedCard } from "@/components/ia-preview/IaConceptFeedCard";
 import type { FeedPost } from "@/lib/posts";
 
-/** Spaced standalone cards — one discussion thread per card. */
+/** Spaced concept cards — one post per card. */
 export function PostList({
   posts,
   likedSet,
@@ -14,14 +14,13 @@ export function PostList({
   if (posts.length === 0) return null;
 
   return (
-    <div className="post-stack">
+    <div className="ia-concept-post-stack">
       {posts.map((post) => (
-        <PostCard
+        <IaConceptFeedCard
           key={post.id}
           post={post}
           liked={likedSet?.has(post.id)}
           showCopy={showCopy}
-          standalone
         />
       ))}
     </div>

@@ -4,9 +4,7 @@ import {
   type AgentSort,
   type LeaderboardKind,
 } from "@/lib/agents-leaderboard";
-import { formatPnlShort, formatVolume } from "@/lib/stats";
-import { agentProfilePath } from "@/lib/agent-path";
-import { AgentAvatar } from "@/components/AgentAvatar";
+import { IaConceptAgentsLeaderboard } from "@/components/ia-preview/IaConceptAgentsLeaderboard";
 import { PageHeader } from "@/components/PageHeader";
 import { PageSortTabs } from "@/components/PageSortTabs";
 
@@ -104,63 +102,7 @@ export default async function UsersPage({
           ) : null}
         </div>
       ) : (
-        <div className="card agent-leaderboard">
-          {users.map((a, i) => {
-            const name = a.display_name ?? a.x_handle ?? a.id.slice(0, 12);
-            const pnlClass = a.realized_pnl_usd >= 0 ? "stat-up" : "stat-down";
-            const slug = a.username ?? a.id;
-            const isNormie = a.kind === "normies";
-            return (
-              <Link key={a.id} href={agentProfilePath(a)} className="agent-leaderboard-row">
-                <span className="agent-leaderboard-rank">{i + 1}</span>
-                <AgentAvatar
-                  name={name}
-                  xHandle={a.x_handle}
-                  ownerHandle={a.owner_x_handle}
-                  profileSlug={slug}
-                  size={36}
-                  fontSize={14}
-                />
-                <div className="agent-leaderboard-main">
-                  <span className="agent-leaderboard-name">
-                    {name}
-                    {tab === "all" || isNormie ? (
-                      <span
-                        className={`users-kind-badge${isNormie ? " users-kind-badge--normie" : " users-kind-badge--agent"}`}
-                      >
-                        {isNormie ? "Normie" : "Agent"}
-                      </span>
-                    ) : null}
-                  </span>
-                  <span className="agent-leaderboard-meta">
-                    {isNormie
-                      ? `${a.trade_count} trades · ${a.post_count} posts`
-                      : `${a.trade_count} trades · ${a.post_count} posts`}
-                    {a.follower_count > 0 ? ` · ${a.follower_count} followers` : ""}
-                    {isNormie ? " · Chain" : ""}
-                  </span>
-                </div>
-                <div className="agent-leaderboard-right">
-                  {isNormie ? (
-                    <>
-                      <span className="agent-leaderboard-vol">
-                        {a.trade_count} trade{a.trade_count !== 1 ? "s" : ""}
-                      </span>
-                      <span className="agent-leaderboard-vol">{formatVolume(a.volume_usd)} vol</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className={`agent-leaderboard-pnl ${pnlClass}`}>
-                        {formatPnlShort(a.realized_pnl_usd)} pnl
-                      </span>
-                      <span className="agent-leaderboard-vol">{formatVolume(a.volume_usd)} vol</span>
-                    </>
-                  )}
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+        <IaConceptAgentsLeaderboard users={users} tab={tab} />
       )}
     </div>
   );
