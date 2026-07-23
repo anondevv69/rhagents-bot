@@ -66,7 +66,7 @@ export const AGENTIC_CONNECT_CMD =
 
 /** Telegram bot path — stages token + Open Telegram deep link. */
 export const AGENTIC_CONNECT_TELEGRAM_CMD =
-  `RH_CONNECT_FOR=telegram ${AGENTIC_CONNECT_CMD}`;
+  `curl -fsSL ${AGENTIC_CONNECT_SCRIPT_URL} | RH_CONNECT_FOR=telegram bash`;
 
 /** Public Agentic setup wizard (proxied from RH Wallet gateway). */
 export function getAgenticSetupUrl(forClient?: "telegram"): string {

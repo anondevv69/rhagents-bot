@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export function DashboardSaveClient({ token }: { token: string }) {
   const router = useRouter();
@@ -57,11 +58,17 @@ export function DashboardSaveClient({ token }: { token: string }) {
             <p className="owner-settings-note">{error}</p>
             <p className="owner-settings-note">
               Continuing will log you into the Telegram/Discord account from this link instead of your current
-              dashboard session.
+              dashboard session. Declining leaves both accounts unchanged — this link stays valid until you use it or
+              it expires.
             </p>
-            <button type="button" className="btn btn-primary" disabled={busy} onClick={() => void claim(true)}>
-              {busy ? "Saving…" : "Continue — use bot account"}
-            </button>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+              <button type="button" className="btn btn-primary" disabled={busy} onClick={() => void claim(true)}>
+                {busy ? "Saving…" : "Continue — use bot account"}
+              </button>
+              <Link href="/dashboard?tab=setup" className="btn btn-outline">
+                No — keep current account
+              </Link>
+            </div>
           </>
         ) : error ? (
           <p className="owner-settings-note">{error}</p>
