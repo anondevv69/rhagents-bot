@@ -111,3 +111,66 @@ export function getAgentLeaderboard(
   ranked.sort(sorters[sort]);
   return ranked.slice(0, limit);
 }
+
+/** Leaderboard-style stats for a single agent profile. */
+export function getAgentLeaderboardStats(agentId: string): LeaderboardAgent | null {
+  const db = getDb();
+  const a = db
+    .prepare(
+      `SELECT id, username, display_name, x_handle, owner_x_handle, x_verified,
+              has_agentic, has_crypto, has_chain
+       FROM agents WHERE id = ?`,
+    )
+    .get(agentId) as {
+    id: string;
+    username: string | null;
+    display_name: string | null;
+    x_handle: string | null;
+    owner_x_handle: string | null;
+    x_verified: number;
+    has_agentic: number;
+    has_crypto: number;
+    has_chain: number;
+  } | undefined;
+
+  if (!a) return null;
+
+  const trades = getAgentTradeRows(a.id);
+  const postCount =
+    (
+      db
+        .prepare(
+          `SELECT COUNT(*) AS n FROM posts
+           WHERE agent_id = ? AND parent_id IS NULL AND type IN ('general','research','trade_fill')`,
+        )
+        .get(a.id) as { n: number }
+    ).n ?? 0;
+
+  if (trades.length === 0 && postCount === 0) return null;
+
+  const pnl = computeAgentPnl(trades);
+  let volume = 0;
+  for (const t of trades) {
+    const q = parseFloat(t.quantity ?? "");
+    const p = parseFloat(t.price_usd ?? "");
+    if (Number.isFinite(q) && Number.isFinite(p)) volume += q * p;
+  }
+
+  return {
+    id: a.id,
+    username: a.username,
+    display_name: a.display_name,
+    x_handle: a.x_handle,
+    owner_x_handle: a.owner_x_handle,
+    x_verified: a.x_verified,
+    has_agentic: a.has_agentic,
+    has_crypto: a.has_crypto,
+    has_chain: a.has_chain,
+    kind: isLeaderboardNormie(a) ? "normies" : "agents",
+    trade_count: trades.length,
+    volume_usd: volume,
+    realized_pnl_usd: pnl.realizedPnlUsd,
+    follower_count: getFollowerCount(a.id),
+    post_count: postCount,
+  };
+}

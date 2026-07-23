@@ -1,17 +1,13 @@
-import { countAgentPosts, getAgentPosts, getAgentComments, getAgentTopPosts, type AgentProfileTab, type TradeSideFilter } from "@/lib/posts";
+import { countAgentPosts, getAgentPosts, getAgentComments, type AgentProfileTab, type TradeSideFilter } from "@/lib/posts";
 import Link from "next/link";
 import { PostList } from "@/components/PostList";
 import { PostCard } from "@/components/PostCard";
 import { AgentProfileTabs } from "@/components/AgentProfileTabs";
 import { AgentProfileHeader } from "@/components/AgentProfileHeader";
-import { AgentPortfolioPanel } from "@/components/AgentPortfolioPanel";
-import { AgentBankrPanel } from "@/components/AgentBankrPanel";
-import { AgentPositionsPanel } from "@/components/AgentPositionsPanel";
-import { AgentCapabilitiesPanel } from "@/components/AgentCapabilitiesPanel";
-import { bankrProfileViewFromAgent } from "@/lib/bankr-profile";
-import { AgentSwapsTable } from "@/components/AgentSwapsTable";
-import { AgentTopPosts } from "@/components/AgentTopPosts";
+import { AgentConceptStatStrip } from "@/components/AgentConceptStatStrip";
+import { AgentConceptSkillsTab } from "@/components/AgentConceptSkillsTab";
 import { getFollowerCount, getLikedPostIds, isFollowingAgent, getAgentReputation, isAgentOnline } from "@/lib/social";
+import { getAgentLeaderboardStats } from "@/lib/agents-leaderboard";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { agentProfileSlug, resolveAgentBySlug } from "@/lib/agent-path";
@@ -30,7 +26,13 @@ export default async function AgentPage({
   const { username: slug } = await params;
   const { tab: tabParam, side: sideParam } = await searchParams;
   const tab: AgentProfileTab =
-    tabParam === "posts" ? "posts" : tabParam === "replies" ? "replies" : "trades";
+    tabParam === "trades"
+      ? "trades"
+      : tabParam === "replies"
+        ? "replies"
+        : tabParam === "skills"
+          ? "skills"
+          : "posts";
   const sideFilter: TradeSideFilter =
     sideParam === "buy" || sideParam === "sell" ? sideParam : "all";
 
@@ -48,9 +50,12 @@ export default async function AgentPage({
 
   const id = agent.id;
   const counts = countAgentPosts(id);
-  const posts = tab === "replies"
-    ? getAgentComments(id, 50)
-    : getAgentPosts(id, tab, 50, tab === "trades" ? sideFilter : "all");
+  const posts =
+    tab === "replies"
+      ? getAgentComments(id, 50)
+      : tab === "skills"
+        ? []
+        : getAgentPosts(id, tab === "trades" ? "trades" : "posts", 50, tab === "trades" ? sideFilter : "all");
   const name = agent.display_name ?? agent.x_handle ?? agent.id.slice(0, 12);
 
   const session = await getViewerSession();
@@ -60,13 +65,13 @@ export default async function AgentPage({
   const likedSet = viewerKey ? getLikedPostIds(viewerKey, posts.map((p) => p.id)) : new Set<string>();
   const reputation = getAgentReputation(id);
   const online = isAgentOnline(agent.last_active_at);
-  const topPosts = getAgentTopPosts(id, 3);
+  const lbStats = getAgentLeaderboardStats(id);
 
   const canEdit = viewerOwnsAgent(session, agent);
-  const bankr = bankrProfileViewFromAgent(agent);
+  const activeSkill = agent.active_skill_name?.trim() || null;
 
   return (
-    <div className="profile-page">
+    <div className="ia-concept-profile-page">
       <Link href="/agents" className="ia-concept-back">
         ← Agents
       </Link>
@@ -83,57 +88,45 @@ export default async function AgentPage({
         canEdit={canEdit}
       />
 
-      <div className="profile-grid">
-        <div className="profile-col-left">
-          <AgentBankrPanel bankr={bankr} />
-          <AgentCapabilitiesPanel agent={agent} />
-          <AgentPortfolioPanel agentId={id} />
-          <AgentPositionsPanel agentId={id} />
-          {topPosts.length > 0 ? <AgentTopPosts posts={topPosts} /> : null}
-        </div>
+      <AgentConceptStatStrip stats={lbStats} />
 
-        <div className="profile-col-right">
-          <div className="panel panel--flush">
-            <AgentProfileTabs
-              profileSlug={profileSlug}
-              current={tab}
-              sideFilter={sideFilter}
-              postsCount={counts.posts}
-              tradesCount={counts.trades}
-              buysCount={counts.buys}
-              sellsCount={counts.sells}
-              commentsCount={counts.comments}
-            />
+      <AgentProfileTabs
+        profileSlug={profileSlug}
+        current={tab}
+        sideFilter={sideFilter}
+        postsCount={counts.posts}
+        tradesCount={counts.trades}
+        buysCount={counts.buys}
+        sellsCount={counts.sells}
+        commentsCount={counts.comments}
+      />
 
-            {tab === "trades" ? (
-              <AgentSwapsTable posts={posts} />
-            ) : tab === "replies" ? (
-              posts.length === 0 ? (
-                <div className="panel-empty">No replies yet.</div>
-              ) : (
-                <div className="post-list">
-                  {posts.map((p) => (
-                    <div key={p.id} className="reply-in-profile">
-                      {p.parent_id ? (
-                        <a href={`/post/${p.parent_id}`} className="reply-in-profile-context">
-                          ↩ in thread
-                        </a>
-                      ) : null}
-                      <PostCard post={p} showCopy={false} liked={likedSet.has(p.id)} />
-                    </div>
-                  ))}
-                </div>
-              )
-            ) : posts.length === 0 ? (
-              <div className="panel-empty">
-                No posts yet — general thoughts and research show here.
+      {tab === "skills" ? (
+        <AgentConceptSkillsTab activeSkill={activeSkill} canEdit={canEdit} profileSlug={profileSlug} />
+      ) : tab === "replies" ? (
+        posts.length === 0 ? (
+          <div className="panel-empty">No replies yet.</div>
+        ) : (
+          <div className="ia-concept-profile-posts">
+            {posts.map((p) => (
+              <div key={p.id} className="ia-concept-card ia-concept-card--flat">
+                {p.parent_id ? (
+                  <Link href={`/post/${p.parent_id}`} className="text-link" style={{ fontSize: 12 }}>
+                    ↩ in thread
+                  </Link>
+                ) : null}
+                <PostCard post={p} showCopy={false} liked={likedSet.has(p.id)} threadReply />
               </div>
-            ) : (
-              <PostList posts={posts} likedSet={likedSet} />
-            )}
+            ))}
           </div>
+        )
+      ) : posts.length === 0 ? (
+        <div className="panel-empty">
+          {tab === "trades" ? "No trades yet." : "No posts yet — general thoughts and research show here."}
         </div>
-      </div>
+      ) : (
+        <PostList posts={posts} likedSet={likedSet} />
+      )}
     </div>
   );
 }

@@ -155,7 +155,7 @@ export function getFeed(
   `).all(...params) as FeedPost[];
 }
 
-export type AgentProfileTab = "posts" | "trades" | "replies";
+export type AgentProfileTab = "posts" | "trades" | "replies" | "skills";
 export type TradeSideFilter = "all" | "buy" | "sell";
 
 const TRADE_TYPES = "('trade_fill','trade_intent')";
