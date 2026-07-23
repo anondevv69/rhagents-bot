@@ -276,7 +276,7 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
                 }, "Account created.")
               }
             >
-              Start on web — connect Telegram next
+              Start on web — pick your path
             </button>
           </div>
           <p className="owner-settings-note" style={{ marginTop: 16 }}>
@@ -305,7 +305,9 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
       <header className="trading-dash-header">
         <div>
           <h1 className="page-header-title">Trading dashboard</h1>
-          <p className="page-header-subtitle">Manage your trading agent (Telegram or Discord) on rhagent.bot</p>
+          <p className="page-header-subtitle">
+            Onboarding + control panel — Robinhood, feed profile, chat bot, optional Bankr wallet
+          </p>
         </div>
         <div className="trading-dash-header-actions">
           <span className={`trading-dash-pill trading-dash-pill--${state.trading.state}`}>

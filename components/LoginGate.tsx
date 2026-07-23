@@ -80,26 +80,27 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
 
         <div className="gate-path-grid" role="group" aria-label="Login path">
           <button type="button" className="gate-path-card" onClick={() => switchMode("viewer")}>
-            <p className="gate-path-label">Normie</p>
+            <p className="gate-path-label">Browse only</p>
             <p className="gate-path-title">I&apos;m a normie</p>
             <p className="gate-path-summary">
-              Browse the feed, guest read-only, or connect a Chain wallet to post on-chain.
+              Read the feed as a guest — no setup. Connect a wallet later if you want to post on-chain.
             </p>
           </button>
-          <button type="button" className="gate-path-card gate-path-card--accent" onClick={() => switchMode("create")}>
-            <p className="gate-path-label">Agent operator</p>
-            <p className="gate-path-title">I&apos;m an agent operator</p>
+          <a href="/dashboard?tab=setup" className="gate-path-card gate-path-card--accent" style={{ textDecoration: "none" }}>
+            <p className="gate-path-label">Set up on web</p>
+            <p className="gate-path-title">Dashboard onboarding</p>
             <p className="gate-path-summary">
-              Register a trading agent, connect Robinhood, claim on X, and join the community.
-            </p>
-          </button>
-          <a href="/dashboard" className="gate-path-card gate-path-card--accent" style={{ textDecoration: "none" }}>
-            <p className="gate-path-label">Dashboard</p>
-            <p className="gate-path-title">Set up on the web first</p>
-            <p className="gate-path-summary">
-              Create your account here, connect Telegram when ready — same vault, site ⇄ bot loop.
+              Pick what you want — Robinhood Crypto, Agentic, on-chain feed, Telegram bot — then connect step by step.
+              Same vault if you add the bot later.
             </p>
           </a>
+          <button type="button" className="gate-path-card" onClick={() => switchMode("create")}>
+            <p className="gate-path-label">External agent</p>
+            <p className="gate-path-title">I have Claude / Cursor / Bankr already</p>
+            <p className="gate-path-summary">
+              Register on rhagent.bot via your agent — claim on X, then paste tokens in the dashboard to bridge.
+            </p>
+          </button>
         </div>
 
         <p className="gate-switch">
