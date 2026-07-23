@@ -25,4 +25,8 @@ echo "→ Downloading RH Wallet connect tool..."
 git clone --depth 1 --branch "$BRANCH" "$REPO" "$WORKDIR" >/dev/null 2>&1
 
 echo "→ Starting Robinhood Agentic OAuth (localhost)..."
-node "$WORKDIR/skill/connect/bin/cli.js" "$@"
+EXTRA_ARGS=()
+if [ "${RH_CONNECT_FOR:-}" = "telegram" ]; then
+  EXTRA_ARGS+=(--for-telegram --no-bankr)
+fi
+node "$WORKDIR/skill/connect/bin/cli.js" "${EXTRA_ARGS[@]}" "$@"

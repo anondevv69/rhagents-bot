@@ -11,6 +11,11 @@ import { getDb, type Agent } from "./db";
 import { linkBankrChainWallet } from "./link-chain-wallet";
 import { scheduleInscribeAgent } from "./inscriber";
 import { DEFAULT_BANKR_SKILL_INSTALLS } from "./bankr-default-skills";
+import {
+  buildPartnerFundPayload,
+  defaultWalletApiKeyBody,
+  type PartnerFundPayload,
+} from "./bankr-partner-config";
 
 const BANKR_API = "https://api.bankr.bot";
 
@@ -84,6 +89,35 @@ interface CreateWalletResponse {
   solAddress?: string;
   idempotencyKey?: string;
   apiKey?: string;
+  fund?: unknown;
+}
+
+async function generateWalletApiKey(
+  walletId: string,
+  channel: ProvisionChannel,
+): Promise<string | undefined> {
+  const keyRes = await partnerFetch<{ apiKey: string }>(
+    `/partner/wallets/${encodeURIComponent(walletId)}/api-keys`,
+    {
+      method: "POST",
+      body: JSON.stringify(defaultWalletApiKeyBody(channel)),
+    },
+  );
+  return keyRes.apiKey;
+}
+
+/** POST /partner/wallets/:identifier/fund — Robinhood Chain only. */
+export async function fundProvisionedWallet(
+  identifier: string,
+  fund?: PartnerFundPayload | null,
+): Promise<void> {
+  const payload = fund ?? buildPartnerFundPayload();
+  if (!payload) return;
+
+  await partnerFetch(`/partner/wallets/${encodeURIComponent(identifier)}/fund`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 /** Create or fetch a provisioned wallet (idempotent). */
@@ -97,61 +131,84 @@ export async function provisionBankrWallet(
     return { ok: false, error: "bankr_partner_not_configured", status: 503 };
   }
 
+  const fundPayload = opts.fund !== false ? buildPartnerFundPayload() : null;
+
   const body: Record<string, unknown> = {
     idempotencyKey: idempotencyKey(channel, externalId),
-    apiKey: {
-      permissions: {
-        agentApiEnabled: true,
-        readOnly: false,
-      },
-    },
+    wallet: { solana: false },
+    apiKey: defaultWalletApiKeyBody(channel),
   };
 
-  if (opts.fund && process.env.BANKR_PROVISION_FUND_ETH) {
-    body.fund = {
-      tokens: [{ tokenAddress: "native", amount: process.env.BANKR_PROVISION_FUND_ETH }],
-      chain: process.env.BANKR_PROVISION_FUND_CHAIN || "base",
-    };
+  if (fundPayload) {
+    body.fund = fundPayload;
   }
 
   try {
-    const res = await fetch(`${BANKR_API}/partner/wallets`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Partner-Key": pk,
-      },
-      body: JSON.stringify(body),
-    });
-    const data = (await res.json()) as CreateWalletResponse;
-    if (!res.ok) {
+    let lastErr: ProvisionError | null = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const res = await fetch(`${BANKR_API}/partner/wallets`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Partner-Key": pk,
+        },
+        body: JSON.stringify(body),
+      });
+      const text = await res.text();
+      let data: CreateWalletResponse & { error?: string };
+      try {
+        data = text ? (JSON.parse(text) as CreateWalletResponse & { error?: string }) : ({} as CreateWalletResponse);
+      } catch {
+        lastErr = {
+          ok: false,
+          error: `Bankr partner API error (${res.status}): ${text.slice(0, 200)}`,
+          status: res.status >= 500 ? 502 : res.status,
+        };
+        if (res.status >= 500 && attempt < 2) {
+          await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+          continue;
+        }
+        return lastErr;
+      }
+      if (!res.ok) {
+        lastErr = {
+          ok: false,
+          error: data.error || "provision_failed",
+          status: res.status,
+        };
+        if (res.status >= 500 && attempt < 2) {
+          await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+          continue;
+        }
+        return lastErr;
+      }
+
+      let apiKey = data.apiKey;
+      if (!apiKey && data.id) {
+        apiKey = await generateWalletApiKey(data.id, channel);
+      }
+
+      // Idempotent replays skip create-time fund — fund on Robinhood Chain if env requests it.
+      if (fundPayload && data.id && data.fund == null) {
+        await fundProvisionedWallet(data.id, fundPayload).catch((err) => {
+          console.warn("[bankr-provision] post-provision fund failed", err);
+        });
+      }
+
+      if (!data.evmAddress || !data.id) {
+        return { ok: false, error: "provision_failed", status: 502 };
+      }
+
       return {
-        ok: false,
-        error: (data as unknown as { error?: string }).error || "provision_failed",
-        status: res.status,
+        ok: true,
+        evm_address: data.evmAddress.toLowerCase(),
+        wallet_id: data.id,
+        provisioned: true,
+        existing: false,
+        api_key: apiKey,
       };
     }
-
-    let apiKey = data.apiKey;
-    if (!apiKey && data.id) {
-      const keyRes = await partnerFetch<{ apiKey: string }>(
-        `/partner/wallets/${encodeURIComponent(data.id)}/api-keys`,
-        {
-          method: "POST",
-          body: JSON.stringify({ permissions: { agentApiEnabled: true, readOnly: false } }),
-        },
-      );
-      apiKey = keyRes.apiKey;
-    }
-
-    return {
-      ok: true,
-      evm_address: data.evmAddress.toLowerCase(),
-      wallet_id: data.id,
-      provisioned: true,
-      existing: false,
-      api_key: apiKey,
-    };
+    return lastErr ?? { ok: false, error: "provision_failed", status: 502 };
   } catch (err) {
     return {
       ok: false,

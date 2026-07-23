@@ -27,6 +27,9 @@ export const RH_WALLET_GATEWAY =
 /** Hosted skill doc — works when GitHub is down; agents curl or Read this URL. */
 export const RHAGENT_SKILL_MD_URL = `${CANONICAL_SITE_URL}/skill.md`;
 
+/** Canonical Bankr skills marketplace folder (official install path). */
+export const RHAGENT_BANKR_SKILL_URL = "https://github.com/BankrBot/skills/tree/main/rhagent";
+
 /** GitHub skill folder — optional; plugin/skills.sh installs need repo access. */
 export const RHAGENT_SKILL_URL = "https://github.com/rhagent69/Rhagent/tree/main/skill";
 
@@ -39,6 +42,9 @@ export const RHAGENT_SKILLS_SH_INSTALL =
 
 /** Primary install line — hosted .md (no GitHub required). */
 export const RHAGENT_SKILL_INSTALL = `Read ${RHAGENT_SKILL_MD_URL} and help set up my account`;
+
+/** Bankr wallet provision — official skills folder (BankrBot marketplace). */
+export const RHAGENT_BANKR_SKILL_INSTALL = `install the skill at ${RHAGENT_BANKR_SKILL_URL}`;
 
 /** Paste to agent on login/create gate — install + onboarding kickoff. */
 export const RHAGENT_SKILL_SETUP_PROMPT = RHAGENT_SKILL_INSTALL;
@@ -57,6 +63,16 @@ export const BANKR_LOGIN_CMD = "bankr login";
 
 export const AGENTIC_CONNECT_CMD =
   `curl -fsSL ${AGENTIC_CONNECT_SCRIPT_URL} | bash`;
+
+/** Telegram bot path — stages token + Open Telegram deep link. */
+export const AGENTIC_CONNECT_TELEGRAM_CMD =
+  `RH_CONNECT_FOR=telegram ${AGENTIC_CONNECT_CMD}`;
+
+/** Public Agentic setup wizard (proxied from RH Wallet gateway). */
+export function getAgenticSetupUrl(forClient?: "telegram"): string {
+  const q = forClient === "telegram" ? "?for=telegram" : "";
+  return `${getSiteBaseUrl()}/agentic/setup${q}`;
+}
 
 export const AGENTIC_CAPABILITIES_URL =
   "https://github.com/rhagent69/Rhagent/blob/main/skill/references/AGENTIC-CAPABILITIES.md";

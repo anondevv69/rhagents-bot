@@ -17,6 +17,8 @@ const PUBLIC_PAGE_PREFIXES = [
   // Trading agent dashboard — auth is its own Telegram /website magic-link cookie, not the viewer gate.
   "/dashboard",
   "/discord",
+  // Agentic OAuth setup wizard (proxied to RH Wallet gateway — public, no viewer cookie).
+  "/agentic",
 ];
 
 /** SEO / social crawlers — must never redirect to login. */
@@ -88,6 +90,11 @@ export function middleware(req: NextRequest) {
   requestHeaders.set("x-pathname", fullPath);
 
   if (pathname.startsWith("/_next") || pathname.startsWith("/favicon")) {
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
+  // Agentic setup wizard — proxied at app/agentic/[[...path]]/route.ts (public, no viewer cookie).
+  if (pathname === "/agentic" || pathname.startsWith("/agentic/")) {
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
