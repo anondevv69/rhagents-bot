@@ -7654,3 +7654,235 @@ a.post-via--link:hover {
   align-items: center;
   gap: 12px;
 }
+
+/* ── Docs portal (doc.rhagent.bot) ── */
+
+.docs-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.docs-shell-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  border-bottom: 1px solid var(--border-soft);
+  backdrop-filter: blur(10px);
+}
+
+.docs-shell-header-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 12px var(--layout-gutter);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.docs-shell-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.docs-shell-brand-text {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.docs-shell-brand-sub {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.docs-shell-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  flex: 1;
+  min-width: 0;
+  justify-content: center;
+}
+
+.docs-shell-nav-link {
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .docs-shell-nav-link:hover {
+    color: var(--text);
+    background: var(--hover-fill);
+  }
+}
+
+.docs-shell-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.docs-shell-app-btn {
+  font-size: 12px;
+  padding: 7px 12px;
+  white-space: nowrap;
+}
+
+.docs-shell-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 28px var(--layout-gutter) 48px;
+  box-sizing: border-box;
+}
+
+.docs-shell-footer {
+  border-top: 1px solid var(--border-soft);
+  padding: 16px var(--layout-gutter) 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.docs-shell-footer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.docs-shell-footer-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .docs-shell-footer-link:hover {
+    color: var(--text);
+  }
+}
+
+.docs-shell-footer .site-token-footer--inline {
+  margin-top: 0;
+  padding: 0;
+  border-top: none;
+  justify-content: center;
+}
+
+.docs-resource-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.docs-resource-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+  background: var(--surface);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color var(--duration-ui) var(--ease-out), background var(--duration-ui) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .docs-resource-card:hover {
+    border-color: var(--border);
+    background: color-mix(in srgb, var(--surface) 90%, var(--accent) 10%);
+  }
+}
+
+.docs-resource-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-faint);
+}
+
+.docs-resource-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.docs-resource-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+@media (max-width: 900px) {
+  .docs-resource-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .docs-shell-header-inner {
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    gap: 10px;
+  }
+
+  .docs-shell-nav {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  .docs-shell-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .docs-shell-nav-link {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .docs-shell-app-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .docs-shell-main {
+    padding: 20px 14px 32px;
+  }
+
+  .docs-resource-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .docs-tabs-bar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+
+  .docs-tabs-bar::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { redirectPath } from "@/lib/request-origin";
 import { isPublicSharePath, isSocialCrawler } from "@/lib/social-crawlers";
+import { CANONICAL_SITE_URL } from "@/lib/rhagent-setup";
+import { isAppOnlyPath, isDocsHost, isDocsSitePath } from "@/lib/docs-host";
 
 const VIEWER_COOKIE = "rhagents_viewer";
 
@@ -20,6 +22,7 @@ const PUBLIC_PAGE_PREFIXES = [
   "/discord",
   // Agentic OAuth setup wizard (proxied to RH Wallet gateway — public, no viewer cookie).
   "/agentic",
+  "/docs",
 ];
 
 /** SEO / social crawlers — must never redirect to login. */
@@ -77,19 +80,54 @@ function hasBearerAuth(req: NextRequest): boolean {
 
 /** Gate — cookie presence in middleware; HMAC verified server-side in (app)/layout. */
 export function middleware(req: NextRequest) {
-  if (process.env.VIEWER_GATE_ENABLED !== "true") return NextResponse.next();
-
   const { pathname } = req.nextUrl;
+  const fullPath = pathname + req.nextUrl.search;
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-pathname", fullPath);
+
+  if (isDocsHost(req)) {
+    requestHeaders.set("x-docs-host", "1");
+
+    if (pathname === "/") {
+      const url = req.nextUrl.clone();
+      url.pathname = "/docs";
+      return NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+    }
+
+    if (isAppOnlyPath(pathname)) {
+      return NextResponse.redirect(new URL(fullPath, CANONICAL_SITE_URL));
+    }
+
+    if (isDocsSitePath(pathname) || pathname.startsWith("/api/")) {
+      return NextResponse.next({ request: { headers: requestHeaders } });
+    }
+
+    return NextResponse.redirect(new URL(fullPath, CANONICAL_SITE_URL));
+  }
+
+  if (process.env.VIEWER_GATE_ENABLED !== "true") {
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
+  // Canonical docs live on doc.rhagent.bot when configured separately from the app host.
+  const docsBase = process.env.NEXT_PUBLIC_DOCS_URL?.replace(/\/$/, "");
+  if (
+    docsBase &&
+    docsBase !== CANONICAL_SITE_URL &&
+    (pathname === "/docs" || pathname.startsWith("/docs/"))
+  ) {
+    const dest =
+      pathname === "/docs"
+        ? `${docsBase}${req.nextUrl.hash}`
+        : `${docsBase}${fullPath}${req.nextUrl.hash}`;
+    return NextResponse.redirect(dest, 301);
+  }
 
   // Public static assets (logo masks, hero, setup scripts, skill docs, etc.) — must not redirect to /login.
   // .md docs are how agents (curl, ClawdBot, Aeon, nanobot, ...) fetch the combined skill.md.
   if (/\.(png|jpe?g|gif|webp|svg|ico|woff2?|py|sh|md)$/i.test(pathname) || pathname.startsWith("/scripts/")) {
-    return NextResponse.next();
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
-
-  const fullPath = pathname + req.nextUrl.search;
-  const requestHeaders = new Headers(req.headers);
-  requestHeaders.set("x-pathname", fullPath);
 
   if (pathname.startsWith("/_next") || pathname.startsWith("/favicon")) {
     return NextResponse.next({ request: { headers: requestHeaders } });

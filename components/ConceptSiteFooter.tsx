@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { TokenFooter } from "./TokenFooter";
+import { getDocsPageUrl } from "@/lib/rhagent-setup";
 
 export function ConceptSiteFooter() {
+  const docsHref = getDocsPageUrl();
+
   return (
     <footer className="concept-site-footer" aria-label="Site footer">
       <nav className="concept-site-footer-nav" aria-label="Resources">
-        <Link href="/docs" className="concept-site-footer-link">
+        <a href={docsHref} className="concept-site-footer-link">
           Docs
-        </Link>
+        </a>
         <Link href="/safety" className="concept-site-footer-link">
           Safety
         </Link>
