@@ -106,6 +106,30 @@ async function generateWalletApiKey(
   return keyRes.apiKey;
 }
 
+/** Enable LLM Gateway (+ ensure Agent API) on all active keys for a provisioned wallet. */
+export async function enableLlmGatewayOnWallet(identifier: string): Promise<{ updated: number }> {
+  const list = await partnerFetch<{ apiKeys: { keyId: string; llmGatewayEnabled?: boolean; isActive?: boolean }[] }>(
+    `/partner/wallets/${encodeURIComponent(identifier)}/api-keys`,
+  );
+  let updated = 0;
+  for (const k of list.apiKeys ?? []) {
+    if (k.isActive === false) continue;
+    if (k.llmGatewayEnabled) continue;
+    await partnerFetch(`/partner/wallets/${encodeURIComponent(identifier)}/api-keys/${encodeURIComponent(k.keyId)}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        permissions: {
+          llmGatewayEnabled: true,
+          agentApiEnabled: true,
+          readOnly: false,
+        },
+      }),
+    });
+    updated++;
+  }
+  return { updated };
+}
+
 /** POST /partner/wallets/:identifier/fund — Robinhood Chain only. */
 export async function fundProvisionedWallet(
   identifier: string,
