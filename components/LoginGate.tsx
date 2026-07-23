@@ -16,6 +16,7 @@ import { SITE_NAME } from "@/lib/rhagent-setup";
 const AGENT_ONBOARD = buildAgentOnboardPrompt();
 
 type Mode = "choose" | "login" | "create";
+type LoginChannel = "agent" | "bot";
 
 export function LoginGate({ next = "/feed" }: { next?: string }) {
   const router = useRouter();
@@ -28,6 +29,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         ? "login"
         : "choose";
   const [mode, setMode] = useState<Mode>(initialMode);
+  const [loginChannel, setLoginChannel] = useState<LoginChannel>("agent");
   const [copied, setCopied] = useState(false);
   const showSetup = searchParams.get("setup") === "1";
 
@@ -229,42 +231,77 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
   }
 
   return (
-    <div className="gate-inner">
+    <div className="gate-inner gate-inner--login">
       <PathPickerBack />
-      <div className="gate-brand">
-        <div className="gate-brand-lockup">
-          <BrandMark size={56} />
-          <span className="gate-brand-name">{SITE_NAME}</span>
-        </div>
+
+      <div className="gate-brand gate-brand--compact">
+        <BrandMark size={28} />
         <h1>Log in</h1>
-        <p>Paste the login code your agent sends back (format <code>XXXX-XXXX</code>).</p>
-      </div>
-
-      <div className="gate-card">
-        <LoginCodeForm next={next} />
-      </div>
-
-      <div className="gate-card">
-        <h2 className="owner-settings-heading" style={{ marginTop: 0, fontSize: 15 }}>
-          Telegram or Discord bot
-        </h2>
-        <p className="owner-settings-note" style={{ marginBottom: 0 }}>
-          Send <code>/dashboard</code> in the trading bot chat. It replies with a one-time link to the
-          dashboard — you don&apos;t paste anything on this page.
+        <p className="gate-brand-subhead">
+          {loginChannel === "agent" ? "Paste a code from your agent" : "Open the dashboard from chat"}
         </p>
       </div>
 
-      <p className="gate-switch">
-        Registering with Claude / Cursor?{" "}
-        <button type="button" className="gate-switch-btn" onClick={() => switchMode("create")}>
-          External agent path
+      <div className="login-channel-tabs" role="tablist" aria-label="Login method">
+        <button
+          type="button"
+          role="tab"
+          id="login-tab-agent"
+          aria-selected={loginChannel === "agent"}
+          aria-controls="login-panel-agent"
+          className={`login-channel-tab${loginChannel === "agent" ? " is-active" : ""}`}
+          onClick={() => setLoginChannel("agent")}
+        >
+          Agent
         </button>
-        {" · "}
-        New on web?{" "}
-        <Link href="/dashboard?tab=setup" className="gate-switch-btn">
-          Get started on dashboard
-        </Link>
-      </p>
+        <button
+          type="button"
+          role="tab"
+          id="login-tab-bot"
+          aria-selected={loginChannel === "bot"}
+          aria-controls="login-panel-bot"
+          className={`login-channel-tab${loginChannel === "bot" ? " is-active" : ""}`}
+          onClick={() => setLoginChannel("bot")}
+        >
+          Telegram / Discord
+        </button>
+      </div>
+
+      <div className="gate-card gate-card--login">
+        {loginChannel === "agent" ? (
+          <div role="tabpanel" id="login-panel-agent" aria-labelledby="login-tab-agent">
+            <LoginCodeForm next={next} />
+          </div>
+        ) : (
+          <div role="tabpanel" id="login-panel-bot" aria-labelledby="login-tab-bot" className="login-bot-panel">
+            <p className="login-bot-lead">
+              Using the rhagent trading bot? Send a command in chat — no paste needed here.
+            </p>
+            <div className="login-bot-cmd">
+              <code>/dashboard</code>
+            </div>
+            <p className="login-bot-note">
+              The bot replies with a one-time link to the trading dashboard (skills, jobs, Robinhood
+              connections). Separate from agent login above.
+            </p>
+          </div>
+        )}
+      </div>
+
+      <footer className="gate-login-alt">
+        <div className="gate-login-alt-row">
+          <span className="gate-login-alt-label">Claude / Cursor / Bankr</span>
+          <button type="button" className="gate-login-alt-link" onClick={() => switchMode("create")}>
+            Register via agent →
+          </button>
+        </div>
+        <div className="gate-login-alt-row">
+          <span className="gate-login-alt-label">New on web</span>
+          <Link href="/dashboard?tab=setup" className="gate-login-alt-link">
+            Dashboard setup →
+          </Link>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -1423,6 +1423,209 @@ body:has(.app-shell) .main-area {
   margin-top: 20px;
 }
 
+.gate-footnote--destination {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  border: 1px solid var(--border-soft);
+  color: var(--muted);
+  font-size: 13px;
+  max-width: 420px;
+  width: 100%;
+}
+
+.gate-brand--compact {
+  margin-bottom: 20px;
+}
+
+.gate-brand--compact h1 {
+  font-size: 26px;
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+.gate-brand-subhead {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.gate-inner--login {
+  max-width: 440px;
+}
+
+.login-channel-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+}
+
+.login-channel-tab {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 12px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.login-channel-tab:hover {
+  color: var(--text);
+}
+
+.login-channel-tab.is-active {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.gate-card--login {
+  margin-bottom: 0;
+}
+
+.login-code-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.login-code-step-hint {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.login-code-step-label--spaced {
+  margin-top: 20px;
+}
+
+.login-code-preview {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 9px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.login-code-copy-btn {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.login-code-input {
+  width: 100%;
+  margin-bottom: 10px;
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.08em;
+}
+
+.login-code-input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.login-code-submit {
+  width: 100%;
+}
+
+.login-bot-panel {
+  padding: 4px 0;
+}
+
+.login-bot-lead {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.login-bot-cmd {
+  margin-bottom: 12px;
+  padding: 14px 16px;
+  text-align: center;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+}
+
+.login-bot-cmd code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.login-bot-note {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.gate-login-alt {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gate-login-alt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.gate-login-alt-label {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.gate-login-alt-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--accent-blue);
+  cursor: pointer;
+  text-decoration: none;
+  text-align: right;
+}
+
+.gate-login-alt-link:hover {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+a.gate-login-alt-link:hover {
+  text-decoration: underline;
+}
+
 .legal-doc {
   text-align: left;
   max-width: 40rem;

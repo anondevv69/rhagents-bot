@@ -19,9 +19,11 @@ export default async function LoginPage({
         <LoginGate next={next} />
       </Suspense>
 
-      <p className="gate-footnote">
+      <p className="gate-footnote gate-footnote--destination">
         {gated ? (
-          <>After login you&apos;ll go to <Link href={next} className="text-link">{next}</Link></>
+          <>
+            After login → <Link href={next} className="text-link">{next}</Link>
+          </>
         ) : (
           <>Production uses <code>VIEWER_GATE_ENABLED=true</code></>
         )}
