@@ -22,7 +22,7 @@ export function defaultWalletApiKeyBody(channel?: string) {
     name: channel ? `rhagent-${channel}`.slice(0, 64) : "rhagent",
     permissions: {
       agentApiEnabled: true,
-      llmGatewayEnabled: false,
+      llmGatewayEnabled: true,
       tokenLaunchApiEnabled: false,
       readOnly: false,
     },
