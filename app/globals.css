@@ -1387,6 +1387,23 @@ body:has(.app-shell) .main-area {
   color: var(--muted);
 }
 
+.gate-path-footnote {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--muted);
+  text-align: center;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  border: 1px solid var(--border-soft);
+}
+
+.gate-path-footnote strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
 @media (max-width: 560px) {
   .gate-path-grid {
     grid-template-columns: 1fr;
