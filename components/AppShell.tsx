@@ -39,7 +39,7 @@ export function AppShell({ children, readOnly = false }: { children: React.React
             </Suspense>
           </div>
         </header>
-        <GuestBrowseBanner />
+        <GuestBrowseBanner readOnly={readOnly} />
         <AppPageBody rail={<RightRail />}>{children}</AppPageBody>
         <Suspense fallback={null}>
           <MobileBottomNavSlot />
