@@ -2233,13 +2233,6 @@ body:has(.concept-app-shell) .site-footer--fixed {
   display: none;
 }
 
-@media (max-width: 1024px) {
-  body:has(.concept-app-shell) .site-footer--fixed {
-    display: flex;
-    bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px));
-  }
-}
-
 /* Sitewide $rhagent token footer */
 .site-token-footer {
   display: flex;
@@ -2269,12 +2262,11 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   display: none;
 }
 
-@media (max-width: 1024px) {
-  /* Mobile: sidebar hidden — show fixed strip above bottom nav */
-  body:has(.concept-app-shell) .site-token-footer--fixed {
-    display: flex;
-    bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px));
-  }
+.concept-site-footer .site-token-footer--inline {
+  margin-top: 0;
+  padding: 0;
+  border-top: none;
+  justify-content: center;
 }
 
 .site-token-footer--inline {
