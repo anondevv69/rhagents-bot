@@ -14,6 +14,8 @@ const ALLOWED_PREFIXES = [
   "connect/",
   "disconnect/",
   "rhagents/",
+  "setup/",
+  "profile/",
 ];
 
 function isAllowed(path: string): boolean {
