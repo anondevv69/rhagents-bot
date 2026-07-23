@@ -106,28 +106,88 @@ async function generateWalletApiKey(
   return keyRes.apiKey;
 }
 
-/** Enable LLM Gateway (+ ensure Agent API) on all active keys for a provisioned wallet. */
-export async function enableLlmGatewayOnWallet(identifier: string): Promise<{ updated: number }> {
-  const list = await partnerFetch<{ apiKeys: { keyId: string; llmGatewayEnabled?: boolean; isActive?: boolean }[] }>(
-    `/partner/wallets/${encodeURIComponent(identifier)}/api-keys`,
+interface PartnerApiKeyMeta {
+  keyId: string;
+  llmGatewayEnabled?: boolean;
+  agentApiEnabled?: boolean;
+  isActive?: boolean;
+}
+
+interface PartnerWalletDetail {
+  id: string;
+  evmAddress?: string;
+}
+
+/** GET /partner/wallets/:identifier — id, EVM address, or Solana address. */
+export async function getPartnerWallet(identifier: string): Promise<PartnerWalletDetail | null> {
+  try {
+    return await partnerFetch<PartnerWalletDetail>(
+      `/partner/wallets/${encodeURIComponent(identifier)}`,
+    );
+  } catch {
+    return null;
+  }
+}
+
+async function listPartnerWalletApiKeys(walletId: string): Promise<PartnerApiKeyMeta[]> {
+  const list = await partnerFetch<{ apiKeys: PartnerApiKeyMeta[] }>(
+    `/partner/wallets/${encodeURIComponent(walletId)}/api-keys`,
   );
+  return list.apiKeys ?? [];
+}
+
+function activeLlmKey(keys: PartnerApiKeyMeta[]): boolean {
+  return keys.some((k) => k.isActive !== false && k.llmGatewayEnabled === true);
+}
+
+/** Enable LLM Gateway (+ ensure Agent API) on all active keys for a provisioned wallet. */
+export async function enableLlmGatewayOnWallet(
+  identifier: string,
+  channel: ProvisionChannel = "telegram",
+): Promise<{ updated: number; walletId: string; apiKey?: string }> {
+  const wallet = await getPartnerWallet(identifier);
+  if (!wallet?.id) {
+    throw new Error("wallet_not_found");
+  }
+  const walletId = wallet.id;
+
   let updated = 0;
-  for (const k of list.apiKeys ?? []) {
+  let keys = await listPartnerWalletApiKeys(walletId);
+  for (const k of keys) {
     if (k.isActive === false) continue;
     if (k.llmGatewayEnabled) continue;
-    await partnerFetch(`/partner/wallets/${encodeURIComponent(identifier)}/api-keys/${encodeURIComponent(k.keyId)}`, {
-      method: "PATCH",
-      body: JSON.stringify({
-        permissions: {
-          llmGatewayEnabled: true,
-          agentApiEnabled: true,
-          readOnly: false,
-        },
-      }),
-    });
+    await partnerFetch(
+      `/partner/wallets/${encodeURIComponent(walletId)}/api-keys/${encodeURIComponent(k.keyId)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          permissions: {
+            llmGatewayEnabled: true,
+            agentApiEnabled: true,
+            readOnly: false,
+          },
+        }),
+      },
+    );
     updated++;
   }
-  return { updated };
+
+  keys = await listPartnerWalletApiKeys(walletId);
+  if (!activeLlmKey(keys)) {
+    const keyRes = await partnerFetch<{ apiKey: string }>(
+      `/partner/wallets/${encodeURIComponent(walletId)}/api-keys`,
+      {
+        method: "POST",
+        body: JSON.stringify(defaultWalletApiKeyBody(channel)),
+      },
+    );
+    if (!keyRes.apiKey) {
+      throw new Error("llm_gateway_enable_failed");
+    }
+    return { updated, walletId, apiKey: keyRes.apiKey };
+  }
+
+  return { updated, walletId };
 }
 
 /** POST /partner/wallets/:identifier/fund — Robinhood Chain only. */

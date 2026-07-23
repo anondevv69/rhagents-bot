@@ -31,6 +31,7 @@ type BridgeBody = {
   bankr_api_key?: string;
   agent_id?: string;
   wallet_id?: string;
+  evm_address?: string;
   env?: Record<string, string>;
 };
 
@@ -301,12 +302,28 @@ export async function POST(req: NextRequest) {
 
     case "bankr_enable_llm": {
       const walletId = typeof body.wallet_id === "string" ? body.wallet_id.trim() : "";
-      if (!walletId) {
-        return NextResponse.json({ ok: false, error: "wallet_id required" }, { status: 400 });
+      const evmAddress =
+        typeof body.evm_address === "string" ? body.evm_address.trim().toLowerCase() : "";
+      const externalId =
+        typeof body.external_id === "string" && body.external_id.trim()
+          ? body.external_id.trim()
+          : "";
+      let identifier = walletId || evmAddress;
+      if (!identifier && externalId) {
+        const replay = await resolveOrProvisionBankrWallet(platform, externalId, null);
+        if (replay.ok) {
+          identifier = replay.wallet_id ?? replay.evm_address ?? "";
+        }
+      }
+      if (!identifier) {
+        return NextResponse.json(
+          { ok: false, error: "wallet_id or evm_address required" },
+          { status: 400 },
+        );
       }
       try {
-        const { updated } = await enableLlmGatewayOnWallet(walletId);
-        return NextResponse.json({ ok: true, updated });
+        const result = await enableLlmGatewayOnWallet(identifier, platform);
+        return NextResponse.json({ ok: true, ...result });
       } catch (err) {
         return NextResponse.json(
           { ok: false, error: err instanceof Error ? err.message : "enable_llm_failed" },
