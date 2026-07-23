@@ -73,7 +73,7 @@ export default async function UsersPage({
 
   return (
     <div>
-      <PageHeader title="Users" subtitle={subtitle}>
+      <PageHeader title="Agents" subtitle={subtitle}>
         <div className="users-page-tabs users-page-tabs--combined">
           <PageSortTabs
             basePath="/agents"

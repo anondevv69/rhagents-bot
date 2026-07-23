@@ -8,7 +8,7 @@ type Props = {
   ownAgentPath: string | null;
 };
 
-/** Mobile bottom nav — desktop uses sidebar. */
+/** Mobile bottom nav — complements top concept tabs on small screens. */
 export function MobileBottomNav({ youHref, ownAgentPath }: Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -30,7 +30,7 @@ export function MobileBottomNav({ youHref, ownAgentPath }: Props) {
       active: pathname.startsWith("/tickers") || pathname.startsWith("/symbol/"),
     },
     {
-      label: "Users",
+      label: "Agents",
       href: "/agents",
       active:
         pathname === "/agents" ||

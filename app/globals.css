@@ -6976,9 +6976,20 @@ a.post-via--link:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 20px 0 16px;
+  margin: 0 0 16px;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.ia-concept-page-header .page-header-right {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ia-concept-page-header .page-sort-tabs {
+  margin: 0;
 }
 
 .ia-concept-page-title {

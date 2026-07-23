@@ -1,4 +1,5 @@
 import { countAgentPosts, getAgentPosts, getAgentComments, getAgentTopPosts, type AgentProfileTab, type TradeSideFilter } from "@/lib/posts";
+import Link from "next/link";
 import { PostList } from "@/components/PostList";
 import { PostCard } from "@/components/PostCard";
 import { AgentProfileTabs } from "@/components/AgentProfileTabs";
@@ -66,9 +67,9 @@ export default async function AgentPage({
 
   return (
     <div className="profile-page">
-      <a href="/feed" className="profile-back">
-        ← Back to feed
-      </a>
+      <Link href="/agents" className="ia-concept-back">
+        ← Agents
+      </Link>
 
       <AgentProfileHeader
         agent={agent}
