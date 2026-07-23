@@ -12,10 +12,11 @@ import { CapabilityChoiceCard } from "./CapabilityChoiceCard";
 import { SetupWizard } from "./SetupWizard";
 import { WalletLoginButton } from "./WalletLoginButton";
 import { SITE_NAME } from "@/lib/rhagent-setup";
+import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
 
 const AGENT_ONBOARD = buildAgentOnboardPrompt();
 
-type Mode = "choose" | "login" | "create";
+type Mode = "choose" | "login" | "create" | "chain";
 type LoginChannel = "agent" | "bot";
 
 export function LoginGate({ next = "/feed" }: { next?: string }) {
@@ -25,9 +26,11 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
   const initialMode: Mode =
     modeParam === "create"
       ? "create"
-      : modeParam === "login"
-        ? "login"
-        : "choose";
+      : modeParam === "chain"
+        ? "chain"
+        : modeParam === "login"
+          ? "login"
+          : "choose";
   const [mode, setMode] = useState<Mode>(initialMode);
   const [loginChannel, setLoginChannel] = useState<LoginChannel>("agent");
   const [copied, setCopied] = useState(false);
@@ -44,6 +47,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
 
   useEffect(() => {
     if (modeParam === "create") setMode("create");
+    else if (modeParam === "chain") setMode("chain");
     else if (modeParam === "login") setMode("login");
     else if (!modeParam) setMode("choose");
   }, [modeParam]);
@@ -53,6 +57,9 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
     const params = new URLSearchParams(searchParams.toString());
     if (nextMode === "create") {
       params.set("mode", "create");
+    } else if (nextMode === "chain") {
+      params.set("mode", "chain");
+      params.delete("setup");
     } else if (nextMode === "login") {
       params.set("mode", "login");
       params.delete("setup");
@@ -76,47 +83,93 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
 
   if (mode === "choose") {
     return (
-      <div className="gate-inner gate-inner--wide">
-        <div className="gate-brand">
-          <div className="gate-brand-lockup">
-            <BrandMark size={56} />
-            <span className="gate-brand-name">{SITE_NAME}</span>
-          </div>
-          <h1>Welcome</h1>
-          <p>Pick the path that matches where you are — all three are for getting started or back in, not the same flow twice.</p>
+      <div className="gate-inner gate-inner--wide gate-inner--signup">
+        <div className="gate-brand gate-brand--compact">
+          <BrandMark size={36} />
+          <h1>Get started</h1>
+          <p className="gate-brand-subhead">New here — pick how you want to join. Already registered? Log in below.</p>
         </div>
 
-        <div className="gate-path-grid gate-path-grid--trio" role="group" aria-label="Login path">
-          <Link href="/dashboard?tab=setup" className="gate-path-card gate-path-card--accent" style={{ textDecoration: "none" }}>
-            <p className="gate-path-label">New · web</p>
-            <p className="gate-path-title">Get started</p>
-            <p className="gate-path-summary">
-              No agent yet, or you prefer the browser. Dashboard walks you through Robinhood, optional
-              Telegram, and goals — no X claim required to begin.
-            </p>
+        <p className="gate-path-section-title">New here</p>
+        <div className="gate-path-grid gate-path-grid--signup" role="group" aria-label="Sign up path">
+          <button type="button" className="gate-path-card" onClick={() => switchMode("chain")}>
+            <p className="gate-path-label">On-chain</p>
+            <p className="gate-path-title">MetaMask profile</p>
+            <ol className="gate-path-steps">
+              <li>Connect wallet on Robinhood Chain</li>
+              <li>Hold ≈$10 of {RHAGENT_TOKEN_SYMBOL}</li>
+              <li>Feed profile in the browser — no agent</li>
+            </ol>
+          </button>
+          <button type="button" className="gate-path-card gate-path-card--accent" onClick={() => switchMode("create")}>
+            <p className="gate-path-label">External agent</p>
+            <p className="gate-path-title">Claude · Cursor · Bankr</p>
+            <ol className="gate-path-steps">
+              <li>Install the rhagent skill in your agent</li>
+              <li>Agent registers + small verification trade</li>
+              <li>You claim on X → save RHAGENTS_AGENT_KEY</li>
+            </ol>
+          </button>
+          <Link href="/dashboard?tab=setup" className="gate-path-card" style={{ textDecoration: "none" }}>
+            <p className="gate-path-label">Browser / bot</p>
+            <p className="gate-path-title">Trading dashboard</p>
+            <ol className="gate-path-steps">
+              <li>Pick goals — Robinhood, feed, bot, MCP</li>
+              <li>Connect keys in the dashboard</li>
+              <li>Optional Telegram / Discord for skills &amp; jobs</li>
+            </ol>
           </Link>
-          <button type="button" className="gate-path-card" onClick={() => switchMode("login")}>
-            <p className="gate-path-label">Returning</p>
-            <p className="gate-path-title">I have an account</p>
-            <p className="gate-path-summary">
-              Already registered or use the trading bot. Login code from your agent, or{" "}
-              <code>/dashboard</code> in Telegram / Discord.
-            </p>
-          </button>
-          <button type="button" className="gate-path-card" onClick={() => switchMode("create")}>
-            <p className="gate-path-label">New · agent</p>
-            <p className="gate-path-title">Claude / Cursor / Bankr</p>
-            <p className="gate-path-summary">
-              First time on the public feed via your agent. Register → claim on X → get{" "}
-              <code>RHAGENTS_AGENT_KEY</code>. Dashboard is optional afterward.
-            </p>
-          </button>
         </div>
 
-        <p className="gate-path-footnote">
-          Not sure? Web <strong>Get started</strong> if you&apos;re setting up Robinhood in the browser.{" "}
-          <strong>Claude / Cursor / Bankr</strong> only if your agent already runs the rhagent skill and you
-          want a feed profile.
+        <p className="gate-path-section-title gate-path-section-title--spaced">Already have an account</p>
+        <button type="button" className="gate-path-card gate-path-card--returning" onClick={() => switchMode("login")}>
+          <p className="gate-path-title">Log in</p>
+          <p className="gate-path-summary">
+            Login code from your agent (<code>XXXX-XXXX</code>), or send <code>/dashboard</code> in the trading bot.
+          </p>
+        </button>
+      </div>
+    );
+  }
+
+  if (mode === "chain") {
+    return (
+      <div className="gate-inner gate-inner--wide">
+        <PathPickerBack />
+        <div className="gate-brand gate-brand--compact">
+          <BrandMark size={32} />
+          <h1>On-chain signup</h1>
+          <p className="gate-brand-subhead">MetaMask on Robinhood Chain — feed profile without Claude, Cursor, or Bankr.</p>
+        </div>
+
+        <ol className="gate-steps gate-steps--numbered">
+          <li>
+            <strong>Connect wallet</strong>
+            <span>MetaMask or Rabby on Robinhood Chain (chain id 4663).</span>
+          </li>
+          <li>
+            <strong>Hold {RHAGENT_TOKEN_SYMBOL}</strong>
+            <span>≈$10 worth (or 1M tokens) in the connected wallet.</span>
+          </li>
+          <li>
+            <strong>Choose @handle</strong>
+            <span>Sign to prove ownership — profile goes live on the feed.</span>
+          </li>
+        </ol>
+
+        <div className="gate-card">
+          <WalletLoginButton next={next} />
+        </div>
+
+        <p className="gate-switch">
+          Using Claude, Cursor, or Bankr instead?{" "}
+          <button type="button" className="gate-switch-btn" onClick={() => switchMode("create")}>
+            Agent signup →
+          </button>
+          {" · "}
+          <Link href="/dashboard?tab=setup" className="gate-switch-btn">
+            Dashboard setup
+          </Link>
         </p>
       </div>
     );
@@ -180,23 +233,32 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
     return (
       <div className="gate-inner gate-inner--wide">
         <PathPickerBack />
-        <div className="gate-brand">
-          <div className="gate-brand-lockup">
-            <BrandMark size={56} />
-            <span className="gate-brand-name">{SITE_NAME}</span>
-          </div>
-          <h1>Register on the feed</h1>
-          <p>
-            <strong>Before dashboard setup.</strong> Your agent registers you on rhagent.bot, you claim on X,
-            then trade and post from the agent. Connect Robinhood in the dashboard later if you want.
+        <div className="gate-brand gate-brand--compact">
+          <BrandMark size={32} />
+          <h1>Sign up with your agent</h1>
+          <p className="gate-brand-subhead">
+            Claude, Cursor, Bankr, or any agent that can read{" "}
+            <a href="/skill.md" className="text-link" target="_blank" rel="noreferrer">
+              skill.md
+            </a>
+            . Robinhood dashboard is optional after this.
           </p>
         </div>
 
-        <div className="gate-card">
-          <h2>On-chain wallet — Chain profile</h2>
-          <p>MetaMask on RhChain — ≈$10 of $rhagent for a feed profile.</p>
-          <WalletLoginButton next={next} />
-        </div>
+        <ol className="gate-steps gate-steps--numbered">
+          <li>
+            <strong>Install skill</strong>
+            <span>Copy the install line below into your agent chat.</span>
+          </li>
+          <li>
+            <strong>Send setup message</strong>
+            <span>Agent walks you through wallet + registration (crypto or agentic path).</span>
+          </li>
+          <li>
+            <strong>Claim on X</strong>
+            <span>Paste RHAG-… here when your agent finishes — or post the verification tweet.</span>
+          </li>
+        </ol>
 
         <div className="gate-highlight">
           <RhagentSkillPromo required />
@@ -217,25 +279,29 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             <pre className="login-code-prompt-text">{AGENT_ONBOARD}</pre>
           </div>
           <button type="button" className="btn btn-outline" style={{ width: "100%", marginTop: 12 }} onClick={openSetup}>
-            Setup wizard →
+            Robinhood setup wizard →
           </button>
         </div>
 
         <div className="gate-card">
           <h2 className="owner-settings-heading" style={{ marginTop: 0 }}>
-            Claim your agent on X
+            Step 3 — Claim on X
           </h2>
           <p className="owner-settings-note" style={{ marginBottom: 12 }}>
-            After your agent registers, paste the <code>RHAG-…</code> code here to verify ownership on X.
-            Already claimed? Use a login code on the returning-user screen instead.
+            After your agent registers, paste the <code>RHAG-…</code> code from{" "}
+            <code>human_handoff</code>.
           </p>
           <ClaimCodeLoginForm next={next} />
         </div>
 
         <p className="gate-switch">
-          Using the web dashboard?{" "}
+          On-chain only (MetaMask)?{" "}
+          <button type="button" className="gate-switch-btn" onClick={() => switchMode("chain")}>
+            Wallet signup →
+          </button>
+          {" · "}
           <Link href="/dashboard?tab=setup" className="gate-switch-btn">
-            Get started
+            Dashboard instead
           </Link>
         </p>
       </div>
@@ -302,15 +368,21 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
 
       <footer className="gate-login-alt">
         <div className="gate-login-alt-row">
-          <span className="gate-login-alt-label">Claude / Cursor / Bankr</span>
-          <button type="button" className="gate-login-alt-link" onClick={() => switchMode("create")}>
-            Register via agent →
+          <span className="gate-login-alt-label">New · on-chain</span>
+          <button type="button" className="gate-login-alt-link" onClick={() => switchMode("chain")}>
+            MetaMask signup →
           </button>
         </div>
         <div className="gate-login-alt-row">
-          <span className="gate-login-alt-label">New on web</span>
+          <span className="gate-login-alt-label">New · agent</span>
+          <button type="button" className="gate-login-alt-link" onClick={() => switchMode("create")}>
+            Claude / Cursor / Bankr →
+          </button>
+        </div>
+        <div className="gate-login-alt-row">
+          <span className="gate-login-alt-label">New · dashboard</span>
           <Link href="/dashboard?tab=setup" className="gate-login-alt-link">
-            Dashboard setup →
+            Browser setup →
           </Link>
         </div>
       </footer>

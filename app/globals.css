@@ -1387,21 +1387,67 @@ body:has(.app-shell) .main-area {
   color: var(--muted);
 }
 
-.gate-path-footnote {
-  margin: 16px 0 0;
-  padding: 12px 14px;
-  font-size: 12px;
-  line-height: 1.55;
-  color: var(--muted);
-  text-align: center;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--surface) 70%, transparent);
-  border: 1px solid var(--border-soft);
+.gate-path-grid--signup {
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 960px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.gate-path-footnote strong {
-  color: var(--text);
+@media (max-width: 800px) {
+  .gate-path-grid--signup {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gate-path-section-title {
+  margin: 0 0 10px;
+  font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-faint);
+}
+
+.gate-path-section-title--spaced {
+  margin-top: 24px;
+}
+
+.gate-inner--signup {
+  max-width: 960px;
+}
+
+.gate-path-steps {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.gate-path-steps li {
+  margin-bottom: 4px;
+}
+
+.gate-path-steps li:last-child {
+  margin-bottom: 0;
+}
+
+.gate-path-card--returning {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gate-steps--numbered {
+  margin-bottom: 20px;
+}
+
+.gate-steps--numbered li span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
 }
 
 @media (max-width: 560px) {
