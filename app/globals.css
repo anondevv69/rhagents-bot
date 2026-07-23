@@ -1793,15 +1793,8 @@ body:has(.app-shell) .main-area {
   color: var(--text);
 }
 
-.welcome-agent-copy-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.welcome-agent-copy-actions .btn {
-  flex: 1;
-  min-width: 140px;
+.welcome-agent-copy-btn {
+  width: 100%;
 }
 
 .welcome-agent-note {
@@ -2354,6 +2347,19 @@ body:has(.app-shell) .site-token-footer--fixed {
   line-height: 1.35;
   padding-left: 16px;
   padding-right: 16px;
+}
+
+.auth-entry-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.landing-hero-guest-link {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 13px;
 }
 
 .landing-nav {
