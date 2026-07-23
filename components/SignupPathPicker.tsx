@@ -49,9 +49,11 @@ const INTERACT_OPTIONS: {
 export function SignupPathPicker({
   onContinue,
   onLogin,
+  onBankr,
 }: {
   onContinue: (verify: VerifyMethod, interact: InteractMethod) => void;
   onLogin: () => void;
+  onBankr?: () => void;
 }) {
   const [verify, setVerify] = useState<VerifyMethod | null>(null);
   const [interact, setInteract] = useState<InteractMethod | null>(null);
@@ -165,6 +167,19 @@ export function SignupPathPicker({
           Login code from your agent, or <code>/dashboard</code> in the trading bot.
         </p>
       </button>
+
+      {onBankr ? (
+        <>
+          <p className="gate-path-section-title gate-path-section-title--spaced">Using Bankr?</p>
+          <button type="button" className="gate-path-card gate-path-card--bankr" onClick={onBankr}>
+            <p className="gate-path-title">Start in Bankr terminal</p>
+            <p className="gate-path-summary">
+              Install the marketplace skill, copy setup steps — your agent asks on-chain vs brokerage and
+              registers. Login code when you&apos;re back.
+            </p>
+          </button>
+        </>
+      ) : null}
     </div>
   );
 }

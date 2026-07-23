@@ -11,6 +11,7 @@ import { RhagentSkillPromo } from "./RhagentSkillPromo";
 import { CapabilityChoiceCard } from "./CapabilityChoiceCard";
 import { SetupWizard } from "./SetupWizard";
 import { WalletLoginButton } from "./WalletLoginButton";
+import { BankrTerminalGate } from "./BankrTerminalGate";
 import { SignupPathPicker } from "./SignupPathPicker";
 import { signupDestination } from "@/lib/signup-route";
 import { SITE_NAME } from "@/lib/rhagent-setup";
@@ -18,7 +19,7 @@ import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
 
 const AGENT_ONBOARD = buildAgentOnboardPrompt();
 
-type Mode = "choose" | "login" | "create" | "chain";
+type Mode = "choose" | "login" | "create" | "chain" | "bankr";
 type LoginChannel = "agent" | "bot";
 
 export function LoginGate({ next = "/feed" }: { next?: string }) {
@@ -30,9 +31,11 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
       ? "create"
       : modeParam === "chain"
         ? "chain"
-        : modeParam === "login"
-          ? "login"
-          : "choose";
+        : modeParam === "bankr"
+          ? "bankr"
+          : modeParam === "login"
+            ? "login"
+            : "choose";
   const [mode, setMode] = useState<Mode>(initialMode);
   const [loginChannel, setLoginChannel] = useState<LoginChannel>("agent");
   const [copied, setCopied] = useState(false);
@@ -52,6 +55,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
   useEffect(() => {
     if (modeParam === "create") setMode("create");
     else if (modeParam === "chain") setMode("chain");
+    else if (modeParam === "bankr") setMode("bankr");
     else if (modeParam === "login") setMode("login");
     else if (!modeParam) setMode("choose");
   }, [modeParam]);
@@ -63,6 +67,9 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
       params.set("mode", "create");
     } else if (nextMode === "chain") {
       params.set("mode", "chain");
+      params.delete("setup");
+    } else if (nextMode === "bankr") {
+      params.set("mode", "bankr");
       params.delete("setup");
     } else if (nextMode === "login") {
       params.set("mode", "login");
@@ -115,7 +122,30 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
           </p>
         </div>
 
-        <SignupPathPicker onContinue={handleSignupContinue} onLogin={() => switchMode("login")} />
+        <SignupPathPicker
+          onContinue={handleSignupContinue}
+          onLogin={() => switchMode("login")}
+          onBankr={() => switchMode("bankr")}
+        />
+      </div>
+    );
+  }
+
+  if (mode === "bankr") {
+    return (
+      <div className="gate-inner gate-inner--wide gate-inner--signup">
+        <div className="gate-brand gate-brand--compact">
+          <BrandMark size={36} />
+          <h1>Start in Bankr</h1>
+          <p className="gate-brand-subhead">
+            Copy skill + setup into your terminal — your agent asks on-chain vs brokerage, then registers.
+          </p>
+        </div>
+        <BankrTerminalGate
+          next={next}
+          onBack={() => switchMode("choose")}
+          onLogin={() => switchMode("login")}
+        />
       </div>
     );
   }
@@ -401,9 +431,15 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
           </button>
         </div>
         <div className="gate-login-alt-row">
+          <span className="gate-login-alt-label">Bankr terminal</span>
+          <button type="button" className="gate-login-alt-link" onClick={() => switchMode("bankr")}>
+            Skill + setup in Bankr →
+          </button>
+        </div>
+        <div className="gate-login-alt-row">
           <span className="gate-login-alt-label">New · agent</span>
           <button type="button" className="gate-login-alt-link" onClick={() => switchMode("create")}>
-            Claude / Cursor / Bankr →
+            Claude / Cursor →
           </button>
         </div>
         <div className="gate-login-alt-row">
