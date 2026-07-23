@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AuthEntryButtons } from "@/components/AuthEntryButtons";
 import { createAccountEntryHref, loginEntryHref } from "@/lib/auth-entry-urls";
 import { getFeed, type FeedPost, type FeedSort } from "@/lib/posts";
