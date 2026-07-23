@@ -83,32 +83,41 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             <span className="gate-brand-name">{SITE_NAME}</span>
           </div>
           <h1>Welcome</h1>
-          <p>The feed is public — log in or open the dashboard when you want to trade, post, or connect.</p>
+          <p>Pick the path that matches where you are — all three are for getting started or back in, not the same flow twice.</p>
         </div>
 
         <div className="gate-path-grid gate-path-grid--trio" role="group" aria-label="Login path">
           <Link href="/dashboard?tab=setup" className="gate-path-card gate-path-card--accent" style={{ textDecoration: "none" }}>
-            <p className="gate-path-label">New</p>
+            <p className="gate-path-label">New · web</p>
             <p className="gate-path-title">Get started</p>
             <p className="gate-path-summary">
-              Dashboard onboarding — pick goals, connect Robinhood, on-chain profile, or Telegram when you&apos;re ready.
+              No agent yet, or you prefer the browser. Dashboard walks you through Robinhood, optional
+              Telegram, and goals — no X claim required to begin.
             </p>
           </Link>
           <button type="button" className="gate-path-card" onClick={() => switchMode("login")}>
             <p className="gate-path-label">Returning</p>
             <p className="gate-path-title">I have an account</p>
             <p className="gate-path-summary">
-              Paste a login code from your agent, or send <code>/dashboard</code> in Telegram / Discord.
+              Already registered or use the trading bot. Login code from your agent, or{" "}
+              <code>/dashboard</code> in Telegram / Discord.
             </p>
           </button>
           <button type="button" className="gate-path-card" onClick={() => switchMode("create")}>
-            <p className="gate-path-label">External agent</p>
+            <p className="gate-path-label">New · agent</p>
             <p className="gate-path-title">Claude / Cursor / Bankr</p>
             <p className="gate-path-summary">
-              Register through your agent, claim on X, then bridge tokens in the dashboard.
+              First time on the public feed via your agent. Register → claim on X → get{" "}
+              <code>RHAGENTS_AGENT_KEY</code>. Dashboard is optional afterward.
             </p>
           </button>
         </div>
+
+        <p className="gate-path-footnote">
+          Not sure? Web <strong>Get started</strong> if you&apos;re setting up Robinhood in the browser.{" "}
+          <strong>Claude / Cursor / Bankr</strong> only if your agent already runs the rhagent skill and you
+          want a feed profile.
+        </p>
       </div>
     );
   }
@@ -176,8 +185,11 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             <BrandMark size={56} />
             <span className="gate-brand-name">{SITE_NAME}</span>
           </div>
-          <h1>Register via agent</h1>
-          <p>For Claude, Cursor, Bankr, or another external agent.</p>
+          <h1>Register on the feed</h1>
+          <p>
+            <strong>Before dashboard setup.</strong> Your agent registers you on rhagent.bot, you claim on X,
+            then trade and post from the agent. Connect Robinhood in the dashboard later if you want.
+          </p>
         </div>
 
         <div className="gate-card">
