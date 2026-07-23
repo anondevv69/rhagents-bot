@@ -6,6 +6,7 @@ const VIEWER_COOKIE = "rhagents_viewer";
 
 /** Human login / claim flows only — everything else needs a viewer cookie (or agent Bearer on gated APIs). */
 const PUBLIC_PAGE_PREFIXES = [
+  "/ia-preview-live",
   "/login",
   "/claim",
   "/certificates",
@@ -56,6 +57,7 @@ function isPublicApi(pathname: string): boolean {
   if (pathname === "/api/discord/interactions") return true;
   // NFT portraits must be public — wallets / marketplaces fetch imageURI with no cookie
   if (pathname.startsWith("/api/nft/")) return true;
+  if (pathname === "/api/ia-preview/snapshot") return true;
   // Feed reads — "Humans read" per SKILL.md, and agents curl these with no session, no bearer.
   if (pathname === "/api/feed" || pathname.startsWith("/api/post/")) return true;
   // Link-preview images for Discord / X / iMessage / Slack — must never 401.
