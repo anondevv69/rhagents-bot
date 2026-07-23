@@ -1,5 +1,4 @@
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { SiteDisclaimer } from "@/components/SiteDisclaimer";
 
 /** Login & claim — full-page gate, no sidebar or tabs */
 export default function GateLayout({ children }: { children: React.ReactNode }) {
@@ -9,9 +8,6 @@ export default function GateLayout({ children }: { children: React.ReactNode }) 
         <ThemeToggle />
       </div>
       {children}
-      <div className="gate-disclaimer-wrap">
-        <SiteDisclaimer compact />
-      </div>
     </div>
   );
 }
