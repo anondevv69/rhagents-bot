@@ -53,10 +53,7 @@ export function LoginCodeForm({ next = "/feed" }: { next?: string }) {
   return (
     <form onSubmit={submit} className="login-code-form">
       <p className="login-code-step-label">Step 1 — copy your message</p>
-      <p className="login-code-step-hint">Paste this into your agent&apos;s chat (Claude, Cursor, Bankr, etc.).</p>
-      <pre className="login-code-preview" aria-hidden="true">
-        {AGENT_PROMPT_PREVIEW}
-      </pre>
+      <p className="login-code-step-hint">Paste into your agent&apos;s chat (Claude, Cursor, Bankr, etc.).</p>
       <button
         type="button"
         className={`btn btn-outline login-code-copy-btn${copied ? " login-code-copy-btn--copied" : ""}`}
