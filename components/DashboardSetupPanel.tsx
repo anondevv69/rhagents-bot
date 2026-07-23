@@ -7,6 +7,8 @@ import {
   deriveExpandedSections,
 } from "@/lib/dashboard-setup-types";
 import { DashboardConnectPanel } from "@/components/DashboardConnectPanel";
+import { DashboardWelcomeGoals, expandedFromGoal } from "@/components/DashboardWelcomeGoals";
+import type { OnboardingGoal } from "@/lib/dashboard-onboarding-goals";
 
 type Props = {
   setup: SetupProgress;
@@ -106,8 +108,33 @@ export function DashboardSetupPanel({
     setup.rhagents,
   ].filter(Boolean).length;
 
+  const [welcomeDone, setWelcomeDone] = useState(() => {
+    if (typeof window === "undefined") return doneCount > 0 || caps.ui_default_surface !== "unset";
+    return (
+      doneCount > 0 ||
+      caps.ui_default_surface !== "unset" ||
+      window.localStorage.getItem("rhagent_dashboard_welcome") === "1"
+    );
+  });
+
+  const showWelcome = !welcomeDone && doneCount === 0 && caps.ui_default_surface === "unset";
+
+  async function pickGoal(goal: OnboardingGoal, surface: UiDefaultSurface) {
+    setExpanded(expandedFromGoal(goal));
+    setWelcomeDone(true);
+    if (typeof window !== "undefined") window.localStorage.setItem("rhagent_dashboard_welcome", "1");
+    if (surface !== "unset") await onSurfacePreference?.(surface);
+    if (goal === "rh_crypto" || goal === "rh_agentic" || goal === "feed") onGoConnections?.();
+  }
+
   return (
     <div className="panel trading-dash-setup">
+      {showWelcome ? (
+        <DashboardWelcomeGoals busy={busy} onPick={(g, s) => void pickGoal(g, s)} />
+      ) : null}
+
+      {!showWelcome ? (
+        <>
       <header className="trading-dash-setup-header">
         <div>
           <h2 className="owner-settings-heading">Setup</h2>
@@ -267,6 +294,8 @@ export function DashboardSetupPanel({
           ) : null}
         </SetupSection>
       </div>
+        </>
+      ) : null}
     </div>
   );
 }

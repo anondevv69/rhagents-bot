@@ -5566,6 +5566,41 @@ a.post-via--link:hover {
   gap: 8px;
 }
 
+.trading-dash-welcome {
+  padding: 4px 0 8px;
+}
+
+.trading-dash-welcome-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.trading-dash-welcome-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+  background: var(--surface-2, rgba(255, 255, 255, 0.03));
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.trading-dash-welcome-card:hover:not(:disabled) {
+  border-color: rgba(200, 255, 0, 0.35);
+  background: rgba(200, 255, 0, 0.04);
+}
+
+.trading-dash-welcome-card:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .trading-dash-setup-header {
   margin-bottom: 12px;
 }
