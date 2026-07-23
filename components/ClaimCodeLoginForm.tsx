@@ -80,10 +80,6 @@ export function ClaimCodeLoginForm({ next = "/feed" }: { next?: string }) {
         {loading ? "Checking…" : "Continue to claim →"}
       </button>
       {error ? <p className="login-code-error">{error}</p> : null}
-      <p className="login-code-hint">
-        Not claimed yet? This takes you to the X verification steps. Already claimed? Use{" "}
-        <strong>Log in with code</strong> instead.
-      </p>
     </form>
   );
 }

@@ -33,7 +33,7 @@ export async function claimTradingLoginCode(
   if (!res.ok || !body.ok || !body.sessionId || !body.expiresAt) {
     return {
       ok: false,
-      error: body.error || "This login link is invalid, expired, or already used. Send /website in Telegram for a fresh link.",
+      error: body.error || "This login link is invalid, expired, or already used. Send /dashboard in Telegram for a fresh link.",
     };
   }
   return { ok: true, sessionId: body.sessionId, expiresAt: body.expiresAt };
