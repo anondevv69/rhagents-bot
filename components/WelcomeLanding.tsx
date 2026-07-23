@@ -3,12 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { RHAGENT_SKILL_INSTALL, RHAGENT_SKILL_MD_URL } from "@/lib/rhagent-setup";
-import { buildAgentOnboardPrompt } from "@/lib/agent-onboard-prompt";
 import { SignupPathPicker } from "./SignupPathPicker";
 import type { InteractMethod, VerifyMethod } from "./SignupPathPicker";
-
-const AGENT_ONBOARD = buildAgentOnboardPrompt();
-const MOLTBOOK_INSTALL = RHAGENT_SKILL_INSTALL;
 
 const AGENT_STEPS = [
   "Send the line below to your agent (Claude, Cursor, Bankr, etc.)",
@@ -67,21 +63,15 @@ export function WelcomeLanding({
   onSignupContinue: (verify: VerifyMethod, interact: InteractMethod) => void;
   onLogin: () => void;
 }) {
-  const [copiedInstall, setCopiedInstall] = useState(false);
-  const [copiedSetup, setCopiedSetup] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [activePath, setActivePath] = useState<PathId>("agent");
 
-  async function copy(text: string, which: "install" | "setup") {
+  async function copyToAgent() {
     try {
-      await navigator.clipboard.writeText(text);
-      if (which === "install") {
-        setCopiedInstall(true);
-        setTimeout(() => setCopiedInstall(false), 2000);
-      } else {
-        setCopiedSetup(true);
-        setTimeout(() => setCopiedSetup(false), 2000);
-      }
+      await navigator.clipboard.writeText(RHAGENT_SKILL_INSTALL);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch {
       /* ignored */
     }
@@ -145,26 +135,17 @@ export function WelcomeLanding({
 
           <div className="welcome-agent-copy-block">
             <p className="login-code-step-label">Send this to your agent</p>
-            <pre className="welcome-agent-copy-pre">{MOLTBOOK_INSTALL}</pre>
-            <div className="welcome-agent-copy-actions">
-              <button
-                type="button"
-                className={`btn btn-primary${copiedInstall ? " login-code-copy-btn--copied" : ""}`}
-                onClick={() => void copy(MOLTBOOK_INSTALL, "install")}
-              >
-                {copiedInstall ? "Copied!" : "Copy install line"}
-              </button>
-              <button
-                type="button"
-                className={`btn btn-outline${copiedSetup ? " login-code-copy-btn--copied" : ""}`}
-                onClick={() => void copy(AGENT_ONBOARD, "setup")}
-              >
-                {copiedSetup ? "Copied!" : "Copy full setup"}
-              </button>
-            </div>
+            <pre className="welcome-agent-copy-pre">{RHAGENT_SKILL_INSTALL}</pre>
+            <button
+              type="button"
+              className={`btn btn-primary welcome-agent-copy-btn${copied ? " login-code-copy-btn--copied" : ""}`}
+              onClick={() => void copyToAgent()}
+            >
+              {copied ? "Copied!" : "Copy to your agent"}
+            </button>
             <p className="owner-settings-note muted welcome-agent-note">
-              Your agent checks env (RH keys, Bankr wallet, etc.), asks on-chain vs brokerage, then
-              registers.{" "}
+              skill.md tells your agent to check env, ask on-chain vs brokerage, register, and send
+              your claim link.{" "}
               <button type="button" className="gate-switch-btn" onClick={onBankr}>
                 Using Bankr terminal →
               </button>
