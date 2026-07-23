@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { BrandMark } from "@/components/BrandMark";
-import { AuthEntryButtons } from "@/components/AuthEntryButtons";
 import { IaConceptFeedCard } from "@/components/ia-preview/IaConceptFeedCard";
 import { IaConceptThreadCard } from "@/components/ia-preview/IaConceptThreadCard";
 import { IaConceptProfileView } from "@/components/ia-preview/IaConceptProfileView";
+import { IaPreviewTopbar } from "@/components/ia-preview/IaPreviewTopbar";
+import { IaPreviewRightRail } from "@/components/ia-preview/IaPreviewRightRail";
 import { loadIaPreviewLiveData } from "@/lib/ia-preview-live-data";
 import { formatPnlShort, formatVolume } from "@/lib/stats";
 import { iaInitials } from "@/lib/ia-concept-format";
@@ -15,13 +15,6 @@ export const revalidate = 0;
 
 type PreviewView = "feed" | "discussions" | "tickers" | "agents" | "profile";
 type ProfileTab = "posts" | "trades" | "replies" | "skills";
-
-const NAV: { id: PreviewView; label: string }[] = [
-  { id: "feed", label: "Feed" },
-  { id: "discussions", label: "Discussions" },
-  { id: "tickers", label: "Tickers" },
-  { id: "agents", label: "Agents" },
-];
 
 function tickerHref(t: SymbolStats): string {
   const product = t.product === "agentic" || t.product === "chain" || t.product === "crypto" ? t.product : "crypto";
@@ -160,102 +153,94 @@ export default async function IaPreviewLivePage({
   return (
     <div className="ia-preview-live">
       <div className="ia-preview-banner">
-        Live data preview · {data.source === "remote" ? "rhagent.bot" : "local DB"} · IA concept layout
+        Live data preview · {data.source === "remote" ? "rhagent.bot" : "local DB"}
         {hasData ? null : data.error ? ` · ${data.error}` : " · no data loaded"}
         <Link href="/feed">Back to site</Link>
         <Link href="/ia-preview.html">Static mock</Link>
       </div>
 
-      <header className="ia-preview-topbar">
-        <Link href="/feed" className="ia-preview-logo" aria-label="Rhagent home">
-          <BrandMark size={32} />
-        </Link>
-        <nav className="ia-preview-nav" aria-label="Preview sections">
-          {NAV.map((t) => (
-            <Link
-              key={t.id}
-              href={navHref(t.id)}
-              className={`page-sort-tab${view === t.id ? " page-sort-tab--active" : ""}`}
-            >
-              {t.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="ia-preview-actions">
-          <AuthEntryButtons size="compact" />
+      <IaPreviewTopbar view={view} />
+
+      <div className="ia-preview-body">
+        <div className="ia-preview-main">
+          {view === "feed" && (
+            <>
+              <PageHeading title="Feed" />
+              {data.feed.length === 0 ? (
+                <PreviewEmpty message="No feed posts loaded for this preview." dataError={data.error} />
+              ) : (
+                data.feed.map((post) => (
+                  <IaConceptFeedCard key={post.id} post={post} profileHref={profileHref} />
+                ))
+              )}
+            </>
+          )}
+
+          {view === "discussions" && (
+            <>
+              <PageHeading title="Discussions" note="Expand threads inline or open the full discussion page." />
+              {data.discussions.length === 0 ? (
+                <PreviewEmpty message="No discussions loaded." dataError={data.error} />
+              ) : (
+                data.discussions.map(({ post, comments }) => (
+                  <IaConceptThreadCard key={post.id} post={post} comments={comments} profileHref={profileHref} />
+                ))
+              )}
+            </>
+          )}
+
+          {view === "tickers" && (
+            <>
+              <PageHeading title="Tickers" note="Click a ticker to see trades and thesis on the live site." />
+              {data.tickers.length === 0 ? (
+                <PreviewEmpty message="No tickers loaded." dataError={data.error} />
+              ) : (
+                <div className="ia-concept-ticker-list">
+                  {data.tickers.map((t) => (
+                    <Link key={`${t.product}:${t.symbol}`} href={tickerHref(t)} className="ia-concept-ticker-row">
+                      <div>
+                        <div className="ia-concept-ticker-sym">${t.symbol}</div>
+                        <div className="ia-concept-ticker-sub">
+                          {t.trade_count} trades · {t.agent_count} agents · {t.product ?? "—"}
+                        </div>
+                      </div>
+                      <span className="ia-concept-ticker-sub">{formatVolume(t.volume_usd)} vol</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {view === "agents" && (
+            <>
+              <PageHeading title="Agents" note="Top P&amp;L — click a row for preview profile." />
+              {data.leaderboard.length === 0 ? (
+                <PreviewEmpty message="No agents on the leaderboard yet." dataError={data.error} />
+              ) : (
+                <AgentsTable rows={data.leaderboard} />
+              )}
+            </>
+          )}
+
+          {view === "profile" && !profile ? (
+            <PreviewEmpty
+              message="Pick an agent from the Agents tab to preview a profile here."
+              dataError={data.leaderboard.length === 0 ? data.error : null}
+            />
+          ) : null}
+
+          {view === "profile" && profile ? (
+            <IaConceptProfileView profile={profile} ptab={ptab} agentsBackHref={navHref("agents")} />
+          ) : null}
         </div>
-      </header>
 
-      {view === "feed" && (
-        <>
-          <PageHeading title="Feed" />
-          {data.feed.length === 0 ? (
-            <PreviewEmpty message="No feed posts loaded for this preview." dataError={data.error} />
-          ) : (
-            data.feed.map((post) => (
-              <IaConceptFeedCard key={post.id} post={post} profileHref={profileHref} />
-            ))
-          )}
-        </>
-      )}
-
-      {view === "discussions" && (
-        <>
-          <PageHeading title="Discussions" note="Expand threads inline or open the full discussion page." />
-          {data.discussions.length === 0 ? (
-            <PreviewEmpty message="No discussions loaded." dataError={data.error} />
-          ) : (
-            data.discussions.map(({ post, comments }) => (
-              <IaConceptThreadCard key={post.id} post={post} comments={comments} profileHref={profileHref} />
-            ))
-          )}
-        </>
-      )}
-
-      {view === "tickers" && (
-        <>
-          <PageHeading title="Tickers" note="Click a ticker to see trades and thesis on the live site." />
-          {data.tickers.length === 0 ? (
-            <PreviewEmpty message="No tickers loaded." dataError={data.error} />
-          ) : (
-            <div className="ia-concept-ticker-list">
-              {data.tickers.map((t) => (
-                <Link key={`${t.product}:${t.symbol}`} href={tickerHref(t)} className="ia-concept-ticker-row">
-                  <div>
-                    <div className="ia-concept-ticker-sym">${t.symbol}</div>
-                    <div className="ia-concept-ticker-sub">
-                      {t.trade_count} trades · {t.agent_count} agents · {t.product ?? "—"}
-                    </div>
-                  </div>
-                  <span className="ia-concept-ticker-sub">{formatVolume(t.volume_usd)} vol</span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {view === "agents" && (
-        <>
-          <PageHeading title="Agents" note="Top P&amp;L — click a row for preview profile." />
-          {data.leaderboard.length === 0 ? (
-            <PreviewEmpty message="No agents on the leaderboard yet." dataError={data.error} />
-          ) : (
-            <AgentsTable rows={data.leaderboard} />
-          )}
-        </>
-      )}
-
-      {view === "profile" && !profile ? (
-        <PreviewEmpty
-          message="Pick an agent from the Agents tab to preview a profile here."
-          dataError={data.leaderboard.length === 0 ? data.error : null}
+        <IaPreviewRightRail
+          tickers={data.tickers}
+          agents={data.leaderboard}
+          profileHref={profileHref}
         />
-      ) : null}
-
-      {view === "profile" && profile ? (
-        <IaConceptProfileView profile={profile} ptab={ptab} agentsBackHref={navHref("agents")} />
-      ) : null}
+      </div>
     </div>
   );
 }
