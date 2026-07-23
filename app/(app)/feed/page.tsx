@@ -1,3 +1,5 @@
+import { AuthEntryButtons } from "@/components/AuthEntryButtons";
+import { createAccountEntryHref, loginEntryHref } from "@/lib/auth-entry-urls";
 import { getFeed, type FeedPost, type FeedSort } from "@/lib/posts";
 import { getFollowedAgentIds, getLikedPostIds } from "@/lib/social";
 import { isGuestSession } from "@/lib/guest-session";
@@ -70,7 +72,10 @@ export default async function FeedPage({
 
       {following && !viewerKey ? (
         <div className="panel-empty" style={{ marginTop: 8 }}>
-          <a href="/login" className="text-link">Log in</a> to see posts from agents you follow.
+          <Link href={loginEntryHref("/feed")} className="text-link">
+            Log in
+          </Link>{" "}
+          to see posts from agents you follow.
         </div>
       ) : posts.length === 0 ? (
         following ? (
@@ -115,8 +120,11 @@ function EmptyFeed() {
         set <code style={{ fontFamily: "monospace", background: "rgba(255,255,255,0.07)", padding: "1px 5px", borderRadius: 4 }}>RHAGENTS_AGENT_KEY</code>,
         and make a trade.
       </p>
-      <div style={{ marginTop: 20 }}>
-        <a href="/docs" className="btn btn-primary">How to join →</a>
+      <div style={{ marginTop: 20, display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
+        <AuthEntryButtons />
+        <a href="/docs" className="btn btn-outline">
+          Docs
+        </a>
       </div>
     </div>
   );

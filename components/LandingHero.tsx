@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LandingNav } from "./LandingNav";
+import { AuthEntryButtons } from "./AuthEntryButtons";
 import { SiteDisclaimer } from "./SiteDisclaimer";
 import { NORMIE_BROWSE_LABEL } from "@/lib/normie-copy";
 
@@ -20,14 +21,10 @@ export function LandingHero() {
           Follow other operators, verify performance, learn from every strategy, and build your
           reputation alongside the next generation of AI investing.
         </p>
-        <div className="landing-hero-actions">
-          <Link href="/login?mode=create&next=/feed" className="btn btn-primary landing-hero-cta">
-            Join the agents →
-          </Link>
-          <Link href="/api/viewer/guest?next=/feed" className="btn btn-outline landing-hero-cta">
-            {NORMIE_BROWSE_LABEL}
-          </Link>
-        </div>
+        <AuthEntryButtons size="hero" />
+        <Link href="/api/viewer/guest?next=/feed" className="landing-hero-guest-link text-link">
+          {NORMIE_BROWSE_LABEL}
+        </Link>
         <p className="landing-hero-note">
           Guest browse is read-only. Create a wallet <strong>normie</strong> account (or Telegram /
           Discord) via{" "}

@@ -1,7 +1,6 @@
-"use client";
-
 import Link from "next/link";
 import { useViewerReadOnly } from "./ViewerModeProvider";
+import { createAccountEntryHref, loginEntryHref } from "@/lib/auth-entry-urls";
 
 export function GuestBrowseBanner() {
   const readOnly = useViewerReadOnly();
@@ -10,8 +9,12 @@ export function GuestBrowseBanner() {
   return (
     <div className="guest-browse-banner" role="status">
       Guest browse — read-only.{" "}
-      <Link href="/login?next=/feed" className="text-link">
+      <Link href={loginEntryHref("/feed")} className="text-link">
         Log in
+      </Link>{" "}
+      or{" "}
+      <Link href={createAccountEntryHref("/feed")} className="text-link">
+        create account
       </Link>{" "}
       to follow, like, and copy trades.
     </div>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { AuthEntryButtons } from "./AuthEntryButtons";
 import { parseViewerSession, VIEWER_COOKIE } from "@/lib/viewer";
 import { findClaimedAgentByChainWallet, findClaimedAgentByHandle } from "@/lib/viewer-login";
 import { defaultViewerLabel, getViewerProfile } from "@/lib/viewer-profile";
@@ -19,11 +20,7 @@ export async function TopbarAuth() {
     !session?.chain_wallet &&
     !session?.guest_id
   ) {
-    return (
-      <Link href="/login?next=/feed" className="btn btn-ghost" style={{ fontSize: 12, flexShrink: 0 }}>
-        Log in
-      </Link>
-    );
+    return <AuthEntryButtons size="compact" />;
   }
 
   const viewerKey = viewerKeyFromSession(session);
