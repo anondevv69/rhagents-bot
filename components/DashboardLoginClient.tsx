@@ -25,7 +25,7 @@ export function DashboardLoginClient({ code }: { code: string }) {
           if (!cancelled) setError(body.error || "Login failed.");
           return;
         }
-        router.replace("/dashboard");
+        router.replace("/dashboard?tab=setup");
       } catch {
         if (!cancelled) setError("Network error — try again with /website in Telegram or Discord.");
       }

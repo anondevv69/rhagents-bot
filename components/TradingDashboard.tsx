@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { ChainWalletConnect } from "@/components/ChainWalletConnect";
 import { WalletLoginButton } from "@/components/WalletLoginButton";
+import { DashboardSetupPanel } from "@/components/DashboardSetupPanel";
+import type { SetupProgress } from "@/lib/dashboard-setup-types";
+import { isSetupIncomplete } from "@/lib/dashboard-setup-types";
+import { tradingTelegramDeepLink } from "@/lib/telegram-bots";
 
 type DashboardState = {
   telegramId: string;
@@ -11,7 +15,13 @@ type DashboardState = {
     cryptoPending?: boolean;
     agentic: boolean;
     rhagents: boolean;
+    bankr?: boolean;
+    bankrWallet?: string | null;
   };
+  setup?: SetupProgress;
+  chatEngine?: string;
+  managedInferenceLine?: string | null;
+  platformLinked?: boolean;
   trading: { state: string; reason?: string | null };
   llm: { provider: string; model: string | null; persona: string | null };
   autotrade: {
@@ -72,6 +82,7 @@ type ChainStatus = {
 };
 
 const TABS = [
+  { id: "setup", label: "Setup" },
   { id: "overview", label: "Overview" },
   { id: "connections", label: "Connections" },
   { id: "skills", label: "Skills" },
@@ -100,12 +111,14 @@ async function api(path: string, options: RequestInit = {}) {
   return body;
 }
 
-export function TradingDashboard() {
+export function TradingDashboard({ initialTab }: { initialTab?: string | null }) {
   const [state, setState] = useState<DashboardState | null>(null);
   const [skills, setSkills] = useState<SkillsState | null>(null);
   const [registrations, setRegistrations] = useState<RegistrationRow[]>([]);
   const [chainStatus, setChainStatus] = useState<ChainStatus | null>(null);
-  const [tab, setTab] = useState<TabId>("overview");
+  const validInitial =
+    initialTab && TABS.some((t) => t.id === initialTab) ? (initialTab as TabId) : null;
+  const [tab, setTab] = useState<TabId>(validInitial ?? "setup");
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; isError?: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -119,12 +132,20 @@ export function TradingDashboard() {
     try {
       const data = (await api("/api/dashboard/proxy/settings/me")) as DashboardState & { ok: boolean };
       setState(data);
+      if (!validInitial && isSetupIncomplete(data.setup)) {
+        setTab("setup");
+      }
       setError(null);
     } catch (err) {
       setState(null);
       setError(err instanceof Error ? err.message : "Failed to load");
     }
-  }, []);
+  }, [validInitial]);
+
+  const bootstrapSetup = useCallback(async () => {
+    await api("/api/dashboard/proxy/setup/bootstrap", { method: "POST" });
+    await loadAll();
+  }, [loadAll]);
 
   const loadSkills = useCallback(async () => {
     try {
@@ -168,9 +189,16 @@ export function TradingDashboard() {
   }, []);
 
   useEffect(() => {
-    void loadAll();
-    void loadSkills();
-    void loadRegistrations();
+    void (async () => {
+      try {
+        await api("/api/dashboard/proxy/setup/bootstrap", { method: "POST" });
+      } catch {
+        /* non-fatal */
+      }
+      await loadAll();
+      void loadSkills();
+      void loadRegistrations();
+    })();
   }, [loadAll, loadSkills, loadRegistrations]);
 
   useEffect(() => {
@@ -260,6 +288,20 @@ export function TradingDashboard() {
           </button>
         ))}
       </nav>
+
+      {tab === "setup" && state?.setup && (
+        <DashboardSetupPanel
+          setup={state.setup}
+          chatEngine={state.chatEngine}
+          managedInferenceLine={state.managedInferenceLine}
+          busy={busy}
+          onBootstrap={() => run(() => bootstrapSetup(), "Ready.")}
+          onGoConnections={() => setTab("connections")}
+          onGoSkills={() => setTab("skills")}
+          onGoJobs={() => setTab("jobs")}
+          botDeepLink={tradingTelegramDeepLink("start") ?? undefined}
+        />
+      )}
 
       {tab === "overview" && (
         <div className="trading-dash-grid">

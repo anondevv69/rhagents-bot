@@ -5500,6 +5500,33 @@ a.post-via--link:hover {
   gap: 8px;
 }
 
+.trading-dash-setup-steps {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trading-dash-setup-step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--surface-2, rgba(255, 255, 255, 0.03));
+}
+
+.trading-dash-setup-step.is-done {
+  opacity: 0.85;
+}
+
+.trading-dash-setup-check {
+  font-weight: 700;
+  min-width: 1.25rem;
+}
+
 .trading-dash-pill {
   display: inline-flex;
   align-items: center;
