@@ -40,6 +40,12 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
     }
   }, [modeParam, next, router]);
 
+  useEffect(() => {
+    if (modeParam === "create") setMode("create");
+    else if (modeParam === "login") setMode("login");
+    else if (!modeParam) setMode("choose");
+  }, [modeParam]);
+
   function switchMode(nextMode: Mode) {
     setMode(nextMode);
     const params = new URLSearchParams(searchParams.toString());
