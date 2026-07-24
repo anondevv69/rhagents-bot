@@ -2,67 +2,50 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 
-export type DocsTabId = "accounts" | "chain" | "app" | "api" | "privacy";
+export type DocsTabId = "start" | "connect" | "api" | "privacy";
 
 const TABS: { id: DocsTabId; label: string }[] = [
-  { id: "accounts", label: "Accounts & Setup" },
-  { id: "chain", label: "Robinhood Chain Setup" },
-  { id: "app", label: "Robinhood App Setup" },
-  { id: "api", label: "API Reference" },
-  { id: "privacy", label: "Privacy and security" },
+  { id: "start",   label: "Get Started" },
+  { id: "connect", label: "Connect Robinhood" },
+  { id: "api",     label: "API Reference" },
+  { id: "privacy", label: "Privacy" },
 ];
 
-/** Anchors that live inside the "api" panel — deep links like /docs#registration flip to that tab. */
+const START_ANCHOR_IDS = new Set([
+  "accounts", "normie", "normie-account", "metamask",
+  "telegram", "discord", "account-types", "onchain",
+  "agent-path", "own-agent", "bankr-agent", "human-browse",
+  "start",
+]);
+const CONNECT_ANCHOR_IDS = new Set([
+  "chain", "robinhood-chain", "app", "setup", "robinhood-app", "connect",
+]);
 const API_ANCHOR_IDS = new Set([
-  "verification",
-  "wallet",
-  "registration",
-  "endpoints-registration",
-  "endpoints-agent",
-  "endpoints-owner",
-  "endpoints-reads",
-  "endpoints-viewer",
-  "endpoints-dashboard",
-  "api",
+  "api", "verification", "wallet", "registration",
+  "endpoints-registration", "endpoints-agent", "endpoints-owner",
+  "endpoints-reads", "endpoints-viewer", "endpoints-dashboard",
 ]);
 const PRIVACY_ANCHOR_IDS = new Set(["privacy"]);
-const CHAIN_ANCHOR_IDS = new Set(["chain", "robinhood-chain"]);
-const APP_ANCHOR_IDS = new Set(["app", "setup", "robinhood-app"]);
-const ACCOUNTS_ANCHOR_IDS = new Set([
-  "accounts",
-  "normie",
-  "normie-account",
-  "telegram",
-  "discord",
-  "metamask",
-  "account-types",
-]);
 
 function tabForHash(hash: string): DocsTabId | null {
   const id = hash.replace(/^#/, "");
   if (!id) return null;
-  if (ACCOUNTS_ANCHOR_IDS.has(id)) return "accounts";
-  if (CHAIN_ANCHOR_IDS.has(id)) return "chain";
-  if (APP_ANCHOR_IDS.has(id)) return "app";
-  if (API_ANCHOR_IDS.has(id)) return "api";
+  if (START_ANCHOR_IDS.has(id))   return "start";
+  if (CONNECT_ANCHOR_IDS.has(id)) return "connect";
+  if (API_ANCHOR_IDS.has(id))     return "api";
   if (PRIVACY_ANCHOR_IDS.has(id)) return "privacy";
   return null;
 }
 
 function hashForTab(id: DocsTabId): string {
-  if (id === "accounts") return "accounts";
-  if (id === "chain") return "chain";
-  if (id === "app") return "app";
-  if (id === "api") return "api";
-  return "privacy";
+  return id;
 }
 
 export function DocsTabs({
   panels,
-  defaultTab = "accounts",
+  defaultTab = "start",
 }: {
   panels: Record<DocsTabId, ReactNode>;
-  /** Default when there is no hash — Accounts & Setup is the human onboarding entry. */
   defaultTab?: DocsTabId;
 }) {
   const [tab, setTab] = useState<DocsTabId>(defaultTab);
