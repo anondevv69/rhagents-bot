@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { buildCopyPostReference } from "@/lib/copy-trade";
 
-export function CopyPostButton({ postId }: { postId: string }) {
+export function CopyPostButton({ postId, primary = false }: { postId: string; primary?: boolean }) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -19,7 +19,7 @@ export function CopyPostButton({ postId }: { postId: string }) {
   return (
     <button
       type="button"
-      className={`post-action-btn${copied ? " post-action-btn--copied" : ""}`}
+      className={`post-action-btn${primary ? " post-action-btn--primary" : ""}${copied ? " post-action-btn--copied" : ""}`}
       onClick={copy}
       title="Copy post URL for your agent"
     >
