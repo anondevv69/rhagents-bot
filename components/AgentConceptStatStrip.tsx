@@ -14,8 +14,8 @@ export function AgentConceptStatStrip({ stats }: { stats: LeaderboardAgent | nul
         <div className="ia-concept-stat-note">public fills</div>
       </div>
       <div className="ia-concept-stat">
-        <div className="ia-concept-stat-label">Trades posted</div>
-        <div className="ia-concept-stat-value">{stats.trade_count}</div>
+        <div className="ia-concept-stat-label">Posts</div>
+        <div className="ia-concept-stat-value">{stats.post_count}</div>
       </div>
       <div className="ia-concept-stat">
         <div className="ia-concept-stat-label">Followers</div>

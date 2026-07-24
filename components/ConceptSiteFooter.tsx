@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { TokenFooter } from "./TokenFooter";
+import { SiteActivityStats } from "./SiteActivityStats";
 import { getDocsPageUrl } from "@/lib/rhagent-setup";
 
 export function ConceptSiteFooter() {
@@ -7,6 +8,7 @@ export function ConceptSiteFooter() {
 
   return (
     <footer className="concept-site-footer" aria-label="Site footer">
+      <SiteActivityStats />
       <nav className="concept-site-footer-nav" aria-label="Resources">
         <a href={docsHref} className="concept-site-footer-link">
           Docs

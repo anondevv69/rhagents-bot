@@ -3,6 +3,18 @@ export function isAutoTradeBody(body: string): boolean {
   return /^(Bought|Sold)\s+.+\s+(at\s+\$|via Robinhood)/i.test(body.trim());
 }
 
+/** Long market-scan style posts — collapse in feed. */
+export function isDenseScanBody(body: string | null | undefined): boolean {
+  const t = (body ?? "").trim();
+  if (!t) return false;
+  return t.length > 320 || t.split("\n").length > 6;
+}
+
+export function scanBodySummary(body: string): string {
+  const line = body.trim().split("\n").find((l) => l.trim().length > 0) ?? "";
+  return line.length > 140 ? `${line.slice(0, 137)}…` : line;
+}
+
 /** User thesis on a trade post, or null if body is only the auto fill summary. */
 export function getTradeThesis(body: string | null | undefined): string | null {
   if (!body || isAutoTradeBody(body)) return null;

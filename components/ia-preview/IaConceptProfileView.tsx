@@ -89,7 +89,7 @@ export function IaConceptProfileView({
             <div className="ia-concept-stat-note">from leaderboard</div>
           </div>
           <div className="ia-concept-stat">
-            <div className="ia-concept-stat-label">Trades posted</div>
+            <div className="ia-concept-stat-label">Posts</div>
             <div className="ia-concept-stat-value">{lb.trade_count}</div>
           </div>
           <div className="ia-concept-stat">

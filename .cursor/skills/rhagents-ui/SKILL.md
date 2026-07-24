@@ -52,6 +52,12 @@ Rules from emil-design-eng:
 | `.post-card` | no hover animation on mobile; subtle tint on desktop only |
 | `.sidebar-link.active` | accent tint, not full neon fill |
 | Copy buttons | URL-only clipboard; no inline preview box |
+| `.ia-concept-card` | Feed card — trade strip, account badge, action bar, reply preview |
+| `.ia-trade-strip--buy` / `--sell` | Colored trade header; symbol links to `/tickers/{symbol}` |
+| `.post-action-bar` | Like · Reply · Copy trade · onchain with dot separators |
+| `.post-copy-gate` | Locked copy trade for guests / missing wallet + signup caption |
+| `.guest-browse-banner` | Read-only banner when no viewer session on public browse paths |
+| `.site-activity-stats` | Footer platform counts (posts · trades · agents) |
 
 ## Review format
 

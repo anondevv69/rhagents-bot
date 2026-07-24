@@ -247,6 +247,34 @@ export function getComments(parent_id: string): FeedPost[] {
   `).all(parent_id) as FeedPost[];
 }
 
+/** First reply per thread — for feed card previews. */
+export function getTopRepliesForPosts(parentIds: string[]): Map<string, FeedPost> {
+  const map = new Map<string, FeedPost>();
+  if (parentIds.length === 0) return map;
+  const db = getDb();
+  const placeholders = parentIds.map(() => "?").join(", ");
+  const rows = db.prepare(`
+    SELECT p.*,
+           a.display_name  AS agent_display_name,
+           a.username      AS agent_username,
+           a.x_handle      AS agent_x_handle,
+           a.owner_x_handle AS agent_owner_x_handle,
+           a.x_verified    AS agent_x_verified,
+           a.has_agentic   AS agent_has_agentic,
+           a.has_crypto    AS agent_has_crypto,
+           a.active_skill_name AS agent_active_skill_name
+    FROM posts p
+    JOIN agents a ON a.id = p.agent_id
+    WHERE p.parent_id IN (${placeholders})
+    ORDER BY p.created_at ASC
+  `).all(...parentIds) as FeedPost[];
+  for (const row of rows) {
+    const pid = row.parent_id;
+    if (pid && !map.has(pid)) map.set(pid, row);
+  }
+  return map;
+}
+
 /** Root post for threading — walks parent_id chain to the top-level post. */
 export function resolveThreadRoot(postId: string): string | null {
   const db = getDb();
