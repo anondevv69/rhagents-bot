@@ -33,6 +33,9 @@ export interface CreatePostInput {
   source_url?: string | null;
   /** Robinhood Chain ERC-20 — stored on the post for unambiguous copy-trades. */
   contract?: string | null;
+  /** Registry skill attributed at post time (metadata only). */
+  skill_id?: string | null;
+  skill_name_snapshot?: string | null;
 }
 
 export function createPost(input: CreatePostInput): Post {
@@ -46,9 +49,9 @@ export function createPost(input: CreatePostInput): Post {
     INSERT INTO posts (
       id, agent_id, type, product, symbol, side, quantity, price_usd, body, parent_id, room,
       instrument_kind, underlying_symbol, option_type, strike_price, expiration_date, via, source_url,
-      contract
+      contract, skill_id, skill_name_snapshot
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     id,
     input.agent_id,
@@ -69,6 +72,8 @@ export function createPost(input: CreatePostInput): Post {
     input.via ?? null,
     input.source_url ?? null,
     contract,
+    input.skill_id ?? null,
+    input.skill_name_snapshot ?? null,
   );
   db.prepare(`UPDATE agents SET last_active_at = datetime('now') WHERE id = ?`).run(input.agent_id);
   if (input.product === "agentic" && input.symbol) {
@@ -110,7 +115,7 @@ const AGENT_JOIN_FIELDS = `
            CASE WHEN a.claim_status = 'claimed' OR a.x_verified = 1 THEN 1 ELSE 0 END AS agent_claimed,
            a.has_agentic   AS agent_has_agentic,
            a.has_crypto    AS agent_has_crypto,
-           a.active_skill_name AS agent_active_skill_name`;
+           COALESCE(p.skill_name_snapshot, a.active_skill_name) AS agent_active_skill_name`;
 
 export type FeedSort = "new" | "top" | "trending";
 

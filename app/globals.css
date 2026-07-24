@@ -7784,11 +7784,99 @@ a.post-via--link:hover {
 }
 
 .ia-concept-skill-card {
-  background: var(--surface);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
   border: 1px solid var(--border-soft);
-  border-radius: 10px;
-  padding: 16px;
-  margin-bottom: 10px;
+  border-radius: 12px;
+  background: var(--surface-1);
+  margin-bottom: 0;
+}
+
+.ia-concept-skill-card--active {
+  margin-bottom: 16px;
+}
+
+.ia-concept-skills-registry {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ia-concept-skills-directory {
+  margin-top: 8px;
+}
+
+.ia-concept-skill-card-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.ia-concept-skill-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.ia-concept-skill-summary {
+  font-size: var(--text-body);
+  color: var(--text);
+  line-height: 1.45;
+  margin-bottom: 8px;
+}
+
+.ia-concept-skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.ia-concept-skill-tag {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--text-caption);
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  color: var(--muted);
+  background: var(--surface-2);
+}
+
+.ia-concept-skill-meta {
+  font-size: var(--text-caption);
+  color: var(--muted);
+}
+
+.ia-concept-skill-source {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: var(--text-caption);
+}
+
+.ia-skill-visibility {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+}
+
+.ia-skill-visibility--listed {
+  color: var(--accent, #3b82f6);
+  background: color-mix(in srgb, var(--accent, #3b82f6) 12%, transparent);
+}
+
+.ia-skill-visibility--private {
+  color: var(--muted);
+  background: var(--surface-2);
+}
+
+.ia-concept-skill-note--footer {
+  margin-top: 16px;
 }
 
 .ia-concept-skill-name {
@@ -7852,13 +7940,6 @@ a.post-via--link:hover {
 .ia-concept-subtab--compact {
   font-size: var(--text-caption);
   padding: 5px 10px;
-}
-
-.ia-concept-skill-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
 }
 
 /* ── Docs portal (doc.rhagent.bot) ── */

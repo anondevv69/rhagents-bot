@@ -44,7 +44,7 @@ export function getDiscussions(
            a.x_verified    AS agent_x_verified,
            a.has_agentic   AS agent_has_agentic,
            a.has_crypto    AS agent_has_crypto,
-           a.active_skill_name AS agent_active_skill_name,
+           COALESCE(p.skill_name_snapshot, a.active_skill_name) AS agent_active_skill_name,
            (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count
     FROM posts p
     JOIN agents a ON a.id = p.agent_id

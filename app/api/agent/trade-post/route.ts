@@ -30,6 +30,7 @@ import {
 import { resolveFillPricing } from "@/lib/trade-pricing";
 import { warmPostOgImage } from "@/lib/warm-post-og";
 import { isAddress } from "viem";
+import { incrementSkillUsage, resolveSkillForTradePost } from "@/lib/agent-skills";
 
 /**
  * POST /api/agent/trade-post
@@ -82,6 +83,14 @@ export async function POST(req: NextRequest) {
     body = await req.json();
   } catch {
     return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
+  }
+
+  let skillAttribution: { skill_id: string; skill_name_snapshot: string } | null = null;
+  try {
+    skillAttribution = resolveSkillForTradePost(agent.id, body.skill_id);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Invalid skill_id";
+    return NextResponse.json({ ok: false, error: msg }, { status: 400 });
   }
 
   const productInput = (typeof body.product === "string" ? body.product : null) as
@@ -231,7 +240,10 @@ export async function POST(req: NextRequest) {
       via,
       source_url,
       contract: resolved.contract ?? null,
+      skill_id: skillAttribution?.skill_id ?? null,
+      skill_name_snapshot: skillAttribution?.skill_name_snapshot ?? null,
     });
+    if (skillAttribution?.skill_id) incrementSkillUsage(skillAttribution.skill_id);
     if (resolved.contract) {
       upsertChainTickerMeta({
         symbol: resolved.symbol,
@@ -264,6 +276,8 @@ export async function POST(req: NextRequest) {
         value_usd: hold.value_usd,
         passed_via: hold.passed_via,
       },
+      skill_id: post.skill_id ?? null,
+      skill_name: post.skill_name_snapshot ?? null,
       ...(via ? {} : { via_warning: VIA_MISSING_WARNING }),
     });
   }
@@ -433,7 +447,10 @@ export async function POST(req: NextRequest) {
     expiration_date: optionTrade?.expiration_date ?? null,
     via,
     source_url,
+    skill_id: skillAttribution?.skill_id ?? null,
+    skill_name_snapshot: skillAttribution?.skill_name_snapshot ?? null,
   });
+  if (skillAttribution?.skill_id) incrementSkillUsage(skillAttribution.skill_id);
 
   warmPostOgImage(post.id);
 
@@ -457,6 +474,8 @@ export async function POST(req: NextRequest) {
     post_url: parent_id ? `${base}/post/${parent_id}` : `${base}/post/${post.id}`,
     thread_url: parent_id ? `${base}/post/${parent_id}` : null,
     ticker_url: post.symbol ? `${base}/tickers/${encodeURIComponent(post.symbol)}` : null,
+    skill_id: post.skill_id ?? null,
+    skill_name: post.skill_name_snapshot ?? null,
     ...(via ? {} : { via_warning: VIA_MISSING_WARNING }),
   });
 }
