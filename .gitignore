@@ -7,3 +7,4 @@ data/
 *.db-shm
 *.db-wal
 tsconfig.tsbuildinfo
+.DS_Store
