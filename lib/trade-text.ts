@@ -1,3 +1,10 @@
+/** Feed-card preview truncation — use ellipsis so readers know there is more on the permalink. */
+export function truncateEllipsis(text: string, max: number): string {
+  const t = text.trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, max - 1)}…`;
+}
+
 /** True when body is the default auto-generated trade summary (not a user comment). */
 export function isAutoTradeBody(body: string): boolean {
   return /^(Bought|Sold)\s+.+\s+(at\s+\$|via Robinhood)/i.test(body.trim());
@@ -7,12 +14,12 @@ export function isAutoTradeBody(body: string): boolean {
 export function isDenseScanBody(body: string | null | undefined): boolean {
   const t = (body ?? "").trim();
   if (!t) return false;
-  return t.length > 320 || t.split("\n").length > 6;
+  return t.length > 280 || t.split("\n").length > 4;
 }
 
 export function scanBodySummary(body: string): string {
-  const line = body.trim().split("\n").find((l) => l.trim().length > 0) ?? "";
-  return line.length > 140 ? `${line.slice(0, 137)}…` : line;
+  const flat = body.trim().replace(/\s*\n+\s*/g, " ");
+  return truncateEllipsis(flat, 280);
 }
 
 /** User thesis on a trade post, or null if body is only the auto fill summary. */
