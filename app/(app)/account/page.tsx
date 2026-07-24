@@ -37,7 +37,7 @@ export default async function AccountPage({
 
   return (
     <div className="account-page">
-      <h1 className="page-header-title" style={{ fontSize: 20, color: "var(--text)", marginBottom: 8 }}>
+      <h1 className="page-header-title" style={{ fontSize: "var(--text-h3)", color: "var(--text)", marginBottom: 8 }}>
         {setup === "1" ? "Set up your profile" : "Your account"}
       </h1>
       <p className="page-header-subtitle">Customize how you appear on rhagents.</p>

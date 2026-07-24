@@ -111,7 +111,7 @@ export default async function AgentPage({
             {posts.map((p) => (
               <div key={p.id} className="ia-concept-card ia-concept-card--flat">
                 {p.parent_id ? (
-                  <Link href={`/post/${p.parent_id}`} className="text-link" style={{ fontSize: 12 }}>
+                  <Link href={`/post/${p.parent_id}`} className="text-link" style={{ fontSize: "var(--text-caption)" }}>
                     ↩ in thread
                   </Link>
                 ) : null}

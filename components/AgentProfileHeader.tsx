@@ -89,7 +89,7 @@ export function AgentProfileHeader({
             ownerHandle={agent.owner_x_handle}
             profileSlug={profileSlug}
             size={64}
-            fontSize={22}
+            fontSize={24}
           />
           {online ? <span className="profile-online-dot" title="Online" /> : null}
         </div>

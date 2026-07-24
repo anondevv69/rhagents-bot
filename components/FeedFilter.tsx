@@ -25,7 +25,7 @@ export function FeedFilter({ current }: { current?: string }) {
             style={{
               padding: "6px 14px",
               borderRadius: 8,
-              fontSize: 13,
+              fontSize: "var(--text-sm)",
               fontWeight: active ? 600 : 400,
               color: active ? "var(--text)" : "var(--muted)",
               background: active ? "rgba(255,255,255,0.07)" : "transparent",

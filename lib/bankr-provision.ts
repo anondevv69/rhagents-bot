@@ -268,25 +268,35 @@ export async function provisionBankrWallet(
         return lastErr;
       }
 
+      // Bankr returns 201 on true creation, 200 on an idempotency-key replay of an existing
+      // wallet — per their docs, the 200 replay body only carries id/evmAddress/solAddress/
+      // idempotencyKey (no apiKey, no fund). Gate every one-time side effect (fund calls,
+      // default skill install, starter credit) on wasCreated so a retried or replayed request
+      // never re-funds or re-installs. Do NOT infer this from data.fund being null — that's
+      // true on every replay by design and previously caused re-funding on retries.
+      const wasCreated = res.status === 201;
+
       let apiKey = data.apiKey;
-      if (!apiKey && data.id) {
+      if (!apiKey && data.id && wasCreated) {
         apiKey = await generateWalletApiKey(data.id, channel);
       }
 
-      // Idempotent replays skip create-time fund — fund on Robinhood Chain if env requests it.
-      if (fundPayload && data.id && data.fund == null) {
-        await fundProvisionedWallet(data.id, fundPayload).catch((err) => {
-          console.warn("[bankr-provision] post-provision fund failed", err);
-        });
-      }
+      if (wasCreated) {
+        // Robinhood Chain gas fund — first creation only.
+        if (fundPayload && data.id) {
+          await fundProvisionedWallet(data.id, fundPayload).catch((err) => {
+            console.warn("[bankr-provision] post-provision fund failed", err);
+          });
+        }
 
-      // Starter LLM credit seed — Base USDC, separate balance from the Robinhood Chain fund
-      // above. Best-effort: a failure here should never block wallet provisioning.
-      const creditPayload = buildStarterCreditFundPayload();
-      if (creditPayload && data.id) {
-        await fundProvisionedWallet(data.id, creditPayload).catch((err) => {
-          console.warn("[bankr-provision] starter credit fund failed", err);
-        });
+        // Starter LLM credit seed — Base USDC, separate balance from the Robinhood Chain fund
+        // above. Best-effort: a failure here should never block wallet provisioning.
+        const creditPayload = buildStarterCreditFundPayload();
+        if (creditPayload && data.id) {
+          await fundProvisionedWallet(data.id, creditPayload).catch((err) => {
+            console.warn("[bankr-provision] starter credit fund failed", err);
+          });
+        }
       }
 
       if (!data.evmAddress || !data.id) {
@@ -298,7 +308,7 @@ export async function provisionBankrWallet(
         evm_address: data.evmAddress.toLowerCase(),
         wallet_id: data.id,
         provisioned: true,
-        existing: false,
+        existing: !wasCreated,
         api_key: apiKey,
       };
     }

@@ -42,7 +42,7 @@ export default async function ClaimPage({ params }: { params: Promise<{ code: st
           <BrandMark size={56} />
           <span className="gate-brand-name">{SITE_NAME}</span>
         </div>
-        <h1 style={{ fontSize: 22 }}>Claim your agent</h1>
+        <h1 style={{ fontSize: "var(--text-h2)" }}>Claim your agent</h1>
         <p>
           Post from <strong style={{ color: "var(--text)" }}>your</strong> X to vouch for{" "}
           <strong style={{ color: "var(--text)" }}>{name}</strong>. Tag <strong>@{PLATFORM_X_HANDLE}</strong>.
@@ -82,7 +82,7 @@ export default async function ClaimPage({ params }: { params: Promise<{ code: st
                 <>
                   <br />
                   Profile: <strong style={{ color: "var(--text)" }}>@{claim.username}</strong>
-                  <span style={{ color: "var(--muted)", fontSize: 13 }}> — permanent</span>
+                  <span style={{ color: "var(--muted)", fontSize: "var(--text-sm)" }}> — permanent</span>
                 </>
               ) : null}
               <br />
@@ -94,7 +94,7 @@ export default async function ClaimPage({ params }: { params: Promise<{ code: st
               borderRadius: 8,
               padding: "14px 16px",
               fontFamily: "monospace",
-              fontSize: 12,
+              fontSize: "var(--text-caption)",
               lineHeight: 1.7,
               whiteSpace: "pre-wrap",
               wordBreak: "break-all",

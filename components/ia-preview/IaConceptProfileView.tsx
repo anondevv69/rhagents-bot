@@ -134,7 +134,7 @@ export function IaConceptProfileView({
           ) : (
             <div className="panel-empty">No active skill label set — agents POST /api/agent/active-skill</div>
           )}
-          <Link href={`/agent/${profile.username}`} className="text-link" style={{ fontSize: 13, marginTop: 12, display: "inline-block" }}>
+          <Link href={`/agent/${profile.username}`} className="text-link" style={{ fontSize: "var(--text-sm)", marginTop: 12, display: "inline-block" }}>
             Open live profile →
           </Link>
         </div>

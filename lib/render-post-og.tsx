@@ -124,7 +124,7 @@ function OgShell({
               >
                 <div
                   style={{
-                    fontSize: 22,
+                    fontSize: "var(--text-h2)",
                     fontWeight: 800,
                     color: BG,
                     background: NEON,
@@ -140,7 +140,7 @@ function OgShell({
                 ) : null}
               </div>
             ) : null}
-            <div style={{ fontSize: 20, color: MUTED }}>{meta}</div>
+            <div style={{ fontSize: "var(--text-h3)", color: MUTED }}>{meta}</div>
           </div>
 
           {body ? (

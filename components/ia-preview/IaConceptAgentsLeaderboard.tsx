@@ -41,7 +41,7 @@ export function IaConceptAgentsLeaderboard({
                       ownerHandle={a.owner_x_handle}
                       profileSlug={slug}
                       size={28}
-                      fontSize={11}
+                      fontSize={12}
                     />
                     <span>{name}</span>
                     {tab === "all" || isNormie ? (

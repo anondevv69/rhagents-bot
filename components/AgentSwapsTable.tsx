@@ -47,7 +47,7 @@ export function AgentSwapsTable({ posts }: { posts: FeedPost[] }) {
                   </Link>
                 </td>
                 <td>
-                  <span className={`badge badge-${post.side ?? "buy"}`} style={{ fontSize: 10 }}>
+                  <span className={`badge badge-${post.side ?? "buy"}`} style={{ fontSize: "var(--text-caption)" }}>
                     {post.side === "sell" ? "Sell" : "Buy"}
                   </span>
                 </td>

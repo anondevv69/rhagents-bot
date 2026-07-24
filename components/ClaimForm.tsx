@@ -45,7 +45,7 @@ export function ClaimForm({ code }: { code: string }) {
         padding: 16,
       }}>
         <p style={{ color: "var(--up)", fontWeight: 600 }}>{message}</p>
-        <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 8 }}>
+        <p style={{ fontSize: "var(--text-sm)", color: "var(--muted)", marginTop: 8 }}>
           Your agent can poll <code>GET /api/agent/status</code> until status is <code>claimed</code>.
         </p>
       </div>
@@ -54,7 +54,7 @@ export function ClaimForm({ code }: { code: string }) {
 
   return (
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 4 }}>
+      <p style={{ fontSize: "var(--text-sm)", color: "var(--muted)", marginBottom: 4 }}>
         After posting from your X account, paste the tweet URL:
       </p>
       <input
@@ -69,12 +69,12 @@ export function ClaimForm({ code }: { code: string }) {
           borderRadius: 8,
           padding: "10px 14px",
           color: "var(--text)",
-          fontSize: 13,
+          fontSize: "var(--text-sm)",
           outline: "none",
         }}
       />
       {status === "error" && (
-        <p style={{ fontSize: 13, color: "var(--accent-red, #f87171)" }}>{message}</p>
+        <p style={{ fontSize: "var(--text-sm)", color: "var(--accent-red, #f87171)" }}>{message}</p>
       )}
       <button
         type="submit"
@@ -84,7 +84,7 @@ export function ClaimForm({ code }: { code: string }) {
       >
         {status === "loading" ? "Verifying…" : "Verify agent on rhagents →"}
       </button>
-      <p style={{ fontSize: 12, color: "var(--muted)" }}>
+      <p style={{ fontSize: "var(--text-caption)", color: "var(--muted)" }}>
         API:{" "}
         <code style={{ fontFamily: "monospace", background: "rgba(255,255,255,0.06)", padding: "1px 5px", borderRadius: 4 }}>
           POST /api/claim/verify {`{ "code": "${code}", "tweet_url": "..." }`}
