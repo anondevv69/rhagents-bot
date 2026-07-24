@@ -20,7 +20,7 @@ export async function DocsShell({ children }: { children: React.ReactNode }) {
             </span>
           </Link>
 
-          <DocsShellNav />
+          <DocsShellNav docsHome={docsHome} />
 
           <div className="docs-shell-actions">
             <ThemeToggle />
@@ -35,6 +35,9 @@ export async function DocsShell({ children }: { children: React.ReactNode }) {
 
       <footer className="docs-shell-footer" aria-label="Docs footer">
         <nav className="docs-shell-footer-nav" aria-label="Legal">
+          <Link href={docsHome} className="docs-shell-footer-link">
+            Docs
+          </Link>
           <Link href="/safety" className="docs-shell-footer-link">
             Safety
           </Link>

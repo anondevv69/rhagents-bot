@@ -7932,6 +7932,11 @@ a.post-via--link:hover {
   }
 }
 
+.docs-shell-nav-link--current {
+  color: var(--text);
+  font-weight: 600;
+}
+
 .docs-shell-actions {
   display: flex;
   align-items: center;
