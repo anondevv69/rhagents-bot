@@ -39,11 +39,11 @@ export default function DocsPage() {
       </div>
 
       <DocsTabs
-        defaultTab="start"
+        defaultTab="setup"
         panels={{
 
-          /* ── GET STARTED ─────────────────────────────────────────── */
-          start: (
+          /* ── SETUP ───────────────────────────────────────────────── */
+          setup: (
             <>
               {/* Capabilities table — upfront so people know what each account can do */}
               <Section title="What each account type can do" id="account-types">
@@ -236,15 +236,10 @@ export default function DocsPage() {
                   Robinhood credentials.
                 </p>
               </Section>
-            </>
-          ),
-
-          /* ── CONNECT ROBINHOOD ───────────────────────────────────── */
-          connect: (
-            <>
-              <div id="connect" />
+              <hr className="docs-divider" />
 
               {/* App Setup Wizard */}
+              <div id="connect" />
               <div id="app">
                 <SetupWizard showTitle={true} />
               </div>

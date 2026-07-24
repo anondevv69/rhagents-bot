@@ -2,51 +2,45 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 
-export type DocsTabId = "start" | "connect" | "api" | "privacy";
+export type DocsTabId = "setup" | "api" | "privacy";
 
 const TABS: { id: DocsTabId; label: string }[] = [
-  { id: "start",   label: "Get Started" },
-  { id: "connect", label: "Connect Robinhood" },
+  { id: "setup",   label: "Setup" },
   { id: "api",     label: "API Reference" },
   { id: "privacy", label: "Privacy" },
 ];
 
-const START_ANCHOR_IDS = new Set([
+const SETUP_ANCHOR_IDS = new Set([
+  "start", "setup", "account-types",
   "accounts", "normie", "normie-account", "metamask",
-  "telegram", "discord", "account-types", "onchain",
-  "agent-path", "own-agent", "bankr-agent", "human-browse",
-  "start",
-]);
-const CONNECT_ANCHOR_IDS = new Set([
-  "chain", "robinhood-chain", "app", "setup", "robinhood-app", "connect",
+  "telegram", "discord", "onchain", "agent-path",
+  "own-agent", "bankr-agent", "human-browse",
+  "bankr-credits", "bankr-automations",
+  "connect", "chain", "robinhood-chain", "app", "robinhood-app",
 ]);
 const API_ANCHOR_IDS = new Set([
   "api", "verification", "wallet", "registration",
   "endpoints-registration", "endpoints-agent", "endpoints-owner",
   "endpoints-reads", "endpoints-viewer", "endpoints-dashboard",
+  "endpoints-bankr",
 ]);
 const PRIVACY_ANCHOR_IDS = new Set(["privacy"]);
 
 function tabForHash(hash: string): DocsTabId | null {
   const id = hash.replace(/^#/, "");
   if (!id) return null;
-  if (START_ANCHOR_IDS.has(id))   return "start";
-  if (CONNECT_ANCHOR_IDS.has(id)) return "connect";
+  if (SETUP_ANCHOR_IDS.has(id))   return "setup";
   if (API_ANCHOR_IDS.has(id))     return "api";
   if (PRIVACY_ANCHOR_IDS.has(id)) return "privacy";
   return null;
 }
 
-function hashForTab(id: DocsTabId): string {
-  return id;
-}
-
-const TAB_IDS: DocsTabId[] = ["start", "connect", "api", "privacy"];
+const TAB_IDS: DocsTabId[] = ["setup", "api", "privacy"];
 
 function syncTabFromLocation(setTab: (tab: DocsTabId) => void) {
   const raw = window.location.hash.replace(/^#/, "");
   const fromHash = tabForHash(window.location.hash);
-  setTab(fromHash ?? "start");
+  setTab(fromHash ?? "setup");
 
   if (TAB_IDS.includes(raw as DocsTabId)) {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -61,7 +55,7 @@ function syncTabFromLocation(setTab: (tab: DocsTabId) => void) {
 
 export function DocsTabs({
   panels,
-  defaultTab = "start",
+  defaultTab = "setup",
 }: {
   panels: Record<DocsTabId, ReactNode>;
   defaultTab?: DocsTabId;
@@ -87,7 +81,8 @@ export function DocsTabs({
             className={`docs-tabs-btn${tab === id ? " docs-tabs-btn--active" : ""}`}
             onClick={() => {
               setTab(id);
-              window.history.replaceState(null, "", `#${hashForTab(id)}`);
+              window.history.replaceState(null, "", `#${id}`);
+              window.scrollTo({ top: 0, behavior: "smooth" });
             }}
           >
             {label}
