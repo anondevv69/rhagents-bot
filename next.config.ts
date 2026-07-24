@@ -8,7 +8,8 @@ const SECURITY_HEADERS = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
   {
     key: "Strict-Transport-Security",
-    value: "max-age=63072000; includeSubDomains; preload",
+    // No includeSubDomains until doc.rhagent.bot has its own cert (Railway TXT verify).
+    value: "max-age=63072000",
   },
   {
     key: "Content-Security-Policy",
