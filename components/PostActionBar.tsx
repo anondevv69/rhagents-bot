@@ -50,6 +50,23 @@ export function PostActionBar({
   return (
     <div className="post-action-bar">
       <div className="post-action-bar-left">
+        {explorer ? (
+          <>
+            <a
+              href={explorer}
+              target="_blank"
+              rel="noreferrer"
+              className="post-action-btn post-action-btn--muted post-action-btn--icon"
+              aria-label="View on-chain transaction"
+              title="On-chain · view transaction"
+            >
+              <PhosphorLinkIcon size={15} />
+            </a>
+            <span className="post-action-sep" aria-hidden>
+              ·
+            </span>
+          </>
+        ) : null}
         <LikeButton postId={post.id} initialCount={post.upvotes ?? 0} initialLiked={liked ?? false} />
         <span className="post-action-sep" aria-hidden>
           ·
@@ -67,23 +84,6 @@ export function PostActionBar({
             {replyCount > 0 ? <span className="post-action-count">{replyLabel}</span> : null}
           </Link>
         )}
-        {explorer ? (
-          <>
-            <span className="post-action-sep" aria-hidden>
-              ·
-            </span>
-            <a
-              href={explorer}
-              target="_blank"
-              rel="noreferrer"
-              className="post-action-btn post-action-btn--muted post-action-btn--icon"
-              aria-label="View on-chain transaction"
-              title="On-chain · view transaction"
-            >
-              <PhosphorLinkIcon size={15} />
-            </a>
-          </>
-        ) : null}
         {xPermalink ? (
           <>
             <span className="post-action-sep" aria-hidden>
@@ -98,7 +98,7 @@ export function PostActionBar({
 
       {showCopy ? (
         <div className="post-action-bar-right">
-          <CopyPostButton postId={post.id} primary />
+          <CopyPostButton postId={post.id} />
         </div>
       ) : null}
     </div>
