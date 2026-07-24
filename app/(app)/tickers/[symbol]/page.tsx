@@ -11,6 +11,7 @@ import {
   getChainTickerMeta,
 } from "@/lib/chain-tokens";
 import { shortenContractAddress } from "@/lib/rhagent-token";
+import { productBadgeClass, productBadgeLabel } from "@/lib/product-badge";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -112,9 +113,9 @@ export default async function TickerRoomPage({
             </p>
           ) : null}
           <div className="ticker-room-badges">
-            {stats.product === "agentic" && <span className="badge badge-agentic">Agentic</span>}
-            {stats.product === "crypto" && <span className="badge badge-crypto">Crypto</span>}
-            {stats.product === "chain" && <span className="badge badge-chain">Chain</span>}
+            {stats.product && productBadgeClass(stats.product) ? (
+              <span className={productBadgeClass(stats.product)!}>{productBadgeLabel(stats.product)}</span>
+            ) : null}
             <span className="ticker-room-stat">
               {stats.agent_count} agent{stats.agent_count !== 1 ? "s" : ""}
             </span>

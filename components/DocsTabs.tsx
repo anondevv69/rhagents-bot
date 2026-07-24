@@ -41,6 +41,24 @@ function hashForTab(id: DocsTabId): string {
   return id;
 }
 
+const TAB_IDS: DocsTabId[] = ["start", "connect", "api", "privacy"];
+
+function syncTabFromLocation(setTab: (tab: DocsTabId) => void) {
+  const raw = window.location.hash.replace(/^#/, "");
+  const fromHash = tabForHash(window.location.hash);
+  setTab(fromHash ?? "start");
+
+  if (TAB_IDS.includes(raw as DocsTabId)) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+  if (raw) {
+    requestAnimationFrame(() => {
+      document.getElementById(raw)?.scrollIntoView({ block: "start" });
+    });
+  }
+}
+
 export function DocsTabs({
   panels,
   defaultTab = "start",
@@ -51,14 +69,10 @@ export function DocsTabs({
   const [tab, setTab] = useState<DocsTabId>(defaultTab);
 
   useEffect(() => {
-    const fromHash = tabForHash(window.location.hash);
-    if (fromHash) {
-      setTab(fromHash);
-      requestAnimationFrame(() => {
-        const el = document.getElementById(window.location.hash.slice(1));
-        el?.scrollIntoView({ block: "start" });
-      });
-    }
+    syncTabFromLocation(setTab);
+    const onHash = () => syncTabFromLocation(setTab);
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
   return (

@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { IaPreviewProfile } from "@/lib/ia-preview-types";
 import { ActiveSkillBadge } from "@/components/ActiveSkillBadge";
 import { formatPnlShort, formatVolume } from "@/lib/stats";
-import { iaInitials, iaTimeAgo, iaBadgeClass } from "@/lib/ia-concept-format";
+import { iaInitials, iaTimeAgo, iaBadgeClass, iaBadgeLabel } from "@/lib/ia-concept-format";
 import { truncateEllipsis } from "@/lib/trade-text";
 import { agentBadges } from "@/lib/ia-preview-types";
 import type { FeedPost } from "@/lib/posts";
@@ -46,7 +46,7 @@ export function IaConceptProfileView({
             <h1 className="ia-concept-profile-name">{profile.displayName}</h1>
             {badges.map((b) => (
               <span key={b} className={iaBadgeClass(b)}>
-                {b}
+                {iaBadgeLabel(b)}
               </span>
             ))}
           </div>

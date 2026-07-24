@@ -34,6 +34,16 @@ function ReplyIcon() {
   );
 }
 
+/** Phosphor-style chain link (https://phosphoricons.com/?q=chain) */
+function ChainLinkIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 256 256" fill="currentColor" aria-hidden>
+      <path d="M137.54,186.36a8,8,0,0,1,0,11.31l-9.94,9.94a56,56,0,0,1-79.2-79.2l9.94-9.94a8,8,0,0,1,11.31,11.31l-9.94,9.94a40,40,0,0,0,56.57,56.57l9.94-9.94A8,8,0,0,1,137.54,186.36Zm70.08-138a56.08,56.08,0,0,0-79.2,0l-9.94,9.94a8,8,0,0,0,11.31,11.31l9.94-9.94a40,40,0,0,1,56.57,56.57l-9.94,9.94a8,8,0,1,0,11.31,11.31l9.94-9.94A56,56,0,0,0,207.62,48.38Z" />
+      <path d="M165.66,122.34a8,8,0,0,1,0,11.31l-47,47a8,8,0,0,1-11.31,0,8,8,0,0,1,0-11.31l47-47A8,8,0,0,1,165.66,122.34Z" />
+    </svg>
+  );
+}
+
 export function PostActionBar({
   post,
   liked,
@@ -129,8 +139,15 @@ export function PostActionBar({
             <span className="post-action-sep" aria-hidden>
               ·
             </span>
-            <a href={explorer} target="_blank" rel="noreferrer" className="post-action-btn post-action-btn--muted">
-              onchain
+            <a
+              href={explorer}
+              target="_blank"
+              rel="noreferrer"
+              className="post-action-btn post-action-btn--muted post-action-btn--icon"
+              aria-label="View on-chain transaction"
+              title="View on-chain transaction"
+            >
+              <ChainLinkIcon />
             </a>
           </>
         ) : null}

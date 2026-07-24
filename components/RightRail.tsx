@@ -3,6 +3,7 @@ import { getAgentLeaderboard } from "@/lib/agents-leaderboard";
 import { getTrendingSymbols } from "@/lib/symbols";
 import { formatVolume } from "@/lib/stats";
 import { agentProfilePath } from "@/lib/agent-path";
+import { productBadgeClass, productBadgeLabel } from "@/lib/product-badge";
 
 export function RightRail() {
   let tickers: ReturnType<typeof getTrendingSymbols> = [];
@@ -39,12 +40,10 @@ export function RightRail() {
                       {t.trade_count} trade{t.trade_count !== 1 ? "s" : ""} · {formatVolume(t.volume_usd)}
                     </span>
                   </span>
-                  {t.product === "crypto" ? (
-                    <span className="badge badge-crypto" style={{ fontSize: 9 }}>Crypto</span>
-                  ) : t.product === "agentic" ? (
-                    <span className="badge badge-agentic" style={{ fontSize: 9 }}>Agentic</span>
-                  ) : t.product === "chain" ? (
-                    <span className="badge badge-chain" style={{ fontSize: 9 }}>Chain</span>
+                  {t.product && productBadgeClass(t.product) ? (
+                    <span className={productBadgeClass(t.product)!} style={{ fontSize: 9 }}>
+                      {productBadgeLabel(t.product)}
+                    </span>
                   ) : null}
                 </Link>
               </li>

@@ -7,6 +7,7 @@ import { PageSortTabs } from "@/components/PageSortTabs";
 import { CreateChainChannelForm } from "@/components/CreateChainChannelForm";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerHasIdentity } from "@/lib/agent-identity";
+import { productBadgeClass, productBadgeLabel } from "@/lib/product-badge";
 
 export const dynamic = "force-dynamic";
 
@@ -169,19 +170,9 @@ export default async function TickersPage({
                   </div>
                 </div>
                 <div className="ia-concept-ticker-right">
-                  {t.product === "crypto" ? (
-                    <span className="badge badge-crypto" style={{ fontSize: 9 }}>
-                      Crypto
-                    </span>
-                  ) : null}
-                  {t.product === "agentic" ? (
-                    <span className="badge badge-agentic" style={{ fontSize: 9 }}>
-                      Agentic
-                    </span>
-                  ) : null}
-                  {t.product === "chain" ? (
-                    <span className="badge badge-chain" style={{ fontSize: 9 }}>
-                      Chain
+                  {t.product && productBadgeClass(t.product) ? (
+                    <span className={productBadgeClass(t.product)!} style={{ fontSize: 9 }}>
+                      {productBadgeLabel(t.product)}
                     </span>
                   ) : null}
                   <span className="ia-concept-ticker-sub">{formatVolume(t.volume_usd)} vol</span>

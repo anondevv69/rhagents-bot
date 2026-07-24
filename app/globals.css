@@ -81,8 +81,9 @@
   --accent-blue: var(--rh-link-blue);
   --accent-red: var(--down);
   --accent-orange: var(--rh-warning);
-  --badge-agentic: var(--rh-link-blue);
-  --badge-crypto: var(--rh-info);
+  --badge-agentic: #60a5fa;
+  --badge-crypto: #2dd4bf;
+  --badge-chain: #34d399;
 }
 
 [data-theme="light"] {
@@ -112,7 +113,8 @@
   --accent-red: var(--down);
   --accent-orange: var(--rh-warning);
   --badge-agentic: #2563EB;
-  --badge-crypto: #0284C7;
+  --badge-crypto: #0d9488;
+  --badge-chain: #059669;
   --border-soft: rgba(0, 0, 0, 0.06);
   --hover-fill: rgba(0, 0, 0, 0.04);
   --hover-fill-strong: rgba(0, 0, 0, 0.07);
@@ -151,9 +153,21 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-.badge-agentic { background: rgba(96,165,250,0.12); color: var(--rh-link-blue); border: 1px solid rgba(96,165,250,0.25); }
-.badge-crypto   { background: rgba(158,212,255,0.12); color: var(--rh-info); border: 1px solid rgba(158,212,255,0.25); }
-.badge-chain    { background: rgba(52,211,153,0.12); color: #34d399; border: 1px solid rgba(52,211,153,0.28); }
+.badge-agentic {
+  background: color-mix(in srgb, var(--badge-agentic) 14%, transparent);
+  color: var(--badge-agentic);
+  border: 1px solid color-mix(in srgb, var(--badge-agentic) 32%, transparent);
+}
+.badge-crypto {
+  background: color-mix(in srgb, var(--badge-crypto) 14%, transparent);
+  color: var(--badge-crypto);
+  border: 1px solid color-mix(in srgb, var(--badge-crypto) 32%, transparent);
+}
+.badge-chain {
+  background: color-mix(in srgb, var(--badge-chain) 14%, transparent);
+  color: var(--badge-chain);
+  border: 1px solid color-mix(in srgb, var(--badge-chain) 32%, transparent);
+}
 .badge-verified { background: rgba(61,220,122,0.12); color: var(--up); border: 1px solid rgba(61,220,122,0.25); }
 .badge-unverified { background: rgba(255,193,7,0.1); color: #ffc107; border: 1px solid rgba(255,193,7,0.28); }
 .badge-bankr { background: rgba(120,140,255,0.12); color: #9eb0ff; border: 1px solid rgba(120,140,255,0.25); }
@@ -430,7 +444,8 @@ a { color: inherit; text-decoration: none; }
   list-style: none;
   cursor: pointer;
   font-size: 12px;
-  color: var(--muted);
+  font-weight: 500;
+  color: var(--muted-faint);
   user-select: none;
 }
 
@@ -7233,16 +7248,6 @@ a.post-via--link:hover {
   opacity: 0.5;
 }
 
-.ia-concept-badge-chain {
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-  color: var(--accent);
-  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
-}
-
 .ia-concept-tag-buy {
   background: color-mix(in srgb, var(--up) 14%, transparent);
   color: var(--up);
@@ -8088,22 +8093,6 @@ a.post-via--link:hover {
   margin-bottom: 10px;
 }
 
-.ia-concept-account-badge {
-  flex-shrink: 0;
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--border-soft);
-  color: var(--muted);
-  white-space: nowrap;
-}
-
-.ia-concept-account-badge--chain {
-  color: var(--warning, #ffc107);
-  border-color: color-mix(in srgb, var(--warning, #ffc107) 35%, var(--border));
-  background: color-mix(in srgb, var(--warning, #ffc107) 8%, transparent);
-}
-
 .ia-trade-strip {
   display: flex;
   align-items: center;
@@ -8190,6 +8179,25 @@ a.post-via--link:hover {
   margin: 0 0 10px;
 }
 
+.ia-concept-trade-thesis--link {
+  display: block;
+  text-decoration: none;
+}
+
+.ia-concept-trade-thesis--link:hover {
+  color: var(--link);
+}
+
+.ia-concept-full-body--link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.ia-concept-full-body--link:hover {
+  color: var(--link);
+}
+
 .post-channel-meta--compact {
   font-size: 12px;
   color: var(--muted);
@@ -8227,6 +8235,11 @@ a.post-via--link:hover {
 
 .post-action-btn--muted {
   color: var(--muted-faint);
+}
+
+.post-action-btn--icon {
+  padding: 5px 7px;
+  line-height: 0;
 }
 
 .post-action-btn--locked {

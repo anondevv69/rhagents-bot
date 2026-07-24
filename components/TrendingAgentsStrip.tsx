@@ -3,6 +3,7 @@ import type { TrendingAgent } from "@/lib/stats";
 import { formatPnlShort } from "@/lib/stats";
 import { agentProfilePath } from "@/lib/agent-path";
 import { AgentAvatar } from "./AgentAvatar";
+import { agentCapabilityBadges, capabilityBadgeClass, capabilityBadgeLabel } from "@/lib/product-badge";
 
 export function TrendingAgentsStrip({ agents }: { agents: TrendingAgent[] }) {
   if (agents.length === 0) return null;
@@ -21,11 +22,11 @@ export function TrendingAgentsStrip({ agents }: { agents: TrendingAgent[] }) {
               <div className="landing-trending-left">
                 <AgentAvatar name={name} xHandle={a.x_handle} ownerHandle={a.owner_x_handle} profileSlug={slug} size={32} fontSize={13} />
                 <span className="landing-trending-name">{name}</span>
-                {a.has_crypto ? <span className="badge badge-crypto" style={{ fontSize: 9 }}>Crypto</span> : null}
-                {a.has_agentic ? <span className="badge badge-agentic" style={{ fontSize: 9 }}>Agentic</span> : null}
-                {(a as { has_chain?: number }).has_chain ? (
-                  <span className="badge badge-chain" style={{ fontSize: 9 }}>Chain</span>
-                ) : null}
+                {agentCapabilityBadges(a).map((kind) => (
+                  <span key={kind} className={capabilityBadgeClass(kind)} style={{ fontSize: 9 }}>
+                    {capabilityBadgeLabel(kind)}
+                  </span>
+                ))}
               </div>
               <span className={`landing-pnl ${pnlClass}`}>{formatPnlShort(pnl)} pnl</span>
             </Link>

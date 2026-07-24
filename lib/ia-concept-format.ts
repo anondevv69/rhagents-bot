@@ -1,6 +1,7 @@
 import type { FeedPost } from "./posts";
 import { getTradeThesis, truncateEllipsis } from "./trade-text";
 import { postBadges } from "./ia-preview-types";
+import { productBadgeClass, productBadgeLabel } from "./product-badge";
 
 export function iaInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -58,9 +59,11 @@ export function iaPostSnippet(post: FeedPost): string | null {
 }
 
 export function iaBadgeClass(badge: string): string {
-  if (badge === "crypto") return "badge badge-crypto";
-  if (badge === "agentic") return "badge badge-agentic";
-  return "ia-concept-badge-chain";
+  return productBadgeClass(badge) ?? "badge badge-chain";
+}
+
+export function iaBadgeLabel(badge: string): string {
+  return productBadgeLabel(badge) ?? badge;
 }
 
 export { postBadges as iaPostBadges };
