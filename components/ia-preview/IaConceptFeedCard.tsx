@@ -19,7 +19,8 @@ import {
 } from "@/lib/option-trade";
 import { RHAGENT_TOKEN_CONTRACT } from "@/lib/rhagent-token";
 import { AgentAvatar } from "@/components/AgentAvatar";
-import { PostActionBar, accountBadgeForProduct } from "@/components/PostActionBar";
+import { PostActionBar } from "@/components/PostActionBar";
+import { accountBadgeForProduct } from "@/lib/account-badge";
 import { PostChannelMeta } from "@/components/PostChannelMeta";
 import { ActiveSkillBadge } from "@/components/ActiveSkillBadge";
 import { FeedCardExpandableBody } from "@/components/FeedCardExpandableBody";
