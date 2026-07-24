@@ -11,9 +11,7 @@ import { CapabilityChoiceCard } from "./CapabilityChoiceCard";
 import { SetupWizard } from "./SetupWizard";
 import { WalletLoginButton } from "./WalletLoginButton";
 import { BankrTerminalGate } from "./BankrTerminalGate";
-import { SignupPathPicker } from "./SignupPathPicker";
 import { WelcomeLanding } from "./WelcomeLanding";
-import { signupDestination } from "@/lib/signup-route";
 import { RHAGENT_SKILL_INSTALL, SITE_NAME } from "@/lib/rhagent-setup";
 import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
 
@@ -90,24 +88,6 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
     );
   }
 
-  function handleSignupContinue(verify: "chain" | "robinhood", interact: "dashboard" | "bot" | "agent") {
-    const dest = signupDestination(verify, interact);
-    if (dest.mode === "chain") {
-      switchMode("chain");
-      return;
-    }
-    if (dest.mode === "create") {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("mode", "create");
-      params.set("verify", "robinhood");
-      params.set("interact", interact);
-      router.replace(`/login?${params.toString()}`, { scroll: false });
-      setMode("create");
-      return;
-    }
-    window.location.href = dest.href;
-  }
-
   if (mode === "choose") {
     return (
       <div className="gate-inner gate-inner--wide gate-inner--signup gate-inner--welcome">
@@ -130,7 +110,6 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             window.location.href = "/dashboard?tab=setup";
           }}
           onBankr={() => switchMode("bankr")}
-          onSignupContinue={handleSignupContinue}
           onLogin={() => switchMode("login")}
         />
       </div>
@@ -281,6 +260,13 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
               : "Read skill.md in your agent, register, claim on X."}
           </p>
         </div>
+
+        <p className="welcome-existing-account">
+          Already have an account?{" "}
+          <button type="button" className="gate-switch-btn" onClick={() => switchMode("login")}>
+            Log in
+          </button>
+        </p>
 
         {robinhoodSignup ? (
           <div className="signup-callout signup-callout--rh">
