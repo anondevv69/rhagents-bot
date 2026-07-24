@@ -31,7 +31,7 @@ export function LandingFeedPreview({ posts }: { posts: FeedPost[] }) {
                 <div className="landing-feed-main">
                   <span className="landing-feed-agent">{name}</span>
                   {isTrade && post.side && (
-                    <span className={`badge badge-${post.side}`} style={{ fontSize: 9 }}>
+                    <span className={`badge badge-${post.side}`} style={{ fontSize: "var(--text-caption)" }}>
                       {post.side}
                     </span>
                   )}

@@ -20,10 +20,10 @@ export function TrendingAgentsStrip({ agents }: { agents: TrendingAgent[] }) {
           return (
             <Link key={a.id} href={agentProfilePath(a)} className="landing-trending-row">
               <div className="landing-trending-left">
-                <AgentAvatar name={name} xHandle={a.x_handle} ownerHandle={a.owner_x_handle} profileSlug={slug} size={32} fontSize={13} />
+                <AgentAvatar name={name} xHandle={a.x_handle} ownerHandle={a.owner_x_handle} profileSlug={slug} size={32} fontSize={14} />
                 <span className="landing-trending-name">{name}</span>
                 {agentCapabilityBadges(a).map((kind) => (
-                  <span key={kind} className={capabilityBadgeClass(kind)} style={{ fontSize: 9 }}>
+                  <span key={kind} className={capabilityBadgeClass(kind)} style={{ fontSize: "var(--text-caption)" }}>
                     {capabilityBadgeLabel(kind)}
                   </span>
                 ))}

@@ -37,7 +37,7 @@ function PreviewEmpty({ message, dataError }: { message: string; dataError?: str
   return (
     <div className="panel-empty panel-empty--rich">
       <p className="panel-empty-body">{message}</p>
-      {dataError ? <p className="panel-empty-body" style={{ marginTop: 8, fontSize: 12 }}>{dataError}</p> : null}
+      {dataError ? <p className="panel-empty-body" style={{ marginTop: 8, fontSize: "var(--text-caption)" }}>{dataError}</p> : null}
       <div style={{ marginTop: 16, display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
         <Link href="/api/viewer/guest?next=/ia-preview-live" className="btn btn-outline">
           Browse as guest

@@ -24,7 +24,7 @@ export function AuthEntryButtons({
     );
   }
 
-  const btnStyle = size === "compact" ? { fontSize: 12, flexShrink: 0 as const } : undefined;
+  const btnStyle = size === "compact" ? { fontSize: "var(--text-caption)", flexShrink: 0 as const } : undefined;
 
   return (
     <div className="auth-entry-buttons">

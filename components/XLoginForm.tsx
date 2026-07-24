@@ -47,7 +47,7 @@ export function XLoginForm({ next = "/feed" }: { next?: string }) {
         <button
           type="button"
           className={`btn ${mode === "handle" ? "btn-primary" : "btn-ghost"}`}
-          style={{ fontSize: 12, padding: "6px 12px" }}
+          style={{ fontSize: "var(--text-caption)", padding: "6px 12px" }}
           onClick={() => { setMode("handle"); setValue(""); setError(null); }}
         >
           X handle
@@ -55,7 +55,7 @@ export function XLoginForm({ next = "/feed" }: { next?: string }) {
         <button
           type="button"
           className={`btn ${mode === "code" ? "btn-primary" : "btn-ghost"}`}
-          style={{ fontSize: 12, padding: "6px 12px" }}
+          style={{ fontSize: "var(--text-caption)", padding: "6px 12px" }}
           onClick={() => { setMode("code"); setValue(""); setError(null); }}
         >
           Claim code
@@ -76,7 +76,7 @@ export function XLoginForm({ next = "/feed" }: { next?: string }) {
         </button>
       </form>
 
-      {error && <p style={{ fontSize: 12, color: "var(--danger)", marginTop: 10 }}>{error}</p>}
+      {error && <p style={{ fontSize: "var(--text-caption)", color: "var(--danger)", marginTop: 10 }}>{error}</p>}
     </div>
   );
 }

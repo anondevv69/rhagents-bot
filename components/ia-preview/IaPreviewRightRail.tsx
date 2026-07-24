@@ -51,7 +51,7 @@ export function IaPreviewRightRail({
                       </span>
                     </span>
                     {t.product && productBadgeClass(t.product) ? (
-                      <span className={productBadgeClass(t.product)!} style={{ fontSize: 9 }}>
+                      <span className={productBadgeClass(t.product)!} style={{ fontSize: "var(--text-caption)" }}>
                         {productBadgeLabel(t.product)}
                       </span>
                     ) : null}

@@ -16,6 +16,12 @@ import {
   type ProvisionChannel,
 } from "@/lib/bankr-provision";
 import {
+  createBankrAutomation,
+  cancelBankrAutomation,
+  getBankrJob,
+  type AutomationInput,
+} from "@/lib/bankr-automations";
+import {
   sanitizeCapabilitiesInput,
   saveAgentCapabilitiesSnapshot,
   updateAgentProfilePrivacy,
@@ -43,6 +49,11 @@ type BridgeBody = {
   profile_show_skills?: boolean;
   profile_show_jobs?: boolean;
   env?: Record<string, string>;
+  wallet_api_key?: string;
+  automation_action?: string;
+  automation_input?: unknown;
+  automation_description?: string;
+  automation_job_id?: string;
 };
 
 /**
@@ -342,6 +353,59 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    case "bankr_automation": {
+      // Structured create/cancel/status for Bankr automations (DCA/limit/stop/TWAP), for
+      // callers that want a form-driven UI (e.g. a future rhagentsite dashboard panel)
+      // instead of composing natural-language prompts themselves. The bot's own /automations
+      // and /cancel_automation commands don't need this — they already talk to the Bankr
+      // Agent API directly via runBankrAgentTurn. This exists as the same structured surface
+      // documented at /docs#bankr-automations and /api/bankr/automation, reachable through
+      // the bridge for callers that only hold the bridge secret.
+      const walletApiKey = typeof body.wallet_api_key === "string" ? body.wallet_api_key.trim() : "";
+      if (!walletApiKey || !walletApiKey.startsWith("bk_usr_")) {
+        return NextResponse.json(
+          { ok: false, error: "wallet_api_key required (bk_usr_...)" },
+          { status: 400 },
+        );
+      }
+      const automationAction = typeof body.automation_action === "string" ? body.automation_action : "";
+      if (!["create", "cancel", "status"].includes(automationAction)) {
+        return NextResponse.json(
+          { ok: false, error: "automation_action required: create, cancel, or status" },
+          { status: 400 },
+        );
+      }
+
+      if (automationAction === "status") {
+        const jobId = typeof body.automation_job_id === "string" ? body.automation_job_id.trim() : "";
+        if (!jobId) {
+          return NextResponse.json({ ok: false, error: "automation_job_id required" }, { status: 400 });
+        }
+        const job = await getBankrJob(walletApiKey, jobId);
+        if ("ok" in job && job.ok === false) {
+          return NextResponse.json(job, { status: job.status });
+        }
+        return NextResponse.json({ ok: true, job });
+      }
+
+      if (automationAction === "cancel") {
+        const description =
+          typeof body.automation_description === "string" ? body.automation_description.trim() : undefined;
+        const result = await cancelBankrAutomation(walletApiKey, description || undefined);
+        return NextResponse.json(result, { status: result.ok ? 200 : result.status });
+      }
+
+      const input = body.automation_input as AutomationInput | undefined;
+      if (!input || typeof input !== "object" || !("kind" in input)) {
+        return NextResponse.json(
+          { ok: false, error: "automation_input required: { kind, ... }" },
+          { status: 400 },
+        );
+      }
+      const created = await createBankrAutomation(walletApiKey, input);
+      return NextResponse.json(created, { status: created.ok ? 200 : created.status });
+    }
+
     case "sync_capabilities": {
       const agentIdBody = typeof body.agent_id === "string" ? body.agent_id.trim() : "";
       const agent =
@@ -400,7 +464,7 @@ export async function POST(req: NextRequest) {
         {
           ok: false,
           error:
-            "Unknown action. Use viewer_verify | claim | link | unlink | owner_status | bankr_provision | bankr_enable_llm | sync_capabilities | profile_privacy",
+            "Unknown action. Use viewer_verify | claim | link | unlink | owner_status | bankr_provision | bankr_enable_llm | bankr_automation | sync_capabilities | profile_privacy",
         },
         { status: 400 },
       );

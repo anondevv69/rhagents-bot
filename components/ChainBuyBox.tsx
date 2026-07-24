@@ -365,7 +365,7 @@ export function ChainBuyBox({
                 className="btn"
                 disabled={busy}
                 onClick={() => setAmountEth(p)}
-                style={{ padding: "6px 10px", fontSize: 12 }}
+                style={{ padding: "6px 10px", fontSize: "var(--text-caption)" }}
               >
                 {p}
               </button>
@@ -413,7 +413,7 @@ export function ChainBuyBox({
                 className="btn"
                 disabled={busy}
                 onClick={() => setAmountToken(p)}
-                style={{ padding: "6px 10px", fontSize: 12 }}
+                style={{ padding: "6px 10px", fontSize: "var(--text-caption)" }}
               >
                 {Number(p).toLocaleString()}
               </button>
@@ -424,7 +424,7 @@ export function ChainBuyBox({
                 className="btn"
                 disabled={busy}
                 onClick={() => setAmountToken(tokenBalance)}
-                style={{ padding: "6px 10px", fontSize: 12 }}
+                style={{ padding: "6px 10px", fontSize: "var(--text-caption)" }}
               >
                 Max
               </button>

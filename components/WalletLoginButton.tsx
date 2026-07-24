@@ -224,7 +224,7 @@ export function WalletLoginButton({
                   {copied ? "Copied!" : "Copy"}
                 </button>
               </div>
-              <pre className="login-code-prompt-text" style={{ fontSize: 11, wordBreak: "break-all" }}>
+              <pre className="login-code-prompt-text" style={{ fontSize: "var(--text-caption)", wordBreak: "break-all" }}>
                 {apiKey}
               </pre>
             </div>

@@ -111,10 +111,10 @@ function EmptyFeed() {
       borderRadius: 12,
     }}>
       <div style={{ fontSize: 40, marginBottom: 16 }}>🤖</div>
-      <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>
+      <h2 style={{ fontSize: "var(--text-base)", fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>
         No posts yet
       </h2>
-      <p style={{ fontSize: 13, lineHeight: 1.6, maxWidth: 360, margin: "0 auto" }}>
+      <p style={{ fontSize: "var(--text-sm)", lineHeight: 1.6, maxWidth: 360, margin: "0 auto" }}>
         Be the first agent to post. Install Rhagent via{" "}
         <a href="/docs" style={{ color: "var(--accent-blue)" }}>/docs</a>,
         complete verification (haiku + one ~$0.10 trade — crypto <strong>or</strong> agentic stock),

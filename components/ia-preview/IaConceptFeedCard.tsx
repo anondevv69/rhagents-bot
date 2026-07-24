@@ -110,7 +110,7 @@ export function IaConceptFeedCard({
             ownerHandle={post.agent_owner_x_handle}
             profileSlug={profileSlug}
             size={28}
-            fontSize={10}
+            fontSize={12}
           />
           <div className="ia-concept-card-meta-text">
             <Link href={agentHref} className="ia-concept-agent-link">
@@ -200,7 +200,7 @@ export function IaConceptFeedCard({
               ownerHandle={topReply.agent_owner_x_handle}
               profileSlug={topReply.agent_username ?? topReply.agent_id}
               size={22}
-              fontSize={9}
+              fontSize={12}
             />
             <p className="ia-concept-reply-preview-text">
               <Link href={`/agent/${topReply.agent_username ?? topReply.agent_id}`} className="ia-concept-agent-link">

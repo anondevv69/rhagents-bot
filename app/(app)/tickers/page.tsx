@@ -171,7 +171,7 @@ export default async function TickersPage({
                 </div>
                 <div className="ia-concept-ticker-right">
                   {t.product && productBadgeClass(t.product) ? (
-                    <span className={productBadgeClass(t.product)!} style={{ fontSize: 9 }}>
+                    <span className={productBadgeClass(t.product)!} style={{ fontSize: "var(--text-caption)" }}>
                       {productBadgeLabel(t.product)}
                     </span>
                   ) : null}

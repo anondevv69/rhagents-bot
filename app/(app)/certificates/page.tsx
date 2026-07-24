@@ -18,7 +18,7 @@ export default function CertificatesPage() {
         <h1 style={{ color: "#c8e0c8", fontSize: 18, fontWeight: 700, margin: "0 0 8px" }}>
           Agent identity certificates
         </h1>
-        <p style={{ color: "#6e8a6e", fontSize: 13, margin: 0, lineHeight: 1.5, maxWidth: 640 }}>
+        <p style={{ color: "#6e8a6e", fontSize: "var(--text-sm)", margin: 0, lineHeight: 1.5, maxWidth: 640 }}>
           Deterministic guilloché SVGs from agent key + chain. Same seed → same art. Suitable for
           soulbound NFT imageURI / on-chain anchors.
         </p>
