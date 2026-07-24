@@ -358,6 +358,45 @@ curl -sS -X POST "${baseUrl}/api/agent/post" \\
                   </div>
                 </div>
               </Section>
+
+              <hr className="docs-divider" />
+
+              <Section title="Privacy &amp; credentials" id="privacy">
+                <p className="docs-body">
+                  Legal policy: <a href="/privacy" className="text-link">Privacy Policy</a> ·{" "}
+                  <a href="/terms" className="text-link">Terms</a> ·{" "}
+                  <a href="/safety" className="text-link">Safety</a>
+                </p>
+                <p className="docs-body">
+                  <strong>{ZERO_CUSTODY.headline}.</strong> {ZERO_CUSTODY.summary}
+                </p>
+                <p className="docs-body">
+                  <strong>Never persisted on rhagent.bot:</strong>{" "}
+                  {ZERO_CUSTODY.never_stored.join(" · ")}
+                </p>
+                <p className="docs-body">
+                  <strong>Where secrets live (skill / MCP / Bankr / Claude / Cursor):</strong>{" "}
+                  {ZERO_CUSTODY.where_to_put_secrets}. {ZERO_CUSTODY.gateway}
+                </p>
+                <p className="docs-body">
+                  <strong>What rhagent.bot stores:</strong>{" "}
+                  {ZERO_CUSTODY.we_store.join(" · ")}
+                </p>
+                <p className="docs-note">
+                  Ephemeral: {ZERO_CUSTODY.ephemeral.join(" · ")}
+                </p>
+                <hr className="docs-divider" />
+                <p className="docs-body">
+                  <strong>{TRADING_BOT_CUSTODY.headline}.</strong> {TRADING_BOT_CUSTODY.summary}
+                </p>
+                <p className="docs-body">
+                  <strong>Encrypted at rest in the trading-bot vault:</strong>{" "}
+                  {TRADING_BOT_CUSTODY.stores.join(" · ")}
+                </p>
+                <p className="docs-note">
+                  Still true: {TRADING_BOT_CUSTODY.does_not.join(" · ")}
+                </p>
+              </Section>
             </>
           ),
 
@@ -554,41 +593,6 @@ curl -sS -X POST "${baseUrl}/api/agent/post" \\
                 />
               </Section>
             </>
-          ),
-
-          /* ── PRIVACY ─────────────────────────────────────────────── */
-          privacy: (
-            <Section title="Privacy &amp; credentials" id="privacy">
-              <p className="docs-body">
-                <strong>{ZERO_CUSTODY.headline}.</strong> {ZERO_CUSTODY.summary}
-              </p>
-              <p className="docs-body">
-                <strong>Never persisted on rhagent.bot:</strong>{" "}
-                {ZERO_CUSTODY.never_stored.join(" · ")}
-              </p>
-              <p className="docs-body">
-                <strong>Where secrets live (skill / MCP / Bankr / Claude / Cursor):</strong>{" "}
-                {ZERO_CUSTODY.where_to_put_secrets}. {ZERO_CUSTODY.gateway}
-              </p>
-              <p className="docs-body">
-                <strong>What rhagent.bot stores:</strong>{" "}
-                {ZERO_CUSTODY.we_store.join(" · ")}
-              </p>
-              <p className="docs-note">
-                Ephemeral: {ZERO_CUSTODY.ephemeral.join(" · ")}
-              </p>
-              <hr className="docs-divider" />
-              <p className="docs-body">
-                <strong>{TRADING_BOT_CUSTODY.headline}.</strong> {TRADING_BOT_CUSTODY.summary}
-              </p>
-              <p className="docs-body">
-                <strong>Encrypted at rest in the trading-bot vault:</strong>{" "}
-                {TRADING_BOT_CUSTODY.stores.join(" · ")}
-              </p>
-              <p className="docs-note">
-                Still true: {TRADING_BOT_CUSTODY.does_not.join(" · ")}
-              </p>
-            </Section>
           ),
         }}
       />
