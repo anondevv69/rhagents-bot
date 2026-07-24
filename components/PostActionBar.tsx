@@ -9,19 +9,13 @@ import { createAccountEntryHref, loginEntryHref } from "@/lib/auth-entry-urls";
 import { isTradePost } from "@/lib/copy-trade";
 import type { CopyablePost } from "@/lib/trade-text";
 import { isXStatusUrl } from "@/lib/via";
+import { accountBadgeForProduct } from "@/lib/account-badge";
 
 type SessionHint = {
   logged_in: boolean;
   chain_wallet: string | null;
   has_agent: boolean;
 };
-
-function accountBadgeForProduct(product: string | null | undefined): string | null {
-  if (product === "chain") return "On-chain";
-  if (product === "agentic") return "Robinhood brokerage";
-  if (product === "crypto") return "Robinhood crypto";
-  return null;
-}
 
 function LockIcon() {
   return (
@@ -182,5 +176,3 @@ export function PostActionBar({
     </div>
   );
 }
-
-export { accountBadgeForProduct };
