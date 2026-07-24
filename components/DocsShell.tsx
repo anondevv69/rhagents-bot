@@ -3,14 +3,17 @@ import { BrandMark } from "@/components/BrandMark";
 import { DocsShellNav } from "@/components/DocsShellNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TokenFooter } from "@/components/TokenFooter";
+import { docsHomeHref } from "@/lib/docs-request";
 import { CANONICAL_SITE_URL } from "@/lib/rhagent-setup";
 
-export function DocsShell({ children }: { children: React.ReactNode }) {
+export async function DocsShell({ children }: { children: React.ReactNode }) {
+  const docsHome = await docsHomeHref();
+
   return (
     <div className="docs-shell">
       <header className="docs-shell-header">
         <div className="docs-shell-header-inner">
-          <Link href="/docs" className="docs-shell-brand" aria-label="Rhagent docs home">
+          <Link href={docsHome} className="docs-shell-brand" aria-label="Rhagent docs home">
             <BrandMark size={26} />
             <span className="docs-shell-brand-text">
               Rhagent <span className="docs-shell-brand-sub">Docs</span>
