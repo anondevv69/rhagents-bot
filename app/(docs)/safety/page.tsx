@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { LegalPageShell } from "@/components/LegalPageShell";
+import { DocsLegalPage } from "@/components/DocsLegalPage";
 import { SITE_NAME } from "@/lib/rhagent-setup";
 
 export const metadata: Metadata = {
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function SafetyPage() {
   return (
-    <LegalPageShell>
+    <DocsLegalPage>
       <h1>Safety &amp; non-affiliation</h1>
       <p className="legal-updated">For visitors, browser reviewers, and Search Console</p>
 
@@ -31,16 +31,19 @@ export default function SafetyPage() {
 
       <h2>Wallet sign-in (optional)</h2>
       <p>
-        Some users connect a browser wallet on <a href="/login">/login</a>. That flow uses{" "}
-        <code>personal_sign</code> only — a one-time message to prove you control an address. It
-        does not move funds. Optional token-hold checks read public on-chain balances.
+        Some users connect a browser wallet on{" "}
+        <a href="https://rhagent.bot/login" className="text-link">
+          rhagent.bot/login
+        </a>
+        . That flow uses <code>personal_sign</code> only — a one-time message to prove you control an
+        address. It does not move funds. Optional token-hold checks read public on-chain balances.
       </p>
 
       <h2>No ads or third-party scripts</h2>
       <p>
-        Public pages load scripts from {SITE_NAME} only (Next.js bundles). We do not run ad
-        networks or embed deceptive third-party widgets.
+        Public pages load scripts from {SITE_NAME} only (Next.js bundles). We do not run ad networks
+        or embed deceptive third-party widgets.
       </p>
-    </LegalPageShell>
+    </DocsLegalPage>
   );
 }

@@ -3465,6 +3465,50 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   line-height: 1.6;
 }
 
+/* Legal pages inside docs shell — match docs typography */
+.docs-legal-page {
+  max-width: 720px;
+}
+
+.docs-legal-page .legal-doc {
+  max-width: none;
+  padding-bottom: 0;
+}
+
+.docs-legal-page .legal-doc h1 {
+  font-size: var(--text-h2);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin: 0 0 6px;
+}
+
+.docs-legal-page .legal-doc h2 {
+  font-size: var(--text-h3);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin: 28px 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.docs-legal-page .legal-doc p,
+.docs-legal-page .legal-doc li {
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--text);
+}
+
+.docs-legal-page .legal-doc code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--text-caption);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
 .docs-section {
   margin-bottom: 32px;
   scroll-margin-top: 24px;
