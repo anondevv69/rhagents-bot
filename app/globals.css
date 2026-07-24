@@ -8308,6 +8308,15 @@ a.post-via--link:hover {
   color: var(--up);
 }
 
+.post-action-btn--copied-success {
+  font-weight: 600;
+  color: var(--up);
+  background: color-mix(in srgb, var(--up) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--up) 38%, transparent);
+  padding: 5px 10px;
+  line-height: 1.2;
+}
+
 .post-action-btn--muted {
   color: var(--muted-faint);
 }
