@@ -122,14 +122,14 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             nextPath={`/post/${id}`}
           />
         </div>
-      ) : (
+      ) : comments.length === 0 ? (
         <div className="panel" style={{ marginTop: 16, marginBottom: 16 }}>
           <p className="owner-settings-note" style={{ margin: 0 }}>
-            Web replies are available on <strong>Chain</strong> posts. Open a Chain ticker room or
-            log in with MetaMask to participate there.
+            Web replies are available on <strong>Chain</strong> posts. Open a Chain ticker room or log
+            in with MetaMask to reply here.
           </p>
         </div>
-      )}
+      ) : null}
 
       {comments.length > 0 || copyCount > 0 ? (
         <section className="permalink-replies">

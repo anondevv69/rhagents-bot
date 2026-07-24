@@ -6,6 +6,8 @@ import {
   formatTradeNotional,
   formatTradeFillDetail,
   isAutoTradeBody,
+  isDenseScanBody,
+  scanBodySummary,
   tradeNotionalUsd,
 } from "@/lib/trade-text";
 import {
@@ -16,17 +18,12 @@ import {
 } from "@/lib/option-trade";
 import { RHAGENT_TOKEN_CONTRACT } from "@/lib/rhagent-token";
 import { AgentAvatar } from "@/components/AgentAvatar";
-import { PostActionBar } from "@/components/PostActionBar";
+import { PostActionBar, accountBadgeForProduct } from "@/components/PostActionBar";
 import { PostChannelMeta } from "@/components/PostChannelMeta";
 import { ActiveSkillBadge } from "@/components/ActiveSkillBadge";
-import {
-  iaAgentName,
-  iaBadgeClass,
-  iaPostBadges,
-  iaPostSnippet,
-  iaPostTitle,
-  iaVoteScore,
-} from "@/lib/ia-concept-format";
+import { FeedCardExpandableBody } from "@/components/FeedCardExpandableBody";
+import { CopyTextButton } from "@/components/CopyTextButton";
+import { iaAgentName, iaBadgeClass, iaPostBadges, iaPostSnippet, iaPostTitle } from "@/lib/ia-concept-format";
 
 function isTradePost(post: FeedPost): boolean {
   return post.type === "trade_fill" || post.type === "trade_intent";
@@ -41,6 +38,7 @@ export function IaConceptFeedCard({
   onThread = false,
   threadReply = false,
   fullBody = false,
+  topReply,
 }: {
   post: FeedPost;
   profileHref?: (username: string) => string;
@@ -50,6 +48,7 @@ export function IaConceptFeedCard({
   onThread?: boolean;
   threadReply?: boolean;
   fullBody?: boolean;
+  topReply?: FeedPost | null;
 }) {
   const profileSlug = post.agent_username ?? post.agent_id;
   const name = iaAgentName(post);
@@ -57,9 +56,9 @@ export function IaConceptFeedCard({
   const badges = iaPostBadges(post);
   const title = iaPostTitle(post);
   const snippet = iaPostSnippet(post);
-  const side = post.side;
-  const symbol = post.symbol;
+  const side = post.side ?? "buy";
   const agentHref = profileHref ? profileHref(profileSlug) : `/agent/${profileSlug}`;
+  const accountBadge = accountBadgeForProduct(post.product);
 
   const showTradePill = isTradePost(post) && !!(getTradeDisplaySymbol(post) ?? post.symbol);
   const thesis = isTradePost(post) ? getTradeThesis(post.body) : null;
@@ -67,18 +66,14 @@ export function IaConceptFeedCard({
   const optionFields = isTradePost(post) ? inferOptionFieldsForDisplay(post) : null;
   const optionLabel = optionFields ? formatOptionContractShort(optionFields) : null;
   const symbolHref = displaySymbol ? `/tickers/${encodeURIComponent(displaySymbol)}` : null;
-  const symbolSideHref =
-    displaySymbol && post.side
-      ? `/tickers/${encodeURIComponent(displaySymbol)}?tab=${post.side === "sell" ? "sells" : "buys"}`
-      : symbolHref;
   const notional = showTradePill ? tradeNotionalUsd(post) : null;
   const hasRealFill =
     notional != null &&
     notional >= 0.001 &&
     !!post.quantity &&
     parseFloat(String(post.quantity).replace(/,/g, "")) > 0;
-  const showFillPill = showTradePill && hasRealFill;
-  const fillDetail = showFillPill ? formatTradeFillDetail(post) : null;
+  const showTradeStrip = showTradePill && hasRealFill;
+  const fillDetail = showTradeStrip ? formatTradeFillDetail(post) : null;
   const chainContract =
     post.product === "chain"
       ? post.contract && /^0x[a-fA-F0-9]{40}$/i.test(post.contract)
@@ -89,104 +84,133 @@ export function IaConceptFeedCard({
       : null;
   const postForCopy = chainContract ? { ...post, contract: chainContract } : post;
 
-  const bodyText =
-    fullBody || onThread
-      ? thesis ?? post.body
-      : null;
-  const showCompactTitle = !fullBody && !onThread;
+  const bodyText = fullBody || onThread ? (thesis ?? post.body) : null;
+  const showCompactTitle = !fullBody && !onThread && !showTradeStrip;
+  const denseBody =
+    !showTradeStrip && !fullBody && !onThread && post.body && isDenseScanBody(post.body) && !isAutoTradeBody(post.body);
+
+  const replyPreviewName = topReply ? iaAgentName(topReply) : null;
+  const replyPreviewText = topReply?.body?.trim().slice(0, 160) ?? null;
+  const extraReplies = (post.reply_count ?? 0) > 1 ? (post.reply_count ?? 0) - 1 : 0;
 
   return (
     <article className={`ia-concept-card${threadReply ? " ia-concept-card--reply" : ""}`}>
-      {threadReply && isTradePost(post) ? (
-        <div className="post-copy-badge">Copied trade</div>
-      ) : null}
-      <div className="ia-concept-vote-row">
-        <div className="ia-concept-vote" aria-hidden>
-          <span className="ia-concept-vote-arrow">▲</span>
-          {iaVoteScore(post)}
-          <span className="ia-concept-vote-arrow">▼</span>
-        </div>
-        <div className="ia-concept-card-body">
-          <div className="ia-concept-card-meta">
-            <AgentAvatar
-              name={name}
-              xHandle={xHandle}
-              ownerHandle={post.agent_owner_x_handle}
-              profileSlug={profileSlug}
-              size={22}
-              fontSize={9}
-            />
+      {threadReply && isTradePost(post) ? <div className="post-copy-badge">Copied trade</div> : null}
+
+      <div className="ia-concept-card-head">
+        <div className="ia-concept-card-meta">
+          <AgentAvatar
+            name={name}
+            xHandle={xHandle}
+            ownerHandle={post.agent_owner_x_handle}
+            profileSlug={profileSlug}
+            size={28}
+            fontSize={10}
+          />
+          <div className="ia-concept-card-meta-text">
             <Link href={agentHref} className="ia-concept-agent-link">
               <b>{name}</b>
             </Link>
-            {xHandle ? (
-              <a
-                href={`https://x.com/${xHandle.replace(/^@/, "")}`}
-                target="_blank"
-                rel="noreferrer"
-                className="ia-concept-handle"
-              >
-                @{xHandle.replace(/^@/, "")}
-              </a>
-            ) : null}
-            {badges.map((b) => (
-              <span key={b} className={iaBadgeClass(b)}>
-                {b}
-              </span>
-            ))}
-            {post.agent_active_skill_name ? (
-              <>
-                <span className="ia-concept-meta-sep">·</span>
-                <ActiveSkillBadge name={post.agent_active_skill_name} />
-              </>
-            ) : null}
-            {symbol && side && !discussion && !showFillPill ? (
-              <span className={side === "sell" ? "ia-concept-tag-sell" : "ia-concept-tag-buy"}>
-                {side.toUpperCase()} · {symbol}
-              </span>
-            ) : null}
+            <PostChannelMeta post={post} compact />
           </div>
-
-          <PostChannelMeta post={post} />
-
-          {showFillPill && symbolSideHref ? (
-            <Link href={symbolSideHref} className={`post-side-badge badge badge-${side ?? "buy"}`}>
-              {side ?? "buy"}
-            </Link>
-          ) : null}
-
-          {showFillPill && symbolHref ? (
-            <Link href={symbolHref} className="trade-pill trade-pill--compact">
-              <span className="trade-pill-symbol">${displaySymbol}</span>
-              {optionLabel ? <span className="trade-pill-option">{optionLabel}</span> : null}
-              {isOptionTrade(post) ? <span className="trade-pill-kind">Option</span> : null}
-              <span className="trade-pill-amount">{formatTradeNotional(post)}</span>
-              {fillDetail ? <span className="trade-pill-muted">{fillDetail}</span> : null}
-            </Link>
-          ) : null}
-
-          {showCompactTitle ? (
-            <Link href={`/post/${post.id}`} className="ia-concept-card-title">
-              {title}
-            </Link>
-          ) : null}
-
-          {showCompactTitle && snippet ? (
-            <p className="ia-concept-card-snippet">{snippet}</p>
-          ) : null}
-
-          {bodyText ? (
-            <div className={showFillPill ? "post-card-body post-card-body--thesis" : "ia-concept-full-body-wrap"}>
-              {showFillPill ? <div className="post-thesis-label">Thesis</div> : null}
-              <p className="ia-concept-full-body">{bodyText}</p>
-            </div>
-          ) : !showCompactTitle && !bodyText && post.body && !(isTradePost(post) && isAutoTradeBody(post.body)) ? (
-            <p className="ia-concept-full-body">{post.body}</p>
-          ) : null}
-
-          <PostActionBar post={postForCopy} liked={liked} showCopy={showCopy} onThread={onThread} />
         </div>
+        {accountBadge && !discussion && !threadReply ? (
+          <span className={`ia-concept-account-badge ia-concept-account-badge--${post.product ?? "app"}`}>
+            {accountBadge}
+          </span>
+        ) : threadReply && post.body ? (
+          <CopyTextButton text={post.body.trim()} label="Copy reply text" />
+        ) : null}
       </div>
+
+      <div className="ia-concept-card-badges-row">
+        {badges.map((b) => (
+          <span key={b} className={iaBadgeClass(b)}>
+            {b}
+          </span>
+        ))}
+        {post.agent_active_skill_name ? <ActiveSkillBadge name={post.agent_active_skill_name} /> : null}
+      </div>
+
+      {showTradeStrip && symbolHref ? (
+        <Link
+          href={symbolHref}
+          className={`ia-trade-strip ia-trade-strip--${side}`}
+        >
+          <div className="ia-trade-strip-left">
+            <span className="ia-trade-strip-action">{side}</span>
+            <span className="ia-trade-strip-symbol">${displaySymbol}</span>
+            {optionLabel ? <span className="ia-trade-strip-option">{optionLabel}</span> : null}
+            {isOptionTrade(post) ? <span className="ia-trade-strip-kind">Option</span> : null}
+          </div>
+          <div className="ia-trade-strip-right">
+            {fillDetail ? <div className="ia-trade-strip-fill">{fillDetail}</div> : null}
+            <div className="ia-trade-strip-size">{formatTradeNotional(post)} size</div>
+          </div>
+        </Link>
+      ) : null}
+
+      {showTradeStrip && thesis ? <p className="ia-concept-trade-thesis">{thesis}</p> : null}
+
+      {showCompactTitle && !denseBody ? (
+        <Link href={`/post/${post.id}`} className="ia-concept-card-title">
+          {title}
+        </Link>
+      ) : null}
+
+      {showCompactTitle && snippet && !showTradeStrip && !denseBody ? (
+        <p className="ia-concept-card-snippet">{snippet}</p>
+      ) : null}
+
+      {denseBody && post.body ? (
+        <FeedCardExpandableBody summary={scanBodySummary(post.body)} full={post.body} />
+      ) : null}
+
+      {bodyText ? (
+        <div className={showTradeStrip ? "post-card-body post-card-body--thesis" : "ia-concept-full-body-wrap"}>
+          {showTradeStrip ? <div className="post-thesis-label">Thesis</div> : null}
+          <p className="ia-concept-full-body">{bodyText}</p>
+        </div>
+      ) : !showCompactTitle &&
+        !bodyText &&
+        !denseBody &&
+        post.body &&
+        !(isTradePost(post) && isAutoTradeBody(post.body)) ? (
+        <p className="ia-concept-full-body">{post.body}</p>
+      ) : null}
+
+      {topReply && replyPreviewText && !onThread ? (
+        <div className="ia-concept-reply-preview">
+          <div className="ia-concept-reply-preview-row">
+            <AgentAvatar
+              name={replyPreviewName ?? "?"}
+              xHandle={agentPublicXHandle(topReply.agent_x_handle, topReply.agent_owner_x_handle)}
+              ownerHandle={topReply.agent_owner_x_handle}
+              profileSlug={topReply.agent_username ?? topReply.agent_id}
+              size={22}
+              fontSize={9}
+            />
+            <p className="ia-concept-reply-preview-text">
+              <Link href={`/agent/${topReply.agent_username ?? topReply.agent_id}`} className="ia-concept-agent-link">
+                <b>{replyPreviewName}</b>
+              </Link>{" "}
+              <span>{replyPreviewText}</span>
+            </p>
+            <CopyTextButton text={topReply.body?.trim() ?? replyPreviewText} />
+          </div>
+          {extraReplies > 0 ? (
+            <Link href={`/post/${post.id}`} className="ia-concept-reply-preview-more text-link">
+              View {extraReplies} more {extraReplies === 1 ? "reply" : "replies"}
+            </Link>
+          ) : (post.reply_count ?? 0) > 0 ? (
+            <Link href={`/post/${post.id}`} className="ia-concept-reply-preview-more text-link">
+              View thread
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
+
+      <PostActionBar post={postForCopy} liked={liked} showCopy={showCopy} onThread={onThread} />
     </article>
   );
 }

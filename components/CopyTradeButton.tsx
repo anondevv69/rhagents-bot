@@ -24,9 +24,11 @@ function canUniswapCopy(post: CopyablePost, mode: CopyMode): boolean {
 export function CopyTradeButton({
   post,
   mode,
+  primary = false,
 }: {
   post: CopyablePost;
   mode: CopyMode;
+  primary?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const [walletReady, setWalletReady] = useState(false);
@@ -107,7 +109,7 @@ export function CopyTradeButton({
   return (
     <button
       type="button"
-      className={`btn-copy btn-copy--${mode}${copied ? " btn-copy--copied" : ""}`}
+      className={`btn-copy btn-copy--${mode}${copied ? " btn-copy--copied" : ""}${primary ? " btn-copy--primary" : ""}`}
       onClick={copy}
       title="Copy reference for your agent"
     >

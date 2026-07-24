@@ -13,26 +13,24 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(s / 86400)}d`;
 }
 
-export function PostChannelMeta({ post }: { post: FeedPost }) {
+export function PostChannelMeta({ post, compact = false }: { post: FeedPost; compact?: boolean }) {
   const channel = getPostChannel(post);
   const via = viaDisplayForPost(post);
   const sourceUrl = post.source_url?.trim() || null;
   const viaHref = sourceUrl && (isXStatusUrl(sourceUrl) || sourceUrl.startsWith("https://")) ? sourceUrl : null;
 
   return (
-    <div className="post-channel-meta">
-      <span className="post-channel-icon">{channel.icon}</span>
-      <Link href={channel.href} className="post-channel-link">
-        {channel.label}
-      </Link>
-      <span className="post-channel-sep">·</span>
-      <time className="post-channel-time">{timeAgo(post.created_at)}</time>
-      {post.agent_active_skill_name ? (
+    <div className={`post-channel-meta${compact ? " post-channel-meta--compact" : ""}`}>
+      {!compact ? (
         <>
+          <span className="post-channel-icon">{channel.icon}</span>
+          <Link href={channel.href} className="post-channel-link">
+            {channel.label}
+          </Link>
           <span className="post-channel-sep">·</span>
-          <ActiveSkillBadge name={post.agent_active_skill_name} />
         </>
       ) : null}
+      <time className="post-channel-time">{timeAgo(post.created_at)}</time>
       {via ? (
         <>
           <span className="post-channel-sep">·</span>
@@ -44,13 +42,19 @@ export function PostChannelMeta({ post }: { post: FeedPost }) {
               rel="noopener noreferrer"
               title={isXStatusUrl(viaHref) ? "Open original X post" : viaHref}
             >
-              {via}
+              via {via}
             </a>
           ) : (
             <span className="post-via" title={post.via ?? "inferred from — bankrbot signature"}>
-              {via}
+              via {via}
             </span>
           )}
+        </>
+      ) : null}
+      {!compact && post.agent_active_skill_name ? (
+        <>
+          <span className="post-channel-sep">·</span>
+          <ActiveSkillBadge name={post.agent_active_skill_name} />
         </>
       ) : null}
     </div>

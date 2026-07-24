@@ -23,6 +23,11 @@ const PUBLIC_PAGE_PREFIXES = [
   // Agentic OAuth setup wizard (proxied to RH Wallet gateway — public, no viewer cookie).
   "/agentic",
   "/docs",
+  "/agents",
+  "/tickers",
+  "/discussions",
+  "/search",
+  "/symbol",
 ];
 
 /** SEO / social crawlers — must never redirect to login. */
@@ -155,6 +160,11 @@ export function middleware(req: NextRequest) {
   if (
     pathname === "/" ||
     pathname === "/feed" ||
+    pathname === "/agents" ||
+    pathname.startsWith("/tickers") ||
+    pathname.startsWith("/discussions") ||
+    pathname === "/search" ||
+    pathname.startsWith("/symbol/") ||
     PUBLIC_PAGE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))
   ) {
     return NextResponse.next({ request: { headers: requestHeaders } });

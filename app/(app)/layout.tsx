@@ -5,6 +5,7 @@ import { getViewerSession } from "@/lib/viewerSession";
 import { viewerGateEnabled } from "@/lib/viewer";
 import { isGuestSession } from "@/lib/guest-session";
 import { isPublicSharePath, isSocialCrawler } from "@/lib/social-crawlers";
+import { isPublicBrowsePath } from "@/lib/public-browse";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   let readOnly = false;
@@ -18,11 +19,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     if (!session) {
       // Permalink shares + crawler unfurls must render (OG tags live in the HTML).
       // Feed is public read-only — login via top-right path picker when ready.
-      if (
-        pathname === "/feed" ||
-        isPublicSharePath(pathname) ||
-        isSocialCrawler(h.get("user-agent"))
-      ) {
+      if (isPublicBrowsePath(pathname) || isSocialCrawler(h.get("user-agent"))) {
         readOnly = true;
       } else {
         redirect(`/login?next=${encodeURIComponent(path)}`);
