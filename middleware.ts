@@ -114,7 +114,7 @@ export function middleware(req: NextRequest) {
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
-  // Canonical docs live on docs.rhagent.bot when configured separately from the app host.
+  // Canonical docs live on doc.rhagent.bot when configured separately from the app host.
   const docsBase = process.env.NEXT_PUBLIC_DOCS_URL?.replace(/\/$/, "");
   if (
     docsBase &&

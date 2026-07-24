@@ -1,10 +1,7 @@
 import type { NextRequest } from "next/server";
 
 /** Hostname for the public docs subdomain (no viewer gate). */
-export const DOCS_HOST = (process.env.DOCS_HOST ?? "docs.rhagent.bot").toLowerCase();
-
-/** Previous docs hostname — kept as an alias during DNS migration. */
-const LEGACY_DOCS_HOST = "doc.rhagent.bot";
+export const DOCS_HOST = (process.env.DOCS_HOST ?? "doc.rhagent.bot").toLowerCase();
 
 export function normalizeHost(host: string): string {
   return host.replace(/^www\./, "").toLowerCase();
@@ -26,9 +23,7 @@ function hostMatchesDocs(hostname: string, docsHost: string): boolean {
 export function isDocsHost(req: NextRequest): boolean {
   const host = requestHost(req);
   if (!host) return false;
-  const docsHost = normalizeHost(DOCS_HOST);
-  const legacyHost = normalizeHost(LEGACY_DOCS_HOST);
-  return hostMatchesDocs(host, docsHost) || hostMatchesDocs(host, legacyHost);
+  return hostMatchesDocs(host, normalizeHost(DOCS_HOST));
 }
 
 /** App routes that should live on rhagent.bot, not the docs subdomain. */
