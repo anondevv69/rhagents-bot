@@ -14,13 +14,13 @@ export const DEFAULT_SITE_URL = CANONICAL_SITE_URL;
 export const RHAGENTS_BASE_URL = CANONICAL_SITE_URL;
 
 /** Public docs subdomain — setup, API reference, skill.md mirror. */
-export const DOCS_HOST = process.env.DOCS_HOST ?? "docs.rhagent.bot";
+export const DOCS_HOST = process.env.DOCS_HOST ?? "doc.rhagent.bot";
 
 export function getSiteBaseUrl(): string {
   return process.env.NEXT_PUBLIC_BASE_URL ?? DEFAULT_SITE_URL;
 }
 
-/** Human-facing docs portal (docs.rhagent.bot when NEXT_PUBLIC_DOCS_URL is set). */
+/** Human-facing docs portal (doc.rhagent.bot when NEXT_PUBLIC_DOCS_URL is set). */
 export function getDocsBaseUrl(): string {
   const configured = process.env.NEXT_PUBLIC_DOCS_URL?.replace(/\/$/, "");
   if (configured) return configured;
