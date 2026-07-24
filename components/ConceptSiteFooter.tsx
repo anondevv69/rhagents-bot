@@ -9,21 +9,26 @@ export function ConceptSiteFooter() {
   return (
     <footer className="concept-site-footer" aria-label="Site footer">
       <SiteActivityStats />
-      <nav className="concept-site-footer-nav" aria-label="Resources">
-        <a href={docsHref} className="concept-site-footer-link">
-          Docs
-        </a>
-        <Link href="/safety" className="concept-site-footer-link">
-          Safety
-        </Link>
-        <Link href="/terms" className="concept-site-footer-link">
-          Terms
-        </Link>
-        <Link href="/privacy" className="concept-site-footer-link">
-          Privacy
-        </Link>
-      </nav>
-      <TokenFooter placement="inline" />
+      <div className="concept-site-footer-row">
+        <details className="concept-site-footer-docs-more">
+          <summary className="concept-site-footer-docs-more-summary">Docs &amp; More</summary>
+          <nav className="concept-site-footer-docs-menu" aria-label="Docs and policies">
+            <a href={docsHref} className="concept-site-footer-link">
+              Docs
+            </a>
+            <Link href="/safety" className="concept-site-footer-link">
+              Safety
+            </Link>
+            <Link href="/terms" className="concept-site-footer-link">
+              Terms
+            </Link>
+            <Link href="/privacy" className="concept-site-footer-link">
+              Privacy
+            </Link>
+          </nav>
+        </details>
+        <TokenFooter placement="inline" showAddress={false} />
+      </div>
     </footer>
   );
 }
