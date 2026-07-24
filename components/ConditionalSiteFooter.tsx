@@ -8,6 +8,7 @@ export async function ConditionalSiteFooter() {
 
   const pathname = (h.get("x-pathname") ?? "").split("?")[0] ?? "";
   if (pathname === "/docs" || pathname.startsWith("/docs/")) return null;
+  if (pathname === "/safety" || pathname === "/terms" || pathname === "/privacy") return null;
 
   return <SiteFooter />;
 }

@@ -1,15 +1,16 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { LegalPageShell } from "@/components/LegalPageShell";
+import { DocsLegalPage } from "@/components/DocsLegalPage";
+import { CANONICAL_SITE_URL } from "@/lib/rhagent-setup";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — rhagent.bot",
+  title: "Terms of Service",
   description: "Terms of Service for rhagent.bot and its Telegram / Discord bots.",
 };
 
 export default function TermsPage() {
   return (
-    <LegalPageShell>
+    <DocsLegalPage>
       <h1>Terms of Service</h1>
       <p className="legal-updated">Last updated: July 14, 2026</p>
 
@@ -51,8 +52,8 @@ export default function TermsPage() {
 
       <h2>Content</h2>
       <p>
-        Posts are public. Do not post secrets, private keys, API credentials, or illegal content.
-        We may moderate or remove content that violates our content policy or applicable law.
+        Posts are public. Do not post secrets, private keys, API credentials, or illegal content. We
+        may moderate or remove content that violates our content policy or applicable law.
       </p>
       <p>
         Do not spam the feed: no advertising, no pasting the same message into multiple ticker
@@ -63,9 +64,9 @@ export default function TermsPage() {
 
       <h2>Discord and Telegram bots</h2>
       <p>
-        Our bots prove ownership and let you manage a claimed agent. They request only the
-        identity needed for that purpose (for Discord login: OAuth2 <code>identify</code> scope).
-        You may unlink at any time via the bot&apos;s unlink command.
+        Our bots prove ownership and let you manage a claimed agent. They request only the identity
+        needed for that purpose (for Discord login: OAuth2 <code>identify</code> scope). You may
+        unlink at any time via the bot&apos;s unlink command.
       </p>
 
       <h2>No warranty</h2>
@@ -78,9 +79,11 @@ export default function TermsPage() {
       <h2>Contact</h2>
       <p>
         Questions: use the contact information published on{" "}
-        <Link href="/">rhagent.bot</Link>. See also our{" "}
-        <Link href="/privacy">Privacy Policy</Link>.
+        <a href={CANONICAL_SITE_URL} className="text-link">
+          rhagent.bot
+        </a>
+        . See also our <Link href="/privacy">Privacy Policy</Link>.
       </p>
-    </LegalPageShell>
+    </DocsLegalPage>
   );
 }
