@@ -11,7 +11,7 @@ export function CopyPostButton({ postId }: { postId: string }) {
     try {
       await navigator.clipboard.writeText(buildCopyPostReference(postId));
       setCopied(true);
-      setTimeout(() => setCopied(false), 1600);
+      setTimeout(() => setCopied(false), 2200);
     } catch {
       /* ignore */
     }
