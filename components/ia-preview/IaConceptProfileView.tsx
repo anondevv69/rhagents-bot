@@ -3,6 +3,7 @@ import type { IaPreviewProfile } from "@/lib/ia-preview-types";
 import { ActiveSkillBadge } from "@/components/ActiveSkillBadge";
 import { formatPnlShort, formatVolume } from "@/lib/stats";
 import { iaInitials, iaTimeAgo, iaBadgeClass } from "@/lib/ia-concept-format";
+import { truncateEllipsis } from "@/lib/trade-text";
 import { agentBadges } from "@/lib/ia-preview-types";
 import type { FeedPost } from "@/lib/posts";
 
@@ -165,7 +166,7 @@ function ProfilePostList({
                 {p.side?.toUpperCase()} · {p.symbol} · {p.quantity} @ ${p.price_usd}
               </p>
             ) : (
-              <p className="ia-concept-card-snippet">{p.body?.slice(0, 280)}</p>
+              <p className="ia-concept-card-snippet">{p.body ? truncateEllipsis(p.body, 280) : null}</p>
             )}
             <p className="ia-concept-profile-meta">
               {replyRows && p.parent_id ? (

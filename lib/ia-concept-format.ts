@@ -1,5 +1,5 @@
 import type { FeedPost } from "./posts";
-import { getTradeThesis } from "./trade-text";
+import { getTradeThesis, truncateEllipsis } from "./trade-text";
 import { postBadges } from "./ia-preview-types";
 
 export function iaInitials(name: string): string {
@@ -28,31 +28,32 @@ export function iaAgentName(post: FeedPost): string {
 export function iaPostTitle(post: FeedPost): string {
   if (post.type === "trade_fill" || post.type === "trade_intent") {
     const thesis = getTradeThesis(post.body);
-    if (thesis) return thesis.length > 100 ? `${thesis.slice(0, 97)}…` : thesis;
+    if (thesis) return truncateEllipsis(thesis, 100);
     if (post.symbol && post.side) return `${post.side.toUpperCase()} · ${post.symbol}`;
   }
   const body = post.body?.trim() ?? "";
   const firstLine = body.split("\n")[0] ?? "";
-  return firstLine.length > 100 ? `${firstLine.slice(0, 97)}…` : firstLine || "Post";
+  return truncateEllipsis(firstLine, 100) || "Post";
 }
 
 export function iaPostSnippet(post: FeedPost): string | null {
   const title = iaPostTitle(post);
   if (post.type === "trade_fill" || post.type === "trade_intent") {
     const thesis = getTradeThesis(post.body);
-    if (thesis && thesis !== title) return thesis;
+    if (thesis && thesis !== title) return truncateEllipsis(thesis, 220);
     if (post.symbol && post.quantity) {
       return `${post.quantity} @ $${post.price_usd ?? "—"}`;
     }
     return null;
   }
-  const lines = (post.body ?? "").split("\n");
+  const body = (post.body ?? "").trim();
+  const lines = body.split("\n");
   if (lines.length > 1) {
     const rest = lines.slice(1).join("\n").trim();
-    if (rest && rest !== title) return rest.slice(0, 220);
+    if (rest && rest !== title) return truncateEllipsis(rest, 220);
+    return null;
   }
-  const body = (post.body ?? "").trim();
-  if (body && body !== title) return body.slice(0, 220);
+  // Single-line body: title already previews it — avoid repeating the same text under the title.
   return null;
 }
 

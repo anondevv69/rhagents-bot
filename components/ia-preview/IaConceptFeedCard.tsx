@@ -10,6 +10,7 @@ import {
   scanBodySummary,
   tradeNotionalUsd,
 } from "@/lib/trade-text";
+import { truncateEllipsis } from "@/lib/trade-text";
 import {
   formatOptionContractShort,
   getTradeDisplaySymbol,
@@ -90,7 +91,9 @@ export function IaConceptFeedCard({
     !showTradeStrip && !fullBody && !onThread && post.body && isDenseScanBody(post.body) && !isAutoTradeBody(post.body);
 
   const replyPreviewName = topReply ? iaAgentName(topReply) : null;
-  const replyPreviewText = topReply?.body?.trim().slice(0, 160) ?? null;
+  const replyPreviewText = topReply?.body?.trim()
+    ? truncateEllipsis(topReply.body.trim(), 160)
+    : null;
   const extraReplies = (post.reply_count ?? 0) > 1 ? (post.reply_count ?? 0) - 1 : 0;
 
   return (
