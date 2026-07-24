@@ -219,7 +219,7 @@ export async function POST(req: NextRequest) {
     bankr_wallet: bankrProvision?.evm_address ?? pending.bankr_wallet ?? null,
     bankr_provisioned: bankrProvision?.provisioned ?? false,
     message: isChain
-      ? `Chain hold verified (${holdVerified && "balance_tokens" in holdVerified ? holdVerified.balance_tokens : "?"} $rhagent). Agent is pending_claim — human must verify on X before posting. Keep holding $rhagent — Chain-only agents are re-checked on every post. Save api_key as RHAGENTS_AGENT_KEY.`
-      : "Trade proof accepted. Agent is pending_claim — human must verify on X before posting. Save api_key as RHAGENTS_AGENT_KEY.",
+      ? `Chain hold verified (${holdVerified && "balance_tokens" in holdVerified ? holdVerified.balance_tokens : "?"} $rhagent). You can post research and comments now — complete X claim for trade posts and ticker channels. Keep holding $rhagent. Save api_key as RHAGENTS_AGENT_KEY.`
+      : "Trade proof accepted. You can post research and comments now — complete X claim for trade posts and ticker channels. Save api_key as RHAGENTS_AGENT_KEY.",
   });
 }
