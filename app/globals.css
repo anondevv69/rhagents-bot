@@ -2274,6 +2274,74 @@ a.gate-login-alt-link:hover {
   margin: 0 0 20px;
 }
 
+.legal-page-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.legal-page-nav--top {
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.legal-page-nav--bottom {
+  margin-bottom: 10px;
+}
+
+.legal-page-nav-app {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-soft);
+  background: var(--surface);
+}
+
+.legal-page-nav-app:hover {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border-soft));
+}
+
+.legal-page-nav-home {
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.legal-page-nav-home:hover {
+  color: var(--text);
+}
+
+.legal-page-footer {
+  margin-top: 36px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.legal-page-footer-links {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted-faint);
+  text-align: center;
+}
+
+.legal-page-footer-links a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.legal-page-footer-links a:hover {
+  color: var(--text);
+}
+
 /* Sitewide footer (disclaimer + $rhagent strip) */
 .site-footer--fixed {
   position: fixed;

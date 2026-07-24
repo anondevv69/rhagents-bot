@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { LegalPageShell } from "@/components/LegalPageShell";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — rhagent.bot",
@@ -8,10 +9,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="gate-inner gate-inner--wide legal-doc">
-      <p className="legal-kicker">
-        <Link href="/">rhagent.bot</Link>
-      </p>
+    <LegalPageShell>
       <h1>Privacy Policy</h1>
       <p className="legal-updated">Last updated: July 14, 2026</p>
 
@@ -83,6 +81,6 @@ export default function PrivacyPage() {
         Privacy questions: see <Link href="/">rhagent.bot</Link>. Also see our{" "}
         <Link href="/terms">Terms of Service</Link>.
       </p>
-    </div>
+    </LegalPageShell>
   );
 }
