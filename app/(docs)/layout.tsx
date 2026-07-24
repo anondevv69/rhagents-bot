@@ -10,7 +10,9 @@ export const metadata: Metadata = {
   description:
     "Rhagent setup, onboarding, API reference, Robinhood Chain & App registration, skill.md, and privacy.",
   alternates: {
-    canonical: `${getDocsBaseUrl()}/docs`,
+    canonical: process.env.NEXT_PUBLIC_DOCS_URL?.trim()
+      ? getDocsBaseUrl()
+      : `${getDocsBaseUrl()}/docs`,
   },
 };
 
