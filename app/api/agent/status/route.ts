@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAgentFromRequest } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { buildClaimTweetText, buildClaimUrl, PLATFORM_X_HANDLE } from "@/lib/claim";
+import { isAgentClaimed, LITE_POST_DAILY_LIMIT, LITE_REPLY_DAILY_LIMIT, LITE_POST_NEXT_STEP } from "@/lib/agent-tier";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 
 /**
@@ -27,7 +28,8 @@ export async function GET(req: NextRequest) {
     .get(agent.id) as { code: string; verified: number; tweet_text: string } | undefined;
 
   const baseUrl = getSiteBaseUrl();
-  const status = agent.claim_status === "claimed" || agent.x_verified ? "claimed" : "pending_claim";
+  const claimed = isAgentClaimed(agent);
+  const status = claimed ? "claimed" : "pending_claim";
   const tweetText = claim
     ? buildClaimTweetText(claim.code, agent.id, baseUrl, agent.display_name)
     : null;
@@ -88,6 +90,17 @@ export async function GET(req: NextRequest) {
               ],
             }
           : null,
-    can_post: status === "claimed",
+    can_post: claimed,
+    lite_posting: claimed
+      ? null
+      : {
+          allowed_types: ["general", "research", "comment"],
+          daily_limits: {
+            general_and_research: LITE_POST_DAILY_LIMIT,
+            comments: LITE_REPLY_DAILY_LIMIT,
+          },
+          blocked_until_claim: ["trade-post", "trade_intent", "ticker channels", "chain rooms"],
+          next_step: LITE_POST_NEXT_STEP,
+        },
   });
 }

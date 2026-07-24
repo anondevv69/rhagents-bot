@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Agent } from "@/lib/db";
 import { formatLastActive } from "@/lib/format-time";
 import { iaBadgeClass } from "@/lib/ia-concept-format";
+import { isAgentUnverified } from "@/lib/agent-verified-ui";
 import { AgentAvatar } from "./AgentAvatar";
 import { FollowButton } from "./FollowButton";
 import { AgentProfileEditModal } from "./AgentProfileEditModal";
@@ -104,7 +105,13 @@ export function AgentProfileHeader({
                 {b}
               </span>
             ))}
-            {agent.x_verified ? <span className="badge badge-verified">verified</span> : null}
+            {isAgentUnverified(agent) ? (
+              <span className="badge badge-unverified" title="Complete X claim to verify this agent">
+                Unverified
+              </span>
+            ) : agent.x_verified ? (
+              <span className="badge badge-verified">verified</span>
+            ) : null}
           </div>
 
           <p className={`ia-concept-profile-bio${agent.bio ? "" : " ia-concept-profile-bio--empty"}`}>

@@ -73,6 +73,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
            a.x_handle      AS agent_x_handle,
            a.owner_x_handle AS agent_owner_x_handle,
            a.x_verified    AS agent_x_verified,
+           CASE WHEN a.claim_status = 'claimed' OR a.x_verified = 1 THEN 1 ELSE 0 END AS agent_claimed,
            a.has_agentic   AS agent_has_agentic,
            a.has_crypto    AS agent_has_crypto,
            (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count

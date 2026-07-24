@@ -22,6 +22,16 @@ import {
 import { warmPostOgImage } from "@/lib/warm-post-og";
 import { isAddress } from "viem";
 import type { HoldCheckResult } from "@/lib/rhagent-holdings";
+import {
+  isAgentClaimed,
+  isLitePostType,
+  litePostRateLimitKey,
+  litePostDailyLimit,
+  CLAIM_REQUIRED_MESSAGE,
+  LITE_POST_NEXT_STEP,
+} from "@/lib/agent-tier";
+import { createUnclaimedLitePost } from "@/lib/agent-lite-post";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 /**
  * POST /api/agent/post
@@ -45,23 +55,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const capError = requireRhCapability(agent);
-  if (capError) return NextResponse.json({ ok: false, error: capError }, { status: 403 });
-
-  const claimError = requireClaimed(agent);
-  if (claimError) {
-    return NextResponse.json(
-      { ok: false, error: claimError, status: "pending_claim", poll: "GET /api/agent/status" },
-      { status: 403 }
-    );
-  }
-
-  const chainOnlyGate = await requireChainOnlyHold(agent);
-  if (!chainOnlyGate.ok) {
-    return NextResponse.json(chainOnlyGate.body, { status: chainOnlyGate.status });
-  }
-  let chainOnlyHold: HoldCheckResult | null = chainOnlyGate.hold;
-
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -79,6 +72,52 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "body is required" }, { status: 400 });
   }
 
+  const parent_id = typeof body.parent_id === "string" ? body.parent_id.trim() : null;
+  const claimed = isAgentClaimed(agent);
+
+  if (!claimed) {
+    if (!isLitePostType(type)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "claim_required",
+          status: "pending_claim",
+          message: CLAIM_REQUIRED_MESSAGE,
+          next_step: LITE_POST_NEXT_STEP,
+          poll: "GET /api/agent/status",
+        },
+        { status: 403 },
+      );
+    }
+    const limitKey = litePostRateLimitKey(agent.id, type);
+    if (!rateLimit(limitKey, litePostDailyLimit(type), 24 * 60 * 60 * 1000)) {
+      return rateLimitResponse();
+    }
+    return createUnclaimedLitePost(agent, req, {
+      type,
+      rawBody,
+      parent_id,
+      body,
+    });
+  }
+
+  const capError = requireRhCapability(agent);
+  if (capError) return NextResponse.json({ ok: false, error: capError }, { status: 403 });
+
+  const claimError = requireClaimed(agent);
+  if (claimError) {
+    return NextResponse.json(
+      { ok: false, error: claimError, status: "pending_claim", poll: "GET /api/agent/status" },
+      { status: 403 }
+    );
+  }
+
+  const chainOnlyGate = await requireChainOnlyHold(agent);
+  if (!chainOnlyGate.ok) {
+    return NextResponse.json(chainOnlyGate.body, { status: chainOnlyGate.status });
+  }
+  let chainOnlyHold: HoldCheckResult | null = chainOnlyGate.hold;
+
   const mod = moderateText(rawBody);
   if (!mod.ok) {
     return NextResponse.json({ ok: false, error: "content_policy", message: mod.error }, { status: 422 });
@@ -92,7 +131,6 @@ export async function POST(req: NextRequest) {
     | "chain"
     | null;
   const symbolInput = normalizeTickerSymbol(typeof body.symbol === "string" ? body.symbol : null);
-  const parent_id = typeof body.parent_id === "string" ? body.parent_id.trim() : null;
 
   const rawRoomInput = typeof body.room === "string" ? body.room.trim().slice(0, 80) : null;
   const roomTickerHint = tickerFromRoom(rawRoomInput);
