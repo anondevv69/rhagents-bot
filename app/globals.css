@@ -8056,10 +8056,10 @@ a.post-via--link:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  margin: 0 0 10px;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin: 0 0 8px;
   text-decoration: none;
   color: inherit;
 }
@@ -8082,10 +8082,10 @@ a.post-via--link:hover {
 }
 
 .ia-trade-strip-action {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: lowercase;
-  padding: 3px 10px;
+  padding: 2px 8px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--up) 25%, transparent);
   color: var(--up);
@@ -8097,7 +8097,7 @@ a.post-via--link:hover {
 }
 
 .ia-trade-strip-symbol {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
@@ -8122,12 +8122,12 @@ a.post-via--link:hover {
 }
 
 .ia-trade-strip-fill {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
 }
 
 .ia-trade-strip-size {
-  font-size: 12px;
+  font-size: 11px;
   opacity: 0.85;
 }
 
@@ -8167,6 +8167,10 @@ a.post-via--link:hover {
 
 .post-action-btn--static {
   cursor: default;
+}
+
+.post-action-btn--copied {
+  color: var(--up);
 }
 
 .post-action-btn--muted {

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { CopyPostButton } from "@/components/CopyPostButton";
 import { CopyTradeButton } from "@/components/CopyTradeButton";
 import { LikeButton } from "@/components/LikeButton";
 import { useViewerReadOnly } from "@/components/ViewerModeProvider";
@@ -9,7 +10,6 @@ import { createAccountEntryHref, loginEntryHref } from "@/lib/auth-entry-urls";
 import { isTradePost } from "@/lib/copy-trade";
 import type { CopyablePost } from "@/lib/trade-text";
 import { isXStatusUrl } from "@/lib/via";
-import { accountBadgeForProduct } from "@/lib/account-badge";
 
 type SessionHint = {
   logged_in: boolean;
@@ -96,10 +96,8 @@ export function PostActionBar({
   const canCopyTrade = session?.logged_in && !readOnly && !needsWallet;
 
   let copyGateHref = createAccountEntryHref(`/post/${post.id}`);
-  let copyGateCaption = "Create an account to copy this trade";
   if (session?.logged_in && needsWallet) {
     copyGateHref = loginEntryHref(`/post/${post.id}`);
-    copyGateCaption = "You're logged in — connect a wallet to copy on-chain trades";
   }
 
   return (
@@ -122,6 +120,10 @@ export function PostActionBar({
             {replyCount > 0 ? <span className="post-action-count">{replyLabel}</span> : null}
           </Link>
         )}
+        <span className="post-action-sep" aria-hidden>
+          ·
+        </span>
+        <CopyPostButton postId={post.id} />
         {explorer ? (
           <>
             <span className="post-action-sep" aria-hidden>
@@ -144,33 +146,16 @@ export function PostActionBar({
         ) : null}
       </div>
 
-      {showCopy ? (
+      {showCopy && trade ? (
         <div className="post-action-bar-right">
-          {trade ? (
-            canCopyTrade ? (
-              <CopyTradeButton post={post} mode="trade" primary />
-            ) : (
-              <div className="post-copy-gate">
-                <Link href={copyGateHref} className="post-action-btn post-action-btn--locked">
-                  <LockIcon />
-                  Copy trade
-                </Link>
-                <p className="post-copy-gate-caption">
-                  <Link href={copyGateHref} className="text-link">
-                    {copyGateCaption} ↗
-                  </Link>
-                </p>
-              </div>
-            )
+          {canCopyTrade ? (
+            <CopyTradeButton post={post} mode="trade" primary />
           ) : (
-            <CopyTradeButton post={post} mode="reply" />
+            <Link href={copyGateHref} className="post-action-btn post-action-btn--locked">
+              <LockIcon />
+              Copy trade
+            </Link>
           )}
-          {productBadge ? <span className="post-product-badge">{productBadge}</span> : null}
-          {!productBadge && trade && post.product ? (
-            <span className="post-product-badge post-product-badge--muted">
-              {accountBadgeForProduct(post.product)}
-            </span>
-          ) : null}
         </div>
       ) : null}
     </div>

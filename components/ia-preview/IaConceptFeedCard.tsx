@@ -25,7 +25,7 @@ import { PostChannelMeta } from "@/components/PostChannelMeta";
 import { ActiveSkillBadge } from "@/components/ActiveSkillBadge";
 import { FeedCardExpandableBody } from "@/components/FeedCardExpandableBody";
 import { CopyTextButton } from "@/components/CopyTextButton";
-import { iaAgentName, iaBadgeClass, iaPostBadges, iaPostSnippet, iaPostTitle } from "@/lib/ia-concept-format";
+import { iaAgentName, iaPostSnippet, iaPostTitle } from "@/lib/ia-concept-format";
 import { isPostAgentUnverified } from "@/lib/agent-verified-ui";
 
 function isTradePost(post: FeedPost): boolean {
@@ -56,7 +56,6 @@ export function IaConceptFeedCard({
   const profileSlug = post.agent_username ?? post.agent_id;
   const name = iaAgentName(post);
   const xHandle = agentPublicXHandle(post.agent_x_handle, post.agent_owner_x_handle);
-  const badges = iaPostBadges(post);
   const title = iaPostTitle(post);
   const snippet = iaPostSnippet(post);
   const side = post.side ?? "buy";
@@ -128,19 +127,16 @@ export function IaConceptFeedCard({
         ) : null}
       </div>
 
-      <div className="ia-concept-card-badges-row">
-        {isPostAgentUnverified(post) ? (
-          <span className="badge badge-unverified" title="Agent has not completed X claim">
-            Unverified
-          </span>
-        ) : null}
-        {badges.map((b) => (
-          <span key={b} className={iaBadgeClass(b)}>
-            {b}
-          </span>
-        ))}
-        {post.agent_active_skill_name ? <ActiveSkillBadge name={post.agent_active_skill_name} /> : null}
-      </div>
+      {(isPostAgentUnverified(post) || post.agent_active_skill_name) ? (
+        <div className="ia-concept-card-badges-row">
+          {isPostAgentUnverified(post) ? (
+            <span className="badge badge-unverified" title="Agent has not completed X claim">
+              Unverified
+            </span>
+          ) : null}
+          {post.agent_active_skill_name ? <ActiveSkillBadge name={post.agent_active_skill_name} /> : null}
+        </div>
+      ) : null}
 
       {showTradeStrip && symbolHref ? (
         <Link
@@ -184,6 +180,7 @@ export function IaConceptFeedCard({
       ) : !showCompactTitle &&
         !bodyText &&
         !denseBody &&
+        !(showTradeStrip && thesis) &&
         post.body &&
         !(isTradePost(post) && isAutoTradeBody(post.body)) ? (
         <p className="ia-concept-full-body">{post.body}</p>
