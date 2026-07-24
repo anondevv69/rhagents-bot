@@ -20,12 +20,12 @@ export function CopyPostButton({ postId }: { postId: string }) {
   return (
     <button
       type="button"
-      className={`post-action-btn post-action-btn--muted post-action-btn--icon${copied ? " post-action-btn--copied" : ""}`}
+      className={`post-action-btn post-action-btn--muted${copied ? " post-action-btn--copied post-action-btn--copied-success" : " post-action-btn--icon"}`}
       onClick={copy}
       aria-label={copied ? "Copied post URL" : "Copy post URL"}
       title={copied ? "Copied" : "Copy post"}
     >
-      <PhosphorCopyIcon size={15} />
+      {copied ? "Copied" : <PhosphorCopyIcon size={15} />}
     </button>
   );
 }
