@@ -1,15 +1,9 @@
 import Link from "next/link";
 import { BrandMark } from "@/components/BrandMark";
+import { DocsShellNav } from "@/components/DocsShellNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TokenFooter } from "@/components/TokenFooter";
 import { CANONICAL_SITE_URL } from "@/lib/rhagent-setup";
-
-const NAV = [
-  { href: "/docs", label: "Setup guide" },
-  { href: "/docs#api", label: "API" },
-  { href: "/skill.md", label: "skill.md" },
-  { href: "/bankr.md", label: "bankr.md" },
-] as const;
 
 export function DocsShell({ children }: { children: React.ReactNode }) {
   return (
@@ -23,13 +17,7 @@ export function DocsShell({ children }: { children: React.ReactNode }) {
             </span>
           </Link>
 
-          <nav className="docs-shell-nav" aria-label="Documentation">
-            {NAV.map(({ href, label }) => (
-              <Link key={href} href={href} className="docs-shell-nav-link">
-                {label}
-              </Link>
-            ))}
-          </nav>
+          <DocsShellNav />
 
           <div className="docs-shell-actions">
             <ThemeToggle />

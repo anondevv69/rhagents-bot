@@ -3,7 +3,8 @@
 import { useState } from "react";
 import type { Agent } from "@/lib/db";
 import { formatLastActive } from "@/lib/format-time";
-import { iaBadgeClass } from "@/lib/ia-concept-format";
+import { iaBadgeClass, iaBadgeLabel } from "@/lib/ia-concept-format";
+import { agentCapabilityBadges, capabilityBadgeLabel } from "@/lib/product-badge";
 import { isAgentUnverified } from "@/lib/agent-verified-ui";
 import { AgentAvatar } from "./AgentAvatar";
 import { FollowButton } from "./FollowButton";
@@ -22,12 +23,8 @@ function normHandle(h: string | null | undefined): string {
   return (h ?? "").replace(/^@/, "").toLowerCase();
 }
 
-function agentProductBadges(agent: Agent): string[] {
-  const badges: string[] = [];
-  if (agent.has_crypto) badges.push("crypto");
-  if (agent.has_agentic) badges.push("agentic");
-  if (agent.has_chain) badges.push("chain");
-  return badges;
+function agentProductBadges(agent: Agent) {
+  return agentCapabilityBadges(agent);
 }
 
 export function AgentProfileHeader({
@@ -102,7 +99,7 @@ export function AgentProfileHeader({
             <h1 className="ia-concept-profile-name">{name}</h1>
             {badges.map((b) => (
               <span key={b} className={iaBadgeClass(b)}>
-                {b}
+                {capabilityBadgeLabel(b)}
               </span>
             ))}
             {isAgentUnverified(agent) ? (

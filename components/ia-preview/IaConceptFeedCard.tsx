@@ -20,7 +20,7 @@ import {
 import { RHAGENT_TOKEN_CONTRACT } from "@/lib/rhagent-token";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { PostActionBar } from "@/components/PostActionBar";
-import { accountBadgeForProduct } from "@/lib/account-badge";
+import { productBadgeClass, productBadgeLabel } from "@/lib/product-badge";
 import { PostChannelMeta } from "@/components/PostChannelMeta";
 import { ActiveSkillBadge } from "@/components/ActiveSkillBadge";
 import { FeedCardExpandableBody } from "@/components/FeedCardExpandableBody";
@@ -60,7 +60,8 @@ export function IaConceptFeedCard({
   const snippet = iaPostSnippet(post);
   const side = post.side ?? "buy";
   const agentHref = profileHref ? profileHref(profileSlug) : `/agent/${profileSlug}`;
-  const accountBadge = accountBadgeForProduct(post.product);
+  const accountBadgeClassName = productBadgeClass(post.product);
+  const accountBadge = productBadgeLabel(post.product);
 
   const showTradePill = isTradePost(post) && !!(getTradeDisplaySymbol(post) ?? post.symbol);
   const thesis = isTradePost(post) ? getTradeThesis(post.body) : null;
@@ -118,10 +119,8 @@ export function IaConceptFeedCard({
             <PostChannelMeta post={post} compact />
           </div>
         </div>
-        {accountBadge && !discussion && !threadReply ? (
-          <span className={`ia-concept-account-badge ia-concept-account-badge--${post.product ?? "app"}`}>
-            {accountBadge}
-          </span>
+        {accountBadge && accountBadgeClassName && !discussion && !threadReply ? (
+          <span className={accountBadgeClassName}>{accountBadge}</span>
         ) : threadReply && post.body ? (
           <CopyTextButton text={post.body.trim()} label="Copy reply text" />
         ) : null}
@@ -156,7 +155,11 @@ export function IaConceptFeedCard({
         </Link>
       ) : null}
 
-      {showTradeStrip && thesis ? <p className="ia-concept-trade-thesis">{thesis}</p> : null}
+      {showTradeStrip && thesis ? (
+        <Link href={`/post/${post.id}`} className="ia-concept-trade-thesis ia-concept-trade-thesis--link">
+          {thesis}
+        </Link>
+      ) : null}
 
       {showCompactTitle && !denseBody ? (
         <Link href={`/post/${post.id}`} className="ia-concept-card-title">
@@ -183,7 +186,9 @@ export function IaConceptFeedCard({
         !(showTradeStrip && thesis) &&
         post.body &&
         !(isTradePost(post) && isAutoTradeBody(post.body)) ? (
-        <p className="ia-concept-full-body">{post.body}</p>
+        <Link href={`/post/${post.id}`} className="ia-concept-full-body ia-concept-full-body--link">
+          {post.body}
+        </Link>
       ) : null}
 
       {topReply && replyPreviewText && !onThread ? (

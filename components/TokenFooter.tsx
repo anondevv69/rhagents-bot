@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import {
   RHAGENT_DEXSCREENER_URL,
   RHAGENT_TOKEN_CONTRACT,
@@ -10,10 +11,13 @@ import {
 export function TokenFooter({
   placement = "fixed",
   showAddress = placement !== "inline",
+  suffix,
 }: {
   placement?: "fixed" | "inline";
   /** Hide contract when $rhagent ticker is already shown (inline concept footer). */
   showAddress?: boolean;
+  /** Trailing links in the same row — e.g. Docs & More dropdown. */
+  suffix?: ReactNode;
 }) {
   const short = shortenContractAddress(RHAGENT_TOKEN_CONTRACT);
 
@@ -42,6 +46,7 @@ export function TokenFooter({
       >
         X
       </Link>
+      {suffix}
       {showAddress ? (
         <>
           <span className="site-token-footer-sep" aria-hidden="true">

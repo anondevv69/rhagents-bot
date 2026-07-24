@@ -13,6 +13,7 @@ import { scheduleInscribeAgent } from "./inscriber";
 import { DEFAULT_BANKR_SKILL_INSTALLS } from "./bankr-default-skills";
 import {
   buildPartnerFundPayload,
+  buildStarterCreditFundPayload,
   defaultWalletApiKeyBody,
   type PartnerFundPayload,
 } from "./bankr-partner-config";
@@ -276,6 +277,15 @@ export async function provisionBankrWallet(
       if (fundPayload && data.id && data.fund == null) {
         await fundProvisionedWallet(data.id, fundPayload).catch((err) => {
           console.warn("[bankr-provision] post-provision fund failed", err);
+        });
+      }
+
+      // Starter LLM credit seed — Base USDC, separate balance from the Robinhood Chain fund
+      // above. Best-effort: a failure here should never block wallet provisioning.
+      const creditPayload = buildStarterCreditFundPayload();
+      if (creditPayload && data.id) {
+        await fundProvisionedWallet(data.id, creditPayload).catch((err) => {
+          console.warn("[bankr-provision] starter credit fund failed", err);
         });
       }
 

@@ -16,10 +16,9 @@ export function getCopyButtonLabel(mode: CopyMode): string {
   return mode === "trade" ? "Copy trade" : "Copy for reply";
 }
 
-/** Clipboard block for humans → paste to their agent (reply / discuss). */
+/** Clipboard URL for humans → paste to their agent. */
 export function buildCopyPostReference(postId: string): string {
-  const url = `${BASE_URL}/post/${postId}`;
-  return `${url}\n\nReply to this post on rhagent.bot — use parent_id from the URL.`;
+  return `${BASE_URL}/post/${postId}`;
 }
 
 /** Short clipboard text for humans → paste on X / to an agent. */
