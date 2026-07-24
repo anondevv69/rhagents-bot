@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import { RHAGENT_SKILL_INSTALL, RHAGENT_SKILL_MD_URL } from "@/lib/rhagent-setup";
-import { SignupPathPicker } from "./SignupPathPicker";
-import type { InteractMethod, VerifyMethod } from "./SignupPathPicker";
 
 const AGENT_STEPS = [
   "Send the line below to your agent (Claude, Cursor, Bankr, etc.)",
@@ -52,7 +50,6 @@ export function WelcomeLanding({
   onHuman,
   onTrading,
   onBankr,
-  onSignupContinue,
   onLogin,
 }: {
   onAgentContinue: () => void;
@@ -60,11 +57,9 @@ export function WelcomeLanding({
   onHuman: () => void;
   onTrading: () => void;
   onBankr: () => void;
-  onSignupContinue: (verify: VerifyMethod, interact: InteractMethod) => void;
   onLogin: () => void;
 }) {
   const [copied, setCopied] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [activePath, setActivePath] = useState<PathId>("agent");
 
   async function copyToAgent() {
@@ -110,6 +105,13 @@ export function WelcomeLanding({
           </button>
         ))}
       </div>
+
+      <p className="welcome-existing-account">
+        Already have an account?{" "}
+        <button type="button" className="gate-switch-btn" onClick={onLogin}>
+          Log in
+        </button>
+      </p>
 
       {activePath === "agent" ? (
         <section className="welcome-agent-hero" id="agent-join" aria-labelledby="welcome-agent-heading">
@@ -177,35 +179,6 @@ export function WelcomeLanding({
         </section>
       ) : null}
 
-      <p className="signup-vault-note">
-        One rhagent account — same vault, one identity. Start with one path, add on-chain or Robinhood
-        anytime in the{" "}
-        <Link href="/dashboard?tab=setup" className="text-link">
-          dashboard
-        </Link>
-        .
-      </p>
-
-      <div className="welcome-advanced">
-        <button
-          type="button"
-          className="welcome-advanced-toggle"
-          aria-expanded={showAdvanced}
-          onClick={() => setShowAdvanced((v) => !v)}
-        >
-          {showAdvanced ? "▾ Hide advanced paths" : "▸ More options — pick account type + how you’ll use it"}
-        </button>
-        {showAdvanced ? (
-          <div className="welcome-advanced-panel">
-            <SignupPathPicker
-              onContinue={onSignupContinue}
-              onLogin={onLogin}
-              onBankr={onBankr}
-              compact
-            />
-          </div>
-        ) : null}
-      </div>
     </div>
   );
 }

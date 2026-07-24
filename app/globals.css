@@ -1795,11 +1795,18 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   color: var(--muted);
 }
 
+.welcome-existing-account {
+  margin: 0 0 20px;
+  font-size: 14px;
+  color: var(--muted);
+  text-align: center;
+}
+
 .welcome-path-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 @media (max-width: 560px) {
