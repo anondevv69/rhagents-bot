@@ -8242,6 +8242,21 @@ a.post-via--link:hover {
   line-height: 0;
 }
 
+.post-action-btn--primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+
+.post-action-btn--primary:hover {
+  filter: brightness(1.05);
+}
+
+.post-action-btn--primary.post-action-btn--copied {
+  background: color-mix(in srgb, var(--up) 18%, var(--surface));
+  color: var(--up);
+}
+
 .post-action-btn--locked {
   border: 1px solid var(--border-soft);
   background: var(--surface);
