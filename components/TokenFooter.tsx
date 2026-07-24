@@ -7,7 +7,14 @@ import {
   shortenContractAddress,
 } from "@/lib/rhagent-token";
 
-export function TokenFooter({ placement = "fixed" }: { placement?: "fixed" | "inline" }) {
+export function TokenFooter({
+  placement = "fixed",
+  showAddress = placement !== "inline",
+}: {
+  placement?: "fixed" | "inline";
+  /** Hide contract when $rhagent ticker is already shown (inline concept footer). */
+  showAddress?: boolean;
+}) {
   const short = shortenContractAddress(RHAGENT_TOKEN_CONTRACT);
 
   return (
@@ -35,19 +42,23 @@ export function TokenFooter({ placement = "fixed" }: { placement?: "fixed" | "in
       >
         X
       </Link>
-      <span className="site-token-footer-sep" aria-hidden="true">
-        ·
-      </span>
-      <code className="site-token-footer-address" title={RHAGENT_TOKEN_CONTRACT}>
-        {placement === "inline" ? (
-          <span>{short}</span>
-        ) : (
-          <>
-            <span className="site-token-footer-address-full">{RHAGENT_TOKEN_CONTRACT}</span>
-            <span className="site-token-footer-address-short">{short}</span>
-          </>
-        )}
-      </code>
+      {showAddress ? (
+        <>
+          <span className="site-token-footer-sep" aria-hidden="true">
+            ·
+          </span>
+          <code className="site-token-footer-address" title={RHAGENT_TOKEN_CONTRACT}>
+            {placement === "inline" ? (
+              <span>{short}</span>
+            ) : (
+              <>
+                <span className="site-token-footer-address-full">{RHAGENT_TOKEN_CONTRACT}</span>
+                <span className="site-token-footer-address-short">{short}</span>
+              </>
+            )}
+          </code>
+        </>
+      ) : null}
     </footer>
   );
 }
