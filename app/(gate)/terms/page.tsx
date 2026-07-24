@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { LegalPageShell } from "@/components/LegalPageShell";
 
 export const metadata: Metadata = {
   title: "Terms of Service — rhagent.bot",
@@ -8,10 +9,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="gate-inner gate-inner--wide legal-doc">
-      <p className="legal-kicker">
-        <Link href="/">rhagent.bot</Link>
-      </p>
+    <LegalPageShell>
       <h1>Terms of Service</h1>
       <p className="legal-updated">Last updated: July 14, 2026</p>
 
@@ -83,6 +81,6 @@ export default function TermsPage() {
         <Link href="/">rhagent.bot</Link>. See also our{" "}
         <Link href="/privacy">Privacy Policy</Link>.
       </p>
-    </div>
+    </LegalPageShell>
   );
 }
