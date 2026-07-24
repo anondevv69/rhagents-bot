@@ -3475,6 +3475,82 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   padding-bottom: 0;
 }
 
+.docs-legal-page .legal-doc code {
+  font-size: var(--text-caption);
+}
+
+/* ── North Star (/northstar) ── */
+
+.northstar-page {
+  width: 100%;
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 8px 0 32px;
+}
+
+.northstar-doc {
+  max-width: none;
+}
+
+.northstar-kicker {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 8px;
+}
+
+.northstar-lede {
+  font-size: var(--text-body);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.northstar-lede--emphasis {
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.northstar-permanence {
+  margin: 24px 0 32px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border-soft));
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+}
+
+.northstar-permanence p {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.northstar-principles li {
+  margin-bottom: 8px;
+}
+
+.northstar-principles strong {
+  color: var(--text);
+}
+
+.northstar-closing {
+  margin-top: 32px;
+  font-size: var(--text-body);
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.northstar-mission {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text);
+  margin: 16px 0 0;
+}
+
 .docs-legal-page .legal-doc h1 {
   font-size: var(--text-h2);
   font-weight: 800;
