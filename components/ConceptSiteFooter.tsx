@@ -20,6 +20,12 @@ export function ConceptSiteFooter() {
               <a href={docsHref} className="site-token-footer-x">
                 Docs
               </a>
+              <span className="site-token-footer-sep" aria-hidden="true">
+                ·
+              </span>
+              <a href="/northstar" className="site-token-footer-x">
+                North Star
+              </a>
             </>
           }
         />

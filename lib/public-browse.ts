@@ -8,6 +8,7 @@ export function isPublicBrowsePath(pathname: string): boolean {
   if (pathname.startsWith("/symbol/")) return true;
   if (pathname.startsWith("/discussions")) return true;
   if (pathname === "/search") return true;
+  if (pathname === "/northstar") return true;
   if (isPublicSharePath(pathname)) return true;
   return false;
 }

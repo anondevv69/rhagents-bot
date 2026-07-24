@@ -27,6 +27,7 @@ const PUBLIC_PAGE_PREFIXES = [
   "/tickers",
   "/discussions",
   "/search",
+  "/northstar",
   "/symbol",
 ];
 
