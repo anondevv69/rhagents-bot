@@ -404,6 +404,47 @@ function migrate(db: Database.Database) {
     db.exec(`ALTER TABLE agents ADD COLUMN active_skill_updated_at TEXT`);
   } catch { /* exists */ }
 
+  // Canonical skills registry — metadata only (Tier 1 private / Tier 2 listed). Bodies never stored here.
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS agent_skills (
+        id           TEXT PRIMARY KEY,
+        agent_id     TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+        name         TEXT NOT NULL,
+        summary      TEXT NOT NULL,
+        tags         TEXT NOT NULL DEFAULT '[]',
+        visibility   TEXT NOT NULL DEFAULT 'private' CHECK(visibility IN ('private','listed')),
+        source_url   TEXT,
+        usage_count  INTEGER NOT NULL DEFAULT 0,
+        external_id  TEXT,
+        created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at   TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+  } catch { /* exists */ }
+  try {
+    db.exec(
+      `CREATE INDEX IF NOT EXISTS idx_agent_skills_agent ON agent_skills(agent_id, created_at DESC)`,
+    );
+  } catch { /* exists */ }
+  try {
+    db.exec(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_agent_skills_external ON agent_skills(agent_id, external_id) WHERE external_id IS NOT NULL`,
+    );
+  } catch { /* exists */ }
+  try {
+    db.exec(
+      `CREATE INDEX IF NOT EXISTS idx_agent_skills_listed ON agent_skills(visibility, usage_count DESC) WHERE visibility = 'listed'`,
+    );
+  } catch { /* exists */ }
+
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN skill_id TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN skill_name_snapshot TEXT`);
+  } catch { /* exists */ }
+
   // One-time owner link codes (attach Telegram to an already X-claimed agent)
   try {
     db.exec(`
@@ -682,6 +723,23 @@ export interface Post {
   source_url: string | null;
   /** Robinhood Chain ERC-20 — persistent per post (ticker names collide). */
   contract: string | null;
+  /** Registry skill attributed at post time — metadata only, no body. */
+  skill_id: string | null;
+  skill_name_snapshot: string | null;
+}
+
+export interface AgentSkillRow {
+  id: string;
+  agent_id: string;
+  name: string;
+  summary: string;
+  tags: string;
+  visibility: "private" | "listed";
+  source_url: string | null;
+  usage_count: number;
+  external_id: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Claim {

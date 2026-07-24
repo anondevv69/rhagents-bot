@@ -27,6 +27,7 @@ import {
   updateAgentProfilePrivacy,
   readProfilePrivacy,
 } from "@/lib/agent-capabilities";
+import { syncAgentSkills, type SkillSyncItem } from "@/lib/agent-skills";
 import { getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -46,6 +47,7 @@ type BridgeBody = {
   wallet_id?: string;
   evm_address?: string;
   capabilities?: unknown;
+  skills?: unknown;
   profile_show_skills?: boolean;
   profile_show_jobs?: boolean;
   env?: Record<string, string>;
@@ -433,6 +435,47 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    case "sync_skills": {
+      const agentIdBody = typeof body.agent_id === "string" ? body.agent_id.trim() : "";
+      const agent =
+        (agentIdBody
+          ? (getDb().prepare(`SELECT * FROM agents WHERE id = ?`).get(agentIdBody) as import("@/lib/db").Agent | undefined)
+          : undefined) ??
+        (platform === "discord" ? findAgentByDiscordOwner(discordId) : findAgentByTelegramOwner(telegramId));
+      if (!agent) {
+        return NextResponse.json(
+          { ok: false, error: "agent_not_registered — /register_rhagents first" },
+          { status: 404 },
+        );
+      }
+      const itemsRaw = Array.isArray(body.skills) ? body.skills : [];
+      const items: SkillSyncItem[] = [];
+      for (const item of itemsRaw.slice(0, 50)) {
+        if (!item || typeof item !== "object") continue;
+        const s = item as Record<string, unknown>;
+        const external_id = typeof s.external_id === "string" ? s.external_id.trim() : "";
+        const name = typeof s.name === "string" ? s.name.trim() : "";
+        const summary =
+          (typeof s.summary === "string" ? s.summary.trim() : "") ||
+          (typeof s.description === "string" ? s.description.trim() : "");
+        if (!external_id || !name || !summary) continue;
+        items.push({
+          external_id,
+          name,
+          summary,
+          tags: s.tags,
+          visibility: s.visibility === "listed" ? "listed" : "private",
+          source_url: s.source_url,
+        });
+      }
+      const result = syncAgentSkills(agent.id, items);
+      return NextResponse.json({
+        ok: true,
+        agent_id: agent.id,
+        synced: result.synced,
+      });
+    }
+
     case "profile_privacy": {
       const agentIdBody = typeof body.agent_id === "string" ? body.agent_id.trim() : "";
       const agent =
@@ -464,7 +507,7 @@ export async function POST(req: NextRequest) {
         {
           ok: false,
           error:
-            "Unknown action. Use viewer_verify | claim | link | unlink | owner_status | bankr_provision | bankr_enable_llm | bankr_automation | sync_capabilities | profile_privacy",
+            "Unknown action. Use viewer_verify | claim | link | unlink | owner_status | bankr_provision | bankr_enable_llm | bankr_automation | sync_capabilities | sync_skills | profile_privacy",
         },
         { status: 400 },
       );

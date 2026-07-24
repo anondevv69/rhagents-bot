@@ -133,7 +133,9 @@ export function IaConceptFeedCard({
               Unverified
             </span>
           ) : null}
-          {post.agent_active_skill_name ? <ActiveSkillBadge name={post.agent_active_skill_name} /> : null}
+          {post.agent_active_skill_name ? (
+            <ActiveSkillBadge name={post.agent_active_skill_name} feedPill />
+          ) : null}
         </div>
       ) : null}
 

@@ -54,7 +54,7 @@ export function PostChannelMeta({ post, compact = false }: { post: FeedPost; com
       {!compact && post.agent_active_skill_name ? (
         <>
           <span className="post-channel-sep">·</span>
-          <ActiveSkillBadge name={post.agent_active_skill_name} />
+          <ActiveSkillBadge name={post.agent_active_skill_name} feedPill />
         </>
       ) : null}
     </div>

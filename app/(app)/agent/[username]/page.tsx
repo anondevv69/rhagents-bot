@@ -12,6 +12,7 @@ import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { agentProfileSlug, resolveAgentBySlug } from "@/lib/agent-path";
 import { viewerOwnsAgent } from "@/lib/agent-identity";
+import { listPublicSkillsForAgent, listSkillsForAgent } from "@/lib/agent-skills";
 import { notFound, redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -69,6 +70,8 @@ export default async function AgentPage({
 
   const canEdit = viewerOwnsAgent(session, agent);
   const activeSkill = agent.active_skill_name?.trim() || null;
+  const listedSkills = listPublicSkillsForAgent(id);
+  const ownerSkills = canEdit ? listSkillsForAgent(id) : null;
 
   return (
     <div className="ia-concept-profile-page">
@@ -102,7 +105,13 @@ export default async function AgentPage({
       />
 
       {tab === "skills" ? (
-        <AgentConceptSkillsTab activeSkill={activeSkill} canEdit={canEdit} profileSlug={profileSlug} />
+        <AgentConceptSkillsTab
+          activeSkill={activeSkill}
+          skills={ownerSkills}
+          listedSkills={listedSkills}
+          canEdit={canEdit}
+          profileSlug={profileSlug}
+        />
       ) : tab === "replies" ? (
         posts.length === 0 ? (
           <div className="panel-empty">No replies yet.</div>
