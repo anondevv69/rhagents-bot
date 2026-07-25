@@ -48,11 +48,14 @@ export function WalletLoginButton({
   /** Stay on page after success instead of navigating (dashboard embed). */
   embed = false,
   continueLabel = "Continue to profile →",
+  /** Hide @handle fields — for returning wallet login, not first-time signup. */
+  loginOnly = false,
 }: {
   next?: string;
   onSuccess?: (result: WalletLoginResult) => void | Promise<void>;
   embed?: boolean;
   continueLabel?: string;
+  loginOnly?: boolean;
 }) {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -254,38 +257,40 @@ export function WalletLoginButton({
 
   return (
     <div>
-      <div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
-        <label style={{ display: "grid", gap: 4 }}>
-          <span className="gate-normie-note" style={{ margin: 0 }}>
-            Username (@handle) — permanent profile URL
-          </span>
-          <input
-            type="text"
-            className="input"
-            placeholder="rayblancoeth"
-            value={username}
-            disabled={busy}
-            autoComplete="username"
-            onChange={(e) => setUsername(e.target.value)}
-            style={{ width: "100%" }}
-          />
-        </label>
-        <label style={{ display: "grid", gap: 4 }}>
-          <span className="gate-normie-note" style={{ margin: 0 }}>
-            Display name — can change later
-          </span>
-          <input
-            type="text"
-            className="input"
-            placeholder="Ray"
-            value={displayName}
-            disabled={busy}
-            autoComplete="nickname"
-            onChange={(e) => setDisplayName(e.target.value)}
-            style={{ width: "100%" }}
-          />
-        </label>
-      </div>
+      {!loginOnly ? (
+        <div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
+          <label style={{ display: "grid", gap: 4 }}>
+            <span className="gate-normie-note" style={{ margin: 0 }}>
+              Username (@handle) — permanent profile URL
+            </span>
+            <input
+              type="text"
+              className="input"
+              placeholder="rayblancoeth"
+              value={username}
+              disabled={busy}
+              autoComplete="username"
+              onChange={(e) => setUsername(e.target.value)}
+              style={{ width: "100%" }}
+            />
+          </label>
+          <label style={{ display: "grid", gap: 4 }}>
+            <span className="gate-normie-note" style={{ margin: 0 }}>
+              Display name — can change later
+            </span>
+            <input
+              type="text"
+              className="input"
+              placeholder="Ray"
+              value={displayName}
+              disabled={busy}
+              autoComplete="nickname"
+              onChange={(e) => setDisplayName(e.target.value)}
+              style={{ width: "100%" }}
+            />
+          </label>
+        </div>
+      ) : null}
       <button
         type="button"
         className="btn btn-primary"
@@ -293,13 +298,13 @@ export function WalletLoginButton({
         disabled={busy}
         onClick={() => void connectAndSign()}
       >
-        {busy ? STATUS_LABEL[status] : "Connect wallet (sign only)"}
+        {busy ? STATUS_LABEL[status] : loginOnly ? "Connect wallet to log in" : "Connect wallet (sign only)"}
       </button>
       <WalletSafetyNote />
       <p className="gate-normie-note">
-        Requires ≈$10 of {RHAGENT_TOKEN_SYMBOL} (or 1M tokens) in your wallet. If nothing pops up,
-        click your wallet extension for a pending sign request. After success: save your agent key,
-        add it to your Telegram or Discord Rhagent bot, then you can trade and post.
+        {loginOnly
+          ? `Sign with the same wallet you used at signup. Still need ≈$10 of ${RHAGENT_TOKEN_SYMBOL} in that wallet.`
+          : `Requires ≈$10 of ${RHAGENT_TOKEN_SYMBOL} (or 1M tokens) in your wallet. If nothing pops up, click your wallet extension for a pending sign request. After success: save your agent key, add it to your Telegram or Discord Rhagent bot, then you can trade and post.`}
       </p>
       {error ? <p className="login-code-error">{error}</p> : null}
       {buyUrl || error ? (
