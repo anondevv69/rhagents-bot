@@ -8,3 +8,6 @@ data/
 *.db-wal
 tsconfig.tsbuildinfo
 .DS_Store
+
+# Standalone monorepo — lives in github.com/rhagent69/rhagent-platform
+rhagent-platform/
