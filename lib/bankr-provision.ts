@@ -137,15 +137,24 @@ async function listPartnerWalletApiKeys(walletId: string): Promise<PartnerApiKey
   return list.apiKeys ?? [];
 }
 
-function activeLlmKey(keys: PartnerApiKeyMeta[]): boolean {
-  return keys.some((k) => k.isActive !== false && k.llmGatewayEnabled === true);
-}
-
-/** Enable LLM Gateway (+ ensure Agent API) on all active keys for a provisioned wallet. */
+/**
+ * Enable LLM Gateway (+ ensure Agent API) on a provisioned wallet and return a USABLE key.
+ *
+ * This is exclusively called from the self-heal/repair path — a caller with an address but
+ * no locally-stored api_key. Bankr's docs are explicit that a key's secret is returned once,
+ * at creation time, and is never re-exposed by GET or PATCH. So patching an existing key's
+ * `llmGatewayEnabled` permission (the old approach here) can leave the gateway "enabled" on
+ * Bankr's side while returning nothing usable to a caller who never captured that key's
+ * secret — the exact half-healed state that was showing up as "Wallet exists but could not
+ * issue a usable key." The only response that's actually useful to a repair caller is a
+ * freshly minted key, so this always issues one instead of treating an already-enabled
+ * remote key as sufficient. Any previously-unusable keys are left alone (harmless extras);
+ * this only adds, never removes.
+ */
 export async function enableLlmGatewayOnWallet(
   identifier: string,
   channel: ProvisionChannel = "telegram",
-): Promise<{ updated: number; walletId: string; apiKey?: string }> {
+): Promise<{ updated: number; walletId: string; apiKey: string }> {
   const wallet = await getPartnerWallet(identifier);
   if (!wallet?.id) {
     throw new Error("wallet_not_found");
@@ -153,7 +162,7 @@ export async function enableLlmGatewayOnWallet(
   const walletId = wallet.id;
 
   let updated = 0;
-  let keys = await listPartnerWalletApiKeys(walletId);
+  const keys = await listPartnerWalletApiKeys(walletId);
   for (const k of keys) {
     if (k.isActive === false) continue;
     if (k.llmGatewayEnabled) continue;
@@ -169,26 +178,21 @@ export async function enableLlmGatewayOnWallet(
           },
         }),
       },
-    );
+    ).catch(() => undefined); // best-effort tidy-up of old keys; the fresh key below is what matters
     updated++;
   }
 
-  keys = await listPartnerWalletApiKeys(walletId);
-  if (!activeLlmKey(keys)) {
-    const keyRes = await partnerFetch<{ apiKey: string }>(
-      `/partner/wallets/${encodeURIComponent(walletId)}/api-keys`,
-      {
-        method: "POST",
-        body: JSON.stringify(defaultWalletApiKeyBody(channel)),
-      },
-    );
-    if (!keyRes.apiKey) {
-      throw new Error("llm_gateway_enable_failed");
-    }
-    return { updated, walletId, apiKey: keyRes.apiKey };
+  const keyRes = await partnerFetch<{ apiKey: string }>(
+    `/partner/wallets/${encodeURIComponent(walletId)}/api-keys`,
+    {
+      method: "POST",
+      body: JSON.stringify(defaultWalletApiKeyBody(channel)),
+    },
+  );
+  if (!keyRes.apiKey) {
+    throw new Error("llm_gateway_enable_failed");
   }
-
-  return { updated, walletId };
+  return { updated, walletId, apiKey: keyRes.apiKey };
 }
 
 /** POST /partner/wallets/:identifier/fund — Robinhood Chain only. */
