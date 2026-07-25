@@ -16,7 +16,7 @@ import { RHAGENT_SKILL_INSTALL, SITE_NAME } from "@/lib/rhagent-setup";
 import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
 
 type Mode = "choose" | "login" | "create" | "chain" | "bankr";
-type LoginChannel = "agent" | "bot";
+type LoginChannel = "agent" | "wallet" | "bot";
 
 export function LoginGate({ next = "/feed" }: { next?: string }) {
   const router = useRouter();
@@ -368,7 +368,11 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         <BrandMark size={28} />
         <h1>Log in</h1>
         <p className="gate-brand-subhead">
-          {loginChannel === "agent" ? "Paste a code from your agent" : "Open the dashboard from chat"}
+          {loginChannel === "agent"
+            ? "Paste a code from your agent"
+            : loginChannel === "wallet"
+              ? "Connect the wallet you signed up with"
+              : "Open the dashboard from chat"}
         </p>
       </div>
 
@@ -383,6 +387,17 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
           onClick={() => setLoginChannel("agent")}
         >
           Agent
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="login-tab-wallet"
+          aria-selected={loginChannel === "wallet"}
+          aria-controls="login-panel-wallet"
+          className={`login-channel-tab${loginChannel === "wallet" ? " is-active" : ""}`}
+          onClick={() => setLoginChannel("wallet")}
+        >
+          Wallet
         </button>
         <button
           type="button"
@@ -402,6 +417,17 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
           <div role="tabpanel" id="login-panel-agent" aria-labelledby="login-tab-agent">
             <LoginCodeForm next={next} />
           </div>
+        ) : loginChannel === "wallet" ? (
+          <div role="tabpanel" id="login-panel-wallet" aria-labelledby="login-tab-wallet">
+            <p className="login-bot-lead">
+              Signed up with MetaMask or Rabby? Connect the same wallet and sign — no code needed.
+            </p>
+            <WalletLoginButton
+              next={next}
+              continueLabel="Continue →"
+              loginOnly
+            />
+          </div>
         ) : (
           <div role="tabpanel" id="login-panel-bot" aria-labelledby="login-tab-bot" className="login-bot-panel">
             <p className="login-bot-lead">
@@ -418,32 +444,12 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         )}
       </div>
 
-      <footer className="gate-login-alt">
-        <div className="gate-login-alt-row">
-          <span className="gate-login-alt-label">New · on-chain</span>
-          <button type="button" className="gate-login-alt-link" onClick={() => switchMode("chain")}>
-            MetaMask signup →
-          </button>
-        </div>
-        <div className="gate-login-alt-row">
-          <span className="gate-login-alt-label">Bankr terminal</span>
-          <button type="button" className="gate-login-alt-link" onClick={() => switchMode("bankr")}>
-            Skill + setup in Bankr →
-          </button>
-        </div>
-        <div className="gate-login-alt-row">
-          <span className="gate-login-alt-label">New · agent</span>
-          <button type="button" className="gate-login-alt-link" onClick={() => switchMode("create")}>
-            Claude / Cursor →
-          </button>
-        </div>
-        <div className="gate-login-alt-row">
-          <span className="gate-login-alt-label">Telegram / Discord bot</span>
-          <Link href="/dashboard?tab=setup" className="gate-login-alt-link">
-            Trading dashboard →
-          </Link>
-        </div>
-      </footer>
+      <p className="welcome-existing-account">
+        Don&apos;t have an account?{" "}
+        <button type="button" className="gate-switch-btn" onClick={() => switchMode("choose")}>
+          Sign up
+        </button>
+      </p>
     </div>
   );
 }
