@@ -1,16 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ONBOARD_USER_TYPES,
   dashboardGoalUrl,
   type OnboardUserType,
 } from "@/lib/onboarding-wizard";
 import type { OnboardingGoal } from "@/lib/dashboard-onboarding-goals";
+import { RHAGENT_SKILL_MD_URL } from "@/lib/rhagent-setup";
+import { ROBINHOOD_MCP_URL } from "@/lib/setup-agents";
 
-const STEPS = ["path", "wallet", "connect", "done"] as const;
-type StepId = (typeof STEPS)[number];
+const HOSTED_STEPS = ["path", "wallet", "connect", "done"] as const;
+const EXTERNAL_STEPS = ["path", "skill", "done"] as const;
 
 async function dashboardApi(path: string, options: RequestInit = {}) {
   const res = await fetch(path, {
@@ -35,15 +37,13 @@ async function dashboardApi(path: string, options: RequestInit = {}) {
 }
 
 type Props = {
-  telegramUrl?: string | null;
-  discordUrl?: string | null;
+  discordInviteUrl?: string | null;
   starterCreditUsd?: number;
   starterMessages?: number;
 };
 
 export function OnboardingWizard({
-  telegramUrl,
-  discordUrl,
+  discordInviteUrl,
   starterCreditUsd = 5,
   starterMessages = 10,
 }: Props) {
@@ -53,12 +53,16 @@ export function OnboardingWizard({
   const [error, setError] = useState<string | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [pickedGoal, setPickedGoal] = useState<OnboardingGoal | null>(null);
+  const [telegramLinkUrl, setTelegramLinkUrl] = useState<string | null>(null);
+  const [discordConnectCode, setDiscordConnectCode] = useState<string | null>(null);
 
-  const step = STEPS[stepIndex];
   const typeOption = useMemo(
     () => ONBOARD_USER_TYPES.find((t) => t.id === userType) ?? null,
     [userType],
   );
+  const isExternal = typeOption?.usesHostedBot === false;
+  const steps = isExternal ? EXTERNAL_STEPS : HOSTED_STEPS;
+  const step = steps[stepIndex];
 
   const ensureSession = useCallback(async () => {
     try {
@@ -105,21 +109,62 @@ export function OnboardingWizard({
     }
   }, [ensureSession]);
 
-  const saveGoalPreference = useCallback(async (goal: OnboardingGoal, surface: string) => {
-    try {
-      await ensureSession();
-      if (surface !== "unset") {
-        await dashboardApi("/api/dashboard/proxy/dashboard/ui-preference", {
-          method: "PATCH",
-          body: JSON.stringify({ ui_default_surface: surface }),
-        });
+  const saveGoalPreference = useCallback(
+    async (goal: OnboardingGoal | null, surface: string) => {
+      if (!goal) return;
+      try {
+        await ensureSession();
+        if (surface !== "unset") {
+          await dashboardApi("/api/dashboard/proxy/dashboard/ui-preference", {
+            method: "PATCH",
+            body: JSON.stringify({ ui_default_surface: surface }),
+          });
+        }
+        setPickedGoal(goal);
+      } catch {
+        setPickedGoal(goal);
       }
-      setPickedGoal(goal);
-    } catch {
-      /* preference is optional — wizard still works */
-      setPickedGoal(goal);
-    }
-  }, [ensureSession]);
+    },
+    [ensureSession],
+  );
+
+  /** Mint RHCN_ codes so Telegram/Discord link to this web account — not a second vault. */
+  useEffect(() => {
+    if (step !== "done" || isExternal) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        await ensureSession();
+        const tgRes = await fetch("/api/dashboard/connect-code", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ platform: "telegram" }),
+        });
+        const tgBody = (await tgRes.json().catch(() => ({}))) as {
+          ok?: boolean;
+          deepLinkTelegram?: string | null;
+          startParam?: string;
+        };
+        if (!cancelled && tgRes.ok && tgBody.ok && tgBody.deepLinkTelegram) {
+          setTelegramLinkUrl(tgBody.deepLinkTelegram);
+        }
+        const dcRes = await fetch("/api/dashboard/connect-code", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ platform: "discord" }),
+        });
+        const dcBody = (await dcRes.json().catch(() => ({}))) as { ok?: boolean; startParam?: string };
+        if (!cancelled && dcRes.ok && dcBody.ok && dcBody.startParam) {
+          setDiscordConnectCode(dcBody.startParam);
+        }
+      } catch {
+        /* user can still open dashboard → Connections */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [step, isExternal, ensureSession]);
 
   async function onContinue() {
     setError(null);
@@ -138,8 +183,8 @@ export function OnboardingWizard({
       setStepIndex(2);
       return;
     }
-    if (step === "connect") {
-      setStepIndex(3);
+    if (step === "connect" || step === "skill") {
+      setStepIndex((i) => i + 1);
     }
   }
 
@@ -152,7 +197,7 @@ export function OnboardingWizard({
     <div className="gate-inner gate-inner--wide">
       <div className="gate-card onboarding-wizard">
         <div className="onboarding-wizard-progress" aria-hidden>
-          {STEPS.map((id, i) => (
+          {steps.map((id, i) => (
             <span key={id} className={`onboarding-wizard-progress-seg${i <= stepIndex ? " is-active" : ""}`} />
           ))}
         </div>
@@ -160,7 +205,7 @@ export function OnboardingWizard({
         {step === "path" ? (
           <>
             <h1 className="page-header-title">How will you use rhagent?</h1>
-            <p className="owner-settings-note muted">Pick a path — you can add the rest anytime on the dashboard.</p>
+            <p className="owner-settings-note muted">Pick a path — you can add the rest anytime.</p>
             <div className="trading-dash-welcome-grid" style={{ marginTop: 20 }}>
               {ONBOARD_USER_TYPES.map((t) => (
                 <button
@@ -204,6 +249,37 @@ export function OnboardingWizard({
           </>
         ) : null}
 
+        {step === "skill" ? (
+          <>
+            <h1 className="page-header-title">Connect your agent</h1>
+            <p className="owner-settings-note muted">
+              No hosted bot required — your Claude, Cursor, or Grok agent reads the skill and provisions its own wallet.
+            </p>
+            <ol className="owner-settings-note" style={{ marginTop: 16, paddingLeft: 20 }}>
+              <li>
+                Install{" "}
+                <a href={RHAGENT_SKILL_MD_URL} className="text-link" target="_blank" rel="noreferrer">
+                  skill.md
+                </a>{" "}
+                in your agent
+              </li>
+              <li>
+                Connect Robinhood Trading MCP:{" "}
+                <a href={ROBINHOOD_MCP_URL} className="text-link" target="_blank" rel="noreferrer">
+                  agent.robinhood.com/mcp/trading
+                </a>
+              </li>
+              <li>Optional: rhagent MCP at <code className="docs-code-inline">/api/mcp</code> for feed + wallet provision</li>
+              <li>
+                Full API walkthrough:{" "}
+                <Link href="/docs#external-mcp" className="text-link">
+                  docs → external agents
+                </Link>
+              </li>
+            </ol>
+          </>
+        ) : null}
+
         {step === "connect" ? (
           <>
             <h1 className="page-header-title">Connect accounts</h1>
@@ -229,7 +305,7 @@ export function OnboardingWizard({
               />
               <ConnectRow
                 title="Telegram / Discord"
-                desc="Mobile bot, skills, jobs, cron"
+                desc="Link chat on the next screen — uses a one-time code, not plain /start"
                 recommended={userType === "agent" || userType === "partner"}
                 href={dashboardGoalUrl("bot")}
               />
@@ -237,18 +313,49 @@ export function OnboardingWizard({
           </>
         ) : null}
 
-        {step === "done" ? (
+        {step === "done" && isExternal ? (
+          <>
+            <h1 className="page-header-title">Point your agent at the skill</h1>
+            <p className="owner-settings-note muted">
+              Tell Claude, Cursor, or Grok: &quot;Read {RHAGENT_SKILL_MD_URL} and follow it.&quot; Registration and wallet
+              provision happen inside the skill flow.
+            </p>
+            <div className="onboarding-wizard-done-actions">
+              <a href={RHAGENT_SKILL_MD_URL} className="btn btn-primary" target="_blank" rel="noreferrer">
+                Open skill.md
+              </a>
+              <Link href="/docs#external-mcp" className="btn btn-secondary">
+                External agent docs
+              </Link>
+            </div>
+          </>
+        ) : null}
+
+        {step === "done" && !isExternal ? (
           <>
             <h1 className="page-header-title">You&apos;re set up</h1>
-            <p className="owner-settings-note muted">Same account everywhere — chat, dashboard, and feed stay in sync.</p>
+            <p className="owner-settings-note muted">
+              Use the buttons below to link Telegram or Discord to <strong>this</strong> account. Do not open the bot
+              with a plain <code className="docs-code-inline">/start</code> first — that creates a second wallet until you
+              link via dashboard.
+            </p>
             <div className="onboarding-wizard-done-actions">
-              {telegramUrl ? (
-                <a href={telegramUrl} className="btn btn-primary" target="_blank" rel="noreferrer">
-                  Open Telegram
+              {telegramLinkUrl ? (
+                <a href={telegramLinkUrl} className="btn btn-primary" target="_blank" rel="noreferrer">
+                  Link Telegram
                 </a>
-              ) : null}
-              {discordUrl ? (
-                <a href={discordUrl} className="btn btn-secondary" target="_blank" rel="noreferrer">
+              ) : (
+                <Link href={`${dashboardGoalUrl("bot")}`} className="btn btn-primary">
+                  Link Telegram (dashboard)
+                </Link>
+              )}
+              {discordInviteUrl && discordConnectCode ? (
+                <p className="owner-settings-note muted" style={{ flexBasis: "100%" }}>
+                  Discord: invite the bot, then run{" "}
+                  <code className="docs-code-inline">/link {discordConnectCode}</code>
+                </p>
+              ) : discordInviteUrl ? (
+                <a href={discordInviteUrl} className="btn btn-secondary" target="_blank" rel="noreferrer">
                   Add Discord bot
                 </a>
               ) : null}
