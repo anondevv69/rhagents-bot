@@ -19,6 +19,7 @@ const PUBLIC_PAGE_PREFIXES = [
   "/agent",
   // Trading agent dashboard — auth is its own Telegram /website magic-link cookie, not the viewer gate.
   "/dashboard",
+  "/onboard",
   "/discord",
   // Agentic OAuth setup wizard (proxied to RH Wallet gateway — public, no viewer cookie).
   "/agentic",

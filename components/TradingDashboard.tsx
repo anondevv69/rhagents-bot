@@ -22,6 +22,8 @@ import {
   SETUP_WIZARD_URL,
 } from "@/lib/dashboard-connect-copy";
 import { tradingTelegramDeepLink } from "@/lib/telegram-bots";
+import type { OnboardingGoal } from "@/lib/dashboard-onboarding-goals";
+import { ONBOARDING_GOALS } from "@/lib/dashboard-onboarding-goals";
 
 type DashboardState = {
   telegramId: string;
@@ -130,6 +132,10 @@ async function api(path: string, options: RequestInit = {}) {
 
 export function TradingDashboard({ initialTab }: { initialTab?: string | null }) {
   const searchParams = useSearchParams();
+  const goalParam = searchParams.get("goal");
+  const initialGoal = ONBOARDING_GOALS.some((g) => g.id === goalParam)
+    ? (goalParam as OnboardingGoal)
+    : null;
   const [state, setState] = useState<DashboardState | null>(null);
   const [skills, setSkills] = useState<SkillsState | null>(null);
   const [registrations, setRegistrations] = useState<RegistrationRow[]>([]);
@@ -447,6 +453,7 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
           onGoJobs={() => setTab("jobs")}
           botDeepLink={tradingTelegramDeepLink("start") ?? undefined}
           onRefresh={() => void loadAll()}
+          initialGoal={initialGoal}
         />
       )}
 
