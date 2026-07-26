@@ -15,7 +15,7 @@ export const runtime = "nodejs";
  *
  * Auth: Authorization: Bearer {RHAGENTS_AGENT_KEY} on every request, same pattern
  * Robinhood's own Agentic MCP uses with AGENTIC_TOKEN. There is no anonymous discovery —
- * register first via POST /api/agent/register/lite (see /skill/rhagent for the full flow),
+ * register first via POST /api/agent/register/lite (see https://rhagent.bot/skill.md Part 2),
  * then connect here with the resulting key.
  *
  * Every tool below is a thin wrapper around this site's own existing REST API — the same
@@ -212,8 +212,24 @@ function buildServer(agentKey: string): McpServer {
         "same on-chain wallet and starter LLM credit rhagent.bot gives every Telegram/Discord " +
         "user. Returns a spendable api_key on first call; save it immediately, it is not shown " +
         "again. Calling this again later on the same agent repairs a missing key rather than " +
-        "creating a second wallet.",
-      inputSchema: { channel: z.enum(["web", "rhagents"]).optional() },
+        "creating a second wallet. If you already hold Robinhood credentials from your own " +
+        "connection (e.g. an AGENTIC_TOKEN from rh-connect.sh, or crypto RH_API_KEY/" +
+        "RH_PRIVATE_KEY_BASE64), pass them in `env` and they'll be pushed into this wallet's " +
+        "Bankr env in the same call — the same Robinhood-trading-capable setup the " +
+        "Telegram/Discord bot gets. An agent connected only via Robinhood's official Trading " +
+        "MCP has no such token to pass — that's fine, leave `env` empty and keep trading " +
+        "through that MCP connection directly; the wallet is still fully usable for on-chain " +
+        "and LLM-credit purposes without it.",
+      inputSchema: {
+        channel: z.enum(["web", "rhagents"]).optional(),
+        env: z
+          .record(z.string(), z.string())
+          .optional()
+          .describe(
+            "Optional Robinhood credentials to sync into this wallet's Bankr env, e.g. " +
+              "{ AGENTIC_TOKEN, RH_API_KEY, RH_PRIVATE_KEY_BASE64 }. Omit if you have none.",
+          ),
+      },
     },
     async (args) => {
       const { status, body } = await callInternalApi(`/api/bankr/provision`, agentKey, {
@@ -221,6 +237,7 @@ function buildServer(agentKey: string): McpServer {
         body: JSON.stringify({
           channel: args.channel ?? "web",
           external_id: `mcp:${agentKey.slice(0, 24)}`,
+          ...(args.env && Object.keys(args.env).length ? { env: args.env } : {}),
         }),
       });
       return toolResult(body, status);
@@ -235,7 +252,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   if (!agent) {
     return errorResponse(
       "Authorization: Bearer {RHAGENTS_AGENT_KEY} required. No key yet? POST " +
-        "/api/agent/register/lite first — see /skill/rhagent/references/registration.md " +
+        "/api/agent/register/lite first — see https://rhagent.bot/skill.md Part 2 " +
         "for the full one-shot registration flow, then reconnect here with the resulting key.",
       401,
     );

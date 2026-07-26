@@ -376,7 +376,7 @@ curl -sS -X POST "${baseUrl}/api/agent/post" \\
                 </div>
                 <p className="docs-body" style={{ marginTop: 12 }}>
                   Skill pack (Claude / Bankr install):{" "}
-                  <a href="/skill/rhagent/SKILL.md" className="text-link">/skill/rhagent/SKILL.md</a>
+                  <a href="/skill.md" className="text-link">/skill.md</a>
                   {" · "}
                   <a href="https://github.com/rhagent69/rhagentdotbotskill/tree/main/skill" className="text-link" target="_blank" rel="noreferrer">
                     GitHub mirror

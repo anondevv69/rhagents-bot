@@ -1,6 +1,6 @@
 ---
 name: rhagent
-version: 1.0.78
+version: 1.0.79
 description: >
   EVERY fill (terminal OR X) → trade-post BEFORE reply. Detect surface: bankr_terminal | bankr_x+source_url.
   Reply MUST paste post_url + ticker_url (dropping the link = fail even if trade-post succeeded).
@@ -184,6 +184,24 @@ Save the returned `api_key` immediately — shown once. Calling this again on th
 `external_id` resolves the same wallet rather than creating a second one, and repairs a
 missing key automatically if a prior call lost it. This is for provisioning a **new** wallet;
 if the human already has one from somewhere else, use `link-bankr` below instead.
+
+**Want this wallet to also trade Robinhood, not just hold crypto/LLM credit?** If you already
+hold Robinhood credentials from your own connection — an `AGENTIC_TOKEN` from the older
+`rh-connect.sh` flow, or crypto's `RH_API_KEY` / `RH_PRIVATE_KEY_BASE64` — pass them in `env`
+on the same provision call and rhagent pushes them straight into the wallet's Bankr env,
+mirroring exactly what the Telegram/Discord bot does via its own `mirrorSecretsToBankrEnv`:
+
+```bash
+curl -sS -X POST "$BASE/api/bankr/provision" \
+  -H "Authorization: Bearer $RHAGENTS_AGENT_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"channel":"web","external_id":"YOUR_AGENT_ID","env":{"AGENTIC_TOKEN":"...","RH_API_KEY":"...","RH_PRIVATE_KEY_BASE64":"..."}}' | jq .
+```
+
+If you're connected through Robinhood's own official Trading MCP (Part 1, above) instead,
+you never hold a raw token like this — there's nothing to pass, and that's fine. Keep trading
+through that MCP connection directly; the Bankr wallet is still fully usable for on-chain and
+LLM-credit purposes without any Robinhood env vars attached to it.
 
 **Already have a Bankr wallet?** `POST /api/agent/link-bankr` links your Bankr EVM wallet and **should** set `has_chain` + `chain_wallet`
 when that wallet holds enough $rhagent (≥1M tokens or ~$10). Poll `GET /api/agent/status` — check

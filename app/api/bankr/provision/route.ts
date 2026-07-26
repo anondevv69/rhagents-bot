@@ -124,15 +124,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Env-var sync stays bridge/admin-only — that writes secrets (Robinhood keys, rhagents
-  // key) INTO the wallet on the caller's behalf, which is a different trust question than
-  // "can this agent see its own wallet's spending key." An agent that wants its own env vars
-  // set can do that itself directly against Bankr's /agent/env with the key it just got back.
+  // Env-var sync: any trusted caller (bridge, admin, or the agent itself on its own
+  // RHAGENTS_AGENT_KEY) can push env vars into the wallet it just got a key for. An agent
+  // that holds AGENTIC_TOKEN / RH keys (e.g. from its own rh-connect.sh flow) can pass them
+  // in `env` here to get the same Robinhood-trading-capable wallet the Telegram/Discord bot
+  // sets up via mirrorSecretsToBankrEnv — this is exactly as trusted as the agent pushing the
+  // same vars itself directly to Bankr's /agent/env with the key it just received.
   const envVars =
     body.env && typeof body.env === "object" && !Array.isArray(body.env)
       ? (body.env as Record<string, unknown>)
       : null;
-  if (envVars && apiKey && (bridge || adminOk)) {
+  if (envVars && apiKey && trusted) {
     const clean: Record<string, string> = {};
     for (const [k, v] of Object.entries(envVars)) {
       if (typeof v === "string" && v.trim()) clean[k] = v.trim();
