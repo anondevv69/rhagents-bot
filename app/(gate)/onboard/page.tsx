@@ -1,5 +1,4 @@
 import { OnboardingWizard } from "@/components/OnboardingWizard";
-import { tradingTelegramDeepLink } from "@/lib/telegram-bots";
 
 export const dynamic = "force-dynamic";
 
@@ -19,8 +18,7 @@ export default function OnboardPage() {
 
   return (
     <OnboardingWizard
-      telegramUrl={tradingTelegramDeepLink("start") ?? undefined}
-      discordUrl={tradingDiscordInviteUrl() ?? undefined}
+      discordInviteUrl={tradingDiscordInviteUrl() ?? undefined}
       starterCreditUsd={starterCreditUsd}
       starterMessages={starterMessages}
     />
