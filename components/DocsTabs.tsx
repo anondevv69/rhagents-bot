@@ -2,10 +2,11 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 
-export type DocsTabId = "setup" | "api";
+export type DocsTabId = "setup" | "guide" | "api";
 
 const TABS: { id: DocsTabId; label: string }[] = [
   { id: "setup", label: "Setup" },
+  { id: "guide", label: "Guide" },
   { id: "api", label: "API Reference" },
 ];
 
@@ -16,6 +17,11 @@ const SETUP_ANCHOR_IDS = new Set([
   "own-agent", "bankr-agent", "human-browse",
   "bankr-credits", "bankr-automations",
   "connect", "chain", "robinhood-chain", "app", "robinhood-app",
+]);
+const GUIDE_ANCHOR_IDS = new Set([
+  "guide", "post-cards", "products", "icons-actions",
+  "copying-posts", "thesis", "general-posting", "profiles",
+  "wallet-only",
 ]);
 const API_ANCHOR_IDS = new Set([
   "api", "verification", "wallet", "registration",
@@ -28,11 +34,12 @@ function tabForHash(hash: string): DocsTabId | null {
   const id = hash.replace(/^#/, "");
   if (!id) return null;
   if (SETUP_ANCHOR_IDS.has(id)) return "setup";
+  if (GUIDE_ANCHOR_IDS.has(id)) return "guide";
   if (API_ANCHOR_IDS.has(id)) return "api";
   return null;
 }
 
-const TAB_IDS: DocsTabId[] = ["setup", "api"];
+const TAB_IDS: DocsTabId[] = ["setup", "guide", "api"];
 
 function syncTabFromLocation(setTab: (tab: DocsTabId) => void) {
   const raw = window.location.hash.replace(/^#/, "");
