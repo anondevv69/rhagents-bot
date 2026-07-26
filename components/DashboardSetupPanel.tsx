@@ -9,6 +9,7 @@ import {
 import { DashboardConnectPanel } from "@/components/DashboardConnectPanel";
 import { DashboardWelcomeGoals, expandedFromGoal } from "@/components/DashboardWelcomeGoals";
 import type { OnboardingGoal } from "@/lib/dashboard-onboarding-goals";
+import { ONBOARDING_GOALS } from "@/lib/dashboard-onboarding-goals";
 
 type Props = {
   setup: SetupProgress;
@@ -24,6 +25,7 @@ type Props = {
   onSurfacePreference?: (surface: UiDefaultSurface) => Promise<void>;
   botDeepLink?: string | null;
   onRefresh?: () => void;
+  initialGoal?: OnboardingGoal | null;
 };
 
 const SURFACE_OPTIONS: { id: UiDefaultSurface; label: string }[] = [
@@ -81,6 +83,7 @@ export function DashboardSetupPanel({
   onSurfacePreference,
   botDeepLink,
   onRefresh,
+  initialGoal,
 }: Props) {
   const expandedDefaults = deriveExpandedSections(caps);
   const [expanded, setExpanded] = useState({ ...expandedDefaults, profile: !setup.rhagents });
@@ -126,6 +129,14 @@ export function DashboardSetupPanel({
     if (surface !== "unset") await onSurfacePreference?.(surface);
     if (goal === "rh_crypto" || goal === "rh_agentic" || goal === "feed") onGoConnections?.();
   }
+
+  useEffect(() => {
+    if (!initialGoal || welcomeDone) return;
+    const match = ONBOARDING_GOALS.find((g) => g.id === initialGoal);
+    if (!match) return;
+    void pickGoal(match.id, match.surface);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once when landing from /onboard
+  }, [initialGoal]);
 
   return (
     <div className="panel trading-dash-setup">

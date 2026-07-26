@@ -36,7 +36,11 @@ export function getDocsPageUrl(hash?: string): string {
 }
 
 export function getSetupWizardUrl(): string {
-  return getDocsPageUrl("app");
+  return getOnboardUrl();
+}
+
+export function getOnboardUrl(): string {
+  return `${CANONICAL_SITE_URL}/onboard`;
 }
 
 export const RH_WALLET_GATEWAY =

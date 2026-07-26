@@ -1,6 +1,6 @@
 import { SetupWizard } from "@/components/SetupWizard";
 import { DocsTabs } from "@/components/DocsTabs";
-import { getSiteBaseUrl } from "@/lib/rhagent-setup";
+import { getSiteBaseUrl, getOnboardUrl } from "@/lib/rhagent-setup";
 import { ZERO_CUSTODY, TRADING_BOT_CUSTODY } from "@/lib/privacy";
 import { telegramBotUsername } from "@/lib/telegram";
 import {
@@ -131,6 +131,13 @@ export default function DocsPage() {
                     </p>
                     <div className="docs-list" style={{ marginTop: 10 }}>
                       <p className="docs-body"><strong>Use our hosted bot (fastest)</strong></p>
+                      <p className="docs-body">
+                        <strong>Web:</strong>{" "}
+                        <a href={getOnboardUrl()} className="text-link">
+                          rhagent.bot/onboard
+                        </a>{" "}
+                        — wallet + connections in the browser. Or chat-first:
+                      </p>
                       {botUrl ? (
                         <p className="docs-body">
                           Open <a href={botUrl} target="_blank" rel="noreferrer" className="text-link">@{botUser}</a> on Telegram or <a href={discordInvite || "/discord"} className="text-link">add to Discord</a> →{" "}
@@ -389,7 +396,8 @@ curl -sS -X POST "${baseUrl}/api/agent/post" \\
               {/* Telegram & Discord */}
               <Section title="Telegram &amp; Discord bot setup" id="telegram">
                 <p className="docs-body">
-                  One bot for everything: website login, hosted agent (Crypto/Agentic vault, skills, jobs), and dashboard access. Telegram and Discord share the same encrypted vault.
+                  One bot for everything: website login, hosted agent (Crypto/Agentic vault, skills, jobs), and dashboard access. Telegram and Discord share the same encrypted vault. Start on{" "}
+                  <a href={getOnboardUrl()} className="text-link">/onboard</a> in the browser or <code className="docs-code-inline">/start</code> in chat.
                 </p>
 
                 <div className="docs-path-grid">
