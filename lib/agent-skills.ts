@@ -1,10 +1,10 @@
 /**
- * Canonical skills registry on rhagent.bot — metadata only (Tier 1 private / Tier 2 listed).
- * Skill bodies stay in the agent runtime (bot vault, local files, MCP). Never store bodies here.
+ * Canonical skills registry on rhagent.bot — metadata + optional agent-uploaded doc_markdown.
  */
 import { randomBytes } from "crypto";
 import { getDb, type AgentSkillRow } from "./db";
-import { moderateFields } from "./content-moderation";
+import { moderateFields, moderateText } from "./content-moderation";
+import { resolveSkillSlug } from "./skill-slug";
 
 export type SkillVisibility = "private" | "listed";
 
@@ -18,6 +18,7 @@ export interface AgentSkill {
   source_url: string | null;
   usage_count: number;
   external_id: string | null;
+  has_doc: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -33,6 +34,8 @@ export interface PublicAgentSkill {
   author_username: string | null;
   author_display_name: string | null;
   external_id: string | null;
+  has_doc: boolean;
+  doc_url: string | null;
 }
 
 const MAX_NAME = 80;
@@ -40,6 +43,7 @@ const MAX_SUMMARY = 200;
 const MAX_TAGS = 8;
 const MAX_TAG_LEN = 24;
 const MAX_EXTERNAL_ID = 64;
+const MAX_DOC_MARKDOWN = 256_000;
 
 export function generateSkillId(): string {
   return "skill_" + randomBytes(8).toString("hex");
@@ -56,6 +60,10 @@ function parseTags(raw: string | null | undefined): string[] {
   }
 }
 
+function rowHasDoc(row: Pick<AgentSkillRow, "doc_markdown">): boolean {
+  return Boolean(row.doc_markdown?.trim());
+}
+
 function rowToSkill(row: AgentSkillRow): AgentSkill {
   return {
     id: row.id,
@@ -67,6 +75,7 @@ function rowToSkill(row: AgentSkillRow): AgentSkill {
     source_url: row.source_url,
     usage_count: row.usage_count ?? 0,
     external_id: row.external_id,
+    has_doc: rowHasDoc(row),
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -122,6 +131,55 @@ function validateSkillMetadata(input: {
   return { ok: true };
 }
 
+function normalizeDocMarkdown(raw: unknown): string | null {
+  if (raw === null || raw === undefined || raw === "") return null;
+  if (typeof raw !== "string") throw new Error("doc_markdown must be a string");
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (trimmed.length > MAX_DOC_MARKDOWN) {
+    throw new Error(`doc_markdown too large (max ${MAX_DOC_MARKDOWN} chars)`);
+  }
+  const mod = moderateText(trimmed);
+  if (!mod.ok) throw new Error(mod.error);
+  return trimmed;
+}
+
+export function getSkillDocMarkdown(skillId: string): string | null {
+  const row = getDb()
+    .prepare(`SELECT doc_markdown FROM agent_skills WHERE id = ?`)
+    .get(skillId) as { doc_markdown: string | null } | undefined;
+  const doc = row?.doc_markdown?.trim();
+  return doc || null;
+}
+
+export function getListedSkillDocBySlug(slug: string): string | null {
+  const normalized = slug.trim().toLowerCase();
+  if (!normalized) return null;
+  const rows = getDb()
+    .prepare(
+      `SELECT doc_markdown, external_id, name, visibility
+       FROM agent_skills
+       WHERE visibility = 'listed' AND doc_markdown IS NOT NULL AND trim(doc_markdown) != ''`,
+    )
+    .all() as Pick<AgentSkillRow, "doc_markdown" | "external_id" | "name" | "visibility">[];
+  for (const row of rows) {
+    const external = row.external_id?.trim().toLowerCase();
+    const nameSlug = row.name
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    if (external === normalized || nameSlug === normalized) {
+      return row.doc_markdown!.trim();
+    }
+  }
+  return null;
+}
+
+export function listedSkillHasDoc(slug: string): boolean {
+  return getListedSkillDocBySlug(slug) !== null;
+}
+
 export function listSkillsForAgent(agentId: string): AgentSkill[] {
   const db = getDb();
   const rows = db
@@ -153,6 +211,7 @@ export function createAgentSkill(
     visibility?: SkillVisibility;
     source_url?: unknown;
     external_id?: string | null;
+    doc_markdown?: unknown;
   },
 ): AgentSkill {
   const name = input.name.trim().slice(0, MAX_NAME);
@@ -164,6 +223,7 @@ export function createAgentSkill(
   if (input.source_url && !source_url) {
     throw new Error("source_url must be a https://github.com/… link");
   }
+  const doc_markdown = normalizeDocMarkdown(input.doc_markdown);
 
   const mod = validateSkillMetadata({ name, summary });
   if (!mod.ok) throw new Error(mod.error);
@@ -180,6 +240,7 @@ export function createAgentSkill(
         tags,
         visibility,
         source_url: input.source_url,
+        doc_markdown: input.doc_markdown,
       });
     }
   }
@@ -188,10 +249,22 @@ export function createAgentSkill(
   const now = new Date().toISOString();
   getDb()
     .prepare(
-      `INSERT INTO agent_skills (id, agent_id, name, summary, tags, visibility, source_url, external_id, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO agent_skills (id, agent_id, name, summary, tags, visibility, source_url, external_id, doc_markdown, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-    .run(id, agentId, name, summary, JSON.stringify(tags), visibility, source_url, external_id, now, now);
+    .run(
+      id,
+      agentId,
+      name,
+      summary,
+      JSON.stringify(tags),
+      visibility,
+      source_url,
+      external_id,
+      doc_markdown,
+      now,
+      now,
+    );
   return getSkillById(id)!;
 }
 
@@ -204,6 +277,7 @@ export function updateAgentSkill(
     tags: unknown;
     visibility: SkillVisibility;
     source_url: unknown | null;
+    doc_markdown: unknown | null;
   }>,
 ): AgentSkill {
   const existing = getSkillById(skillId);
@@ -227,16 +301,26 @@ export function updateAgentSkill(
         ? "private"
         : existing.visibility;
 
+  let doc_markdown: string | null | undefined;
+  if (patch.doc_markdown !== undefined) {
+    doc_markdown = normalizeDocMarkdown(patch.doc_markdown);
+  } else {
+    const row = getDb()
+      .prepare(`SELECT doc_markdown FROM agent_skills WHERE id = ?`)
+      .get(skillId) as { doc_markdown: string | null } | undefined;
+    doc_markdown = row?.doc_markdown ?? null;
+  }
+
   const mod = validateSkillMetadata({ name, summary });
   if (!mod.ok) throw new Error(mod.error);
 
   const now = new Date().toISOString();
   getDb()
     .prepare(
-      `UPDATE agent_skills SET name = ?, summary = ?, tags = ?, visibility = ?, source_url = ?, updated_at = ?
+      `UPDATE agent_skills SET name = ?, summary = ?, tags = ?, visibility = ?, source_url = ?, doc_markdown = ?, updated_at = ?
        WHERE id = ? AND agent_id = ?`,
     )
-    .run(name, summary, JSON.stringify(tags), visibility, source_url, now, skillId, agentId);
+    .run(name, summary, JSON.stringify(tags), visibility, source_url, doc_markdown, now, skillId, agentId);
   return getSkillById(skillId)!;
 }
 
@@ -280,6 +364,7 @@ export function toPublicSkill(
   author?: { username: string | null; display_name: string | null },
 ): PublicAgentSkill {
   const a = author ?? authorFields(skill.agent_id);
+  const slug = resolveSkillSlug({ name: skill.name, external_id: skill.external_id });
   return {
     id: skill.id,
     name: skill.name,
@@ -291,6 +376,8 @@ export function toPublicSkill(
     author_username: a.username,
     author_display_name: a.display_name,
     external_id: skill.external_id,
+    has_doc: skill.has_doc,
+    doc_url: skill.visibility === "listed" && skill.has_doc ? `/skills/${slug}/skill.md` : null,
   };
 }
 
@@ -340,11 +427,7 @@ export function findListedSkillBySlug(slug: string): PublicAgentSkill | null {
   for (const row of rows) {
     const skill = rowToSkill(row);
     const external = skill.external_id?.trim().toLowerCase();
-    const nameSlug = skill.name
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
+    const nameSlug = resolveSkillSlug({ name: skill.name, external_id: skill.external_id });
     if (external === normalized || nameSlug === normalized) {
       return toPublicSkill(skill, { username: row.username, display_name: row.display_name });
     }
@@ -359,9 +442,10 @@ export interface SkillSyncItem {
   tags?: unknown;
   visibility?: SkillVisibility;
   source_url?: unknown;
+  doc_markdown?: unknown;
 }
 
-/** Bulk upsert from bot bridge — metadata only, keyed by external_id. */
+/** Bulk upsert from bot bridge — keyed by external_id. */
 export function syncAgentSkills(agentId: string, items: SkillSyncItem[]): { synced: number } {
   let synced = 0;
   for (const item of items.slice(0, 50)) {
@@ -376,6 +460,7 @@ export function syncAgentSkills(agentId: string, items: SkillSyncItem[]): { sync
       tags: item.tags,
       visibility: item.visibility,
       source_url: item.source_url,
+      doc_markdown: item.doc_markdown,
     });
     synced += 1;
   }

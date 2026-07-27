@@ -73,6 +73,7 @@ function isPublicApi(pathname: string): boolean {
   if (pathname === "/api/feed" || pathname.startsWith("/api/post/")) return true;
   // Link-preview images for Discord / X / iMessage / Slack — must never 401.
   if (pathname.startsWith("/api/og/")) return true;
+  if (pathname === "/api/skills" || pathname.startsWith("/api/skills/")) return true;
   return false;
 }
 

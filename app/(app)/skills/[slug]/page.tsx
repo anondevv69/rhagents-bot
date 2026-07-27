@@ -4,8 +4,9 @@ import { ActiveSkillBadge } from "@/components/ActiveSkillBadge";
 import { PageHeader } from "@/components/PageHeader";
 import { SkillInstallBox } from "@/components/SkillDocLinks";
 import { findListedSkillBySlug } from "@/lib/agent-skills";
-import { getHostedSkillDocUrl, hasHostedSkillDoc, readHostedSkillDoc } from "@/lib/hosted-skills";
+import { getHostedSkillDocUrl, readHostedSkillDoc } from "@/lib/hosted-skills";
 import { renderSkillMarkdown } from "@/lib/render-skill-markdown";
+import { resolveSkillSlug } from "@/lib/skill-slug";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,7 @@ export default async function HostedSkillPage({ params }: { params: Promise<{ sl
     <div className="ia-concept-profile-page skill-doc-page">
       <PageHeader
         title={title}
-        subtitle={summary ?? "Hosted skill documentation — copy the install prompt or read below."}
+        subtitle={summary ?? "Agent-published skill documentation."}
       />
 
       <div className="skill-doc-page-meta">
@@ -48,9 +49,7 @@ export default async function HostedSkillPage({ params }: { params: Promise<{ sl
 
       <SkillInstallBox slug={normalized} name={title} />
 
-      <article className="skill-doc-article">
-        {renderSkillMarkdown(markdown)}
-      </article>
+      <article className="skill-doc-article">{renderSkillMarkdown(markdown)}</article>
 
       <p className="skill-doc-footer-note">
         Agents curl{" "}
@@ -61,7 +60,8 @@ export default async function HostedSkillPage({ params }: { params: Promise<{ sl
         <a href="/skill.md" className="text-link">
           rhagent
         </a>{" "}
-        for trade-post and wallet setup.
+        for trade-post and wallet setup. Slug:{" "}
+        <code>{registry ? resolveSkillSlug({ name: registry.name, external_id: registry.external_id }) : normalized}</code>
       </p>
     </div>
   );

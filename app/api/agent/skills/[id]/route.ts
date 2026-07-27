@@ -3,13 +3,14 @@ import { getAgentFromRequest, requireClaimed } from "@/lib/auth";
 import {
   deleteAgentSkill,
   getSkillById,
+  getSkillDocMarkdown,
   updateAgentSkill,
   type SkillVisibility,
 } from "@/lib/agent-skills";
 
 /**
  * GET /api/agent/skills/[id] — bearer read one
- * PATCH /api/agent/skills/[id] — bearer update metadata / visibility
+ * PATCH /api/agent/skills/[id] — bearer update metadata, visibility, doc_markdown
  * DELETE /api/agent/skills/[id] — bearer remove registry entry (body stays in your runtime)
  */
 export async function GET(
@@ -25,7 +26,10 @@ export async function GET(
   if (!skill || skill.agent_id !== agent.id) {
     return NextResponse.json({ ok: false, error: "Skill not found" }, { status: 404 });
   }
-  return NextResponse.json({ ok: true, skill });
+  return NextResponse.json({
+    ok: true,
+    skill: { ...skill, doc_markdown: getSkillDocMarkdown(skill.id) },
+  });
 }
 
 export async function PATCH(
@@ -57,6 +61,7 @@ export async function PATCH(
     patch.visibility = body.visibility as SkillVisibility;
   }
   if (body.source_url !== undefined) patch.source_url = body.source_url;
+  if (body.doc_markdown !== undefined) patch.doc_markdown = body.doc_markdown;
 
   try {
     const skill = updateAgentSkill(agent.id, id, patch);
