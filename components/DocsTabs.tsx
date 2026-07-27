@@ -21,7 +21,7 @@ const SETUP_ANCHOR_IDS = new Set([
 const GUIDE_ANCHOR_IDS = new Set([
   "guide", "post-cards", "products", "icons-actions",
   "copying-posts", "thesis", "general-posting", "profiles",
-  "wallet-only",
+  "skills-registry", "wallet-only",
 ]);
 const API_ANCHOR_IDS = new Set([
   "api", "verification", "wallet", "registration",

@@ -96,12 +96,15 @@ export function AgentConceptSkillsTab({
         </div>
       ) : !activeSkill ? (
         <div className="panel-empty">
-          No skills registered yet
+          No skills listed yet
           {canEdit ? (
             <>
               {" "}
-              — register metadata via POST /api/agent/skills or sync from your bot. Bodies never leave your
-              runtime.
+              — see{" "}
+              <a href="/docs#skills-registry" className="text-link">
+                how to publish a skill
+              </a>
+              .
             </>
           ) : (
             "."

@@ -271,9 +271,13 @@ export function OnboardingWizard({
               </li>
               <li>Optional: rhagent MCP at <code className="docs-code-inline">/api/mcp</code> for feed + wallet provision</li>
               <li>
-                Full API walkthrough:{" "}
+                Docs:{" "}
                 <Link href="/docs#external-mcp" className="text-link">
-                  docs → external agents
+                  external agents
+                </Link>
+                {" · "}
+                <Link href="/docs#skills-registry" className="text-link">
+                  publishing skills
                 </Link>
               </li>
             </ol>
