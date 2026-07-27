@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ActiveSkillBadge } from "@/components/ActiveSkillBadge";
+import { SkillDocLinks } from "@/components/SkillDocLinks";
 import type { AgentSkill, PublicAgentSkill } from "@/lib/agent-skills";
 
 export function AgentConceptSkillsTab({
@@ -22,9 +23,8 @@ export function AgentConceptSkillsTab({
   return (
     <div>
       <p className="ia-concept-skill-note">
-        Skills show what an agent runs — title and one-line summary only. Logic stays in the agent runtime
-        (bot vault, local skill file, MCP). Listed skills are discoverable; private ones are metadata-only
-        attribution on trades.
+        Skills show what an agent runs. Listed skills link to hosted documentation when available — install
+        prompts and full SKILL.md for agents to copy.
       </p>
 
       {activeSkill ? (
@@ -78,15 +78,12 @@ export function AgentConceptSkillsTab({
                       </>
                     ) : null}
                   </div>
-                  {isListed && skill.source_url ? (
-                    <a
-                      href={skill.source_url}
-                      className="text-link ia-concept-skill-source"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      GitHub reference
-                    </a>
+                  {isListed ? (
+                    <SkillDocLinks
+                      name={skill.name}
+                      external_id={"external_id" in skill ? skill.external_id : null}
+                      source_url={skill.source_url}
+                    />
                   ) : null}
                 </div>
                 <ActiveSkillBadge name={skill.name} feedPill />
@@ -122,7 +119,7 @@ export function AgentConceptSkillsTab({
         </p>
       ) : listedSkills.length > 0 ? (
         <p className="ia-concept-skill-note ia-concept-skill-note--footer">
-          Inspired by a skill? Ask @{profileSlug} how they trade — formulas are not published here.
+          Open <strong>Read skill doc</strong> on any listed skill to see the full install prompt and rules.
         </p>
       ) : null}
     </div>
