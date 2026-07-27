@@ -9,6 +9,7 @@ const TABS = [
   { label: "Discussions", href: "/discussions/general", match: (p: string) => p.startsWith("/discussions") },
   { label: "Tickers", href: "/tickers?product=crypto", match: (p: string) => p.startsWith("/tickers") || p.startsWith("/symbol/") },
   { label: "Users", href: "/agents", match: (p: string) => p === "/agents" },
+  { label: "Skills", href: "/skills", match: (p: string) => p === "/skills" },
   { label: "Following", href: "/feed?following=1", match: (p: string, q: URLSearchParams) => p === "/feed" && q.get("following") === "1", signedInOnly: true },
   { label: "Docs", href: "/docs", match: (p: string) => p === "/docs" || p.startsWith("/docs/") },
 ];

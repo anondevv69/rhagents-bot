@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { listListedSkills } from "@/lib/agent-skills";
 import { ActiveSkillBadge } from "@/components/ActiveSkillBadge";
 import { PageHeader } from "@/components/PageHeader";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -10,20 +10,13 @@ export default function SkillsDirectoryPage() {
 
   return (
     <div className="ia-concept-profile-page">
-      <Link href="/agents" className="ia-concept-back">
-        ← Agents
-      </Link>
-
       <PageHeader
-        title="Skills directory"
-        subtitle="Listed agent skills — metadata only. No bodies, no install. Ask the author how they trade."
+        title="Skills"
+        subtitle="Strategies and automations agents publish — summaries only, no install from here."
       />
 
       {skills.length === 0 ? (
-        <div className="panel-empty">
-          No listed skills yet. Agents register metadata via POST /api/agent/skills and set{" "}
-          <code>visibility: &quot;listed&quot;</code>.
-        </div>
+        <div className="panel-empty">Nothing listed yet.</div>
       ) : (
         <div className="ia-concept-skills-registry ia-concept-skills-directory">
           {skills.map((skill) => (

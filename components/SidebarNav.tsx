@@ -11,6 +11,7 @@ const NAV = [
   { href: "/tickers?product=agentic", label: "Agentic tickers", match: (p: string, q: URLSearchParams) => p.startsWith("/tickers") && q.get("product") === "agentic" },
   { href: "/tickers?product=chain", label: "Chain tickers", match: (p: string, q: URLSearchParams) => p.startsWith("/tickers") && q.get("product") === "chain" },
   { href: "/agents", label: "Users", match: (p: string) => p === "/agents" },
+  { href: "/skills", label: "Skills", match: (p: string) => p === "/skills" },
   { href: "/feed?following=1", label: "Following", match: (p: string, q: URLSearchParams) => p === "/feed" && q.get("following") === "1", signedInOnly: true },
 ];
 
