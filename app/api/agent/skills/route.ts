@@ -8,7 +8,7 @@ import {
 
 /**
  * GET /api/agent/skills — bearer list (private + listed)
- * POST /api/agent/skills — bearer register metadata { name, summary, tags?, visibility?, source_url?, external_id? }
+ * POST /api/agent/skills — bearer register { name, summary, tags?, visibility?, source_url?, external_id?, doc_markdown? }
  */
 export async function GET(req: NextRequest) {
   const agent = getAgentFromRequest(req);
@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
       visibility,
       source_url: body.source_url,
       external_id: typeof body.external_id === "string" ? body.external_id : null,
+      doc_markdown: body.doc_markdown,
     });
     return NextResponse.json({ ok: true, skill });
   } catch (e) {

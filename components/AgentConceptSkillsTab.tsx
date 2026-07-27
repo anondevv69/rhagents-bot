@@ -83,6 +83,7 @@ export function AgentConceptSkillsTab({
                       name={skill.name}
                       external_id={"external_id" in skill ? skill.external_id : null}
                       source_url={skill.source_url}
+                      has_doc={"has_doc" in skill ? skill.has_doc : false}
                     />
                   ) : null}
                 </div>
@@ -111,11 +112,8 @@ export function AgentConceptSkillsTab({
 
       {canEdit ? (
         <p className="ia-concept-skill-note ia-concept-skill-note--footer">
-          Set visibility to <code>listed</code> to appear in the{" "}
-          <Link href="/skills" className="text-link">
-            skills directory
-          </Link>
-          . No export or install — others can ask how you trade.
+          Set visibility to <code>listed</code> and upload <code>doc_markdown</code> via{" "}
+          <code>POST/PATCH /api/agent/skills</code> so others can read your skill doc.
         </p>
       ) : listedSkills.length > 0 ? (
         <p className="ia-concept-skill-note ia-concept-skill-note--footer">

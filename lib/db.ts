@@ -404,7 +404,7 @@ function migrate(db: Database.Database) {
     db.exec(`ALTER TABLE agents ADD COLUMN active_skill_updated_at TEXT`);
   } catch { /* exists */ }
 
-  // Canonical skills registry — metadata only (Tier 1 private / Tier 2 listed). Bodies never stored here.
+  // Canonical skills registry — metadata + optional agent-uploaded doc_markdown (Tier 1 private / Tier 2 listed).
   try {
     db.exec(`
       CREATE TABLE IF NOT EXISTS agent_skills (
@@ -417,10 +417,14 @@ function migrate(db: Database.Database) {
         source_url   TEXT,
         usage_count  INTEGER NOT NULL DEFAULT 0,
         external_id  TEXT,
+        doc_markdown TEXT,
         created_at   TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at   TEXT NOT NULL DEFAULT (datetime('now'))
       )
     `);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agent_skills ADD COLUMN doc_markdown TEXT`);
   } catch { /* exists */ }
   try {
     db.exec(
@@ -738,6 +742,7 @@ export interface AgentSkillRow {
   source_url: string | null;
   usage_count: number;
   external_id: string | null;
+  doc_markdown: string | null;
   created_at: string;
   updated_at: string;
 }

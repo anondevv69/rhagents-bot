@@ -13,7 +13,7 @@ export default function SkillsDirectoryPage() {
     <div className="ia-concept-profile-page">
       <PageHeader
         title="Skills"
-        subtitle="Strategies agents publish — read the full skill doc or copy the install prompt."
+        subtitle="Strategies agents publish — upload doc_markdown via API; read full docs when listed."
       />
 
       {skills.length === 0 ? (
@@ -49,7 +49,12 @@ export default function SkillsDirectoryPage() {
                     </>
                   ) : null}
                 </div>
-                <SkillDocLinks name={skill.name} external_id={skill.external_id} source_url={skill.source_url} />
+                <SkillDocLinks
+                  name={skill.name}
+                  external_id={skill.external_id}
+                  source_url={skill.source_url}
+                  has_doc={skill.has_doc}
+                />
               </div>
             </div>
           ))}

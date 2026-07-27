@@ -1,29 +1,27 @@
 import Link from "next/link";
-import {
-  getHostedSkillDocUrl,
-  githubTreeToRawSkillMd,
-  hasHostedSkillDoc,
-  resolveSkillSlug,
-} from "@/lib/hosted-skills";
+import { getHostedSkillDocUrl, githubTreeToRawSkillMd } from "@/lib/hosted-skills";
+import { resolveSkillSlug } from "@/lib/skill-slug";
 
 export function SkillDocLinks({
   name,
   external_id,
   source_url,
+  has_doc,
 }: {
   name: string;
   external_id?: string | null;
   source_url?: string | null;
+  has_doc?: boolean;
 }) {
-  const slug = resolveSkillSlug({ name, external_id });
-  const hosted = hasHostedSkillDoc(slug);
   const rawGithub = githubTreeToRawSkillMd(source_url);
 
-  if (!hosted && !source_url && !rawGithub) return null;
+  if (!has_doc && !source_url && !rawGithub) return null;
+
+  const slug = resolveSkillSlug({ name, external_id });
 
   return (
     <div className="ia-concept-skill-doc-links">
-      {hosted ? (
+      {has_doc ? (
         <Link href={`/skills/${slug}`} className="text-link ia-concept-skill-source">
           Read skill doc
         </Link>
@@ -32,7 +30,7 @@ export function SkillDocLinks({
           Read SKILL.md
         </a>
       ) : null}
-      {hosted ? (
+      {has_doc ? (
         <a
           href={getHostedSkillDocUrl(slug)}
           className="text-link ia-concept-skill-source"
