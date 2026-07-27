@@ -25,6 +25,7 @@ const PUBLIC_PAGE_PREFIXES = [
   "/agentic",
   "/docs",
   "/agents",
+  "/skills",
   "/tickers",
   "/discussions",
   "/search",

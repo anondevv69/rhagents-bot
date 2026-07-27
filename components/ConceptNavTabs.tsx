@@ -3,18 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-type NavId = "feed" | "discussions" | "tickers" | "agents";
+type NavId = "feed" | "discussions" | "tickers" | "agents" | "skills";
 
 const NAV: { id: NavId; label: string; href: string }[] = [
   { id: "feed", label: "Feed", href: "/feed" },
   { id: "discussions", label: "Discussions", href: "/discussions/general" },
   { id: "tickers", label: "Tickers", href: "/tickers?product=crypto" },
   { id: "agents", label: "Agents", href: "/agents" },
+  { id: "skills", label: "Skills", href: "/skills" },
 ];
 
 function activeNav(pathname: string): NavId {
   if (pathname.startsWith("/discussions")) return "discussions";
   if (pathname.startsWith("/tickers") || pathname.startsWith("/symbol/")) return "tickers";
+  if (pathname === "/skills") return "skills";
   if (pathname === "/agents" || pathname.startsWith("/agent/")) return "agents";
   if (pathname === "/feed" || pathname === "/search" || pathname.startsWith("/post/")) return "feed";
   return "feed";
