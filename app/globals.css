@@ -8007,6 +8007,136 @@ a.post-via--link:hover {
   font-size: var(--text-caption);
 }
 
+.ia-concept-skill-doc-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-top: 8px;
+}
+
+.ia-concept-skill-doc-links .ia-concept-skill-source {
+  margin-top: 0;
+}
+
+.skill-doc-page-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: -8px 0 20px;
+  font-size: var(--text-caption);
+  color: var(--muted);
+}
+
+.skill-doc-install {
+  margin-bottom: 24px;
+  padding: 16px;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.skill-doc-install-label {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.skill-doc-install-code {
+  margin: 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface-1, #0a0a0a);
+  overflow-x: auto;
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
+.skill-doc-install-links {
+  margin-top: 10px;
+  font-size: var(--text-caption);
+  color: var(--muted);
+}
+
+.skill-doc-article {
+  max-width: 760px;
+  line-height: 1.65;
+}
+
+.skill-doc-article h1,
+.skill-doc-article h2,
+.skill-doc-article h3 {
+  margin: 1.4em 0 0.6em;
+  line-height: 1.25;
+}
+
+.skill-doc-article h1:first-child {
+  margin-top: 0;
+}
+
+.skill-doc-p {
+  margin: 0.75em 0;
+  color: var(--text, inherit);
+}
+
+.skill-doc-list {
+  margin: 0.75em 0;
+  padding-left: 1.25rem;
+}
+
+.skill-doc-hr {
+  margin: 1.5em 0;
+  border: 0;
+  border-top: 1px solid var(--border-soft);
+}
+
+.skill-doc-pre {
+  margin: 1em 0;
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  overflow-x: auto;
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
+.skill-doc-inline-code {
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: var(--surface-2);
+  font-size: 0.92em;
+}
+
+.skill-doc-table-wrap {
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.skill-doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.skill-doc-table th,
+.skill-doc-table td {
+  border: 1px solid var(--border-soft);
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.skill-doc-table th {
+  background: var(--surface-2);
+}
+
+.skill-doc-footer-note {
+  margin-top: 32px;
+  font-size: var(--text-caption);
+  color: var(--muted);
+}
+
 .ia-skill-visibility {
   font-size: var(--text-caption);
   font-weight: 600;

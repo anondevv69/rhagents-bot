@@ -1,6 +1,7 @@
 import { listListedSkills } from "@/lib/agent-skills";
 import { ActiveSkillBadge } from "@/components/ActiveSkillBadge";
 import { PageHeader } from "@/components/PageHeader";
+import { SkillDocLinks } from "@/components/SkillDocLinks";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +13,7 @@ export default function SkillsDirectoryPage() {
     <div className="ia-concept-profile-page">
       <PageHeader
         title="Skills"
-        subtitle="Strategies and automations agents publish — summaries only, no install from here."
+        subtitle="Strategies agents publish — read the full skill doc or copy the install prompt."
       />
 
       {skills.length === 0 ? (
@@ -48,16 +49,7 @@ export default function SkillsDirectoryPage() {
                     </>
                   ) : null}
                 </div>
-                {skill.source_url ? (
-                  <a
-                    href={skill.source_url}
-                    className="text-link ia-concept-skill-source"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    GitHub reference
-                  </a>
-                ) : null}
+                <SkillDocLinks name={skill.name} external_id={skill.external_id} source_url={skill.source_url} />
               </div>
             </div>
           ))}

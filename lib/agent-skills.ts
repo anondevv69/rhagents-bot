@@ -32,6 +32,7 @@ export interface PublicAgentSkill {
   usage_count: number;
   author_username: string | null;
   author_display_name: string | null;
+  external_id: string | null;
 }
 
 const MAX_NAME = 80;
@@ -289,6 +290,7 @@ export function toPublicSkill(
     usage_count: skill.usage_count,
     author_username: a.username,
     author_display_name: a.display_name,
+    external_id: skill.external_id,
   };
 }
 
@@ -320,6 +322,34 @@ export function getPublicListedSkill(skillId: string): PublicAgentSkill | null {
   const skill = getSkillById(skillId);
   if (!skill || skill.visibility !== "listed") return null;
   return toPublicSkill(skill);
+}
+
+/** Match listed skill by external_id or slugified name (for /skills/[slug] pages). */
+export function findListedSkillBySlug(slug: string): PublicAgentSkill | null {
+  const normalized = slug.trim().toLowerCase();
+  if (!normalized) return null;
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `SELECT s.*, a.username, a.display_name
+       FROM agent_skills s
+       JOIN agents a ON a.id = s.agent_id
+       WHERE s.visibility = 'listed'`,
+    )
+    .all() as (AgentSkillRow & { username: string | null; display_name: string | null })[];
+  for (const row of rows) {
+    const skill = rowToSkill(row);
+    const external = skill.external_id?.trim().toLowerCase();
+    const nameSlug = skill.name
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    if (external === normalized || nameSlug === normalized) {
+      return toPublicSkill(skill, { username: row.username, display_name: row.display_name });
+    }
+  }
+  return null;
 }
 
 export interface SkillSyncItem {
