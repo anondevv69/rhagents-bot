@@ -6,7 +6,8 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: "/",
+      // /api/og/* must be crawlable — X/Discord/iMessage fetch twitter:image from here.
+      allow: ["/", "/api/og/"],
       disallow: ["/api/"],
     },
     sitemap: `${base}/sitemap.xml`,
