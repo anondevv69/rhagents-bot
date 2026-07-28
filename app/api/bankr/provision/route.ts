@@ -133,13 +133,16 @@ export async function POST(req: NextRequest) {
   }
 
   let agent = null;
+  let skippedWalletReplace = false;
   if (agentId) {
-    agent = await attachBankrWalletToAgent(
+    const attached = await attachBankrWalletToAgent(
       agentId,
       result.evm_address,
       result.wallet_id,
       result.provisioned,
     );
+    agent = attached.agent;
+    skippedWalletReplace = !!attached.skipped_replace;
   }
 
   // Env-var sync: any trusted caller (bridge, admin, or the agent itself on its own
@@ -184,10 +187,18 @@ export async function POST(req: NextRequest) {
     chain_wallet: agent?.chain_wallet ?? null,
     bankr_wallet: result.evm_address,
     ...(trusted && apiKey ? { api_key: apiKey } : {}),
-    message: result.existing
-      ? apiKey
-        ? "Linked existing Bankr wallet — key repaired and attached."
-        : "Linked existing Bankr wallet — no new wallet created."
-      : "Bankr wallet provisioned. Save api_key securely (shown once).",
+    ...(skippedWalletReplace
+      ? {
+          warning: "agent_already_linked",
+          linked_bankr_wallet: agent?.bankr_wallet ?? bearerAgent?.bankr_wallet ?? null,
+        }
+      : {}),
+    message: skippedWalletReplace
+      ? "Wallet key minted but agent record keeps its existing linked address. Use link-bankr to switch wallets."
+      : result.existing
+        ? apiKey
+          ? "Linked existing Bankr wallet — key repaired and attached."
+          : "Linked existing Bankr wallet — no new wallet created."
+        : "Bankr wallet provisioned. Save api_key securely (shown once).",
   });
 }

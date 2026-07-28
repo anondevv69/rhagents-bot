@@ -120,7 +120,6 @@ interface PartnerWalletDetail {
   evmAddress?: string;
 }
 
-/** GET /partner/wallets/:identifier — id, EVM address, or Solana address. */
 export async function getPartnerWallet(identifier: string): Promise<PartnerWalletDetail | null> {
   try {
     return await partnerFetch<PartnerWalletDetail>(
@@ -136,6 +135,13 @@ async function listPartnerWalletApiKeys(walletId: string): Promise<PartnerApiKey
     `/partner/wallets/${encodeURIComponent(walletId)}/api-keys`,
   );
   return list.apiKeys ?? [];
+}
+
+/** Partner-visible permission flags for keys on a provisioned wallet (server-only). */
+export async function getPartnerWalletKeyPermissions(
+  walletId: string,
+): Promise<PartnerApiKeyMeta[]> {
+  return listPartnerWalletApiKeys(walletId);
 }
 
 /**
@@ -374,16 +380,25 @@ export async function attachBankrWalletToAgent(
   evmAddress: string,
   walletId: string | null,
   provisioned: boolean,
-): Promise<Agent | null> {
+  opts: { replaceExisting?: boolean } = {},
+): Promise<{ agent: Agent | null; skipped_replace?: boolean }> {
   const wallet = evmAddress.toLowerCase();
   const db = getDb();
   const agent = db.prepare(`SELECT * FROM agents WHERE id = ?`).get(agentId) as Agent | undefined;
-  if (!agent) return null;
+  if (!agent) return { agent: null };
+
+  if (
+    agent.bankr_wallet &&
+    agent.bankr_wallet.toLowerCase() !== wallet &&
+    !opts.replaceExisting
+  ) {
+    return { agent, skipped_replace: true };
+  }
 
   const taken = db
     .prepare(`SELECT id FROM agents WHERE LOWER(bankr_wallet) = ? AND id != ?`)
     .get(wallet, agentId);
-  if (taken) return agent;
+  if (taken) return { agent };
 
   db.prepare(
     `UPDATE agents SET bankr_wallet = ?, bankr_wallet_id = ?, bankr_provisioned = ? WHERE id = ?`,
@@ -397,7 +412,7 @@ export async function attachBankrWalletToAgent(
     }
   }
   scheduleInscribeAgent(updated);
-  return updated;
+  return { agent: updated };
 }
 
 /** Auto-provision + attach after agent registration if no wallet yet. */
@@ -419,7 +434,15 @@ export async function autoProvisionAgentWallet(agentId: string): Promise<{
     return { attached: false, error: result.error };
   }
 
-  await attachBankrWalletToAgent(agentId, result.evm_address, result.wallet_id, result.provisioned);
+  const attached = await attachBankrWalletToAgent(
+    agentId,
+    result.evm_address,
+    result.wallet_id,
+    result.provisioned,
+  );
+  if (!attached.agent) {
+    return { attached: false, error: "attach_failed" };
+  }
   return {
     attached: true,
     evm_address: result.evm_address,

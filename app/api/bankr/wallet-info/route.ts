@@ -1,19 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAgentFromRequest } from "@/lib/auth";
-import { getWalletMeRaw } from "@/lib/bankr";
+import {
+  evmAddressFromWalletMe,
+  getWalletMeRaw,
+  probeWalletApiCapabilities,
+} from "@/lib/bankr";
+import { getPartnerWalletKeyPermissions } from "@/lib/bankr-provision";
 
 export const dynamic = "force-dynamic";
 
 /**
  * POST /api/bankr/wallet-info
  *
- * Server-side passthrough to Bankr's GET /wallet/me for a wallet's own api_key. Exists
- * because Bankr's API doesn't set CORS headers for browser callers, so an agent (or a human
- * testing from a browser console) holding only a bk_usr_... key has no direct way to check
- * what that key can actually do — e.g. confirm walletApiEnabled is set after a repair.
- * rhagent.bot never stores the key; it's used for exactly this one relayed call.
+ * Server-side relay for Bankr wallet identity + capability checks. GET /wallet/me does NOT
+ * expose permission flags (walletApiEnabled, etc.) — those live on Bankr's Partner API only.
+ * This endpoint adds:
+ *   - capabilities.wallet_api_reachable — probe via POST /wallet/swap-quote (403 = disabled)
+ *   - partner_key_permissions — when rhagent has bankr_wallet_id for this address (server-only)
  *
- * Auth: Authorization: Bearer {RHAGENTS_AGENT_KEY} — any registered agent.
+ * Auth: Authorization: Bearer {RHAGENTS_AGENT_KEY}
  * Body: { wallet_api_key: "bk_usr_..." }
  */
 export async function POST(req: NextRequest) {
@@ -38,11 +43,42 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { status, body: walletInfo } = await getWalletMeRaw(walletApiKey);
-    return NextResponse.json({ ok: status < 400, wallet: walletInfo }, { status });
+    const [{ status, body: walletInfo }, capabilities] = await Promise.all([
+      getWalletMeRaw(walletApiKey),
+      probeWalletApiCapabilities(walletApiKey),
+    ]);
+
+    const evm = evmAddressFromWalletMe(walletInfo);
+    let partnerKeyPermissions: unknown = null;
+    if (
+      agent.bankr_wallet_id &&
+      agent.bankr_wallet &&
+      evm &&
+      agent.bankr_wallet.toLowerCase() === evm
+    ) {
+      try {
+        partnerKeyPermissions = await getPartnerWalletKeyPermissions(agent.bankr_wallet_id);
+      } catch {
+        partnerKeyPermissions = null;
+      }
+    }
+
+    return NextResponse.json({
+      ok: status < 400,
+      wallet: walletInfo,
+      capabilities,
+      partner_key_permissions: partnerKeyPermissions,
+      note:
+        "GET /wallet/me does not include walletApiEnabled. Use capabilities.wallet_api_reachable " +
+        "(swap-quote probe) or partner_key_permissions when available.",
+    });
   } catch (err) {
     return NextResponse.json(
-      { ok: false, error: "bankr_unreachable", message: err instanceof Error ? err.message : "request failed" },
+      {
+        ok: false,
+        error: "bankr_unreachable",
+        message: err instanceof Error ? err.message : "request failed",
+      },
       { status: 502 },
     );
   }
