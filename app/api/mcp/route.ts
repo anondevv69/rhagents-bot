@@ -4,7 +4,7 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { z } from "zod";
 import { getAgentFromRequest } from "@/lib/auth";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
-import { CANONICAL_VIA_IDS, MCP_VIA_FIELD_DESCRIPTION, MCP_VIA_INSTRUCTIONS } from "@/lib/via";
+import { CANONICAL_VIA_IDS, MCP_VIA_FIELD_DESCRIPTION, MCP_VIA_INSTRUCTIONS, MCP_WALLET_INSTRUCTIONS } from "@/lib/via";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -68,10 +68,26 @@ function toolResult(body: unknown, status: number) {
   };
 }
 
+const walletKeySchema = z
+  .string()
+  .describe("bk_usr_... key from provision_wallet. rhagent never stores it — pass each call.");
+
+async function callBankrWallet(
+  agentKey: string,
+  walletApiKey: string,
+  action: string,
+  params: Record<string, unknown>,
+) {
+  return callInternalApi(`/api/bankr/wallet`, agentKey, {
+    method: "POST",
+    body: JSON.stringify({ wallet_api_key: walletApiKey, action, params }),
+  });
+}
+
 function buildServer(agentKey: string, agentId?: string): McpServer {
   const server = new McpServer(
-    { name: "rhagent", version: "1.0.1" },
-    { instructions: MCP_VIA_INSTRUCTIONS },
+    { name: "rhagent", version: "1.2.0" },
+    { instructions: `${MCP_VIA_INSTRUCTIONS}\n\n${MCP_WALLET_INSTRUCTIONS}` },
   );
 
   const viaSchema = z
@@ -271,6 +287,177 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
       const { status, body } = await callInternalApi(`/api/bankr/wallet-info`, agentKey, {
         method: "POST",
         body: JSON.stringify({ wallet_api_key: args.wallet_api_key }),
+      });
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "wallet_get_portfolio",
+    {
+      title: "Bankr wallet balances (on-chain portfolio)",
+      description:
+        "Read-only Bankr GET /wallet/portfolio for a provisioned wallet — bypasses browser CORS.",
+      inputSchema: {
+        wallet_api_key: walletKeySchema,
+        chains: z
+          .string()
+          .optional()
+          .describe('Comma-separated chains, e.g. "robinhood", "base", or "robinhood,base".'),
+        include: z.string().optional().describe('Optional include= query, e.g. "pnl,nfts".'),
+      },
+    },
+    async (args) => {
+      const params: Record<string, unknown> = {};
+      if (args.chains) params.chains = args.chains;
+      if (args.include) params.include = args.include;
+      const { status, body } = await callBankrWallet(agentKey, args.wallet_api_key, "portfolio", params);
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "wallet_swap_quote",
+    {
+      title: "Quote a Bankr wallet swap (no execution)",
+      description:
+        "Bankr POST /wallet/swap-quote — price a same-chain or cross-chain swap. Use the returned " +
+        "minBuyAmount when calling wallet_swap. No Bankr LLM required.",
+      inputSchema: {
+        wallet_api_key: walletKeySchema,
+        fromChain: z.string().describe('e.g. "robinhood", "base"'),
+        fromToken: z.string().describe("Token contract or native sentinel 0xeeee…eeee"),
+        toChain: z.string(),
+        toToken: z.string(),
+        amount: z.string().describe("Human-readable amount, e.g. 0.001"),
+        slippageBps: z.number().min(10).max(2000).optional(),
+      },
+    },
+    async (args) => {
+      const { wallet_api_key, ...params } = args;
+      const { status, body } = await callBankrWallet(agentKey, wallet_api_key, "swap_quote", params);
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "wallet_swap",
+    {
+      title: "Execute a Bankr wallet swap",
+      description:
+        "Bankr POST /wallet/swap — execute after wallet_swap_quote. Pass minBuyAmount from the quote. " +
+        "Then post_trade_fill on rhagent.bot for the fill.",
+      inputSchema: {
+        wallet_api_key: walletKeySchema,
+        fromChain: z.string(),
+        fromToken: z.string(),
+        toChain: z.string(),
+        toToken: z.string(),
+        amount: z.string(),
+        minBuyAmount: z.string().describe("From wallet_swap_quote response — slippage protection."),
+        slippageBps: z.number().min(10).max(2000).optional(),
+      },
+    },
+    async (args) => {
+      const { wallet_api_key, ...params } = args;
+      const { status, body } = await callBankrWallet(agentKey, wallet_api_key, "swap", params);
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "wallet_transfer",
+    {
+      title: "Transfer tokens from a Bankr wallet",
+      description: "Bankr POST /wallet/transfer — send native or ERC20 tokens.",
+      inputSchema: {
+        wallet_api_key: walletKeySchema,
+        to: z.string().describe("Recipient 0x address or ENS"),
+        token: z.string().describe("Symbol or contract address"),
+        amount: z.string(),
+        chain: z.string().optional(),
+        chainId: z.number().optional(),
+      },
+    },
+    async (args) => {
+      const { wallet_api_key, ...params } = args;
+      const { status, body } = await callBankrWallet(agentKey, wallet_api_key, "transfer", params);
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "wallet_sign",
+    {
+      title: "Sign with a Bankr wallet (no broadcast)",
+      description: "Bankr POST /wallet/sign — personal_sign, typed data, or transaction signing.",
+      inputSchema: {
+        wallet_api_key: walletKeySchema,
+        payload: z
+          .record(z.string(), z.unknown())
+          .describe("Bankr sign body, e.g. { signatureType, message } or { signatureType, transaction }"),
+      },
+    },
+    async (args) => {
+      const { status, body } = await callBankrWallet(
+        agentKey,
+        args.wallet_api_key,
+        "sign",
+        args.payload,
+      );
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "wallet_submit",
+    {
+      title: "Submit a signed transaction via Bankr wallet",
+      description: "Bankr POST /wallet/submit — broadcast raw transaction to chain.",
+      inputSchema: {
+        wallet_api_key: walletKeySchema,
+        payload: z
+          .record(z.string(), z.unknown())
+          .describe("Bankr submit body, e.g. { transaction: {...}, waitForConfirmation: true }"),
+      },
+    },
+    async (args) => {
+      const { status, body } = await callBankrWallet(
+        agentKey,
+        args.wallet_api_key,
+        "submit",
+        args.payload,
+      );
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "bankr_automation",
+    {
+      title: "Create/cancel/check Bankr automations (DCA, limit, stop, TWAP)",
+      description:
+        "Uses Bankr Agent API (natural language) under the hood — needs LLM credits or Club. " +
+        "For direct swaps without Bankr's LLM, use wallet_swap_quote + wallet_swap instead.",
+      inputSchema: {
+        wallet_api_key: walletKeySchema,
+        action: z.enum(["create", "cancel", "status"]),
+        input: z.record(z.string(), z.unknown()).optional(),
+        description: z.string().optional(),
+        job_id: z.string().optional(),
+      },
+    },
+    async (args) => {
+      const { wallet_api_key, action, input, description, job_id } = args;
+      const { status, body } = await callInternalApi(`/api/bankr/automation`, agentKey, {
+        method: "POST",
+        body: JSON.stringify({
+          action,
+          wallet_api_key,
+          ...(input ? { input } : {}),
+          ...(description ? { description } : {}),
+          ...(job_id ? { job_id } : {}),
+        }),
       });
       return toolResult(body, status);
     },
