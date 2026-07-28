@@ -260,11 +260,9 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
     {
       title: "Check what a Bankr wallet key can actually do",
       description:
-        "Server-side passthrough to Bankr's own GET /wallet/me for a wallet's api_key — " +
-        "confirms address, chains, and the key's own permission flags (e.g. walletApiEnabled). " +
-        "Exists because Bankr's API has no CORS support for direct browser calls, so this is " +
-        "the only way to check a key's real permissions from a browser-based agent. " +
-        "rhagent.bot does not store the key; it's used once for this call.",
+        "Server-side passthrough to Bankr's GET /wallet/me plus a swap-quote probe that confirms " +
+        "whether Wallet API write paths are reachable (GET /wallet/me does NOT expose " +
+        "walletApiEnabled). rhagent.bot does not store the key; it's used once for these calls.",
       inputSchema: {
         wallet_api_key: z.string().describe("The bk_usr_... key returned by provision_wallet."),
       },

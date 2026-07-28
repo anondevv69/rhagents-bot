@@ -268,12 +268,13 @@ export async function POST(req: NextRequest) {
 
         let agent = null;
         if (agentId) {
-          agent = await attachBankrWalletToAgent(
+          const attached = await attachBankrWalletToAgent(
             agentId,
             result.evm_address,
             result.wallet_id,
             result.provisioned,
           );
+          agent = attached.agent;
         }
 
         const envVars =

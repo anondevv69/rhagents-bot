@@ -47,6 +47,46 @@ export async function getWalletMeRaw(bankrApiKey: string): Promise<{ status: num
   return { status: res.status, body };
 }
 
+/** Extract EVM address from Bankr /wallet/me JSON. */
+export function evmAddressFromWalletMe(body: unknown): string | null {
+  if (!body || typeof body !== "object") return null;
+  const wallets = (body as { wallets?: { chain?: string; address?: string }[] }).wallets;
+  const evm = wallets?.find((w) => w.chain === "evm")?.address;
+  return evm?.toLowerCase() ?? null;
+}
+
+/**
+ * Probe whether a key can use Bankr's Wallet API write paths. GET /wallet/me does NOT expose
+ * permission flags — the only self-service signal is attempting a read-style swap quote.
+ * 403 → wallet API write disabled; 2xx/4xx validation → write path reachable.
+ */
+export async function probeWalletApiCapabilities(
+  bankrApiKey: string,
+): Promise<{ wallet_api_reachable: boolean | null; probe: string; status: number }> {
+  const res = await fetch(`${BANKR_API}/wallet/swap-quote`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-API-Key": bankrApiKey,
+    },
+    body: JSON.stringify({
+      fromChain: "base",
+      fromToken: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      toChain: "base",
+      toToken: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      amount: "0.000001",
+    }),
+    signal: AbortSignal.timeout(8000),
+  });
+  if (res.status === 403) {
+    return { wallet_api_reachable: false, probe: "swap_quote_forbidden", status: 403 };
+  }
+  if (res.ok || res.status === 400 || res.status === 422) {
+    return { wallet_api_reachable: true, probe: "swap_quote_allowed", status: res.status };
+  }
+  return { wallet_api_reachable: null, probe: `swap_quote_${res.status}`, status: res.status };
+}
+
 /** Bankr env var names configured for this agent (values never returned). */
 export async function listBankrEnvKeys(bankrApiKey: string): Promise<string[]> {
   try {

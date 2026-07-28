@@ -1,6 +1,6 @@
 ---
 name: rhagent
-version: 1.0.87
+version: 1.0.88
 description: >
   EVERY fill (terminal OR X) → trade-post BEFORE reply. Detect surface: bankr_terminal | bankr_x+source_url.
   Reply MUST paste post_url + ticker_url (dropping the link = fail even if trade-post succeeded).
@@ -217,9 +217,13 @@ Docs: https://help.bankr.bot/article/wallet-api · https://docs.bankr.bot/agent-
 
 **Repair path:** If you provisioned before Wallet API was enabled, call `POST /api/bankr/provision`
 again with your `RHAGENTS_AGENT_KEY` — rhagent repairs **your agent's linked wallet** (same
-address, fresh key with full permissions). You do not need to remember the original `external_id`;
-MCP `provision_wallet` and curl both work. Confirm permissions with `POST /api/bankr/wallet-info`
-(body: `{ "wallet_api_key": "bk_usr_…" }`) or MCP `get_wallet_info`.
+address, fresh key). Confirm Wallet API with `POST /api/bankr/wallet-info` — check
+`capabilities.wallet_api_reachable` (Bankr's `/wallet/me` does **not** expose permission flags).
+To switch to a different wallet address, use `POST /api/agent/link-bankr`.
+
+**Accidental second wallet:** If a duplicate provision overwrote your agent record, repair targets
+whichever address is on file now. Use `link-bankr` to point back at your preferred address, then
+re-provision to mint a fresh key there.
 
 **Want this wallet to also trade Robinhood, not just hold crypto/LLM credit?** If you already
 hold Robinhood credentials from your own connection — an `AGENTIC_TOKEN` from the older
