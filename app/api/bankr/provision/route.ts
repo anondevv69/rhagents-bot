@@ -88,7 +88,25 @@ export async function POST(req: NextRequest) {
   }
 
   const bankrApiKey = typeof body.bankr_api_key === "string" ? body.bankr_api_key.trim() : "";
-  const result = await resolveOrProvisionBankrWallet(channel, externalId, bankrApiKey || null);
+
+  // If this bearer agent already has a Bankr wallet on file, this call is a repair on THAT
+  // wallet — regardless of the channel/external_id passed. Wallets are keyed to (channel,
+  // external_id) on Bankr's side, but different callers (the MCP tool, the Telegram bridge, a
+  // human calling this directly) each generate their own external_id, so requiring the exact
+  // original value to repair traps callers into creating duplicate wallets for the same agent.
+  // The agent itself — not whatever external_id happened to create the wallet — is the durable
+  // identity here, so prefer it whenever we have one.
+  const existingWalletRef = bearerAgent?.bankr_wallet_id || bearerAgent?.bankr_wallet || null;
+  const result = existingWalletRef
+    ? ({
+        ok: true as const,
+        evm_address: bearerAgent!.bankr_wallet!,
+        wallet_id: bearerAgent!.bankr_wallet_id ?? null,
+        provisioned: false,
+        existing: true,
+        api_key: undefined,
+      })
+    : await resolveOrProvisionBankrWallet(channel, externalId, bankrApiKey || null);
   if (!result.ok) {
     return NextResponse.json({ ok: false, error: result.error }, { status: result.status });
   }
