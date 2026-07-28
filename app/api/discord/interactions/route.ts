@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  forwardDiscordToTradingAgent,
+  useTradingDiscordForward,
+} from "@/lib/discord-trading-forward";
+import {
   DiscordInteractionType,
   DiscordResponseType,
   interactionInvoker,
@@ -33,9 +37,23 @@ import { rateLimit } from "@/lib/rate-limit";
  *
  * Must verify the Ed25519 signature on every request (including PING) and respond within 3s,
  * or defer (type 5) + follow up for anything slower (the /ask NL command).
+ * When TRADING_DISCORD_APPLICATION_ID is set, forwards to rhagent-telegram-agent
+ * (Discord credentials + full /start /trading command set live there).
+ *
+ * Legacy social-only handler below runs only when TRADING_DISCORD_APPLICATION_ID is unset.
  */
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
+
+  if (useTradingDiscordForward()) {
+    try {
+      return await forwardDiscordToTradingAgent(req, rawBody);
+    } catch (err) {
+      console.error("[discord/interactions] forward to trading agent failed", err);
+      return NextResponse.json({ error: "upstream unavailable" }, { status: 502 });
+    }
+  }
+
   const signature = req.headers.get("x-signature-ed25519");
   const timestamp = req.headers.get("x-signature-timestamp");
 
