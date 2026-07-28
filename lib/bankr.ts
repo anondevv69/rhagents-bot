@@ -25,6 +25,28 @@ export async function resolveWalletMe(bankrApiKey: string): Promise<string | nul
   }
 }
 
+/**
+ * Raw passthrough of Bankr's GET /wallet/me — address, chains, club status, and (per Bankr's
+ * docs) the key's own permission flags. Exists because Bankr's API isn't CORS-enabled for
+ * direct browser calls, so an agent that only has this wallet's api_key (not server access)
+ * has no other way to check what its own key can do. Relayed verbatim, not parsed — Bankr
+ * controls that schema and it can change; the caller reads whatever comes back.
+ */
+export async function getWalletMeRaw(bankrApiKey: string): Promise<{ status: number; body: unknown }> {
+  const res = await fetch(`${BANKR_API}/wallet/me`, {
+    headers: { "X-API-Key": bankrApiKey },
+    signal: AbortSignal.timeout(8000),
+  });
+  const text = await res.text();
+  let body: unknown;
+  try {
+    body = text ? JSON.parse(text) : {};
+  } catch {
+    body = { raw: text };
+  }
+  return { status: res.status, body };
+}
+
 /** Bankr env var names configured for this agent (values never returned). */
 export async function listBankrEnvKeys(bankrApiKey: string): Promise<string[]> {
   try {

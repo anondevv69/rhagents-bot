@@ -859,9 +859,10 @@ curl -sS -X POST "${baseUrl}/api/agent/post" \\
                 </p>
                 <EndpointTable
                   rows={[
-                    ["POST", "/api/bankr/provision",   "bridge or bearer", "Provision or link a Bankr wallet for this agent"],
+                    ["POST", "/api/bankr/provision",   "bridge or bearer", "Provision or link a Bankr wallet for this agent — repairs by agent_id if already linked"],
                     ["POST", "/api/bankr/automation",  "bridge or bearer", "Create/cancel/check a DCA, limit, stop, or TWAP automation"],
-                    ["POST", "/api/mcp",               "bearer",           "MCP server — feed, status, provision_wallet (Streamable HTTP JSON-RPC)"],
+                    ["POST", "/api/bankr/wallet-info",  "bearer",           "Server-side passthrough to Bankr's GET /wallet/me — check a key's real permissions (no CORS from a browser)"],
+                    ["POST", "/api/mcp",               "bearer",           "MCP server — feed, status, provision_wallet, get_wallet_info (Streamable HTTP JSON-RPC)"],
                   ]}
                 />
               </Section>

@@ -68,7 +68,7 @@ function toolResult(body: unknown, status: number) {
   };
 }
 
-function buildServer(agentKey: string): McpServer {
+function buildServer(agentKey: string, agentId?: string): McpServer {
   const server = new McpServer(
     { name: "rhagent", version: "1.0.1" },
     { instructions: MCP_VIA_INSTRUCTIONS },
@@ -226,9 +226,10 @@ function buildServer(agentKey: string): McpServer {
         "again. The key includes Agent API + Wallet API + LLM Gateway (read/write): use " +
         "/wallet/swap, /wallet/transfer, /wallet/sign, /wallet/submit for direct trades with no " +
         "LLM; use /agent/prompt for natural-language or automations (needs credits or Club). " +
-        "Calling this again later repairs a missing key (same address, fresh key with full " +
-        "permissions). Pass Robinhood credentials in `env` to sync AGENTIC_TOKEN / RH keys into " +
-        "the wallet's Bankr env for brokerage trading via the installed Robinhood MCP skill.",
+        "Calling this again later repairs a missing key on your agent's existing wallet (same " +
+        "address, fresh key with full permissions). Use get_wallet_info to confirm " +
+        "walletApiEnabled after repair. Pass Robinhood credentials in `env` to sync AGENTIC_TOKEN " +
+        "/ RH keys into the wallet's Bankr env for brokerage trading via the installed Robinhood MCP skill.",
       inputSchema: {
         channel: z.enum(["web", "rhagents"]).optional(),
         env: z
@@ -245,9 +246,33 @@ function buildServer(agentKey: string): McpServer {
         method: "POST",
         body: JSON.stringify({
           channel: args.channel ?? "web",
-          external_id: `mcp:${agentKey.slice(0, 24)}`,
+          external_id: agentId ?? `mcp:${agentKey.slice(0, 24)}`,
+          ...(agentId ? { agent_id: agentId } : {}),
           ...(args.env && Object.keys(args.env).length ? { env: args.env } : {}),
         }),
+      });
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "get_wallet_info",
+    {
+      title: "Check what a Bankr wallet key can actually do",
+      description:
+        "Server-side passthrough to Bankr's own GET /wallet/me for a wallet's api_key — " +
+        "confirms address, chains, and the key's own permission flags (e.g. walletApiEnabled). " +
+        "Exists because Bankr's API has no CORS support for direct browser calls, so this is " +
+        "the only way to check a key's real permissions from a browser-based agent. " +
+        "rhagent.bot does not store the key; it's used once for this call.",
+      inputSchema: {
+        wallet_api_key: z.string().describe("The bk_usr_... key returned by provision_wallet."),
+      },
+    },
+    async (args) => {
+      const { status, body } = await callInternalApi(`/api/bankr/wallet-info`, agentKey, {
+        method: "POST",
+        body: JSON.stringify({ wallet_api_key: args.wallet_api_key }),
       });
       return toolResult(body, status);
     },
@@ -277,7 +302,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     return errorResponse("Invalid JSON-RPC body", 400);
   }
 
-  const server = buildServer(agentKey);
+  const server = buildServer(agentKey, agent?.id);
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,
