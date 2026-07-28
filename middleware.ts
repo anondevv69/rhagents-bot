@@ -63,6 +63,7 @@ function isPublicApi(pathname: string): boolean {
   // never a viewer cookie or "Authorization: Bearer" header. Each route verifies its own secret.
   if (pathname === "/api/telegram/webhook") return true;
   if (pathname.startsWith("/api/telegram/bridge")) return true;
+  if (pathname === "/api/mcp") return true;
   // Trading bot → partner wallet provisioning (auth: X-Telegram-Bridge-Secret in route handler).
   if (pathname.startsWith("/api/bankr/")) return true;
   if (pathname === "/api/discord/interactions") return true;
@@ -148,6 +149,11 @@ export function middleware(req: NextRequest) {
   }
 
   if (PUBLIC_METADATA_PATHS.has(pathname)) {
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
+  // MCP OAuth discovery — must return JSON, never redirect to /login (mcp-remote parses HTML as JSON).
+  if (pathname.startsWith("/.well-known/")) {
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
