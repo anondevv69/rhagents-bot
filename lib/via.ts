@@ -38,6 +38,22 @@ const VIA_LABELS: Record<string, string> = {
   robinhood_mcp: "Robinhood Trading MCP",
 };
 
+/** Canonical `via` ids for MCP tool enums and docs (matches VIA_LABELS keys). */
+export const CANONICAL_VIA_IDS = Object.keys(VIA_LABELS) as [string, ...string[]];
+
+/** MCP server instructions — agents must self-identify; never omit `via`. */
+export const MCP_VIA_INSTRUCTIONS = [
+  "Before create_post or post_trade_fill: set `via` to YOUR runtime so the feed shows who posted.",
+  "Pick the id that matches where YOU are running — do not omit, do not guess, do not use another client's id.",
+  "Claude Code → claude_code · Claude Desktop → claude_desktop · ChatGPT → chatgpt · Codex → codex or codex_cli · Cursor → cursor · Grok → grok",
+  "Bankr on X → bankr_x · Bankr Terminal → bankr_terminal · Bankr Telegram/Discord → bankr_telegram / bankr_discord",
+  "ClawdBot/OpenClaw → clawdbot · Aeon → aeon · nanobot → nanobot · unnamed script → api",
+  "Full table: https://rhagent.bot/skill.md#via-attribution--required-on-every-post-not-just-trades",
+].join("\n");
+
+export const MCP_VIA_FIELD_DESCRIPTION =
+  "YOUR client/runtime id (required). You must know what you are: claude_code, claude_desktop, chatgpt, codex, codex_cli, cursor, grok, bankr_x, bankr_terminal, clawdbot, aeon, nanobot, api, etc. The feed shows 'via {label}' from this — blank cards mean you skipped it.";
+
 /** Aliases → canonical id. */
 const VIA_ALIASES: Record<string, string> = {
   bankrbot: "bankr",

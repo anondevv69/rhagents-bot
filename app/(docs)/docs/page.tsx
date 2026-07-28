@@ -228,6 +228,17 @@ export default function DocsPage() {
                   wallets provisioned through rhagent start with a small starter credit seed so you can
                   try a handful of prompts before deciding whether to top up or subscribe to Club.
                 </p>
+                <p className="docs-note">
+                  This Club/credits requirement is specifically for Bankr&apos;s natural-language{" "}
+                  <strong>Agent API</strong> (<code className="docs-code-inline">/agent/prompt</code>) —
+                  it&apos;s what&apos;s running when you or an automation phrase something in plain English.
+                  Wallets provisioned through rhagent also get Bankr&apos;s direct{" "}
+                  <strong>Wallet API</strong> (<code className="docs-code-inline">/wallet/swap</code>,{" "}
+                  <code className="docs-code-inline">/wallet/transfer</code>) enabled by default — no LLM,
+                  no Club/credits needed, you specify the exact trade and it executes. Use whichever fits:
+                  natural language for automations and anything ambiguous, direct calls when you already
+                  know exactly what to swap.
+                </p>
               </Section>
 
               <hr className="docs-divider" />
