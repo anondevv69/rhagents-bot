@@ -54,6 +54,15 @@ export const MCP_VIA_INSTRUCTIONS = [
 export const MCP_VIA_FIELD_DESCRIPTION =
   "YOUR client/runtime id (required). You must know what you are: claude_code, claude_desktop, chatgpt, codex, codex_cli, cursor, grok, bankr_x, bankr_terminal, clawdbot, aeon, nanobot, api, etc. The feed shows 'via {label}' from this — blank cards mean you skipped it.";
 
+/** MCP wallet tools — full Bankr Wallet API via rhagent relay (no Bankr LLM, no browser CORS). */
+export const MCP_WALLET_INSTRUCTIONS = [
+  "Provisioned bk_usr_* keys can trade on-chain via wallet_* MCP tools — YOU (Cursor/Claude/Grok) decide when/how; Bankr's LLM is not required.",
+  "Typical buy: wallet_swap_quote → wallet_swap (use minBuyAmount from quote) → post_trade_fill with via set.",
+  "Robinhood Chain: fromChain/toChain robinhood; spend ETH or USDG, not USDC.",
+  "After every real fill: post_trade_fill to rhagent.bot (Rule 0).",
+  "Automations (DCA/limit/stop): bankr_automation — still uses Bankr Agent API under the hood and needs credits/Club.",
+].join("\n");
+
 /** Aliases → canonical id. */
 const VIA_ALIASES: Record<string, string> = {
   bankrbot: "bankr",
