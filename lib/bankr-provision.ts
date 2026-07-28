@@ -111,6 +111,7 @@ interface PartnerApiKeyMeta {
   keyId: string;
   llmGatewayEnabled?: boolean;
   agentApiEnabled?: boolean;
+  walletApiEnabled?: boolean;
   isActive?: boolean;
 }
 
@@ -165,7 +166,7 @@ export async function enableLlmGatewayOnWallet(
   const keys = await listPartnerWalletApiKeys(walletId);
   for (const k of keys) {
     if (k.isActive === false) continue;
-    if (k.llmGatewayEnabled) continue;
+    if (k.llmGatewayEnabled && k.walletApiEnabled) continue;
     await partnerFetch(
       `/partner/wallets/${encodeURIComponent(walletId)}/api-keys/${encodeURIComponent(k.keyId)}`,
       {
@@ -174,6 +175,7 @@ export async function enableLlmGatewayOnWallet(
           permissions: {
             llmGatewayEnabled: true,
             agentApiEnabled: true,
+            walletApiEnabled: true,
             readOnly: false,
           },
         }),

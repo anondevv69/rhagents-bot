@@ -26,6 +26,11 @@ export function defaultWalletApiKeyBody(channel?: string) {
     permissions: {
       agentApiEnabled: true,
       llmGatewayEnabled: true,
+      // Direct, deterministic wallet ops (swap/transfer/sign/submit via /wallet/*) —
+      // without this, a provisioned wallet can only act through the natural-language
+      // Agent API (/agent/prompt), which needs Bankr Club or LLM credits and routes
+      // every action through Bankr's own LLM. See docs.bankr.bot/wallet-api/overview.
+      walletApiEnabled: true,
       tokenLaunchApiEnabled: false,
       readOnly: false,
     },

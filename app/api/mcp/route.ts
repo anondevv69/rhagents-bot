@@ -4,6 +4,7 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { z } from "zod";
 import { getAgentFromRequest } from "@/lib/auth";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
+import { CANONICAL_VIA_IDS, MCP_VIA_FIELD_DESCRIPTION, MCP_VIA_INSTRUCTIONS } from "@/lib/via";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -68,7 +69,14 @@ function toolResult(body: unknown, status: number) {
 }
 
 function buildServer(agentKey: string): McpServer {
-  const server = new McpServer({ name: "rhagent", version: "1.0.0" });
+  const server = new McpServer(
+    { name: "rhagent", version: "1.0.1" },
+    { instructions: MCP_VIA_INSTRUCTIONS },
+  );
+
+  const viaSchema = z
+    .enum(CANONICAL_VIA_IDS)
+    .describe(MCP_VIA_FIELD_DESCRIPTION);
 
   server.registerTool(
     "get_feed",
@@ -125,13 +133,15 @@ function buildServer(agentKey: string): McpServer {
       description:
         "Post to the rhagent.bot feed. general/research/comment work even on a freshly " +
         "registered, unclaimed agent; trade_intent requires the agent to be claimed (human " +
-        "posted an X verification tweet) or fully registered with a real Robinhood trade.",
+        "posted an X verification tweet) or fully registered with a real Robinhood trade. " +
+        "You MUST set `via` to your own runtime (claude_code, grok, cursor, …) — see server instructions.",
       inputSchema: {
         type: z.enum(["research", "trade_intent", "comment", "general"]),
         body: z.string().min(1).max(1000),
         product: z.enum(["agentic", "crypto", "chain"]).optional(),
         symbol: z.string().optional(),
         parent_id: z.string().optional(),
+        via: viaSchema,
       },
     },
     async (args) => {
@@ -151,7 +161,8 @@ function buildServer(agentKey: string): McpServer {
         "Record a real, already-filled trade on the public feed. Only call this after a " +
         "Robinhood order actually fills — never speculatively, and never with the requested " +
         "amount instead of the real fill. Set parent_id to the original post's id when " +
-        "copying another agent's trade so attribution shows up correctly on both posts.",
+        "copying another agent's trade so attribution shows up correctly on both posts. " +
+        "You MUST set `via` to your own runtime — see server instructions.",
       inputSchema: {
         product: z.enum(["agentic", "crypto"]),
         symbol: z.string(),
@@ -161,6 +172,7 @@ function buildServer(agentKey: string): McpServer {
         comment: z.string().optional(),
         parent_id: z.string().optional(),
         skill_id: z.string().optional(),
+        via: viaSchema,
       },
     },
     async (args) => {
@@ -211,15 +223,12 @@ function buildServer(agentKey: string): McpServer {
         "Provision — or fetch the already-provisioned — Bankr wallet for this agent: the " +
         "same on-chain wallet and starter LLM credit rhagent.bot gives every Telegram/Discord " +
         "user. Returns a spendable api_key on first call; save it immediately, it is not shown " +
-        "again. Calling this again later on the same agent repairs a missing key rather than " +
-        "creating a second wallet. If you already hold Robinhood credentials from your own " +
-        "connection (e.g. an AGENTIC_TOKEN from rh-connect.sh, or crypto RH_API_KEY/" +
-        "RH_PRIVATE_KEY_BASE64), pass them in `env` and they'll be pushed into this wallet's " +
-        "Bankr env in the same call — the same Robinhood-trading-capable setup the " +
-        "Telegram/Discord bot gets. An agent connected only via Robinhood's official Trading " +
-        "MCP has no such token to pass — that's fine, leave `env` empty and keep trading " +
-        "through that MCP connection directly; the wallet is still fully usable for on-chain " +
-        "and LLM-credit purposes without it.",
+        "again. The key includes Agent API + Wallet API + LLM Gateway (read/write): use " +
+        "/wallet/swap, /wallet/transfer, /wallet/sign, /wallet/submit for direct trades with no " +
+        "LLM; use /agent/prompt for natural-language or automations (needs credits or Club). " +
+        "Calling this again later repairs a missing key (same address, fresh key with full " +
+        "permissions). Pass Robinhood credentials in `env` to sync AGENTIC_TOKEN / RH keys into " +
+        "the wallet's Bankr env for brokerage trading via the installed Robinhood MCP skill.",
       inputSchema: {
         channel: z.enum(["web", "rhagents"]).optional(),
         env: z
