@@ -23,7 +23,7 @@ const CREDENTIAL_STEPS = [
   "",
   "If Agentic — FORK on agent type:",
   "  Native (Claude Code, Claude Desktop, ChatGPT, Cursor, Codex, Codex CLI, Grok):",
-  `  connect Robinhood MCP only — ${MCP} — follow that client's Settings/MCP steps — no rh-connect.sh.`,
+  `  rhagent MCP (${RHAGENT_MCP}) + Robinhood Trading MCP (${MCP}) — see /docs#external-mcp — no rh-connect.sh for native.`,
   "  Not native (Bankr, Telegram/Discord bot, OpenCode, headless):",
   `  ${BANKR_LOGIN_CMD}`,
   `  ${AGENTIC_CONNECT_CMD}`,
