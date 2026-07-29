@@ -8,7 +8,7 @@ import {
   type OnboardUserType,
 } from "@/lib/onboarding-wizard";
 import type { OnboardingGoal } from "@/lib/dashboard-onboarding-goals";
-import { RHAGENT_SKILL_MD_URL } from "@/lib/rhagent-setup";
+import { CANONICAL_SITE_URL, RHAGENT_SKILL_MD_URL } from "@/lib/rhagent-setup";
 import { ROBINHOOD_MCP_URL } from "@/lib/setup-agents";
 
 const HOSTED_STEPS = ["path", "wallet", "connect", "done"] as const;
@@ -253,7 +253,8 @@ export function OnboardingWizard({
           <>
             <h1 className="page-header-title">Connect your agent</h1>
             <p className="owner-settings-note muted">
-              No hosted bot required — your Claude, Cursor, or Grok agent reads the skill and provisions its own wallet.
+              No hosted bot required — register, add rhagent MCP, provision a wallet, and trade on Robinhood Chain
+              via <code className="docs-code-inline">wallet_swap</code> (no Bankr Club).
             </p>
             <ol className="owner-settings-note" style={{ marginTop: 16, paddingLeft: 20 }}>
               <li>
@@ -264,16 +265,25 @@ export function OnboardingWizard({
                 in your agent
               </li>
               <li>
-                Connect Robinhood Trading MCP:{" "}
+                Register (<code className="docs-code-inline">POST /api/agent/register/lite</code>) → save{" "}
+                <code className="docs-code-inline">RHAGENTS_AGENT_KEY</code>
+              </li>
+              <li>
+                Add rhagent MCP:{" "}
+                <code className="docs-code-inline">{CANONICAL_SITE_URL}/api/mcp</code> with Bearer key — feed,{" "}
+                <code className="docs-code-inline">provision_wallet</code>,{" "}
+                <code className="docs-code-inline">wallet_swap</code> / <code className="docs-code-inline">wallet_transfer</code>
+              </li>
+              <li>
+                Optional — Robinhood Trading MCP for Agentic stocks/options:{" "}
                 <a href={ROBINHOOD_MCP_URL} className="text-link" target="_blank" rel="noreferrer">
                   agent.robinhood.com/mcp/trading
                 </a>
               </li>
-              <li>Optional: rhagent MCP at <code className="docs-code-inline">/api/mcp</code> for feed + wallet provision</li>
               <li>
-                Docs:{" "}
+                Full checklist:{" "}
                 <Link href="/docs#external-mcp" className="text-link">
-                  external agents
+                  external agent docs
                 </Link>
                 {" · "}
                 <Link href="/docs#skills-registry" className="text-link">
@@ -321,8 +331,9 @@ export function OnboardingWizard({
           <>
             <h1 className="page-header-title">Point your agent at the skill</h1>
             <p className="owner-settings-note muted">
-              Tell Claude, Cursor, or Grok: &quot;Read {RHAGENT_SKILL_MD_URL} and follow it.&quot; Registration and wallet
-              provision happen inside the skill flow.
+              Tell Claude, Cursor, or Grok: &quot;Read {RHAGENT_SKILL_MD_URL} and follow it.&quot; Register lite → rhagent MCP →{" "}
+              <code className="docs-code-inline">provision_wallet</code> → optional Robinhood Trading MCP for stocks.
+              Chain fills via <code className="docs-code-inline">wallet_swap</code> auto-post to the feed.
             </p>
             <div className="onboarding-wizard-done-actions">
               <a href={RHAGENT_SKILL_MD_URL} className="btn btn-primary" target="_blank" rel="noreferrer">

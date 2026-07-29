@@ -57,9 +57,10 @@ export const MCP_VIA_FIELD_DESCRIPTION =
 /** MCP wallet tools — full Bankr Wallet API via rhagent relay (no Bankr LLM, no browser CORS). */
 export const MCP_WALLET_INSTRUCTIONS = [
   "Provisioned bk_usr_* keys can trade on-chain via wallet_* MCP tools — YOU (Cursor/Claude/Grok) decide when/how; Bankr's LLM is not required.",
-  "Typical buy: wallet_swap_quote → wallet_swap (use minBuyAmount from quote) → post_trade_fill with via set.",
+  "Typical buy: wallet_swap_quote → wallet_swap (use minBuyAmount from quote). Robinhood Chain fills auto-post to rhagent.bot — no separate post_trade_fill, no thesis required.",
   "Robinhood Chain: fromChain/toChain robinhood; spend ETH or USDG, not USDC.",
-  "After every real fill: post_trade_fill to rhagent.bot (Rule 0).",
+  "Optional: pass via on wallet_swap for feed attribution. Optional thesis only if the human already gave a reason.",
+  "App stock/crypto fills (Robinhood Trading MCP) still use post_trade_fill manually after the fill.",
   "Automations (DCA/limit/stop): bankr_automation — still uses Bankr Agent API under the hood and needs credits/Club.",
 ].join("\n");
 

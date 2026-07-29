@@ -34,7 +34,7 @@ export const ONBOARD_USER_TYPES: OnboardUserTypeOption[] = [
   {
     id: "external",
     title: "Claude / Cursor / Grok",
-    summary: "Your own AI agent — skill.md, Robinhood MCP, wallet provision",
+    summary: "Your own AI agent — skill.md, rhagent MCP, on-chain trading + optional Robinhood MCP",
     goal: null,
     surface: "mcp",
     usesHostedBot: false,

@@ -31,11 +31,13 @@ import { resolveFillPricing } from "@/lib/trade-pricing";
 import { warmPostOgImage } from "@/lib/warm-post-og";
 import { isAddress } from "viem";
 import { incrementSkillUsage, resolveSkillForTradePost } from "@/lib/agent-skills";
+import { MCP_WALLET_SWAP_AUTO_POST_HEADER } from "@/lib/wallet-swap-auto-post";
 
 /**
  * POST /api/agent/trade-post
  * product: "agentic" | "crypto" | "chain"
  * Claimed agents must post every fill — App and Chain.
+ * MCP wallet_swap auto-posts chain fills (X-RHAGENTS-Auto-Post: mcp-wallet-swap) without a separate tool call.
  */
 export async function POST(req: NextRequest) {
   const agent = getAgentFromRequest(req);
@@ -50,6 +52,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const isMcpWalletSwapAutoPost =
+    req.headers.get("x-rhagents-auto-post") === MCP_WALLET_SWAP_AUTO_POST_HEADER;
+
   if (!agent.haiku_verified) {
     return NextResponse.json(
       {
@@ -61,19 +66,21 @@ export async function POST(req: NextRequest) {
   }
 
   const capError = requireRhCapability(agent);
-  if (capError) {
+  if (capError && !isMcpWalletSwapAutoPost) {
     return NextResponse.json({ ok: false, error: capError }, { status: 403 });
   }
 
   const claimError = requireClaimed(agent);
-  if (claimError) {
+  if (claimError && !isMcpWalletSwapAutoPost) {
     return NextResponse.json(
       { ok: false, error: claimError, status: "pending_claim", poll: "GET /api/agent/status" },
       { status: 403 }
     );
   }
 
-  const chainOnlyGate = await requireChainOnlyHold(agent);
+  const chainOnlyGate = isMcpWalletSwapAutoPost
+    ? ({ ok: true as const, hold: null })
+    : await requireChainOnlyHold(agent);
   if (!chainOnlyGate.ok) {
     return NextResponse.json(chainOnlyGate.body, { status: chainOnlyGate.status });
   }
@@ -140,20 +147,29 @@ export async function POST(req: NextRequest) {
     (!!symbolInput && isAddress(symbolInput));
 
   if (wantsChain) {
-    const productErr = canPostProduct(agent, "chain");
+    const productErr = isMcpWalletSwapAutoPost ? null : canPostProduct(agent, "chain");
     if (productErr) {
       return NextResponse.json({ ok: false, error: productErr }, { status: 403 });
     }
-    if (!agent.chain_wallet) {
+    const chainWallet = agent.chain_wallet ?? (isMcpWalletSwapAutoPost ? agent.bankr_wallet : null);
+    if (!chainWallet) {
       return NextResponse.json(
         { ok: false, error: "No chain_wallet — POST /api/agent/verify-chain" },
         { status: 403 }
       );
     }
     const hold =
-      chainOnlyGate.hold && chainOnlyGate.hold.ok
-        ? chainOnlyGate.hold
-        : await checkRhagentHoldings(agent.chain_wallet);
+      isMcpWalletSwapAutoPost
+        ? {
+            ok: true as const,
+            balance_tokens: 0,
+            value_usd: null,
+            passed_via: "token_amount" as const,
+            wallet: chainWallet as `0x${string}`,
+          }
+        : chainOnlyGate.hold && chainOnlyGate.hold.ok
+          ? chainOnlyGate.hold
+          : await checkRhagentHoldings(chainWallet);
     if (!hold.ok) {
       return NextResponse.json(holdFailResponse(hold), { status: 403 });
     }

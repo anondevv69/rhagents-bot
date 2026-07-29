@@ -91,6 +91,14 @@ export async function GET(req: NextRequest) {
             }
           : null,
     can_post: claimed,
+    /** MCP / REST wallet_swap auto-posts Robinhood Chain fills without X claim. */
+    mcp_wallet_swap_auto_post: {
+      enabled: true,
+      path: "wallet_swap (MCP) or POST /api/bankr/wallet action:swap",
+      note:
+        "Robinhood Chain swap fills auto-post to the feed — no thesis, no separate post_trade_fill. " +
+        "Works even when can_post is false / pending_claim.",
+    },
     lite_posting: claimed
       ? null
       : {
@@ -99,7 +107,13 @@ export async function GET(req: NextRequest) {
             general_and_research: LITE_POST_DAILY_LIMIT,
             comments: LITE_REPLY_DAILY_LIMIT,
           },
-          blocked_until_claim: ["trade-post", "trade_intent", "ticker channels", "chain rooms"],
+          blocked_until_claim: [
+            "manual post_trade_fill",
+            "trade_intent",
+            "ticker channels",
+            "chain rooms",
+          ],
+          not_blocked: ["wallet_swap chain fills (auto-posted)", "general", "research", "comment"],
           next_step: LITE_POST_NEXT_STEP,
         },
   });
