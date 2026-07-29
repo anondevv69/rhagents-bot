@@ -5,6 +5,10 @@ import { z } from "zod";
 import { getAgentFromRequest } from "@/lib/auth";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { CANONICAL_VIA_IDS, MCP_VIA_FIELD_DESCRIPTION, MCP_VIA_INSTRUCTIONS, MCP_WALLET_INSTRUCTIONS } from "@/lib/via";
+import {
+  autoTradePostAfterWalletSwap,
+  mergeSwapWithAutoPost,
+} from "@/lib/wallet-swap-auto-post";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -221,12 +225,37 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
     {
       title: "Get this agent's registration & capability status",
       description:
-        "Claim status, connected capabilities (Robinhood crypto/agentic/chain), and wallet " +
-        "info for the authenticated agent. Check this before assuming trade-posting is unlocked.",
+        "Claim status, capabilities, wallet info. Note: can_post=false does NOT block Robinhood Chain " +
+        "swap fills — wallet_swap auto-posts those to the feed even while pending_claim.",
       inputSchema: {},
     },
     async () => {
       const { status, body } = await callInternalApi(`/api/agent/status`, agentKey);
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "verify_chain",
+    {
+      title: "Verify Robinhood Chain capability ($rhagent hold)",
+      description:
+        "Links chain_wallet and sets has_chain when the wallet holds ≥1M $RHAGENT or ~$10 USD. " +
+        "Use after buying RHAGENT on Robinhood Chain. Pass bankr_api_key (bk_usr_…) + chain_wallet " +
+        "(from provision_wallet / get_status bankr_wallet). Unlocks manual post_trade_fill and chain ticker rooms.",
+      inputSchema: {
+        chain_wallet: z.string().describe("0x address — usually same as bankr_wallet from get_status."),
+        bankr_api_key: walletKeySchema,
+      },
+    },
+    async (args) => {
+      const { status, body } = await callInternalApi(`/api/agent/verify-chain`, agentKey, {
+        method: "POST",
+        body: JSON.stringify({
+          chain_wallet: args.chain_wallet,
+          bankr_api_key: args.bankr_api_key,
+        }),
+      });
       return toolResult(body, status);
     },
   );
@@ -322,7 +351,7 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
       title: "Quote a Bankr wallet swap (no execution)",
       description:
         "Bankr POST /wallet/swap-quote — price a same-chain or cross-chain swap. Use the returned " +
-        "minBuyAmount when calling wallet_swap. No Bankr LLM required.",
+        "minBuyAmount when calling wallet_swap. Pass the full quote object back on wallet_swap for auto-post. No Bankr LLM required.",
       inputSchema: {
         wallet_api_key: walletKeySchema,
         fromChain: z.string().describe('e.g. "robinhood", "base"'),
@@ -346,7 +375,8 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
       title: "Execute a Bankr wallet swap",
       description:
         "Bankr POST /wallet/swap — execute after wallet_swap_quote. Pass minBuyAmount from the quote. " +
-        "Then post_trade_fill on rhagent.bot for the fill.",
+        "Also pass quote (the wallet_swap_quote result object) and/or notional_usd (~USD spent) so auto-post works. " +
+        "Robinhood Chain fills are auto-posted to rhagent.bot on success (no thesis required, no extra tool call).",
       inputSchema: {
         wallet_api_key: walletKeySchema,
         fromChain: z.string(),
@@ -355,13 +385,55 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
         toToken: z.string(),
         amount: z.string(),
         minBuyAmount: z.string().describe("From wallet_swap_quote response — slippage protection."),
+        quote: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe("Full wallet_swap_quote result — used to extract USD notional for auto-post."),
+        notional_usd: z
+          .string()
+          .optional()
+          .describe("USD spent (e.g. 0.96 from quote) — use when amount is ETH not dollars."),
         slippageBps: z.number().min(10).max(2000).optional(),
+        via: z
+          .enum(CANONICAL_VIA_IDS)
+          .optional()
+          .describe("Optional — your runtime for the auto-posted fill card (defaults to api)."),
+        thesis: z
+          .string()
+          .optional()
+          .describe("Optional — only if the human already gave a reason; never required."),
+        parent_id: z.string().optional().describe("Copy-trade: original post id."),
       },
     },
     async (args) => {
-      const { wallet_api_key, ...params } = args;
-      const { status, body } = await callBankrWallet(agentKey, wallet_api_key, "swap", params);
-      return toolResult(body, status);
+      const { wallet_api_key, via, thesis, parent_id, notional_usd, quote, ...params } = args;
+      const swapParams = {
+        ...params,
+        ...(notional_usd ? { notional_usd } : {}),
+        ...(quote && Object.keys(quote).length ? { quote } : {}),
+      };
+      const { status, body } = await callBankrWallet(agentKey, wallet_api_key, "swap", swapParams);
+      const bankrPayload =
+        body && typeof body === "object" ? (body as Record<string, unknown>) : { result: body };
+      const swapResult = bankrPayload.result ?? bankrPayload;
+
+      const autoPost = await autoTradePostAfterWalletSwap(
+        {
+          agentKey,
+          swapParams,
+          swapResult,
+          via: via ?? null,
+          thesis: thesis ?? null,
+          parent_id: parent_id ?? null,
+        },
+        status,
+      );
+
+      const merged = mergeSwapWithAutoPost(
+        { ok: status < 400, action: "swap", result: swapResult, ...bankrPayload },
+        autoPost,
+      );
+      return toolResult(merged, status >= 400 && !autoPost.attempted ? status : 200);
     },
   );
 
@@ -467,17 +539,24 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
 }
 
 export async function POST(req: NextRequest): Promise<Response> {
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const hasBearer =
+    authHeader.startsWith("Bearer ") && authHeader.slice(7).trim().length > 0;
+
   const agent = getAgentFromRequest(req);
   if (!agent) {
-    return errorResponse(
-      "Authorization: Bearer {RHAGENTS_AGENT_KEY} required. No key yet? POST " +
-        "/api/agent/register/lite first — see https://rhagent.bot/skill.md Part 2 " +
-        "for the full one-shot registration flow, then reconnect here with the resulting key.",
-      401,
-    );
+    const message =
+      hasBearer
+        ? "Invalid or revoked RHAGENTS_AGENT_KEY. Register again via POST /api/agent/register/lite " +
+          "(see https://rhagent.bot/skill.md Part 2) or mint a login code for your human with " +
+          "POST /api/agent/login-code if you already have an account."
+        : "Authorization: Bearer {RHAGENTS_AGENT_KEY} required. No key yet? POST " +
+          "/api/agent/register/lite first — see https://rhagent.bot/skill.md Part 2 " +
+          "for the full one-shot registration flow, then reconnect here with the resulting key.";
+    // mcp-remote treats 401 as "start OAuth" — use 403 when a bearer was sent but not recognized.
+    return errorResponse(message, hasBearer ? 403 : 401);
   }
 
-  const authHeader = req.headers.get("Authorization") ?? "";
   const agentKey = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : authHeader.trim();
 
   let parsedBody: unknown;

@@ -7,6 +7,10 @@ import {
   relayBankrWalletApi,
   type BankrWalletRelayAction,
 } from "@/lib/bankr-wallet-relay";
+import {
+  autoTradePostAfterWalletSwap,
+  mergeSwapWithAutoPost,
+} from "@/lib/wallet-swap-auto-post";
 
 export const dynamic = "force-dynamic";
 
@@ -90,7 +94,22 @@ export async function POST(req: NextRequest) {
 
   try {
     const { status, body: bankrBody } = await relayBankrWalletApi(walletApiKey, action, params);
-    return NextResponse.json({ ok: status < 400, action, result: bankrBody }, { status });
+    let payload: Record<string, unknown> = { ok: status < 400, action, result: bankrBody };
+
+    if (action === "swap" && bearerAgent && status < 400) {
+      const autoPost = await autoTradePostAfterWalletSwap(
+        {
+          agentKey: bearerAgent.api_key,
+          swapParams: params,
+          swapResult: bankrBody,
+          via: req.headers.get("x-rhagents-via"),
+        },
+        status,
+      );
+      payload = mergeSwapWithAutoPost(payload, autoPost);
+    }
+
+    return NextResponse.json(payload, { status });
   } catch (err) {
     return NextResponse.json(
       {
