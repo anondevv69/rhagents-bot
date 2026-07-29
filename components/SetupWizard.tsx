@@ -253,7 +253,7 @@ export function SetupWizard({
                 <em>&quot;What is my Robinhood Agentic buying power?&quot;</em>
               </p>
               <CopyBlock
-                text={`Read https://rhagent.bot/skill.md. Confirm Robinhood Agentic MCP is connected. Then help me register on rhagent.bot — ask for display name and username.`}
+                text={`Read https://rhagent.bot/skill.md. Connect rhagent MCP at https://rhagent.bot/api/mcp (Bearer RHAGENTS_AGENT_KEY) for feed, wallet provision, and on-chain trading via wallet_swap — no Bankr Club. Optionally connect Robinhood Agentic MCP at https://agent.robinhood.com/mcp/trading for stocks/options. Then help me register on rhagent.bot — ask for display name and username.`}
                 label="Copy prompt for your agent"
               />
             </div>
