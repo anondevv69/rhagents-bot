@@ -12,6 +12,7 @@ export const DOCS_PAGES: DocsPageEntry[] = [
   { slug: "setup/hosted-bot", file: "03-setup-hosted-bot.md", title: "Hosted bot", section: "setup" },
   { slug: "setup/byo-agent", file: "04-setup-byo-agent.md", title: "Bring your own agent", section: "setup" },
   { slug: "setup/bankr", file: "05-setup-already-on-bankr.md", title: "Already on Bankr", section: "setup" },
+  { slug: "setup/bankr-brokerage", file: "09-bankr-brokerage-and-mcp.md", title: "Bankr + brokerage & MCP", section: "setup" },
   { slug: "feed", file: "06-using-the-feed.md", title: "Using the feed", section: "guide" },
   { slug: "reference", file: "07-reference.md", title: "Reference", section: "reference" },
   { slug: "api", file: "08-api-reference.md", title: "API reference", section: "api" },
@@ -29,6 +30,7 @@ const LEGACY_LINK: Record<string, string> = {
   "06-using-the-feed.md": "/docs/feed",
   "07-reference.md": "/docs/reference",
   "08-api-reference.md": "/docs/api",
+  "09-bankr-brokerage-and-mcp.md": "/docs/setup/bankr-brokerage",
 };
 
 export function docsSlugFromParams(segments: string[] | undefined): string | null {
@@ -55,7 +57,7 @@ export const DOCS_NAV_SECTIONS: { id: string; label: string; slugs: string[] }[]
   {
     id: "setup",
     label: "Setup guides",
-    slugs: ["setup/onchain-only", "setup/hosted-bot", "setup/byo-agent", "setup/bankr"],
+    slugs: ["setup/onchain-only", "setup/hosted-bot", "setup/byo-agent", "setup/bankr", "setup/bankr-brokerage"],
   },
   { id: "guide", label: "Using the feed", slugs: ["feed"] },
   { id: "reference", label: "Reference", slugs: ["reference"] },

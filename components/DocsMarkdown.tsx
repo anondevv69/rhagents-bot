@@ -1,11 +1,13 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeSlug from "rehype-slug";
 
 export function DocsMarkdown({ content }: { content: string }) {
   return (
     <article className="docs-markdown">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeSlug]}
         components={{
           a: ({ href, children }) => (
             <a
