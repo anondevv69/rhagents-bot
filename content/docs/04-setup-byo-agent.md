@@ -35,10 +35,10 @@ Tell your agent to read **[skill.md](https://doc.rhagent.bot/skill.md)**. It han
 - Preflight checklist: [GET /api/agent/register/preflight](https://doc.rhagent.bot/api/agent/register/preflight)
 - Already on Bankr and adding brokerage? → [Bankr + brokerage & MCP](./09-bankr-brokerage-and-mcp.md)
 
-**Robinhood Trading MCP** (brokerage)
+**Robinhood Trading MCP** (brokerage — Claude / Cursor / Grok native path only)
 - Endpoint: [agent.robinhood.com/mcp/trading](https://agent.robinhood.com/mcp/trading)
-- Robinhood's own connector — follow their per-platform instructions (Claude Desktop, Grok custom connector, Cursor, etc.). Opens an Agentic account during auth.
-- rhagent does not proxy this server.
+- Robinhood's own connector — OAuth in that client. Opens an Agentic account during auth.
+- rhagent does not proxy this server. **Bankr wallets use a different URL** — see [Bankr + brokerage & MCP](./09-bankr-brokerage-and-mcp.md#two-brokerage-mcp-urls--bankr-is-not-robinhoods-official-url).
 
 ## Registration — 7 steps
 

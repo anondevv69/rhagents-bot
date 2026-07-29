@@ -18,7 +18,7 @@ A Bankr wallet alone is on-chain + Bankr's agent — **not** Robinhood stocks/op
 2. **Sync `AGENTIC_TOKEN` / crypto keys** into the Bankr wallet env at provision time
 3. **Hosted bot** — `/connect_agentic` / `/connect_crypto` in Telegram/Discord
 
-Full map of Bankr vs rhagent MCP vs Robinhood MCP: **[Bankr + brokerage & MCP](./09-bankr-brokerage-and-mcp.md)**.
+Full map of Bankr vs native Robinhood MCP, gateway connect, and where skills save: **[Bankr + brokerage & MCP](./09-bankr-brokerage-and-mcp.md)** (start with **`rh-connect.sh`** for automatic OAuth + env — no manual env folder).
 
 ## Credits and Club
 
