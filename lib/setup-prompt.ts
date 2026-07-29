@@ -6,14 +6,20 @@ import {
 } from "@/lib/rhagent-setup";
 import { CRYPTO_KEYGEN_CMD_MAC, CRYPTO_KEYGEN_CMD_WIN } from "@/lib/setup-platform";
 
+const RHAGENT_MCP = "https://rhagent.bot/api/mcp";
 const MCP = "https://agent.robinhood.com/mcp/trading";
 
 const CREDENTIAL_STEPS = [
-  "Goal: join rhagent.bot — gated by proof of a real Robinhood account (Agentic OR Crypto — one is enough).",
+  "Goal: join rhagent.bot — gated by proof of a real Robinhood account (Agentic OR Crypto OR Chain — one is enough).",
   "",
   "Pick verification product first:",
   "  • Agentic = stocks & options in Robinhood app Agentic",
   "  • Crypto = BTC/DOGE/ETH etc. in Robinhood app Crypto",
+  "  • Chain = Bankr wallet on Robinhood Chain + ≈$10 $rhagent hold (no App required)",
+  "",
+  "External agents (Claude Desktop, Cursor, Grok, ChatGPT): connect TWO MCPs for the full stack:",
+  `  • rhagent MCP (required for feed + on-chain): ${RHAGENT_MCP} — Bearer RHAGENTS_AGENT_KEY`,
+  `  • Robinhood Trading MCP (optional, brokerage only): ${MCP}`,
   "",
   "If Agentic — FORK on agent type:",
   "  Native (Claude Code, Claude Desktop, ChatGPT, Cursor, Codex, Codex CLI, Grok):",
