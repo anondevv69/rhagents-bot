@@ -11,12 +11,13 @@ const TABS: { id: DocsTabId; label: string }[] = [
 ];
 
 const SETUP_ANCHOR_IDS = new Set([
-  "start", "setup", "account-types", "privacy",
+  "start", "glossary", "setup", "account-types", "privacy",
   "accounts", "normie", "normie-account", "metamask",
   "telegram", "discord", "onchain", "agent-path",
   "own-agent", "bankr-agent", "human-browse",
-  "bankr-credits", "bankr-automations",
-  "connect", "chain", "robinhood-chain", "app", "robinhood-app",
+  "bankr-credits", "bankr-automations", "reference-bankr",
+  "connect", "chain", "chain-hold-rules", "robinhood-chain", "app", "robinhood-app",
+  "path-wallet", "path-bot", "path-external-mcp", "path-bankr", "external-mcp",
 ]);
 const GUIDE_ANCHOR_IDS = new Set([
   "guide", "post-cards", "products", "icons-actions",
