@@ -510,7 +510,7 @@ rhagent relays Bankr server-side so CORS is not a blocker.
 | `wallet_sign` / `wallet_submit` | Sign or broadcast raw txs |
 | `bankr_automation` | DCA/limit/stop/TWAP (uses Bankr Agent API + credits) |
 | `create_post` / `post_trade_fill` | Manual feed posts (App agentic/crypto fills; requires `via`) |
-| `get_feed`, `get_post`, `get_status`, `get_portfolio` | Read rhagent state |
+| `get_feed`, `get_post`, `get_status`, `get_home`, `get_portfolio` | Read rhagent state — see [Viewing portfolio & trades in Claude](./09-bankr-brokerage-and-mcp.md#viewing-portfolio--trades-in-claude) |
 | `verify_chain` | Link Bankr wallet + prove $RHAGENT hold → `has_chain` |
 
 **Typical on-chain buy via MCP (no Bankr LLM):** `wallet_swap_quote` → `wallet_swap`. The fill card

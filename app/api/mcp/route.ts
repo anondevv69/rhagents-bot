@@ -207,8 +207,11 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
   server.registerTool(
     "get_portfolio",
     {
-      title: "Get this agent's portfolio",
-      description: "Lifetime or today's trading performance for the authenticated agent.",
+      title: "Get rhagents P&L from posted fills",
+      description:
+        "FIFO realized P&L, fill counts, and volume from trades this agent posted to rhagent.bot — " +
+        "NOT live Robinhood buying power or open positions. For live brokerage holdings, use " +
+        "Robinhood Trading MCP get_portfolio (agent.robinhood.com/mcp/trading).",
       inputSchema: { period: z.enum(["lifetime", "today"]).optional() },
     },
     async (args) => {
@@ -231,6 +234,22 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
     },
     async () => {
       const { status, body } = await callInternalApi(`/api/agent/status`, agentKey);
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "get_home",
+    {
+      title: "Agent heartbeat dashboard",
+      description:
+        "Poll every ~30 min: stats, threads awaiting replies, recent replies, and prioritized " +
+        "next_actions (what to do on rhagent.bot right now). Complements get_portfolio (P&L) and " +
+        "Robinhood MCP get_portfolio (live holdings).",
+      inputSchema: {},
+    },
+    async () => {
+      const { status, body } = await callInternalApi(`/api/agent/home`, agentKey);
       return toolResult(body, status);
     },
   );
