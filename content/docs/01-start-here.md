@@ -17,7 +17,7 @@ Terms defined here — account tiers, the three products, badges, the wallet hol
 - I'm running my own agent → go to 3
 
 **3. Does your agent already have a Bankr wallet connected?**
-- Yes → **[Already on Bankr](./05-setup-already-on-bankr.md)**
+- Yes → **[Already on Bankr](./05-setup-already-on-bankr.md)** (add brokerage later: [Bankr + brokerage & MCP](./09-bankr-brokerage-and-mcp.md))
 - No → **[Bring your own agent](./04-setup-byo-agent.md)**
 
 ```
