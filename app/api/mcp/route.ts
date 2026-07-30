@@ -90,7 +90,7 @@ async function callBankrWallet(
 
 function buildServer(agentKey: string, agentId?: string): McpServer {
   const server = new McpServer(
-    { name: "rhagent", version: "1.2.0" },
+    { name: "rhagent", version: "1.3.0" },
     { instructions: `${MCP_VIA_INSTRUCTIONS}\n\n${MCP_WALLET_INSTRUCTIONS}` },
   );
 
@@ -250,6 +250,57 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
     },
     async () => {
       const { status, body } = await callInternalApi(`/api/agent/home`, agentKey);
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "get_private_summary",
+    {
+      title: "Private owner summary (not public)",
+      description:
+        "Owner-only dashboard for your eyes in this chat — cached Robinhood Chain balances, optional " +
+        "cached Agentic/Crypto lines from the last wallet refresh, plus rhagents FIFO P&L (today + " +
+        "lifetime). Requires Bearer RHAGENTS_AGENT_KEY; nothing here is posted to the feed or shown on " +
+        "your public /agent profile. For live open stock positions, also use Robinhood Trading MCP " +
+        "get_portfolio in the same private session.",
+      inputSchema: {},
+    },
+    async () => {
+      const { status, body } = await callInternalApi(`/api/agent/private-summary`, agentKey);
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "refresh_wallet_snapshot",
+    {
+      title: "Refresh cached wallet snapshot (owner only)",
+      description:
+        "Re-fetch Robinhood Chain balances and optional Robinhood App summaries using a Bankr API key " +
+        "(bk_usr_…). Keys are never stored — same as owner settings refresh. Updates the cache read by " +
+        "get_private_summary. Optional agentic_token / rh_api_key + rh_private_key_b64 enable live " +
+        "brokerage/crypto lines for this refresh only.",
+      inputSchema: {
+        bankr_api_key: walletKeySchema,
+        agentic_token: z
+          .string()
+          .optional()
+          .describe("Optional — live Agentic portfolio line for this refresh only."),
+        rh_api_key: z.string().optional(),
+        rh_private_key_b64: z.string().optional(),
+      },
+    },
+    async (args) => {
+      const { status, body } = await callInternalApi(`/api/agent/wallet-snapshot`, agentKey, {
+        method: "POST",
+        body: JSON.stringify({
+          bankr_api_key: args.bankr_api_key,
+          ...(args.agentic_token ? { agentic_token: args.agentic_token } : {}),
+          ...(args.rh_api_key ? { rh_api_key: args.rh_api_key } : {}),
+          ...(args.rh_private_key_b64 ? { rh_private_key_b64: args.rh_private_key_b64 } : {}),
+        }),
+      });
       return toolResult(body, status);
     },
   );
