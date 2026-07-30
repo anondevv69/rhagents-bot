@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<!--
+  Telegram Mini App: deposit screen.
+
+  Opened by the bot via a WebApp button pointing at this page, e.g.:
+    https://rhagent.bot/telegram/deposit?orderId=...&paymentLinkUrl=...
+
+  Flow:
+    1. Bot's /deposit command calls POST /api/bankr/deposit/create (see
+       ../telegram/bot-handler.ts) to get { orderId, paymentLinkUrl }.
+    2. Bot opens this page as a Telegram WebApp button, passing those two
+       values as query params (or have your backend template them in
+       server-side — either works, query params shown here for clarity).
+    3. This page embeds the paymentLinkUrl in an iframe per Coinbase's
+       requirements (allow="payment", specific sandbox attributes) and
+       listens for postMessage events to show progress.
+    4. On success/failure, calls Telegram.WebApp.close() so the user lands
+       back in the chat.
+
+  UNVERIFIED ON REAL DEVICES: Apple Pay's PaymentRequest API and Google Pay's
+  equivalent need to actually be reachable from inside Telegram's in-app
+  WebView on iOS/Android. This is standard web tech and Telegram Mini Apps
+  are Chrome/Safari-engine webviews, so it should work, but this hasn't been
+  tested against a real Coinbase sandbox order + real Telegram client as part
+  of this build — do that before shipping.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Add funds</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--tg-theme-bg-color, #0b0b0b);
+      color: var(--tg-theme-text-color, #fff);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    h1 { font-size: 18px; margin: 0 0 4px; }
+    p.sub { color: var(--tg-theme-hint-color, #888); font-size: 14px; margin: 0 0 20px; }
+    #payment-frame-container {
+      flex: 1;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+      min-height: 220px;
+    }
+    iframe { width: 100%; height: 100%; border: 0; min-height: 220px; }
+    #status {
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      display: none;
+    }
+    #status.info { display: block; background: rgba(120,150,255,0.12); }
+    #status.error { display: block; background: rgba(255,90,90,0.14); color: #ff6b6b; }
+    #status.success { display: block; background: rgba(90,220,140,0.14); color: #3ddc84; }
+  </style>
+</head>
+<body>
+  <h1>Add funds</h1>
+  <p class="sub">Pay with Apple Pay or Google Pay — funds go straight to your wallet.</p>
+
+  <div id="payment-frame-container"></div>
+  <div id="status"></div>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+    tg?.expand();
+    tg?.ready();
+
+    const params = new URLSearchParams(window.location.search);
+    const paymentLinkUrl = params.get("paymentLinkUrl");
+    const orderId = params.get("orderId");
+
+    const statusEl = document.getElementById("status");
+    const frameContainer = document.getElementById("payment-frame-container");
+
+    function setStatus(kind, message) {
+      statusEl.className = kind;
+      statusEl.textContent = message;
+    }
+
+    if (!paymentLinkUrl) {
+      setStatus("error", "Missing payment link — go back and try /deposit again.");
+    } else {
+      const iframe = document.createElement("iframe");
+      iframe.src = paymentLinkUrl;
+      // Coinbase's docs require `allow="payment"` on the iframe for the
+      // Apple Pay / Google Pay session APIs to be reachable inside it.
+      iframe.allow = "payment";
+      iframe.setAttribute("referrerpolicy", "no-referrer");
+      frameContainer.appendChild(iframe);
+    }
+
+    // Coinbase's payment-link page posts events to the parent window.
+    // https://docs.cdp.coinbase.com/onramp/headless-onramp/overview#post-message-events
+    window.addEventListener("message", (event) => {
+      let payload;
+      try {
+        payload = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+      } catch {
+        return; // not a Coinbase event
+      }
+      if (!payload || typeof payload.eventName !== "string") return;
+
+      switch (payload.eventName) {
+        case "onramp_api.load_pending":
+          setStatus("info", "Loading payment options…");
+          break;
+        case "onramp_api.load_success":
+          statusEl.className = "";
+          statusEl.textContent = "";
+          break;
+        case "onramp_api.load_error":
+          setStatus("error", describeError(payload.data?.errorCode) ?? "Couldn't load payment options.");
+          break;
+        case "onramp_api.commit_success":
+          setStatus("info", "Payment started — confirming…");
+          break;
+        case "onramp_api.commit_error":
+          setStatus("error", describeError(payload.data?.errorCode) ?? "Payment couldn't be started.");
+          break;
+        case "onramp_api.cancel":
+          setStatus("info", "Cancelled.");
+          break;
+        case "onramp_api.polling_success":
+          setStatus("success", "Done — funds are on the way to your wallet.");
+          notifyBotAndClose({ orderId, status: "success" });
+          break;
+        case "onramp_api.polling_error":
+          setStatus("error", describeError(payload.data?.errorCode) ?? "Something went wrong processing the payment.");
+          notifyBotAndClose({ orderId, status: "error", errorCode: payload.data?.errorCode });
+          break;
+      }
+    });
+
+    function describeError(code) {
+      const messages = {
+        ERROR_CODE_GUEST_CARD_SOFT_DECLINED: "Your bank declined this — try a different card.",
+        ERROR_CODE_GUEST_INVALID_CARD: "That card or billing address looks invalid.",
+        ERROR_CODE_GUEST_CARD_INSUFFICIENT_BALANCE: "Insufficient balance on that card.",
+        ERROR_CODE_GUEST_CARD_HARD_DECLINED: "That card was declined by the issuing bank.",
+        ERROR_CODE_GUEST_CARD_RISK_DECLINED: "This transaction was flagged and can't proceed.",
+        ERROR_CODE_GUEST_REGION_MISMATCH: "Deposits aren't available in your region yet.",
+        ERROR_CODE_GUEST_PERMISSION_DENIED: "This account can't use deposits right now.",
+        ERROR_CODE_GUEST_CARD_PREPAID_DECLINED: "Prepaid cards aren't supported — use a standard debit card.",
+        ERROR_CODE_GUEST_TRANSACTION_LIMIT: "This would go over your weekly limit. Try a smaller amount, or ask about raising your limit.",
+        ERROR_CODE_GUEST_TRANSACTION_COUNT: "You've hit the lifetime transaction limit for unverified deposits — raising your limit removes this cap.",
+      };
+      return code ? messages[code] : null;
+    }
+
+    function notifyBotAndClose(result) {
+      // Optional: send a structured result back to the bot backend via
+      // Telegram.WebApp.sendData (only works if this Mini App was opened as
+      // a *keyboard button* web_app, not an inline button — see bot-handler.ts).
+      try {
+        tg?.sendData(JSON.stringify(result));
+      } catch {
+        // sendData isn't available for inline-button-launched mini apps —
+        // that's fine, the backend also gets transaction status via the
+        // Transaction Status API / your own webhook, independent of this.
+      }
+      setTimeout(() => tg?.close(), 1800);
+    }
+  </script>
+</body>
+</html>

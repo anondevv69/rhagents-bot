@@ -466,6 +466,37 @@ function migrate(db: Database.Database) {
     db.exec(`CREATE INDEX IF NOT EXISTS idx_owner_link_agent ON owner_link_codes(agent_id)`);
   } catch { /* exists */ }
 
+  // Coinbase onramp deposit — verified contact info per Telegram/Discord user (no SSN stored).
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS deposit_contact_verifications (
+        platform           TEXT NOT NULL,
+        platform_user_id   TEXT NOT NULL,
+        phone_e164         TEXT,
+        email              TEXT,
+        phone_verified_at  TEXT,
+        email_verified_at  TEXT,
+        updated_at         TEXT NOT NULL DEFAULT (datetime('now')),
+        PRIMARY KEY (platform, platform_user_id)
+      )
+    `);
+  } catch { /* exists */ }
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS deposit_otp_challenges (
+        id           TEXT PRIMARY KEY,
+        platform     TEXT NOT NULL,
+        platform_user_id TEXT NOT NULL,
+        channel      TEXT NOT NULL CHECK(channel IN ('phone','email')),
+        destination  TEXT NOT NULL,
+        code_hash    TEXT NOT NULL,
+        expires_at   TEXT NOT NULL,
+        verified     INTEGER NOT NULL DEFAULT 0,
+        created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+  } catch { /* exists */ }
+
   // Robinhood Chain ticker metadata (symbol ↔ contract ↔ name) for room headers
   try {
     db.exec(`

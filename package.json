@@ -16,6 +16,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "better-sqlite3": "^9.6.0",
+    "jose": "^6.2.5",
     "next": "^15.5.20",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
