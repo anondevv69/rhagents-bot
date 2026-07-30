@@ -9,6 +9,13 @@ import {
   autoTradePostAfterWalletSwap,
   mergeSwapWithAutoPost,
 } from "@/lib/wallet-swap-auto-post";
+import {
+  mcpWalletDepositCheckLimits,
+  mcpWalletDepositCreate,
+  mcpWalletDepositIdentity,
+  mcpWalletDepositOtpSend,
+  mcpWalletDepositOtpVerify,
+} from "@/lib/coinbase-onramp/mcp-deposit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -90,7 +97,7 @@ async function callBankrWallet(
 
 function buildServer(agentKey: string, agentId?: string): McpServer {
   const server = new McpServer(
-    { name: "rhagent", version: "1.3.0" },
+    { name: "rhagent", version: "1.4.0" },
     { instructions: `${MCP_VIA_INSTRUCTIONS}\n\n${MCP_WALLET_INSTRUCTIONS}` },
   );
 
@@ -302,6 +309,100 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
         }),
       });
       return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "wallet_deposit_identity",
+    {
+      title: "Deposit verification status (Coinbase onramp)",
+      description:
+        "Check whether verified US phone + email are on file for fiat deposits into your provisioned " +
+        "Bankr wallet. Coinbase requires both before Apple Pay / Google Pay checkout. Use " +
+        "wallet_deposit_otp_send and wallet_deposit_otp_verify to collect them from the human once.",
+      inputSchema: {},
+    },
+    async () => {
+      if (!agentId) return toolResult({ ok: false, error: "agent id required" }, 400);
+      return mcpWalletDepositIdentity(agentId);
+    },
+  );
+
+  server.registerTool(
+    "wallet_deposit_otp_send",
+    {
+      title: "Send deposit verification OTP",
+      description:
+        "Send SMS or email OTP so Coinbase can accept a deposit order. Collect phone (+14155551234) " +
+        "or email from the human first — the agent cannot receive OTPs itself.",
+      inputSchema: {
+        channel: z.enum(["phone", "email"]),
+        destination: z
+          .string()
+          .describe("E.164 US phone (+1…) or email address from the human operator"),
+      },
+    },
+    async (args) => {
+      if (!agentId) return toolResult({ ok: false, error: "agent id required" }, 400);
+      return mcpWalletDepositOtpSend(agentId, args);
+    },
+  );
+
+  server.registerTool(
+    "wallet_deposit_otp_verify",
+    {
+      title: "Verify deposit OTP code",
+      description: "Confirm the code the human received — run once per channel (phone and email).",
+      inputSchema: {
+        challenge_id: z.string(),
+        code: z.string(),
+        channel: z.enum(["phone", "email"]),
+        destination: z.string(),
+      },
+    },
+    async (args) => {
+      if (!agentId) return toolResult({ ok: false, error: "agent id required" }, 400);
+      return mcpWalletDepositOtpVerify(agentId, args);
+    },
+  );
+
+  server.registerTool(
+    "wallet_deposit_check_limits",
+    {
+      title: "Check Coinbase guest deposit limits",
+      description:
+        "Weekly/lifetime Guest Checkout limits ($500/week default). Requires verified phone on file.",
+      inputSchema: {
+        payment_method: z
+          .enum(["GUEST_CHECKOUT_APPLE_PAY", "GUEST_CHECKOUT_GOOGLE_PAY"])
+          .optional(),
+      },
+    },
+    async (args) => {
+      if (!agentId) return toolResult({ ok: false, error: "agent id required" }, 400);
+      return mcpWalletDepositCheckLimits(agentId, args);
+    },
+  );
+
+  server.registerTool(
+    "wallet_deposit_create",
+    {
+      title: "Create fiat deposit link (Apple Pay / Google Pay)",
+      description:
+        "Add USD to your provisioned Bankr wallet via Coinbase Guest Checkout. Returns paymentLinkUrl — " +
+        "a **human must open the link and pay** (biometric/card confirm). The agent cannot complete payment. " +
+        "Requires provision_wallet first + verified phone/email (wallet_deposit_otp_*). Default asset: USDC on Base.",
+      inputSchema: {
+        payment_amount_usd: z.string().describe('USD amount, e.g. "25.00"'),
+        payment_method: z
+          .enum(["GUEST_CHECKOUT_APPLE_PAY", "GUEST_CHECKOUT_GOOGLE_PAY"])
+          .optional(),
+        asset: z.string().optional().describe("Defaults to USDC"),
+      },
+    },
+    async (args) => {
+      if (!agentId) return toolResult({ ok: false, error: "agent id required" }, 400);
+      return mcpWalletDepositCreate(agentId, args);
     },
   );
 

@@ -29,6 +29,14 @@ import {
 } from "@/lib/agent-capabilities";
 import { syncAgentSkills, type SkillSyncItem } from "@/lib/agent-skills";
 import { getDb } from "@/lib/db";
+import {
+  bridgeDepositCreate,
+  bridgeDepositIdentity,
+  bridgeDepositLimits,
+  bridgeDepositLimitsUpgrade,
+  bridgeDepositOtpSend,
+  bridgeDepositOtpVerify,
+} from "@/lib/coinbase-onramp/deposit-bridge";
 
 export const dynamic = "force-dynamic";
 
@@ -503,12 +511,42 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, privacy });
     }
 
+    case "deposit_identity": {
+      const result = await bridgeDepositIdentity({ ...body, platform, telegram_id: telegramId, discord_id: discordId });
+      return NextResponse.json(result.body, { status: result.status });
+    }
+
+    case "deposit_otp_send": {
+      const result = await bridgeDepositOtpSend({ ...body, platform, telegram_id: telegramId, discord_id: discordId });
+      return NextResponse.json(result.body, { status: result.status });
+    }
+
+    case "deposit_otp_verify": {
+      const result = await bridgeDepositOtpVerify({ ...body, platform, telegram_id: telegramId, discord_id: discordId });
+      return NextResponse.json(result.body, { status: result.status });
+    }
+
+    case "deposit_create": {
+      const result = await bridgeDepositCreate({ ...body, platform, telegram_id: telegramId, discord_id: discordId });
+      return NextResponse.json(result.body, { status: result.status });
+    }
+
+    case "deposit_limits": {
+      const result = await bridgeDepositLimits({ ...body, platform, telegram_id: telegramId, discord_id: discordId });
+      return NextResponse.json(result.body, { status: result.status });
+    }
+
+    case "deposit_limits_upgrade": {
+      const result = await bridgeDepositLimitsUpgrade({ ...body, platform, telegram_id: telegramId, discord_id: discordId });
+      return NextResponse.json(result.body, { status: result.status });
+    }
+
     default:
       return NextResponse.json(
         {
           ok: false,
           error:
-            "Unknown action. Use viewer_verify | claim | link | unlink | owner_status | bankr_provision | bankr_enable_llm | bankr_automation | sync_capabilities | sync_skills | profile_privacy",
+            "Unknown action. Use viewer_verify | claim | link | unlink | owner_status | bankr_provision | bankr_enable_llm | bankr_automation | sync_capabilities | sync_skills | profile_privacy | deposit_identity | deposit_otp_send | deposit_otp_verify | deposit_create | deposit_limits | deposit_limits_upgrade",
         },
         { status: 400 },
       );
