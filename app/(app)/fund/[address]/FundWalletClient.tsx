@@ -10,6 +10,30 @@ type Identity = {
   ready: boolean;
 };
 
+const SANDBOX_PHONE = "+10005550100";
+const SANDBOX_EMAIL = "tester@sandbox.test";
+const SANDBOX_CODE = "000000";
+
+function friendlyError(raw: string): string {
+  if (raw === "phone_must_be_e164_us") {
+    return "Enter a valid US phone number, e.g. 4155551234 or +14155551234.";
+  }
+  if (raw === "invalid_email") return "Enter a valid email address.";
+  if (raw === "otp_provider_not_configured") {
+    return "Deposits aren't configured on the server yet — try again later.";
+  }
+  if (raw.startsWith("coinbase_verification_not_allowlisted")) {
+    return "Coinbase hasn't approved this app for real phone/email verification yet. Tap \"Use sandbox test values\" below to try the full flow safely — no real money moves.";
+  }
+  if (raw.startsWith("coinbase_otp_send_failed") || raw.startsWith("coinbase_otp")) {
+    return `Coinbase couldn't send the code (${raw.replace(/^coinbase_otp[a-z_]*: ?/, "")}).`;
+  }
+  if (raw === "invalid_or_expired_code") {
+    return "That code is wrong or expired — request a new one.";
+  }
+  return raw;
+}
+
 export default function FundWalletClient({
   address,
   initialAmount,
@@ -19,6 +43,7 @@ export default function FundWalletClient({
 }) {
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [cdpOk, setCdpOk] = useState(false);
+  const [sandbox, setSandbox] = useState(false);
   const [amount, setAmount] = useState(initialAmount);
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -38,6 +63,7 @@ export default function FundWalletClient({
     if (data.ok) {
       setIdentity(data.identity);
       setCdpOk(Boolean(data.cdp_configured));
+      setSandbox(Boolean(data.sandbox));
       if (data.identity?.phone) setPhone(data.identity.phone);
       if (data.identity?.email) setEmail(data.identity.email);
     } else {
@@ -60,7 +86,7 @@ export default function FundWalletClient({
     });
     const data = await res.json();
     if (!data.ok) {
-      setError(data.error ?? "OTP send failed");
+      setError(friendlyError(data.error ?? "OTP send failed"));
       setStatus("");
       return;
     }
@@ -85,7 +111,7 @@ export default function FundWalletClient({
     });
     const data = await res.json();
     if (!data.ok) {
-      setError(data.error ?? "Invalid code");
+      setError(friendlyError(data.error ?? "Invalid code"));
       return;
     }
     setIdentity(data.identity);
@@ -102,7 +128,7 @@ export default function FundWalletClient({
     });
     const data = await res.json();
     if (!data.ok) {
-      setError(data.error ?? "Deposit failed");
+      setError(friendlyError(data.error ?? "Deposit failed"));
       setStatus("");
       return;
     }
@@ -138,12 +164,41 @@ export default function FundWalletClient({
       {!ready && (
         <div style={{ marginTop: 20 }}>
           <p style={{ fontSize: 14, fontWeight: 600 }}>Verify once (Coinbase sends the code)</p>
+          {sandbox && (
+            <div
+              style={{
+                marginTop: 8,
+                marginBottom: 8,
+                padding: 10,
+                background: "#f2f7ff",
+                border: "1px solid #cfe0ff",
+                borderRadius: 8,
+                fontSize: 13,
+              }}
+            >
+              <p style={{ margin: 0, color: "#333" }}>
+                Sandbox mode — no real money moves. Use test values and code {SANDBOX_CODE}.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setPhone(SANDBOX_PHONE);
+                  setEmail(SANDBOX_EMAIL);
+                }}
+                style={{ marginTop: 6 }}
+              >
+                Use sandbox test values
+              </button>
+            </div>
+          )}
           <label style={{ display: "block", marginTop: 12, fontSize: 14 }}>
-            US phone (+1…)
+            US phone
             <input
+              type="tel"
+              inputMode="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="+14155551234"
+              placeholder="4155551234 or +14155551234"
               style={{ display: "block", width: "100%", marginTop: 4, padding: 10 }}
             />
           </label>

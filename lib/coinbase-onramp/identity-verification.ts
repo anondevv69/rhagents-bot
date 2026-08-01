@@ -20,8 +20,35 @@ function basicEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 }
 
+/** Accepts "4155551234", "14155551234", "+14155551234", "(415) 555-1234", etc. */
+function normalizeUsPhone(raw: string): string | null {
+  const trimmed = raw.trim();
+  const digits = trimmed.replace(/\D/g, "");
+  if (trimmed.startsWith("+")) {
+    const candidate = `+${digits}`;
+    return E164.test(candidate) ? candidate : null;
+  }
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  return null;
+}
+
 function normalizeDestination(channel: "phone" | "email", dest: string): string {
-  return channel === "email" ? dest.trim().toLowerCase() : dest.trim();
+  if (channel === "email") return dest.trim().toLowerCase();
+  return normalizeUsPhone(dest) ?? dest.trim();
+}
+
+/** 401/403 on the Verification API means Coinbase hasn't allowlisted this app yet — separate from Onramp order approval. */
+const SANDBOX_HINT =
+  "Use Coinbase sandbox test values to try the full flow: phone +10005550100, email anything@sandbox.test, code 000000.";
+
+function friendlyCdpError(err: CdpApiError): Error {
+  if (err.status === 401 || err.status === 403) {
+    return new Error(
+      `coinbase_verification_not_allowlisted: Coinbase hasn't approved this app for live phone/email verification yet. ${SANDBOX_HINT}`,
+    );
+  }
+  return new Error(`coinbase_otp_send_failed: ${err.message.slice(0, 160)}`);
 }
 
 function otpExpiresMs(iso: string): number {
@@ -65,7 +92,7 @@ export async function sendDepositOtp(params: {
       };
     } catch (err) {
       if (err instanceof CdpApiError) {
-        throw new Error(`coinbase_otp_send_failed: ${err.message.slice(0, 160)}`);
+        throw friendlyCdpError(err);
       }
       throw err;
     }
@@ -120,6 +147,9 @@ export async function verifyDepositOtp(params: {
       return true;
     } catch (err) {
       if (err instanceof CdpApiError) {
+        if (err.status === 401 || err.status === 403) {
+          throw friendlyCdpError(err);
+        }
         return false;
       }
       throw err;
