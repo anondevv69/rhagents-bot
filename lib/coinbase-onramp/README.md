@@ -9,7 +9,7 @@ Fund provisioned Bankr wallets via Apple Pay / Google Pay (Coinbase Guest Checko
 | `lib/coinbase-onramp/onramp-client.ts` | CDP JWT + Create Order / Limits / Upgrade |
 | `lib/coinbase-onramp/wallet-lookup.ts` | Maps Telegram/Discord user → `agents.bankr_wallet` |
 | `lib/coinbase-onramp/identity-store.ts` | SQLite verified contact + OTP challenges |
-| `lib/coinbase-onramp/identity-verification.ts` | Twilio Verify or `DEPOSIT_OTP_DEV` |
+| `lib/coinbase-onramp/identity-verification.ts` | Coinbase Verification API (+ `DEPOSIT_OTP_DEV` fallback) |
 | `lib/coinbase-onramp/deposit-routes.ts` | Core handlers |
 | `lib/coinbase-onramp/deposit-bridge.ts` | Telegram/Discord bridge action adapters |
 | `app/api/bankr/deposit/*` | HTTP routes (bridge-auth only) |
@@ -26,11 +26,10 @@ COINBASE_ONRAMP_ASSET=USDC            # default
 COINBASE_ONRAMP_SANDBOX=1             # prefix partnerUserRef with sandbox-
 TELEGRAM_MINIAPP_BASE=https://rhagent.bot/telegram/deposit
 
-# OTP — pick one:
-DEPOSIT_OTP_DEV=1                     # logs 6-digit code to server console
-TWILIO_ACCOUNT_SID=
-TWILIO_AUTH_TOKEN=
-TWILIO_VERIFY_SERVICE_SID=
+# OTP — Coinbase sends SMS/email via POST /v2/onramp/verifications (requires CDP keys).
+# Sandbox: phone +1000…, email *@sandbox.test, code 000000
+# Production verification API may require Coinbase allowlisting during onboarding.
+DEPOSIT_OTP_DEV=1                     # local only when CDP keys absent — logs code to console
 ```
 
 ## rhagent-telegram-agent integration

@@ -1,8 +1,15 @@
 import {
+  CdpApiError,
+  cdpConfigured,
+  initiateOnrampVerification,
+  submitOnrampVerification,
+} from "@/lib/coinbase-onramp/onramp-client";
+import {
   createOtpChallenge,
-  getDepositIdentity,
-  phoneVerifiedRecently,
-  emailVerified,
+  createPendingCoinbaseVerification,
+  getDepositIdentityStatus,
+  getPendingCoinbaseVerification,
+  saveCoinbaseVerification,
   verifyOtpChallenge,
 } from "@/lib/coinbase-onramp/identity-store";
 import type { DepositPlatform } from "@/lib/coinbase-onramp/wallet-lookup";
@@ -13,46 +20,23 @@ function basicEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 }
 
-async function sendTwilioVerify(to: string, channel: "sms" | "email"): Promise<void> {
-  const sid = process.env.TWILIO_ACCOUNT_SID?.trim();
-  const token = process.env.TWILIO_AUTH_TOKEN?.trim();
-  const service = process.env.TWILIO_VERIFY_SERVICE_SID?.trim();
-  if (!sid || !token || !service) {
-    throw new Error("twilio_not_configured");
-  }
-
-  const body = new URLSearchParams({
-    To: to,
-    Channel: channel,
-  });
-
-  const auth = Buffer.from(`${sid}:${token}`).toString("base64");
-  const res = await fetch(
-    `https://verify.twilio.com/v2/Services/${encodeURIComponent(service)}/Verifications`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${auth}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body,
-    },
-  );
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`twilio_send_failed: ${text.slice(0, 120)}`);
-  }
+function normalizeDestination(channel: "phone" | "email", dest: string): string {
+  return channel === "email" ? dest.trim().toLowerCase() : dest.trim();
 }
 
-/** Send OTP — Twilio Verify when configured, otherwise dev-mode code in response. */
+function otpExpiresMs(iso: string): number {
+  const at = Date.parse(iso);
+  return Number.isNaN(at) ? Date.now() + 10 * 60 * 1000 : at;
+}
+
+/** Send OTP via Coinbase Verification API (or dev fallback). */
 export async function sendDepositOtp(params: {
   platform: DepositPlatform;
   platformUserId: string;
   channel: "phone" | "email";
   destination: string;
 }): Promise<{ challengeId: string; expiresAt: number; devCode?: string }> {
-  const dest = params.destination.trim();
+  const dest = normalizeDestination(params.channel, params.destination);
   if (params.channel === "phone") {
     if (!E164.test(dest)) {
       throw new Error("phone_must_be_e164_us");
@@ -61,53 +45,44 @@ export async function sendDepositOtp(params: {
     throw new Error("invalid_email");
   }
 
-  const { challengeId, code, expiresAt } = createOtpChallenge(
-    params.platform,
-    params.platformUserId,
-    params.channel,
-    params.channel === "email" ? dest.toLowerCase() : dest,
-  );
-
-  const twilioReady =
-    process.env.TWILIO_ACCOUNT_SID?.trim() &&
-    process.env.TWILIO_AUTH_TOKEN?.trim() &&
-    process.env.TWILIO_VERIFY_SERVICE_SID?.trim();
-
-  if (twilioReady) {
-    await sendTwilioVerify(dest, params.channel === "phone" ? "sms" : "email");
-    return { challengeId, expiresAt };
+  if (cdpConfigured()) {
+    try {
+      const initiated = await initiateOnrampVerification({
+        channel: params.channel === "phone" ? "sms" : "email",
+        destination: dest,
+      });
+      createPendingCoinbaseVerification({
+        verificationId: initiated.verificationId,
+        platform: params.platform,
+        platformUserId: params.platformUserId,
+        channel: params.channel,
+        destination: dest,
+        expiresAtIso: initiated.otpExpiresAt,
+      });
+      return {
+        challengeId: initiated.verificationId,
+        expiresAt: otpExpiresMs(initiated.otpExpiresAt),
+      };
+    } catch (err) {
+      if (err instanceof CdpApiError) {
+        throw new Error(`coinbase_otp_send_failed: ${err.message.slice(0, 160)}`);
+      }
+      throw err;
+    }
   }
 
   if (process.env.DEPOSIT_OTP_DEV === "1") {
+    const { challengeId, code, expiresAt } = createOtpChallenge(
+      params.platform,
+      params.platformUserId,
+      params.channel,
+      dest,
+    );
     console.info(`[deposit-otp-dev] ${params.channel} ${dest}: ${code}`);
     return { challengeId, expiresAt, devCode: code };
   }
 
   throw new Error("otp_provider_not_configured");
-}
-
-async function checkTwilioVerify(to: string, code: string): Promise<boolean> {
-  const sid = process.env.TWILIO_ACCOUNT_SID?.trim();
-  const token = process.env.TWILIO_AUTH_TOKEN?.trim();
-  const service = process.env.TWILIO_VERIFY_SERVICE_SID?.trim();
-  if (!sid || !token || !service) return false;
-
-  const body = new URLSearchParams({ To: to, Code: code });
-  const auth = Buffer.from(`${sid}:${token}`).toString("base64");
-  const res = await fetch(
-    `https://verify.twilio.com/v2/Services/${encodeURIComponent(service)}/VerificationCheck`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${auth}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body,
-    },
-  );
-  if (!res.ok) return false;
-  const data = (await res.json()) as { status?: string };
-  return data.status === "approved";
 }
 
 export async function verifyDepositOtp(params: {
@@ -118,28 +93,42 @@ export async function verifyDepositOtp(params: {
   challengeId: string;
   code: string;
 }): Promise<boolean> {
-  const dest = params.channel === "email" ? params.destination.trim().toLowerCase() : params.destination.trim();
-  const twilioReady =
-    process.env.TWILIO_ACCOUNT_SID?.trim() &&
-    process.env.TWILIO_AUTH_TOKEN?.trim() &&
-    process.env.TWILIO_VERIFY_SERVICE_SID?.trim();
+  const dest = normalizeDestination(params.channel, params.destination);
+  const verificationId = params.challengeId.trim();
+  const code = params.code.trim();
 
-  if (twilioReady) {
-    const ok = await checkTwilioVerify(dest, params.code.trim());
-    if (!ok) return false;
-    return verifyOtpChallenge(
-      params.challengeId,
-      "__twilio__",
+  if (cdpConfigured() && verificationId.startsWith("onramp_verification_")) {
+    const pending = getPendingCoinbaseVerification(
+      verificationId,
       params.platform,
       params.platformUserId,
       params.channel,
       dest,
     );
+    if (!pending) return false;
+
+    try {
+      const confirmed = await submitOnrampVerification(verificationId, code);
+      saveCoinbaseVerification({
+        platform: params.platform,
+        platformUserId: params.platformUserId,
+        channel: params.channel,
+        destination: dest,
+        verificationId: confirmed.verificationId,
+        verificationExpiresAt: confirmed.verificationExpiresAt,
+      });
+      return true;
+    } catch (err) {
+      if (err instanceof CdpApiError) {
+        return false;
+      }
+      throw err;
+    }
   }
 
   return verifyOtpChallenge(
-    params.challengeId,
-    params.code.trim(),
+    verificationId,
+    code,
     params.platform,
     params.platformUserId,
     params.channel,
@@ -147,13 +136,4 @@ export async function verifyDepositOtp(params: {
   );
 }
 
-export function getDepositIdentityStatus(platform: DepositPlatform, platformUserId: string) {
-  const row = getDepositIdentity(platform, platformUserId);
-  return {
-    phone: row?.phone_e164 ?? null,
-    email: row?.email ?? null,
-    phone_verified: phoneVerifiedRecently(row),
-    email_verified: emailVerified(row),
-    ready: phoneVerifiedRecently(row) && emailVerified(row),
-  };
-}
+export { getDepositIdentityStatus } from "@/lib/coinbase-onramp/identity-store";

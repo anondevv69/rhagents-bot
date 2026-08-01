@@ -32,7 +32,7 @@ function jsonError(err: unknown) {
   const status =
     msg === "phone_not_verified" || msg === "email_not_verified"
       ? 400
-      : msg === "otp_provider_not_configured" || msg === "twilio_not_configured"
+      : msg === "otp_provider_not_configured" || msg.startsWith("coinbase_otp")
         ? 503
         : 500;
   return { status, body: { ok: false, error: msg } };

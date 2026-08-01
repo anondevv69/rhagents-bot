@@ -45,17 +45,34 @@ export async function handleCreateDeposit(
 
   let phoneNumber = body.phoneNumber?.trim();
   let email = body.email?.trim();
+  let smsVerificationId: string | undefined;
+  let emailVerificationId: string | undefined;
+  let phoneNumberVerifiedAt: string | undefined;
+
+  try {
+    const id = assertDepositIdentityReady(body.platform, body.platformUserId);
+    phoneNumber = phoneNumber ?? id.phoneNumber;
+    email = email ?? id.email;
+    smsVerificationId = id.smsVerificationId;
+    emailVerificationId = id.emailVerificationId;
+    phoneNumberVerifiedAt = id.phoneNumberVerifiedAt;
+  } catch {
+    throw new HttpError(
+      400,
+      "phoneNumber and email must be verified before deposit — complete verification on the fund page first",
+    );
+  }
+
   if (!phoneNumber || !email) {
-    try {
-      const id = assertDepositIdentityReady(body.platform, body.platformUserId);
-      phoneNumber = phoneNumber ?? id.phoneNumber;
-      email = email ?? id.email;
-    } catch {
-      throw new HttpError(
-        400,
-        "phoneNumber and email must be verified before deposit — run /verify in the trading bot first",
-      );
-    }
+    throw new HttpError(400, "phoneNumber and email required");
+  }
+
+  const hasCoinbaseVerification = Boolean(smsVerificationId && emailVerificationId);
+  if (!hasCoinbaseVerification && !phoneNumberVerifiedAt) {
+    throw new HttpError(
+      400,
+      "phoneNumber and email must be verified before deposit — complete verification on the fund page first",
+    );
   }
 
   if (!body.paymentAmount || Number(body.paymentAmount) <= 0) {
@@ -74,6 +91,9 @@ export async function handleCreateDeposit(
       partnerUserRef: `${sandboxPrefix}${body.platform}:${body.platformUserId}`,
       phoneNumber: phoneNumber!,
       email: email!,
+      smsVerificationId,
+      emailVerificationId,
+      phoneNumberVerifiedAt,
       destinationAddress: wallet.address,
       network: wallet.network,
       asset: body.asset ?? process.env.COINBASE_ONRAMP_ASSET?.trim() ?? "USDC",
