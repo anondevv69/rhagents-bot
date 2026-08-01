@@ -19,8 +19,8 @@ Fund provisioned Bankr wallets via Apple Pay / Google Pay (Coinbase Guest Checko
 ## Env vars
 
 ```bash
-CDP_API_KEY_ID=organizations/.../apiKeys/...
-CDP_API_KEY_SECRET="-----BEGIN EC PRIVATE KEY-----\n...\n-----END EC PRIVATE KEY-----"
+CDP_API_KEY_ID=organizations/.../apiKeys/...   # or UUID from downloaded JSON
+CDP_API_KEY_SECRET=...                         # Ed25519 base64 (default) OR EC PEM block
 COINBASE_ONRAMP_NETWORK=base          # default
 COINBASE_ONRAMP_ASSET=USDC            # default
 COINBASE_ONRAMP_SANDBOX=1             # prefix partnerUserRef with sandbox-
