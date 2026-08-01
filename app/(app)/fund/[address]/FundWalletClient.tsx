@@ -23,7 +23,7 @@ function friendlyError(raw: string): string {
     return "Deposits aren't configured on the server yet — try again later.";
   }
   if (raw.startsWith("coinbase_verification_not_allowlisted")) {
-    return "Coinbase hasn't approved this app for real phone/email verification yet. Tap \"Use sandbox test values\" below to try the full flow safely — no real money moves.";
+    return "Coinbase Onramp isn't enabled on this API key yet. Use the test values below (code 000000) to try the flow, or enter your real phone/email once Onramp is approved.";
   }
   if (raw.startsWith("coinbase_otp_send_failed") || raw.startsWith("coinbase_otp")) {
     return `Coinbase couldn't send the code (${raw.replace(/^coinbase_otp[a-z_]*: ?/, "")}).`;
@@ -164,7 +164,7 @@ export default function FundWalletClient({
       {!ready && (
         <div style={{ marginTop: 20 }}>
           <p style={{ fontSize: 14, fontWeight: 600 }}>Verify once (Coinbase sends the code)</p>
-          {sandbox && (
+          {cdpOk && (
             <div
               style={{
                 marginTop: 8,
@@ -177,17 +177,21 @@ export default function FundWalletClient({
               }}
             >
               <p style={{ margin: 0, color: "#333" }}>
-                Sandbox mode — no real money moves. Use test values and code {SANDBOX_CODE}.
+                {sandbox
+                  ? `Sandbox mode — no real money moves. Test code: ${SANDBOX_CODE}.`
+                  : `Testing without Onramp approval? Use Coinbase test values and code ${SANDBOX_CODE}.`}
               </p>
               <button
                 type="button"
                 onClick={() => {
                   setPhone(SANDBOX_PHONE);
                   setEmail(SANDBOX_EMAIL);
+                  setPhoneCode(SANDBOX_CODE);
+                  setEmailCode(SANDBOX_CODE);
                 }}
                 style={{ marginTop: 6 }}
               >
-                Use sandbox test values
+                Use test values
               </button>
             </div>
           )}

@@ -38,17 +38,19 @@ function normalizeDestination(channel: "phone" | "email", dest: string): string 
   return normalizeUsPhone(dest) ?? dest.trim();
 }
 
-/** 401/403 on the Verification API means Coinbase hasn't allowlisted this app yet — separate from Onramp order approval. */
-const SANDBOX_HINT =
-  "Use Coinbase sandbox test values to try the full flow: phone +10005550100, email anything@sandbox.test, code 000000.";
-
 function friendlyCdpError(err: CdpApiError): Error {
   if (err.status === 401 || err.status === 403) {
-    return new Error(
-      `coinbase_verification_not_allowlisted: Coinbase hasn't approved this app for live phone/email verification yet. ${SANDBOX_HINT}`,
-    );
+    return new Error("coinbase_verification_not_allowlisted");
   }
   return new Error(`coinbase_otp_send_failed: ${err.message.slice(0, 160)}`);
+}
+
+function cdpAllowlistBlocked(err: unknown): boolean {
+  return err instanceof Error && err.message === "coinbase_verification_not_allowlisted";
+}
+
+function devOtpFallbackEnabled(): boolean {
+  return process.env.DEPOSIT_OTP_DEV === "1" || process.env.COINBASE_ONRAMP_SANDBOX === "1";
 }
 
 function otpExpiresMs(iso: string): number {
@@ -92,7 +94,18 @@ export async function sendDepositOtp(params: {
       };
     } catch (err) {
       if (err instanceof CdpApiError) {
-        throw friendlyCdpError(err);
+        const mapped = friendlyCdpError(err);
+        if (cdpAllowlistBlocked(mapped) && devOtpFallbackEnabled()) {
+          const { challengeId, code, expiresAt } = createOtpChallenge(
+            params.platform,
+            params.platformUserId,
+            params.channel,
+            dest,
+          );
+          console.info(`[deposit-otp-dev-fallback] ${params.channel} ${dest}: ${code}`);
+          return { challengeId, expiresAt, devCode: code };
+        }
+        throw mapped;
       }
       throw err;
     }
