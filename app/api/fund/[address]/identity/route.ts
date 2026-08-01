@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fundIdentity, fundWalletKey } from "@/lib/coinbase-onramp/fund-public";
 import { HttpError } from "@/lib/coinbase-onramp/deposit-routes";
-import { cdpConfigured } from "@/lib/coinbase-onramp/onramp-client";
+import { cdpConfigured, onrampSandboxEnabled } from "@/lib/coinbase-onramp/onramp-client";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +16,7 @@ export async function GET(
       ok: true,
       identity: fundIdentity(address),
       cdp_configured: cdpConfigured(),
+      sandbox: onrampSandboxEnabled(),
     });
   } catch (err) {
     const msg = err instanceof HttpError ? err.message : "invalid_address";

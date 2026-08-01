@@ -189,3 +189,8 @@ export async function submitLimitUpgrade(params: SubmitLimitUpgradeParams): Prom
 export function cdpConfigured(): boolean {
   return Boolean(process.env.CDP_API_KEY_ID?.trim() && process.env.CDP_API_KEY_SECRET?.trim());
 }
+
+/** Coinbase's documented sandbox destinations bypass Onramp Verification API allowlisting. */
+export function onrampSandboxEnabled(): boolean {
+  return process.env.COINBASE_ONRAMP_SANDBOX === "1";
+}

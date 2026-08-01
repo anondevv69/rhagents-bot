@@ -25,6 +25,9 @@ export async function POST(
     if (err instanceof HttpError) {
       return NextResponse.json({ ok: false, error: err.message }, { status: err.status });
     }
+    if (err instanceof Error && err.message.startsWith("coinbase_verification_not_allowlisted")) {
+      return NextResponse.json({ ok: false, error: err.message }, { status: 503 });
+    }
     return NextResponse.json({ ok: false, error: "verify_failed" }, { status: 400 });
   }
 }
