@@ -33,6 +33,7 @@ export interface CreateDepositResponse {
   paymentLinkUrl: string;
   destinationAddress: string;
   mini_app_path: string;
+  fund_pay_path?: string;
 }
 
 export async function handleCreateDeposit(
@@ -81,15 +82,17 @@ export async function handleCreateDeposit(
       domain: body.domain,
     });
 
+    const site = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://rhagent.bot";
     const miniBase =
-      process.env.TELEGRAM_MINIAPP_BASE?.trim() ||
-      `${process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://rhagent.bot"}/telegram/deposit`;
+      process.env.TELEGRAM_MINIAPP_BASE?.trim() || `${site}/telegram/deposit`;
+    const fundPayBase = `${site}/fund/${wallet.address}/pay`;
 
     return {
       orderId: order.orderId,
       paymentLinkUrl: order.paymentLinkUrl,
       destinationAddress: wallet.address,
       mini_app_path: `${miniBase}?orderId=${encodeURIComponent(order.orderId)}&paymentLinkUrl=${encodeURIComponent(order.paymentLinkUrl)}`,
+      fund_pay_path: `${fundPayBase}?orderId=${encodeURIComponent(order.orderId)}&paymentLinkUrl=${encodeURIComponent(order.paymentLinkUrl)}`,
     };
   } catch (err) {
     if (err instanceof CdpApiError) {

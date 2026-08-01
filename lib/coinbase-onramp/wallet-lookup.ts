@@ -9,7 +9,26 @@ export interface ResolvedWallet {
   agent_id: string;
 }
 
-export type DepositPlatform = "telegram" | "discord" | "agent";
+export type DepositPlatform = "telegram" | "discord" | "agent" | "wallet";
+
+const EVM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
+
+export function normalizeWalletAddress(address: string): string {
+  const trimmed = address.trim();
+  if (!EVM_ADDRESS_RE.test(trimmed)) {
+    throw new HttpError(400, "Invalid EVM wallet address.");
+  }
+  return trimmed.toLowerCase();
+}
+
+export function findAgentByWalletAddress(address: string): Agent | null {
+  const normalized = normalizeWalletAddress(address);
+  return (
+    (getDb()
+      .prepare(`SELECT * FROM agents WHERE lower(bankr_wallet) = ?`)
+      .get(normalized) as Agent | undefined) ?? null
+  );
+}
 
 export function resolveAgentForPlatform(
   platform: DepositPlatform,
@@ -19,6 +38,7 @@ export function resolveAgentForPlatform(
   if (!id) return null;
   if (platform === "telegram") return findAgentByTelegramOwner(id);
   if (platform === "discord") return findAgentByDiscordOwner(id);
+  if (platform === "wallet") return findAgentByWalletAddress(id);
   return (getDb().prepare(`SELECT * FROM agents WHERE id = ?`).get(id) as Agent | undefined) ?? null;
 }
 
@@ -27,6 +47,16 @@ export async function resolveWalletAddress(params: {
   platform: DepositPlatform;
   platformUserId: string;
 }): Promise<ResolvedWallet> {
+  if (params.platform === "wallet") {
+    const address = normalizeWalletAddress(params.platformUserId);
+    const agent = findAgentByWalletAddress(address);
+    return {
+      address,
+      network: process.env.COINBASE_ONRAMP_NETWORK?.trim() || "base",
+      agent_id: agent?.id ?? `wallet:${address}`,
+    };
+  }
+
   const agent = resolveAgentForPlatform(params.platform, params.platformUserId);
   if (!agent) {
     throw new HttpError(
