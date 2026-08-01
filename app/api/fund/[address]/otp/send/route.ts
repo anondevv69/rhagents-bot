@@ -30,7 +30,7 @@ export async function POST(
     }
     const msg = err instanceof Error ? err.message : "otp_send_failed";
     const status =
-      msg === "otp_provider_not_configured" || msg === "twilio_not_configured" ? 503 : 500;
+      msg === "otp_provider_not_configured" || msg.startsWith("coinbase_otp") ? 503 : 500;
     return NextResponse.json({ ok: false, error: msg }, { status });
   }
 }

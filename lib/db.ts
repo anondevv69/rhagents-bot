@@ -482,6 +482,18 @@ function migrate(db: Database.Database) {
     `);
   } catch { /* exists */ }
   try {
+    db.exec(`ALTER TABLE deposit_contact_verifications ADD COLUMN sms_verification_id TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE deposit_contact_verifications ADD COLUMN email_verification_id TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE deposit_contact_verifications ADD COLUMN sms_verification_expires_at TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE deposit_contact_verifications ADD COLUMN email_verification_expires_at TEXT`);
+  } catch { /* exists */ }
+  try {
     db.exec(`
       CREATE TABLE IF NOT EXISTS deposit_otp_challenges (
         id           TEXT PRIMARY KEY,

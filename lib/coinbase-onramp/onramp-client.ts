@@ -86,6 +86,42 @@ export interface CreateOnrampOrderParams {
   paymentAmount: string;
   paymentMethod: "GUEST_CHECKOUT_APPLE_PAY" | "GUEST_CHECKOUT_GOOGLE_PAY";
   domain?: string;
+  /** Coinbase-managed verification IDs (preferred over phoneNumberVerifiedAt). */
+  smsVerificationId?: string;
+  emailVerificationId?: string;
+  phoneNumberVerifiedAt?: string;
+  agreementAcceptedAt?: string;
+}
+
+export interface InitiateOnrampVerificationResponse {
+  verificationId: string;
+  otpExpiresAt: string;
+}
+
+export interface SubmitOnrampVerificationResponse {
+  verificationId: string;
+  verificationExpiresAt: string;
+}
+
+export async function initiateOnrampVerification(params: {
+  channel: "sms" | "email";
+  destination: string;
+}): Promise<InitiateOnrampVerificationResponse> {
+  return cdpRequest<InitiateOnrampVerificationResponse>("POST", "/v2/onramp/verifications", {
+    channel: params.channel,
+    destination: params.destination,
+  });
+}
+
+export async function submitOnrampVerification(
+  verificationId: string,
+  otpCode: string,
+): Promise<SubmitOnrampVerificationResponse> {
+  return cdpRequest<SubmitOnrampVerificationResponse>(
+    "POST",
+    `/v2/onramp/verifications/${encodeURIComponent(verificationId)}/submit`,
+    { otpCode },
+  );
 }
 
 export interface CreateOnrampOrderResponse {
@@ -97,7 +133,7 @@ export interface CreateOnrampOrderResponse {
 export async function createOnrampOrder(
   params: CreateOnrampOrderParams,
 ): Promise<CreateOnrampOrderResponse> {
-  return cdpRequest<CreateOnrampOrderResponse>("POST", "/v2/onramp/orders", {
+  const body: Record<string, string> = {
     partnerUserRef: params.partnerUserRef,
     phoneNumber: params.phoneNumber,
     email: params.email,
@@ -106,8 +142,15 @@ export async function createOnrampOrder(
     asset: params.asset,
     paymentAmount: params.paymentAmount,
     paymentMethod: params.paymentMethod,
-    domain: params.domain,
-  });
+    agreementAcceptedAt: params.agreementAcceptedAt ?? new Date().toISOString(),
+  };
+  if (params.domain) body.domain = params.domain;
+  if (params.smsVerificationId) body.smsVerificationId = params.smsVerificationId;
+  if (params.emailVerificationId) body.emailVerificationId = params.emailVerificationId;
+  if (params.phoneNumberVerifiedAt && !params.smsVerificationId) {
+    body.phoneNumberVerifiedAt = params.phoneNumberVerifiedAt;
+  }
+  return cdpRequest<CreateOnrampOrderResponse>("POST", "/v2/onramp/orders", body);
 }
 
 export interface OnrampLimit {

@@ -137,7 +137,7 @@ export default function FundWalletClient({
 
       {!ready && (
         <div style={{ marginTop: 20 }}>
-          <p style={{ fontSize: 14, fontWeight: 600 }}>Verify once (Coinbase requirement)</p>
+          <p style={{ fontSize: 14, fontWeight: 600 }}>Verify once (Coinbase sends the code)</p>
           <label style={{ display: "block", marginTop: 12, fontSize: 14 }}>
             US phone (+1…)
             <input
