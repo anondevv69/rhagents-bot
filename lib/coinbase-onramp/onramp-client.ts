@@ -3,7 +3,7 @@
  * Docs: https://docs.cdp.coinbase.com/onramp/headless-onramp/overview
  */
 
-import { SignJWT, importPKCS8 } from "jose";
+import { generateJwt } from "@coinbase/cdp-sdk/auth";
 
 const CDP_BASE_URL = "https://api.cdp.coinbase.com/platform";
 
@@ -23,29 +23,16 @@ function getAuthConfig(): CdpAuthConfig {
 
 async function buildCdpJwt(method: string, path: string): Promise<string> {
   const { apiKeyId, apiKeySecret } = getAuthConfig();
-  const pem = apiKeySecret.includes("\\n") ? apiKeySecret.replace(/\\n/g, "\n") : apiKeySecret;
-  const privateKey = await importPKCS8(pem, "ES256");
-  const uri = `${method} api.cdp.coinbase.com${path}`;
-  const now = Math.floor(Date.now() / 1000);
-  const nonce = cryptoRandomHex(16);
-
-  return new SignJWT({
-    sub: apiKeyId,
-    iss: "cdp",
-    aud: ["cdp_service"],
-    uris: [uri],
-  })
-    .setProtectedHeader({ alg: "ES256", kid: apiKeyId, typ: "JWT", nonce })
-    .setIssuedAt(now)
-    .setNotBefore(now)
-    .setExpirationTime(now + 120)
-    .sign(privateKey);
-}
-
-function cryptoRandomHex(bytes: number): string {
-  const arr = new Uint8Array(bytes);
-  crypto.getRandomValues(arr);
-  return Buffer.from(arr).toString("hex");
+  const requestPath = path.startsWith("/platform") ? path : `/platform${path}`;
+  return generateJwt({
+    apiKeyId,
+    apiKeySecret,
+    requestMethod: method,
+    requestHost: "api.cdp.coinbase.com",
+    requestPath,
+    expiresIn: 120,
+    audience: ["cdp_service"],
+  });
 }
 
 async function cdpRequest<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
