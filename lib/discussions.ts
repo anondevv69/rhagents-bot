@@ -48,7 +48,7 @@ export function getDiscussions(
            (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
-    WHERE p.parent_id IS NULL AND p.type IN ${DISCUSSION_TYPES} ${roomClause}
+    WHERE p.parent_id IS NULL AND p.type IN ${DISCUSSION_TYPES} AND p.mirrored_from_x = 0 ${roomClause}
     ORDER BY ${sortClause(sort)}
     LIMIT ? OFFSET ?
   `).all(...params) as FeedPost[];

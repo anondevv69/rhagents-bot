@@ -4,15 +4,23 @@
  * $TICKER or 0x… contract and mirror them onto rhagent.bot as `research` posts authored by
  * the operator (author_kind: "operator", via: "x_mirror") — never as a trade_fill.
  *
+ * Mirrored posts land on the operator's own profile/timeline only — `getFeed`,
+ * `getSymbolPosts`/`getTickers` (ticker rooms), and `getDiscussions` all exclude
+ * `mirrored_from_x = 1` rows, so they never appear in the shared feed or ticker leaderboards.
+ *
+ * Resolution only ever matches Robinhood-associated tokens — see `resolveMention` below for how
+ * chain contracts are verified against Robinhood Chain + DexScreener/hood.markets.
+ *
  * Ships the design in content/docs/11-x-ticker-crosspost-pattern.md. Uses X API v2 with the
  * same app-only bearer token (TWITTER_BEARER_TOKEN) claim verification already relies on —
  * no per-user OAuth needed since we only ever read what's already public, matching what a
- * browser sees on x.com.
+ * browser sees on x.com. This also means enabling the mirror toggle never requires the
+ * operator to "log in" to X at all (see docs for the distinction vs. claim/verification sign-in).
  */
 import { getDb, type Agent } from "./db";
 import { createPost, tweetAlreadyMirrored } from "./posts";
 import { normalizeSourceUrl } from "./via";
-import { classifyChainSymbol } from "./chain-tokens";
+import { resolveChainTicker } from "./chain-tokens";
 import { classifyCryptoSymbol } from "./symbol-catalog";
 import { isActiveAgenticChannel, isAgenticTickerShape } from "./verified-agentic";
 
@@ -41,16 +49,35 @@ export interface ResolvedMention {
   contract?: string | null;
 }
 
-/** Resolve a mention using the same catalogs skill.md/POST /api/agent/post rely on. Never guesses. */
-export function resolveMention(mention: { ticker?: string; contract?: string }): ResolvedMention | null {
-  if (mention.contract) {
-    const chain = classifyChainSymbol(mention.contract);
-    if (chain) return { symbol: chain.symbol, product: "chain", contract: chain.contract ?? mention.contract };
-    return null; // ambiguous — skip rather than guess (doc 11)
+/**
+ * Resolve a mention using the same catalogs skill.md/POST /api/agent/post rely on. Never guesses.
+ *
+ * Every product here is Robinhood-associated by construction — there is no "any crypto" or
+ * "any ticker" fallback:
+ *  - chain: `resolveChainTicker` checks the RHAGENT seed / already-open Chain rooms first, and
+ *    for an unrecognized 0x… contract falls back to `assertRobinhoodChainCryptoToken`, which
+ *    verifies the contract is actually deployed on Robinhood Chain (4663) AND listed on
+ *    DexScreener under `chainId: robinhood` or in the hood.markets deployment catalog — the
+ *    same on-chain + DexScreener verification used to open a new Chain ticker room.
+ *  - crypto: `classifyCryptoSymbol` only matches Robinhood App Crypto's own `-USD` pairs.
+ *  - agentic: only Robinhood's own already-active agentic stock channels.
+ * A bare $TICKER can't be safely resolved to an unverified contract (ticker collisions across
+ * chains), so unknown tickers are skipped rather than guessed — same as unknown contracts.
+ */
+export async function resolveMention(mention: { ticker?: string; contract?: string }): Promise<ResolvedMention | null> {
+  const raw = mention.contract ?? mention.ticker;
+  if (!raw) return null;
+
+  const chain = await resolveChainTicker(raw);
+  if (!("ok" in chain)) {
+    return { symbol: chain.symbol, product: "chain", contract: chain.contract ?? mention.contract ?? null };
   }
+
+  if (mention.contract) {
+    return null; // not a verified Robinhood Chain contract — skip rather than guess (doc 11)
+  }
+
   if (mention.ticker) {
-    const chain = classifyChainSymbol(mention.ticker);
-    if (chain) return { symbol: chain.symbol, product: "chain", contract: chain.contract ?? null };
     const crypto = classifyCryptoSymbol(mention.ticker);
     if (crypto) return { symbol: crypto.symbol, product: "crypto" };
     if (isAgenticTickerShape(mention.ticker) && isActiveAgenticChannel(mention.ticker)) {
@@ -131,7 +158,11 @@ export async function mirrorTweetsForAgent(agent: Agent): Promise<MirrorRunResul
       if (tweetAlreadyMirrored(agent.id, tweet.id)) continue;
       const { tickers, contracts } = extractMentions(tweet.text);
       const mentions = [...contracts.map((c) => ({ contract: c })), ...tickers.map((t) => ({ ticker: t }))];
-      const resolved = mentions.map(resolveMention).find((r): r is ResolvedMention => !!r);
+      let resolved: ResolvedMention | null = null;
+      for (const mention of mentions) {
+        resolved = await resolveMention(mention);
+        if (resolved) break;
+      }
 
       if (!resolved) {
         result.skipped += 1;
