@@ -11,6 +11,7 @@ import { CapabilityChoiceCard } from "./CapabilityChoiceCard";
 import { SetupWizard } from "./SetupWizard";
 import { WalletLoginButton } from "./WalletLoginButton";
 import { BankrKeyLoginForm } from "./BankrKeyLoginForm";
+import { PrivyLoginButton } from "./PrivyLoginButton";
 import { BankrTerminalGate } from "./BankrTerminalGate";
 import { WelcomeLanding } from "./WelcomeLanding";
 import { RHAGENT_SKILL_INSTALL, SITE_NAME } from "@/lib/rhagent-setup";
@@ -178,6 +179,10 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
 
         <div className="gate-card">
           <WalletLoginButton next={next} />
+        </div>
+
+        <div className="gate-card">
+          <PrivyLoginButton next={next} />
         </div>
 
         <p className="gate-switch">
@@ -428,6 +433,8 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
               continueLabel="Continue →"
               loginOnly
             />
+            <hr className="gate-divider" style={{ margin: "16px 0" }} />
+            <PrivyLoginButton next={next} />
             <hr className="gate-divider" style={{ margin: "16px 0" }} />
             <p className="login-bot-lead">Using a Bankr wallet? Log in with its API key instead.</p>
             <BankrKeyLoginForm next={next} />

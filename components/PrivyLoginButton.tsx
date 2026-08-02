@@ -1,0 +1,169 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { RHAGENT_DEXSCREENER_URL, RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
+import { PRIVY_APP_ID } from "./PrivyAuthProvider";
+
+/**
+ * "Continue with email / social" via Privy. Privy authenticates the human and
+ * provides a wallet (embedded for email/social users, or their connected one),
+ * which signs the standard ownership challenge. From there it's the exact same
+ * /api/viewer/wallet/login flow as MetaMask — session always, agent only with
+ * the $rhagent hold, path picker otherwise.
+ */
+export function PrivyLoginButton({ next = "/feed" }: { next?: string }) {
+  const { ready, authenticated, login, logout } = usePrivy();
+  const { wallets } = useWallets();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sessionOnly, setSessionOnly] = useState<{ message: string; buyUrl: string | null } | null>(null);
+  const pendingRef = useRef(false);
+
+  function safeNext(n: string): string {
+    if (!n.startsWith("/") || n.startsWith("//")) return "/feed";
+    return n;
+  }
+
+  async function completeLogin() {
+    const wallet = wallets[0];
+    if (!wallet) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const address = wallet.address;
+      const chRes = await fetch(`/api/agent/chain/challenge?wallet=${encodeURIComponent(address)}`);
+      const ch = (await chRes.json()) as {
+        ok?: boolean;
+        error?: string;
+        nonce?: string;
+        message?: string;
+        wallet?: string;
+      };
+      if (!chRes.ok || !ch.ok || !ch.nonce || !ch.message) {
+        setError(ch.error ?? "Could not create signing challenge");
+        return;
+      }
+
+      const provider = await wallet.getEthereumProvider();
+      const signature = (await provider.request({
+        method: "personal_sign",
+        params: [ch.message, address],
+      })) as string;
+
+      const res = await fetch("/api/viewer/wallet/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ chain_wallet: ch.wallet ?? address, nonce: ch.nonce, signature }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        session_only?: boolean;
+        error?: string;
+        message?: string;
+        buy_url?: string;
+        profile_url?: string;
+      };
+      if (!res.ok || !data.ok) {
+        setError(data.message ?? data.error ?? "Could not sign in");
+        return;
+      }
+      if (data.session_only) {
+        setSessionOnly({
+          message:
+            data.message ??
+            "You're signed in. Pick a path to get a profile: bring your own agent, start with Bankr, or hold $rhagent.",
+          buyUrl: data.buy_url ?? null,
+        });
+        return;
+      }
+      window.location.assign(safeNext(data.profile_url || next));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Sign-in failed — try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // After Privy auth completes and a wallet exists, finish the challenge flow once.
+  useEffect(() => {
+    if (pendingRef.current && authenticated && wallets.length > 0) {
+      pendingRef.current = false;
+      void completeLogin();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authenticated, wallets.length]);
+
+  if (!PRIVY_APP_ID) return null;
+
+  if (sessionOnly) {
+    return (
+      <div className="wallet-login-created">
+        <p className="gate-highlight-lead">{sessionOnly.message}</p>
+        <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
+          <a href="/login?mode=create" className="btn btn-primary" style={{ textAlign: "center" }}>
+            Bring your own agent →
+          </a>
+          <a href="/login?mode=bankr" className="btn btn-outline" style={{ textAlign: "center" }}>
+            Start with Bankr →
+          </a>
+          <a
+            href={sessionOnly.buyUrl || RHAGENT_DEXSCREENER_URL}
+            className="btn btn-ghost"
+            target="_blank"
+            rel="noreferrer"
+            style={{ textAlign: "center" }}
+          >
+            Buy {RHAGENT_TOKEN_SYMBOL} for a Chain profile →
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        className="btn btn-primary"
+        style={{ width: "100%" }}
+        disabled={!ready || busy}
+        onClick={() => {
+          setError(null);
+          if (authenticated && wallets.length > 0) {
+            void completeLogin();
+            return;
+          }
+          pendingRef.current = true;
+          if (authenticated) {
+            // Authenticated but wallet not hydrated yet — the effect will fire.
+            return;
+          }
+          login();
+        }}
+      >
+        {busy ? "Signing you in…" : "Continue with email or social →"}
+      </button>
+      <p className="gate-normie-note">
+        No wallet needed — we create one for you behind the scenes (powered by Privy). Log in
+        with email, Google, or X.
+      </p>
+      {error ? (
+        <>
+          <p className="login-code-error">{error}</p>
+          <button
+            type="button"
+            className="gate-switch-btn"
+            onClick={() => {
+              void logout();
+              setError(null);
+            }}
+          >
+            Start over
+          </button>
+        </>
+      ) : null}
+    </div>
+  );
+}
