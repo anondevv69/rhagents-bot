@@ -12,6 +12,8 @@ type Identity = {
 };
 
 type FundConfig = {
+  deposits_enabled: boolean;
+  deposits_disabled_message: string | null;
   provider: "swapped" | "coinbase" | null;
   swapped_configured: boolean;
   swapped_sandbox: boolean;
@@ -32,6 +34,9 @@ function friendlyError(raw: string): string {
   }
   if (raw === "invalid_email") return "Enter a valid email address.";
   if (raw === "invalid_amount") return "Enter a valid amount (e.g. 25 or 25.00).";
+  if (raw === "deposits_disabled") {
+    return "Card deposits are coming soon — our payment partner account is pending approval.";
+  }
   if (raw === "swapped_not_configured") {
     return "Card deposits aren't configured on the server yet — try again later.";
   }
@@ -475,6 +480,11 @@ export default function FundWalletClient({
       const swapped = Boolean(data.swapped_configured);
       const cdp = Boolean(data.cdp_configured);
       setConfig({
+        deposits_enabled: Boolean(data.deposits_enabled),
+        deposits_disabled_message:
+          typeof data.deposits_disabled_message === "string"
+            ? data.deposits_disabled_message
+            : null,
         provider: swapped ? "swapped" : cdp ? "coinbase" : null,
         swapped_configured: swapped,
         swapped_sandbox: Boolean(data.swapped_sandbox),
@@ -488,11 +498,22 @@ export default function FundWalletClient({
     <div style={{ maxWidth: 480, margin: "0 auto", padding: "24px 16px", fontFamily: "system-ui" }}>
       <h1 style={{ fontSize: 22, marginBottom: 4 }}>Add funds</h1>
 
-      {!config && !error && (
-        <p style={{ color: "#666", fontSize: 14 }}>Loading…</p>
+      {config && !config.deposits_enabled && (
+        <>
+          <p style={{ color: "#666", fontSize: 14, marginTop: 0 }}>
+            {config.deposits_disabled_message ??
+              "Card deposits are coming soon — our payment partner account is pending approval."}
+          </p>
+          <p style={{ fontSize: 12, wordBreak: "break-all", color: "#888", marginTop: 16 }}>
+            {address}
+          </p>
+          <p style={{ marginTop: 24, fontSize: 13, color: "#666" }}>
+            You can still add USDC to your wallet manually and run /buy_credits in chat.
+          </p>
+        </>
       )}
 
-      {config?.provider === "swapped" && (
+      {config?.deposits_enabled && config?.provider === "swapped" && (
         <SwappedFundPanel
           address={address}
           initialAmount={initialAmount}
@@ -500,7 +521,7 @@ export default function FundWalletClient({
         />
       )}
 
-      {config?.provider === "coinbase" && (
+      {config?.deposits_enabled && config?.provider === "coinbase" && (
         <CoinbaseFundPanel
           address={address}
           initialAmount={initialAmount}
@@ -509,10 +530,14 @@ export default function FundWalletClient({
         />
       )}
 
-      {config && !config.provider && (
+      {config?.deposits_enabled && !config.provider && (
         <p style={{ color: "#c00", fontSize: 14 }}>
           Card deposits aren&apos;t configured on the server yet.
         </p>
+      )}
+
+      {!config && !error && (
+        <p style={{ color: "#666", fontSize: 14 }}>Loading…</p>
       )}
 
       {error && <p style={{ marginTop: 12, fontSize: 14, color: "#c00" }}>{error}</p>}

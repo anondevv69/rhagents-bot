@@ -7,6 +7,7 @@ import {
   swappedConfigured,
   swappedDisplayMeta,
 } from "@/lib/swapped-ramp/swapped-ramp-client";
+import { fundDepositsEnabled } from "@/lib/fund-deposits";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,9 @@ export async function GET(
   ctx: { params: Promise<{ address: string }> },
 ) {
   try {
+    if (!fundDepositsEnabled()) {
+      return NextResponse.json({ ok: false, error: "deposits_disabled" }, { status: 503 });
+    }
     if (!swappedConfigured()) {
       return NextResponse.json({ ok: false, error: "swapped_not_configured" }, { status: 503 });
     }
