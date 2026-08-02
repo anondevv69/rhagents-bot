@@ -120,16 +120,18 @@ export interface CreateOnrampOrderResponse {
 export async function createOnrampOrder(
   params: CreateOnrampOrderParams,
 ): Promise<CreateOnrampOrderResponse> {
-  const body: Record<string, string> = {
+  const body: Record<string, string | boolean> = {
     partnerUserRef: params.partnerUserRef,
     phoneNumber: params.phoneNumber,
     email: params.email,
     destinationAddress: params.destinationAddress,
-    network: params.network,
-    asset: params.asset,
+    destinationNetwork: params.network,
+    purchaseCurrency: params.asset,
+    paymentCurrency: "USD",
     paymentAmount: params.paymentAmount,
     paymentMethod: params.paymentMethod,
     agreementAcceptedAt: params.agreementAcceptedAt ?? new Date().toISOString(),
+    isQuote: false,
   };
   if (params.domain) body.domain = params.domain;
   if (params.smsVerificationId) body.smsVerificationId = params.smsVerificationId;
@@ -137,7 +139,19 @@ export async function createOnrampOrder(
   if (params.phoneNumberVerifiedAt && !params.smsVerificationId) {
     body.phoneNumberVerifiedAt = params.phoneNumberVerifiedAt;
   }
-  return cdpRequest<CreateOnrampOrderResponse>("POST", "/v2/onramp/orders", body);
+  const raw = await cdpRequest<Record<string, unknown>>("POST", "/v2/onramp/orders", body);
+  const order = raw.order as Record<string, unknown> | undefined;
+  const paymentLink = raw.paymentLink as Record<string, unknown> | undefined;
+  const orderId =
+    (typeof order?.orderId === "string" ? order.orderId : null) ??
+    (typeof raw.orderId === "string" ? raw.orderId : null);
+  const paymentLinkUrl =
+    (typeof paymentLink?.url === "string" ? paymentLink.url : null) ??
+    (typeof raw.paymentLinkUrl === "string" ? raw.paymentLinkUrl : null);
+  if (!orderId || !paymentLinkUrl) {
+    throw new CdpApiError(502, JSON.stringify(raw).slice(0, 300));
+  }
+  return { orderId, paymentLinkUrl };
 }
 
 export interface OnrampLimit {
