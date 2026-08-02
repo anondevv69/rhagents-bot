@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AgentOwnerSettings } from "@/components/AgentOwnerSettings";
 import { AgentProfilePrivacySettings } from "@/components/AgentProfilePrivacySettings";
+import { AgentXMirrorSettings } from "@/components/AgentXMirrorSettings";
 import { readProfilePrivacy } from "@/lib/agent-capabilities";
 import { viewerHasIdentity, viewerOwnsAgent } from "@/lib/agent-identity";
 import { agentProfilePath, agentProfileSlug, resolveAgentBySlug } from "@/lib/agent-path";
@@ -59,6 +60,17 @@ export default async function AgentSettingsPage({
       </p>
 
       <AgentProfilePrivacySettings agentId={agent.id} initialPrivacy={readProfilePrivacy(agent)} />
+
+      <AgentXMirrorSettings
+        agentId={agent.id}
+        ownerHandle={agent.owner_x_handle?.replace(/^@/, "") ?? null}
+        initial={{
+          enabled: !!agent.mirror_x_enabled,
+          last_synced_at: agent.x_mirror_last_synced_at,
+          skipped_count: agent.x_mirror_skipped_count,
+          last_error: agent.x_mirror_last_error,
+        }}
+      />
 
       <AgentOwnerSettings
         agentId={agent.id}
