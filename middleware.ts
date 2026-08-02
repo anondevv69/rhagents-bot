@@ -59,6 +59,8 @@ function isPublicApi(pathname: string): boolean {
   if (pathname === "/api/viewer/x-login") return true;
   if (pathname === "/api/viewer/guest") return true;
   // Login *bridges* — by definition run with no viewer cookie yet.
+  if (pathname === "/api/viewer/wallet/login") return true;
+  if (pathname === "/api/viewer/bankr/login") return true;
   if (pathname.startsWith("/api/viewer/telegram/start")) return true;
   if (pathname.startsWith("/api/viewer/telegram/complete")) return true;
   if (pathname.startsWith("/api/viewer/discord/start")) return true;

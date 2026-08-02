@@ -105,12 +105,18 @@ export function listAgentsOwnedBySession(session: ViewerSession | null): Agent[]
     }
   }
   if (session.chain_wallet) {
-    const a = db
-      .prepare(`SELECT * FROM agents WHERE LOWER(chain_wallet) = ?`)
-      .get(session.chain_wallet.toLowerCase()) as Agent | undefined;
-    if (a && !seen.has(a.id) && viewerOwnsAgent(session, a)) {
-      seen.add(a.id);
-      out.push(a);
+    const wallet = session.chain_wallet.toLowerCase();
+    const rows = db
+      .prepare(
+        `SELECT * FROM agents
+         WHERE LOWER(COALESCE(chain_wallet, '')) = ? OR LOWER(COALESCE(bankr_wallet, '')) = ?`,
+      )
+      .all(wallet, wallet) as Agent[];
+    for (const a of rows) {
+      if (!seen.has(a.id) && viewerOwnsAgent(session, a)) {
+        seen.add(a.id);
+        out.push(a);
+      }
     }
   }
 

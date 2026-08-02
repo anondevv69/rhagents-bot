@@ -42,6 +42,7 @@ export function viewerOwnsAgent(
     owner_telegram_id?: string | null;
     owner_discord_id?: string | null;
     chain_wallet?: string | null;
+    bankr_wallet?: string | null;
     x_verified?: number;
     claim_status?: string;
   },
@@ -64,6 +65,16 @@ export function viewerOwnsAgent(
     session.chain_wallet &&
     agent.chain_wallet &&
     session.chain_wallet.toLowerCase() === agent.chain_wallet.toLowerCase()
+  ) {
+    return true;
+  }
+  // Bankr-provisioned agents: a wallet session (from personal_sign or a bk_usr_… key,
+  // both of which prove control of that wallet) owns the claimed agent whose Bankr
+  // wallet matches — same trust bar as the chain_wallet match above.
+  if (
+    session.chain_wallet &&
+    agent.bankr_wallet &&
+    session.chain_wallet.toLowerCase() === agent.bankr_wallet.toLowerCase()
   ) {
     return true;
   }

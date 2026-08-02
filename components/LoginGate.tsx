@@ -10,6 +10,7 @@ import { RhagentSkillPromo } from "./RhagentSkillPromo";
 import { CapabilityChoiceCard } from "./CapabilityChoiceCard";
 import { SetupWizard } from "./SetupWizard";
 import { WalletLoginButton } from "./WalletLoginButton";
+import { BankrKeyLoginForm } from "./BankrKeyLoginForm";
 import { BankrTerminalGate } from "./BankrTerminalGate";
 import { WelcomeLanding } from "./WelcomeLanding";
 import { RHAGENT_SKILL_INSTALL, SITE_NAME } from "@/lib/rhagent-setup";
@@ -427,6 +428,9 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
               continueLabel="Continue →"
               loginOnly
             />
+            <hr className="gate-divider" style={{ margin: "16px 0" }} />
+            <p className="login-bot-lead">Using a Bankr wallet? Log in with its API key instead.</p>
+            <BankrKeyLoginForm next={next} />
           </div>
         ) : (
           <div role="tabpanel" id="login-panel-bot" aria-labelledby="login-tab-bot" className="login-bot-panel">

@@ -105,17 +105,32 @@ function ensureWalletClaimed(agent: Agent, wallet: `0x${string}`): Agent {
 export type WalletLoginOk = {
   ok: true;
   created: boolean;
+  session_only: false;
   chain_wallet: `0x${string}`;
   agent_id: string;
   username: string | null;
   display_name: string | null;
   /** Only returned when a new agent was created — show once. */
   api_key?: string;
+  /** null when logging into an existing agent without a current $rhagent hold. */
   hold: {
     balance_tokens: number;
     value_usd: number | null;
     passed_via: HoldCheckOk["passed_via"];
-  };
+  } | null;
+};
+
+/**
+ * Signature was valid but there's no agent for this wallet and no $rhagent hold —
+ * we still log the human in (viewer session) so they can pick a path (BYO agent,
+ * Bankr, or buy the token). No agent is created and no claim status is upgraded.
+ */
+export type WalletSessionOnly = {
+  ok: true;
+  created: false;
+  session_only: true;
+  chain_wallet: `0x${string}`;
+  hold_fail: ReturnType<typeof holdFailResponse>;
 };
 
 export type WalletLoginFail = {
@@ -125,7 +140,14 @@ export type WalletLoginFail = {
 };
 
 /**
- * Prove wallet ownership, require $rhagent hold, find-or-create a claimed Chain agent.
+ * Prove wallet ownership (single-use nonce + personal_sign), then log the human in.
+ *
+ * Trust model:
+ * - A valid signature is always enough for a viewer *session* (human entry).
+ * - The $rhagent hold gates trust *upgrades* only: creating a new claimed Chain agent,
+ *   or upgrading an existing agent to claimed/has_chain (`ensureWalletClaimed`).
+ * - Without a hold and without an existing agent, the caller gets `session_only` — the
+ *   human is logged in and picks a path (BYO agent / Bankr / buy the token).
  */
 export async function loginOrRegisterWithChainWallet(opts: {
   chain_wallet: string;
@@ -135,7 +157,7 @@ export async function loginOrRegisterWithChainWallet(opts: {
   username?: string | null;
   /** Display name — only used when creating a new agent. */
   display_name?: string | null;
-}): Promise<WalletLoginOk | WalletLoginFail> {
+}): Promise<WalletLoginOk | WalletSessionOnly | WalletLoginFail> {
   const ownership = await verifyChainWalletOwnership({
     chain_wallet: opts.chain_wallet,
     nonce: opts.nonce,
@@ -146,29 +168,41 @@ export async function loginOrRegisterWithChainWallet(opts: {
   }
 
   const hold = await checkRhagentHoldings(ownership.wallet);
-  if (!hold.ok) {
-    return { ok: false, status: 403, body: holdFailResponse(hold) };
-  }
+  const wallet = ownership.wallet;
 
-  const existing = findAgentByChainWallet(hold.wallet);
+  const existing = findAgentByChainWallet(wallet);
   if (existing) {
-    const agent = ensureWalletClaimed(existing, hold.wallet);
+    // Returning owner: session on signature alone; claim/has_chain upgrade stays hold-gated.
+    const agent = hold.ok ? ensureWalletClaimed(existing, wallet) : existing;
     return {
       ok: true,
       created: false,
-      chain_wallet: hold.wallet,
+      session_only: false,
+      chain_wallet: wallet,
       agent_id: agent.id,
       username: agent.username,
       display_name: agent.display_name ?? agent.owner_display_name,
-      hold: {
-        balance_tokens: hold.balance_tokens,
-        value_usd: hold.value_usd,
-        passed_via: hold.passed_via,
-      },
+      hold: hold.ok
+        ? {
+            balance_tokens: hold.balance_tokens,
+            value_usd: hold.value_usd,
+            passed_via: hold.passed_via,
+          }
+        : null,
     };
   }
 
-  const created = createChainAgentFromWallet(hold.wallet, hold, {
+  if (!hold.ok) {
+    return {
+      ok: true,
+      created: false,
+      session_only: true,
+      chain_wallet: wallet,
+      hold_fail: holdFailResponse(hold),
+    };
+  }
+
+  const created = createChainAgentFromWallet(wallet, hold, {
     username: opts.username,
     display_name: opts.display_name,
   });
@@ -179,7 +213,8 @@ export async function loginOrRegisterWithChainWallet(opts: {
   return {
     ok: true,
     created: true,
-    chain_wallet: hold.wallet,
+    session_only: false,
+    chain_wallet: wallet,
     agent_id: created.agent.id,
     username: created.agent.username,
     display_name: created.agent.display_name,

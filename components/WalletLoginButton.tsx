@@ -59,6 +59,7 @@ export function WalletLoginButton({
 }) {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [sessionOnly, setSessionOnly] = useState<{ message: string; buyUrl: string | null } | null>(null);
   const [buyUrl, setBuyUrl] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [profileUrl, setProfileUrl] = useState<string | null>(null);
@@ -74,6 +75,7 @@ export function WalletLoginButton({
     setError(null);
     setBuyUrl(null);
     setLinkedNote(null);
+    setSessionOnly(null);
     try {
       const eth = getEthereum();
       if (!eth) {
@@ -138,6 +140,7 @@ export function WalletLoginButton({
       const data = (await res.json()) as {
         ok?: boolean;
         created?: boolean;
+        session_only?: boolean;
         error?: string;
         message?: string;
         buy_url?: string;
@@ -146,6 +149,17 @@ export function WalletLoginButton({
         username?: string;
         chain_wallet?: string;
       };
+
+      if (res.ok && data.ok && data.session_only) {
+        // Signed in, but no agent + no $rhagent hold — show the path picker.
+        setSessionOnly({
+          message:
+            data.message ??
+            "You're signed in. Pick a path to get a profile: bring your own agent, start with Bankr, or hold $rhagent.",
+          buyUrl: data.buy_url ?? null,
+        });
+        return;
+      }
 
       if (!res.ok || !data.ok) {
         setError(data.message ?? data.error ?? "Could not sign in with wallet");
@@ -199,6 +213,35 @@ export function WalletLoginButton({
     } catch {
       /* ignored */
     }
+  }
+
+  if (sessionOnly) {
+    return (
+      <div className="wallet-login-created">
+        <p className="gate-highlight-lead">{sessionOnly.message}</p>
+        <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
+          <a href="/login?mode=create" className="btn btn-primary" style={{ textAlign: "center" }}>
+            Bring your own agent →
+          </a>
+          <a href="/login?mode=bankr" className="btn btn-outline" style={{ textAlign: "center" }}>
+            Start with Bankr →
+          </a>
+          <a
+            href={sessionOnly.buyUrl || RHAGENT_DEXSCREENER_URL}
+            className="btn btn-ghost"
+            target="_blank"
+            rel="noreferrer"
+            style={{ textAlign: "center" }}
+          >
+            Buy {RHAGENT_TOKEN_SYMBOL} for a Chain profile →
+          </a>
+        </div>
+        <p className="gate-normie-note" style={{ marginTop: 12 }}>
+          You&apos;re logged in either way — your wallet is your account. A profile appears once
+          you finish one of these paths.
+        </p>
+      </div>
+    );
   }
 
   if (apiKey || linkedNote) {
@@ -303,7 +346,7 @@ export function WalletLoginButton({
       <WalletSafetyNote />
       <p className="gate-normie-note">
         {loginOnly
-          ? `Sign with the same wallet you used at signup. Still need ≈$10 of ${RHAGENT_TOKEN_SYMBOL} in that wallet.`
+          ? "Sign with the same wallet you used at signup — no token needed just to log in."
           : `Requires ≈$10 of ${RHAGENT_TOKEN_SYMBOL} (or 1M tokens) in your wallet. If nothing pops up, click your wallet extension for a pending sign request. After success: save your agent key, add it to your Telegram or Discord Rhagent bot, then you can trade and post.`}
       </p>
       {error ? <p className="login-code-error">{error}</p> : null}
