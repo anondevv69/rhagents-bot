@@ -16,6 +16,9 @@
   "dependencies": {
     "@coinbase/cdp-sdk": "^1.54.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@privy-io/react-auth": "^3.36.1",
+    "@stripe/crypto": "^1.1.2",
+    "@stripe/stripe-js": "^9.12.1",
     "better-sqlite3": "^9.6.0",
     "jose": "^6.2.5",
     "next": "^15.5.20",

@@ -14,9 +14,10 @@ const FETCH_MS = 30_000;
 
 export function getEthereum(): EthereumProvider | null {
   if (typeof window === "undefined") return null;
-  const injected = (window as Window & { ethereum?: EthereumProvider }).ethereum;
+  // Explicit cast — Privy's SDK also declares a global Window.ethereum type.
+  const injected = (window as unknown as { ethereum?: EthereumProvider }).ethereum;
   if (!injected) return null;
-  const list = injected.providers?.length ? injected.providers : [injected];
+  const list: EthereumProvider[] = injected.providers?.length ? injected.providers : [injected];
   return list.find((p) => p.isMetaMask) ?? list[0] ?? null;
 }
 
