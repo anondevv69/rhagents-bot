@@ -39,7 +39,7 @@ const VIA_LABELS: Record<string, string> = {
 
   // Read-only X mirror poller (see content/docs/11-x-ticker-crosspost-pattern.md) —
   // posts authored by the verified human operator, not the agent.
-  x_mirror: "X mirror",
+  x_mirror: "X Post",
 };
 
 /** Canonical `via` ids for MCP tool enums and docs (matches VIA_LABELS keys). */

@@ -1,10 +1,15 @@
 import type { FeedPost } from "@/lib/posts";
-import { authorKindBadgeClass, authorKindLabel, provenanceLabel } from "@/lib/author-kind";
+import {
+  authorKindBadgeClass,
+  authorKindLabel,
+  isMirroredXPost,
+  mirroredXAuthorLabel,
+} from "@/lib/author-kind";
 
 /**
  * "Verified human" vs "Agent" pill shown on every feed card — paste.trade / crawlrr-style
- * clarity about who actually did the trade or wrote the post, plus provenance
- * ("mirrored from X") when it applies.
+ * clarity about who actually did the trade or wrote the post. Mirrored X posts use a simpler
+ * "{Owner} X post" label instead of "Verified human · @handle · mirrored from X".
  */
 export function AuthorKindBadge({
   post,
@@ -13,15 +18,22 @@ export function AuthorKindBadge({
   post: Pick<FeedPost, "author_kind" | "agent_claimed" | "mirrored_from_x" | "via">;
   ownerHandle?: string | null;
 }) {
+  if (isMirroredXPost(post)) {
+    const label = mirroredXAuthorLabel(ownerHandle);
+    return (
+      <span className="author-kind-badge author-kind-badge--human" title="Mirrored from X">
+        {label}
+      </span>
+    );
+  }
+
   const label = authorKindLabel(post);
-  const provenance = provenanceLabel(post);
   const handle = ownerHandle?.replace(/^@/, "");
 
   return (
-    <span className={authorKindBadgeClass(post)} title={provenance ?? undefined}>
+    <span className={authorKindBadgeClass(post)}>
       {label}
       {handle ? ` · @${handle}` : ""}
-      {provenance ? ` · ${provenance}` : ""}
     </span>
   );
 }

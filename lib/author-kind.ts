@@ -37,8 +37,14 @@ export function authorKindBadgeClass(post: Pick<FeedPost, "author_kind" | "agent
   return "author-kind-badge author-kind-badge--agent";
 }
 
-/** Provenance text shown after the badge, e.g. "mirrored from X". */
-export function provenanceLabel(post: Pick<FeedPost, "mirrored_from_x" | "via">): string | null {
-  if (post.mirrored_from_x || post.via === "x_mirror") return "mirrored from X";
-  return null;
+export function isMirroredXPost(post: Pick<FeedPost, "mirrored_from_x" | "via">): boolean {
+  return !!(post.mirrored_from_x || post.via === "x_mirror");
+}
+
+/** Badge text for mirrored X posts — e.g. "Rayblancoeth X post". */
+export function mirroredXAuthorLabel(ownerHandle: string | null | undefined): string {
+  const handle = ownerHandle?.replace(/^@/, "").trim();
+  if (!handle) return "X post";
+  const name = handle.charAt(0).toUpperCase() + handle.slice(1);
+  return `${name} X post`;
 }

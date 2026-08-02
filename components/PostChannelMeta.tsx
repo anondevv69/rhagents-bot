@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getPostChannel } from "@/lib/post-channel";
 import type { FeedPost } from "@/lib/posts";
+import { isMirroredXPost } from "@/lib/author-kind";
 import { isXStatusUrl, viaDisplayForPost } from "@/lib/via";
 import { ActiveSkillBadge } from "@/components/ActiveSkillBadge";
 
@@ -15,7 +16,7 @@ function timeAgo(dateStr: string): string {
 
 export function PostChannelMeta({ post, compact = false }: { post: FeedPost; compact?: boolean }) {
   const channel = getPostChannel(post);
-  const via = viaDisplayForPost(post);
+  const via = isMirroredXPost(post) ? "Via X Post" : viaDisplayForPost(post);
   const sourceUrl = post.source_url?.trim() || null;
   const viaHref = sourceUrl && (isXStatusUrl(sourceUrl) || sourceUrl.startsWith("https://")) ? sourceUrl : null;
 
@@ -42,11 +43,11 @@ export function PostChannelMeta({ post, compact = false }: { post: FeedPost; com
               rel="noopener noreferrer"
               title={isXStatusUrl(viaHref) ? "Open original X post" : viaHref}
             >
-              via {via}
+              {via}
             </a>
           ) : (
             <span className="post-via" title={post.via ?? "inferred from — bankrbot signature"}>
-              via {via}
+              {via}
             </span>
           )}
         </>
