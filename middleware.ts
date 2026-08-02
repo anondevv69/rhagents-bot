@@ -30,6 +30,9 @@ const PUBLIC_PAGE_PREFIXES = [
   "/search",
   "/northstar",
   "/symbol",
+  "/builds",
+  "/x-mirror",
+  "/onboard",
 ];
 
 /** SEO / social crawlers — must never redirect to login. */
