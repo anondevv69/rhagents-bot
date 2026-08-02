@@ -27,11 +27,11 @@ if (process.env.DISABLE_X_MIRROR_SCHEDULER !== "true") {
         const results = await runXMirrorPoll();
         const posted = results.reduce((n, r) => n + r.posted, 0);
         const errored = results.filter((r) => r.error);
-        if (posted > 0 || errored.length > 0) {
-          console.log(
-            `[x-mirror-scheduler] agents=${results.length} posted=${posted} errors=${errored.length}`,
-            errored.map((r) => ({ agent_id: r.agent_id, error: r.error }))
-          );
+        console.log(
+          `[x-mirror-scheduler] tick at ${new Date().toISOString()} — agents=${results.length} posted=${posted} errors=${errored.length}`
+        );
+        if (errored.length > 0) {
+          console.log("[x-mirror-scheduler] errors:", errored.map((r) => ({ agent_id: r.agent_id, error: r.error })));
         }
       } catch (err) {
         console.error("[x-mirror-scheduler] poll failed", err);
