@@ -90,7 +90,11 @@ export function AgentXMirrorSettings({
           @{ownerHandle}
         </a>
         , it shows up here labeled &ldquo;Verified human · mirrored from X&rdquo; — read-only, originals
-        only (no retweets/replies), never posted as a trade.
+        only (no retweets/replies), never posted as a trade.{" "}
+        <a href="/x-mirror" className="text-link">
+          How it works
+        </a>
+        .
       </p>
       <label className="owner-settings-check" style={{ display: "block", marginBottom: 8 }}>
         <input type="checkbox" checked={state.enabled} disabled={busy} onChange={(e) => toggle(e.target.checked)} />{" "}
