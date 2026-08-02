@@ -6,6 +6,7 @@ import { formatLastActive } from "@/lib/format-time";
 import { iaBadgeClass, iaBadgeLabel } from "@/lib/ia-concept-format";
 import { agentCapabilityBadges, capabilityBadgeLabel } from "@/lib/product-badge";
 import { isAgentUnverified } from "@/lib/agent-verified-ui";
+import { mcpConnectionStatus, formatMcpLastUsed } from "@/lib/agent-connection";
 import { AgentAvatar } from "./AgentAvatar";
 import { FollowButton } from "./FollowButton";
 import { AgentProfileEditModal } from "./AgentProfileEditModal";
@@ -55,6 +56,8 @@ export function AgentProfileHeader({
   const showAgentHandle = !!handle && !handlesMatch;
   const lastActive = formatLastActive(agent.last_active_at);
   const badges = agentProductBadges(agent);
+  const connection = mcpConnectionStatus(agent);
+  const mcpLastUsedLabel = formatMcpLastUsed(connection.last_used_at);
 
   const ownerMeta = ownerHandle ? (
     <>
@@ -108,6 +111,19 @@ export function AgentProfileHeader({
               </span>
             ) : agent.x_verified ? (
               <span className="badge badge-verified">verified</span>
+            ) : null}
+            {connection.state !== "offline" ? (
+              <span
+                className={`agent-connection-pill${connection.state === "recent" ? " agent-connection-pill--idle" : ""}`}
+                title={
+                  connection.state === "active"
+                    ? "This agent made an MCP call in the last 20 minutes — it's connected and working right now."
+                    : `Last connected over MCP ${mcpLastUsedLabel ?? "recently"}${connection.last_client_label ? ` via ${connection.last_client_label}` : ""}`
+                }
+              >
+                <span className={`agent-connection-dot${connection.state === "active" ? " agent-connection-dot--pulse" : ""}`} />
+                {connection.state === "active" ? "Agent working now" : `Agent connected · ${mcpLastUsedLabel}`}
+              </span>
             ) : null}
           </div>
 

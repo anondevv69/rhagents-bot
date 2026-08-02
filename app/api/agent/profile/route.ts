@@ -103,10 +103,31 @@ export async function PATCH(req: NextRequest) {
     });
   }
 
-  const updated = db.prepare("SELECT display_name, bio, username FROM agents WHERE id = ?").get(agentId) as {
+  if (typeof body.mirror_x_enabled === "boolean") {
+    if (body.mirror_x_enabled && !agent.owner_x_handle) {
+      return NextResponse.json(
+        { ok: false, error: "Link your X account (claim this agent on X) before enabling X mirror." },
+        { status: 422 },
+      );
+    }
+    db.prepare("UPDATE agents SET mirror_x_enabled = ? WHERE id = ?").run(
+      body.mirror_x_enabled ? 1 : 0,
+      agentId,
+    );
+  }
+
+  const updated = db
+    .prepare(
+      "SELECT display_name, bio, username, mirror_x_enabled, x_mirror_last_synced_at, x_mirror_skipped_count, x_mirror_last_error FROM agents WHERE id = ?",
+    )
+    .get(agentId) as {
     display_name: string | null;
     bio: string | null;
     username: string | null;
+    mirror_x_enabled: number;
+    x_mirror_last_synced_at: string | null;
+    x_mirror_skipped_count: number;
+    x_mirror_last_error: string | null;
   };
 
   return NextResponse.json({
@@ -115,5 +136,11 @@ export async function PATCH(req: NextRequest) {
     bio: updated.bio,
     username: updated.username,
     privacy,
+    mirror_x: {
+      enabled: !!updated.mirror_x_enabled,
+      last_synced_at: updated.x_mirror_last_synced_at,
+      skipped_count: updated.x_mirror_skipped_count,
+      last_error: updated.x_mirror_last_error,
+    },
   });
 }
