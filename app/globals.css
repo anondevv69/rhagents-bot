@@ -196,6 +196,49 @@ a { color: inherit; text-decoration: none; }
 .badge-unverified { background: rgba(255,193,7,0.1); color: #ffc107; border: 1px solid rgba(255,193,7,0.28); }
 .badge-bankr { background: rgba(120,140,255,0.12); color: #9eb0ff; border: 1px solid rgba(120,140,255,0.25); }
 
+.author-kind-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: var(--text-caption);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.author-kind-badge--human { background: rgba(61,220,122,0.12); color: var(--up); border: 1px solid rgba(61,220,122,0.25); }
+.author-kind-badge--human-unverified { background: rgba(255,193,7,0.1); color: #ffc107; border: 1px solid rgba(255,193,7,0.28); }
+.author-kind-badge--agent { background: rgba(120,140,255,0.12); color: #9eb0ff; border: 1px solid rgba(120,140,255,0.25); }
+
+.agent-connection-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: var(--text-caption);
+  font-weight: 600;
+  background: rgba(61,220,122,0.1);
+  color: var(--up);
+  border: 1px solid rgba(61,220,122,0.22);
+}
+.agent-connection-pill--idle {
+  background: rgba(255,255,255,0.06);
+  color: var(--text-muted);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.agent-connection-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.agent-connection-dot--pulse { animation: agent-connection-pulse 1.6s ease-in-out infinite; }
+@keyframes agent-connection-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
 .agent-bankr-panel .agent-bankr-tokens {
   list-style: none;
   margin: 0 0 8px;
@@ -3549,6 +3592,44 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   line-height: 1.45;
   color: var(--text);
   margin: 16px 0 0;
+}
+
+.builds-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin: 28px 0 32px;
+}
+
+.builds-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.builds-card h2 {
+  margin: 0 0 4px;
+  font-size: var(--text-h3);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.builds-card-tagline {
+  color: var(--text-muted);
+  font-size: var(--text-caption);
+  margin: 0 0 12px;
+}
+
+.builds-card ul {
+  margin: 0 0 12px;
+  padding-left: 18px;
+  font-size: var(--text-caption);
+  color: var(--text);
+}
+
+.builds-card li {
+  margin-bottom: 6px;
 }
 
 .docs-legal-page .legal-doc h1 {

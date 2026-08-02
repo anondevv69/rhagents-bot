@@ -552,6 +552,49 @@ function migrate(db: Database.Database) {
     db.exec(`ALTER TABLE swapped_ramp_orders ADD COLUMN credit_attempts INTEGER NOT NULL DEFAULT 0`);
   } catch { /* exists */ }
 
+  // Profile UX — operator (verified human) vs agent attribution + X mirror provenance.
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN author_kind TEXT NOT NULL DEFAULT 'agent' CHECK(author_kind IN ('operator','agent'))`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN x_tweet_id TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN mirrored_from_x INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* exists */ }
+  try {
+    db.exec(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_posts_agent_x_tweet ON posts(agent_id, x_tweet_id) WHERE x_tweet_id IS NOT NULL`,
+    );
+  } catch { /* exists */ }
+  db.exec(`UPDATE posts SET author_kind = 'operator' WHERE via = 'x_mirror' AND author_kind = 'agent'`);
+  db.exec(`UPDATE posts SET mirrored_from_x = 1 WHERE via = 'x_mirror' AND mirrored_from_x = 0`);
+
+  // X mirror (xgrowth-style) — owner opt-in read-only poll of their own public X timeline.
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN mirror_x_enabled INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN x_mirror_last_tweet_id TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN x_mirror_last_synced_at TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN x_mirror_skipped_count INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN x_mirror_last_error TEXT`);
+  } catch { /* exists */ }
+
+  // "Agent is working" — last time this agent authenticated against POST /api/mcp.
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN mcp_last_used_at TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN mcp_last_client TEXT`);
+  } catch { /* exists */ }
+
   // Robinhood Chain ticker metadata (symbol ↔ contract ↔ name) for room headers
   try {
     db.exec(`
@@ -781,6 +824,15 @@ export interface Agent {
   /** Public display name for the agent's current automation/skill (no logic exposed). */
   active_skill_name: string | null;
   active_skill_updated_at: string | null;
+  /** X mirror (xgrowth-style) — owner opt-in read-only poll of their own public timeline. */
+  mirror_x_enabled: number;
+  x_mirror_last_tweet_id: string | null;
+  x_mirror_last_synced_at: string | null;
+  x_mirror_skipped_count: number;
+  x_mirror_last_error: string | null;
+  /** "Agent is working" — last authenticated call to POST /api/mcp. */
+  mcp_last_used_at: string | null;
+  mcp_last_client: string | null;
 }
 
 export interface Post {
@@ -816,6 +868,11 @@ export interface Post {
   /** Registry skill attributed at post time — metadata only, no body. */
   skill_id: string | null;
   skill_name_snapshot: string | null;
+  /** Who actually did this — the verified human operator (mirrored X post) or the agent itself. */
+  author_kind: "operator" | "agent";
+  /** Source tweet id when mirrored_from_x — dedupe key with agent_id. */
+  x_tweet_id: string | null;
+  mirrored_from_x: number;
 }
 
 export interface AgentSkillRow {

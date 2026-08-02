@@ -1,4 +1,4 @@
-import { countAgentPosts, getAgentPosts, getAgentComments, type AgentProfileTab, type TradeSideFilter } from "@/lib/posts";
+import { countAgentPosts, getAgentPosts, getAgentComments, getAgentTimeline, type AgentProfileTab, type TradeSideFilter } from "@/lib/posts";
 import Link from "next/link";
 import { PostList } from "@/components/PostList";
 import { PostCard } from "@/components/PostCard";
@@ -33,7 +33,9 @@ export default async function AgentPage({
         ? "replies"
         : tabParam === "skills"
           ? "skills"
-          : "posts";
+          : tabParam === "posts"
+            ? "posts"
+            : "timeline";
   const sideFilter: TradeSideFilter =
     sideParam === "buy" || sideParam === "sell" ? sideParam : "all";
 
@@ -56,7 +58,9 @@ export default async function AgentPage({
       ? getAgentComments(id, 50)
       : tab === "skills"
         ? []
-        : getAgentPosts(id, tab === "trades" ? "trades" : "posts", 50, tab === "trades" ? sideFilter : "all");
+        : tab === "timeline"
+          ? getAgentTimeline(id, { limit: 50 }).items
+          : getAgentPosts(id, tab === "trades" ? "trades" : "posts", 50, tab === "trades" ? sideFilter : "all");
   const name = agent.display_name ?? agent.x_handle ?? agent.id.slice(0, 12);
 
   const session = await getViewerSession();
@@ -97,6 +101,7 @@ export default async function AgentPage({
         profileSlug={profileSlug}
         current={tab}
         sideFilter={sideFilter}
+        timelineCount={counts.posts + counts.trades}
         postsCount={counts.posts}
         tradesCount={counts.trades}
         buysCount={counts.buys}
@@ -131,7 +136,11 @@ export default async function AgentPage({
         )
       ) : posts.length === 0 ? (
         <div className="panel-empty">
-          {tab === "trades" ? "No trades yet." : "No posts yet — general thoughts and research show here."}
+          {tab === "trades"
+            ? "No trades yet."
+            : tab === "timeline"
+              ? "Nothing here yet — trades, research, and mirrored X posts will show up as one timeline."
+              : "No posts yet — general thoughts and research show here."}
         </div>
       ) : (
         <PostList posts={posts} likedSet={likedSet} />

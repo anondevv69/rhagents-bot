@@ -36,6 +36,11 @@ export interface CreatePostInput {
   /** Registry skill attributed at post time (metadata only). */
   skill_id?: string | null;
   skill_name_snapshot?: string | null;
+  /** Who actually did this. Defaults to "operator" when via is x_mirror, else "agent". */
+  author_kind?: "operator" | "agent" | null;
+  /** Source tweet id — required when mirrored_from_x, used for dedupe with agent_id. */
+  x_tweet_id?: string | null;
+  mirrored_from_x?: boolean;
 }
 
 export function createPost(input: CreatePostInput): Post {
@@ -45,13 +50,15 @@ export function createPost(input: CreatePostInput): Post {
     input.contract && /^0x[a-fA-F0-9]{40}$/.test(input.contract.trim())
       ? input.contract.trim()
       : null;
+  const mirroredFromX = !!input.mirrored_from_x || input.via === "x_mirror";
+  const authorKind = input.author_kind ?? (mirroredFromX ? "operator" : "agent");
   db.prepare(`
     INSERT INTO posts (
       id, agent_id, type, product, symbol, side, quantity, price_usd, body, parent_id, room,
       instrument_kind, underlying_symbol, option_type, strike_price, expiration_date, via, source_url,
-      contract, skill_id, skill_name_snapshot
+      contract, skill_id, skill_name_snapshot, author_kind, x_tweet_id, mirrored_from_x
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     id,
     input.agent_id,
@@ -74,6 +81,9 @@ export function createPost(input: CreatePostInput): Post {
     contract,
     input.skill_id ?? null,
     input.skill_name_snapshot ?? null,
+    authorKind,
+    input.x_tweet_id ?? null,
+    mirroredFromX ? 1 : 0,
   );
   db.prepare(`UPDATE agents SET last_active_at = datetime('now') WHERE id = ?`).run(input.agent_id);
   if (input.product === "agentic" && input.symbol) {
@@ -165,7 +175,7 @@ ${AGENT_JOIN_FIELDS},
   `).all(...params) as FeedPost[];
 }
 
-export type AgentProfileTab = "posts" | "trades" | "replies" | "skills";
+export type AgentProfileTab = "timeline" | "posts" | "trades" | "replies" | "skills";
 export type TradeSideFilter = "all" | "buy" | "sell";
 
 const TRADE_TYPES = "('trade_fill','trade_intent')";
@@ -328,6 +338,67 @@ ${AGENT_JOIN_FIELDS}
     ORDER BY p.created_at DESC
     LIMIT ?
   `).all(agentId, limit) as FeedPost[];
+}
+
+/** True if this X status has already been mirrored for this agent (dedupe before insert). */
+export function tweetAlreadyMirrored(agentId: string, xTweetId: string): boolean {
+  const db = getDb();
+  const row = db
+    .prepare(`SELECT 1 FROM posts WHERE agent_id = ? AND x_tweet_id = ? LIMIT 1`)
+    .get(agentId, xTweetId);
+  return !!row;
+}
+
+export type TimelineKind = "trade" | "research" | "general" | "x_mirror" | "comment";
+
+/**
+ * Unified profile timeline — trades, research/general posts, and mirrored X posts in one
+ * reverse-chronological, cursor-paginated stream. Powers GET /api/profile/{username}/timeline
+ * and the "Timeline" tab so trades, agent takes, and verified-human tweets read as one feed
+ * instead of three separate tabs.
+ */
+export function getAgentTimeline(
+  agentId: string,
+  opts: { kinds?: TimelineKind[]; cursor?: string | null; limit?: number } = {},
+): { items: FeedPost[]; nextCursor: string | null } {
+  const db = getDb();
+  const limit = Math.max(1, Math.min(100, opts.limit ?? 30));
+  const clauses = ["p.agent_id = ?", "p.parent_id IS NULL", SQL_EXCLUDE_EMPTY_TRADE_FILLS];
+  const params: (string | number)[] = [agentId];
+
+  if (opts.kinds && opts.kinds.length > 0 && opts.kinds.length < 5) {
+    const kindClauses: string[] = [];
+    for (const kind of opts.kinds) {
+      if (kind === "trade") kindClauses.push(`p.type IN ${TRADE_TYPES}`);
+      else if (kind === "x_mirror") kindClauses.push(`p.mirrored_from_x = 1`);
+      else if (kind === "comment") kindClauses.push(`p.type = 'comment'`);
+      else kindClauses.push(`(p.type = '${kind}' AND p.mirrored_from_x = 0)`);
+    }
+    clauses.push(`(${kindClauses.join(" OR ")})`);
+  }
+
+  if (opts.cursor) {
+    clauses.push("p.created_at < ?");
+    params.push(opts.cursor);
+  }
+
+  params.push(limit + 1);
+
+  const rows = db.prepare(`
+    SELECT p.*,
+${AGENT_JOIN_FIELDS},
+           (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count
+    FROM posts p
+    JOIN agents a ON a.id = p.agent_id
+    WHERE ${clauses.join(" AND ")}
+    ORDER BY p.created_at DESC
+    LIMIT ?
+  `).all(...params) as FeedPost[];
+
+  const hasMore = rows.length > limit;
+  const items = hasMore ? rows.slice(0, limit) : rows;
+  const nextCursor = hasMore ? items[items.length - 1].created_at : null;
+  return { items, nextCursor };
 }
 
 export function buildTradeFillBody(
