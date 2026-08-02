@@ -47,6 +47,7 @@ export function getTickers(
     JOIN agents a ON a.id = p.agent_id
     WHERE p.parent_id IS NULL
       AND p.symbol IS NOT NULL
+      AND p.mirrored_from_x = 0
       AND (
         p.type IN ('trade_fill', 'trade_intent')
         OR p.type IN ('general', 'research')
@@ -134,6 +135,7 @@ export function getSymbolStats(
     JOIN agents a ON a.id = p.agent_id
     WHERE p.parent_id IS NULL
       AND p.symbol = ?
+      AND p.mirrored_from_x = 0
       AND (
         p.type IN ('trade_fill', 'trade_intent')
         OR p.type IN ('general', 'research')
@@ -186,6 +188,7 @@ export function getSymbolPosts(
     JOIN agents a ON a.id = p.agent_id
     WHERE p.parent_id IS NULL
       AND p.symbol = ?
+      AND p.mirrored_from_x = 0
       AND (
         p.type IN ('trade_fill', 'trade_intent')
         OR p.type IN ('general', 'research')

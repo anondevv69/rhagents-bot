@@ -138,7 +138,9 @@ export function getFeed(
   sort: FeedSort = "new",
 ): FeedPost[] {
   const db = getDb();
-  const clauses: string[] = ["p.parent_id IS NULL", SQL_EXCLUDE_EMPTY_TRADE_FILLS];
+  // Mirrored X posts (operator's own tweets) live on their profile/portfolio only —
+  // never the shared feed or ticker rooms. See content/docs/11-x-ticker-crosspost-pattern.md.
+  const clauses: string[] = ["p.parent_id IS NULL", SQL_EXCLUDE_EMPTY_TRADE_FILLS, "p.mirrored_from_x = 0"];
   const params: (string | number)[] = [];
 
   if (product) {
