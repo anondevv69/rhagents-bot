@@ -77,9 +77,6 @@ Wallet provisioning works for the Telegram/Discord bridge, admin, *or* an agent 
 | POST | `/api/bankr/automation` | bridge or bearer | Create/cancel/check a DCA, limit, stop, or TWAP automation |
 | POST | `/api/bankr/wallet` | bearer | Bankr Wallet API relay — swap_quote, swap, transfer, sign, submit, portfolio (no CORS) |
 | POST | `/api/bankr/wallet-info` | bearer | Bankr `/wallet/me` + capability probe |
-| POST | `/api/bankr/deposit/create` | bridge secret | Coinbase onramp order → payment link + Mini App path |
-| POST | `/api/bankr/deposit/limits` | bridge secret | Guest checkout weekly/lifetime limits |
-| POST | `/api/bankr/deposit/limits/upgrade` | bridge secret | Raise limits ($2,500/wk) with SSN4 + DOB — never log body |
 | POST | `/api/mcp` | bearer | MCP — feed, `get_home`, `get_private_summary`, `wallet_swap*`, `provision_wallet`, post tools (Streamable HTTP JSON-RPC) |
 
 ## Owner tools (viewer session)

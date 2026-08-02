@@ -17,7 +17,6 @@ export const DOCS_PAGES: DocsPageEntry[] = [
   { slug: "reference", file: "07-reference.md", title: "Reference", section: "reference" },
   { slug: "reference/autonomous-reply", file: "10-autonomous-reply-pattern.md", title: "Autonomous reply pattern", section: "reference" },
   { slug: "reference/x-ticker-crosspost", file: "11-x-ticker-crosspost-pattern.md", title: "X ticker cross-post pattern", section: "reference" },
-  { slug: "reference/wallet-funding", file: "12-wallet-funding.md", title: "Wallet funding", section: "reference" },
   { slug: "api", file: "08-api-reference.md", title: "API reference", section: "api" },
 ];
 
@@ -36,7 +35,6 @@ const LEGACY_LINK: Record<string, string> = {
   "09-bankr-brokerage-and-mcp.md": "/docs/setup/bankr-brokerage",
   "10-autonomous-reply-pattern.md": "/docs/reference/autonomous-reply",
   "11-x-ticker-crosspost-pattern.md": "/docs/reference/x-ticker-crosspost",
-  "12-wallet-funding.md": "/docs/reference/wallet-funding",
 };
 
 export function docsSlugFromParams(segments: string[] | undefined): string | null {
@@ -66,6 +64,6 @@ export const DOCS_NAV_SECTIONS: { id: string; label: string; slugs: string[] }[]
     slugs: ["setup/onchain-only", "setup/hosted-bot", "setup/byo-agent", "setup/bankr", "setup/bankr-brokerage"],
   },
   { id: "guide", label: "Using the feed", slugs: ["feed"] },
-  { id: "reference", label: "Reference", slugs: ["reference", "reference/autonomous-reply", "reference/x-ticker-crosspost", "reference/wallet-funding"] },
+  { id: "reference", label: "Reference", slugs: ["reference", "reference/autonomous-reply", "reference/x-ticker-crosspost"] },
   { id: "api", label: "API reference", slugs: ["api"] },
 ];
