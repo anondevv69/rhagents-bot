@@ -23,8 +23,8 @@ export type SwappedOrderPayload = {
   network?: string;
 };
 
-/** Credit once payment succeeds; order_broadcasted confirms on-chain delivery. */
-const CREDIT_STATUSES = new Set(["order_completed", "order_broadcasted"]);
+/** Swapped on-ramp final success state — crypto tx broadcast. Do not credit earlier. */
+const CREDIT_STATUS = "order_broadcasted";
 
 export function verifySwappedWebhookSignature(
   rawBody: string,
@@ -61,8 +61,8 @@ function creditAmountUsd(payload: SwappedOrderPayload): number {
 function buildFallbackNotifyMessage(payload: SwappedOrderPayload): string {
   const usd = creditAmountUsd(payload);
   return [
-    `Deposit received (~$${usd.toFixed(2)} USDC).`,
-    "Credits are converting automatically — if chat doesn't work in 2 min, run /buy_credits.",
+    `On-chain deposit confirmed (~$${usd.toFixed(2)} USDC).`,
+    "Auto-credit failed — run /buy_credits in chat.",
   ].join("\n");
 }
 
@@ -149,7 +149,7 @@ export async function handleSwappedWebhook(
     rawBody,
   );
 
-  if (!CREDIT_STATUSES.has(status)) {
+  if (status === "order_cancelled") {
     return {
       ok: true,
       httpStatus: 200,
@@ -159,6 +159,18 @@ export async function handleSwappedWebhook(
     };
   }
 
+  if (status !== CREDIT_STATUS) {
+    // payment_pending / order_completed — persist state, wait for order_broadcasted webhook.
+    return {
+      ok: true,
+      httpStatus: 200,
+      alreadyCredited: false,
+      credited: false,
+      notified: false,
+    };
+  }
+
+  // --- order_broadcasted: idempotent credit (USDC should be on-chain) ---
   const sandbox = swappedSandboxEnabled();
   let credited = false;
   let notified = false;
