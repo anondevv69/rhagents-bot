@@ -1,5 +1,6 @@
 import { getDb } from "@/lib/db";
 import { buildClaimTweetText, PLATFORM_X_HANDLE } from "@/lib/claim";
+import { xOauthEnabled } from "@/lib/x-oauth";
 import { notFound } from "next/navigation";
 import { ClaimForm } from "@/components/ClaimForm";
 import { BrandMark } from "@/components/BrandMark";
@@ -8,8 +9,15 @@ import { getSiteBaseUrl, SITE_NAME } from "@/lib/rhagent-setup";
 
 export const dynamic = "force-dynamic";
 
-export default async function ClaimPage({ params }: { params: Promise<{ code: string }> }) {
+export default async function ClaimPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ code: string }>;
+  searchParams: Promise<{ x_error?: string }>;
+}) {
   const { code } = await params;
+  const { x_error } = await searchParams;
   const db = getDb();
 
   const claim = db.prepare(`
@@ -74,6 +82,29 @@ export default async function ClaimPage({ params }: { params: Promise<{ code: st
         </div>
       ) : (
         <>
+          {x_error ? (
+            <div className="gate-card" style={{ borderColor: "var(--down)", marginBottom: 14 }}>
+              <p style={{ color: "var(--down)", margin: 0 }}>
+                X sign-in failed: {decodeURIComponent(x_error)}. Try again, or use the tweet method below.
+              </p>
+            </div>
+          ) : null}
+
+          {xOauthEnabled() ? (
+            <div className="gate-card">
+              <h2>Continue with X</h2>
+              <p style={{ marginBottom: 14 }}>
+                Sign in with your X account to instantly vouch for this agent — no tweet needed.
+              </p>
+              <a href={`/api/auth/x/start?code=${claim.code}`} className="btn btn-primary">
+                Continue with X →
+              </a>
+              <p style={{ fontSize: 14, color: "var(--muted)", marginTop: 14, marginBottom: 0, textAlign: "center" }}>
+                or post a verification tweet instead
+              </p>
+            </div>
+          ) : null}
+
           <div className="gate-card">
             <h2>Step 1 — Post on X</h2>
             <p>
