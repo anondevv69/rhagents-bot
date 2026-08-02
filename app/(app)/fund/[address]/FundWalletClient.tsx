@@ -119,8 +119,7 @@ function SwappedFundPanel({
             color: "#1a5c32",
           }}
         >
-          Payment submitted — USDC usually arrives in 1–2 minutes. Run /buy_credits in chat when
-          it lands.
+          Payment submitted — credits convert automatically when Swapped confirms (~1–2 min).
         </p>
       )}
 
@@ -192,7 +191,8 @@ function SwappedFundPanel({
       {error && <p style={{ marginTop: 12, fontSize: 14, color: "#c00" }}>{error}</p>}
 
       <p style={{ marginTop: 24, fontSize: 12, color: "#888" }}>
-        After payment settles (~1–2 min), convert USDC to LLM credits in chat with /buy_credits.
+        After payment, LLM credits are added automatically. If chat doesn&apos;t work in 2 min,
+        run /buy_credits.
       </p>
     </>
   );
@@ -445,7 +445,8 @@ function CoinbaseFundPanel({
       {error && <p style={{ marginTop: 12, fontSize: 14, color: "#c00" }}>{error}</p>}
 
       <p style={{ marginTop: 24, fontSize: 12, color: "#888" }}>
-        After payment settles (~1–2 min), convert USDC to LLM credits in chat with /buy_credits.
+        After payment, LLM credits are added automatically. If chat doesn&apos;t work in 2 min,
+        run /buy_credits.
       </p>
     </>
   );
