@@ -509,6 +509,29 @@ function migrate(db: Database.Database) {
     `);
   } catch { /* exists */ }
 
+  // Swapped Ramp onramp — webhook idempotency + notify dedupe.
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS swapped_ramp_orders (
+        order_id            TEXT PRIMARY KEY,
+        wallet_address      TEXT,
+        order_status        TEXT NOT NULL,
+        order_crypto        TEXT,
+        order_crypto_amount TEXT,
+        transaction_id      TEXT,
+        notified_at         TEXT,
+        raw_json            TEXT,
+        created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+  } catch { /* exists */ }
+  try {
+    db.exec(
+      `CREATE INDEX IF NOT EXISTS idx_swapped_orders_wallet ON swapped_ramp_orders(wallet_address)`,
+    );
+  } catch { /* exists */ }
+
   // Robinhood Chain ticker metadata (symbol ↔ contract ↔ name) for room headers
   try {
     db.exec(`

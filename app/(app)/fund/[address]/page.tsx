@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { normalizeWalletAddress } from "@/lib/coinbase-onramp/wallet-lookup";
 import FundWalletClient from "./FundWalletClient";
 
@@ -29,7 +30,9 @@ export default async function FundWalletPage({
 
   return (
     <main>
-      <FundWalletClient address={address} initialAmount={initialAmount} />
+      <Suspense fallback={<p style={{ padding: 24, fontFamily: "system-ui" }}>Loading…</p>}>
+        <FundWalletClient address={address} initialAmount={initialAmount} />
+      </Suspense>
     </main>
   );
 }

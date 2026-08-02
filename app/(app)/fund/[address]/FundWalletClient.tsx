@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 type Identity = {
   phone: string | null;
@@ -10,15 +11,30 @@ type Identity = {
   ready: boolean;
 };
 
+type FundConfig = {
+  provider: "swapped" | "coinbase" | null;
+  swapped_configured: boolean;
+  swapped_sandbox: boolean;
+  cdp_configured: boolean;
+  sandbox: boolean;
+};
+
 const SANDBOX_PHONE = "+10005550100";
 const SANDBOX_EMAIL = "tester@sandbox.test";
 const SANDBOX_CODE = "000000";
+
+const IFRAME_ALLOW =
+  "accelerometer; autoplay; camera; encrypted-media; gyroscope; payment; clipboard-read; clipboard-write";
 
 function friendlyError(raw: string): string {
   if (raw === "phone_must_be_e164_us") {
     return "Enter a valid US phone number, e.g. 4155551234 or +14155551234.";
   }
   if (raw === "invalid_email") return "Enter a valid email address.";
+  if (raw === "invalid_amount") return "Enter a valid amount (e.g. 25 or 25.00).";
+  if (raw === "swapped_not_configured") {
+    return "Card deposits aren't configured on the server yet — try again later.";
+  }
   if (raw === "otp_provider_not_configured") {
     return "Deposits aren't configured on the server yet — try again later.";
   }
@@ -34,16 +50,166 @@ function friendlyError(raw: string): string {
   return raw;
 }
 
-export default function FundWalletClient({
+function SwappedFundPanel({
   address,
   initialAmount,
+  sandbox,
 }: {
   address: string;
   initialAmount: string;
+  sandbox: boolean;
+}) {
+  const searchParams = useSearchParams();
+  const paidReturn = searchParams.get("paid") === "1";
+  const [amount, setAmount] = useState(initialAmount);
+  const [widgetUrl, setWidgetUrl] = useState("");
+  const [status, setStatus] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const apiBase = `/api/fund/${encodeURIComponent(address)}`;
+
+  const loadWidget = useCallback(async () => {
+    setError("");
+    setLoading(true);
+    setStatus("Loading checkout…");
+    try {
+      const res = await fetch(
+        `${apiBase}/widget?amount=${encodeURIComponent(amount.trim())}`,
+      );
+      const data = await res.json();
+      if (!data.ok) {
+        setError(friendlyError(data.error ?? "Could not start checkout"));
+        setWidgetUrl("");
+        setStatus("");
+        return;
+      }
+      setWidgetUrl(data.widgetUrl);
+      setStatus("");
+    } catch {
+      setError("Network error — try again.");
+      setStatus("");
+    } finally {
+      setLoading(false);
+    }
+  }, [apiBase, amount]);
+
+  useEffect(() => {
+    void loadWidget();
+  }, [loadWidget]);
+
+  const subtitle = sandbox
+    ? "Sandbox — test card only, Sepolia ETH (max €15)"
+    : "Card or Apple Pay → USDC on Base";
+
+  return (
+    <>
+      <p style={{ color: "#666", fontSize: 14, marginTop: 0 }}>{subtitle}</p>
+      <p style={{ fontSize: 12, wordBreak: "break-all", color: "#888" }}>{address}</p>
+
+      {paidReturn && (
+        <p
+          style={{
+            marginTop: 12,
+            padding: 10,
+            background: "#e8f8ee",
+            border: "1px solid #9ed4b0",
+            borderRadius: 8,
+            fontSize: 13,
+            color: "#1a5c32",
+          }}
+        >
+          Payment submitted — USDC usually arrives in 1–2 minutes. Run /buy_credits in chat when
+          it lands.
+        </p>
+      )}
+
+      {sandbox && (
+        <p
+          style={{
+            marginTop: 12,
+            padding: 10,
+            background: "#fff8e6",
+            border: "1px solid #f0d78c",
+            borderRadius: 8,
+            fontSize: 13,
+            color: "#664d00",
+          }}
+        >
+          Sandbox mode: use Swapped test cards only. Crypto lands as testnet ETH, not USDC on
+          Base.
+        </p>
+      )}
+
+      <label style={{ display: "block", marginTop: 16, fontSize: 14 }}>
+        Amount ({sandbox ? "EUR, max 15" : "USD"})
+        <input
+          type="text"
+          inputMode="decimal"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          style={{ display: "block", width: "100%", marginTop: 4, padding: 10, fontSize: 16 }}
+        />
+      </label>
+
+      <button
+        type="button"
+        disabled={loading}
+        onClick={() => void loadWidget()}
+        style={{
+          marginTop: 12,
+          width: "100%",
+          padding: 12,
+          fontSize: 15,
+          fontWeight: 600,
+          background: loading ? "#999" : "#007aff",
+          color: "#fff",
+          border: "none",
+          borderRadius: 10,
+        }}
+      >
+        {loading ? "Loading…" : "Refresh checkout"}
+      </button>
+
+      {widgetUrl && (
+        <iframe
+          src={widgetUrl}
+          allow={IFRAME_ALLOW}
+          title="Buy crypto with Swapped"
+          style={{
+            width: "100%",
+            maxWidth: 400,
+            height: 482,
+            margin: "16px auto 0",
+            display: "block",
+            border: 0,
+            borderRadius: 28,
+          }}
+        />
+      )}
+
+      {status && <p style={{ marginTop: 12, fontSize: 14, color: "#333" }}>{status}</p>}
+      {error && <p style={{ marginTop: 12, fontSize: 14, color: "#c00" }}>{error}</p>}
+
+      <p style={{ marginTop: 24, fontSize: 12, color: "#888" }}>
+        After payment settles (~1–2 min), convert USDC to LLM credits in chat with /buy_credits.
+      </p>
+    </>
+  );
+}
+
+function CoinbaseFundPanel({
+  address,
+  initialAmount,
+  cdpOk,
+  sandbox,
+}: {
+  address: string;
+  initialAmount: string;
+  cdpOk: boolean;
+  sandbox: boolean;
 }) {
   const [identity, setIdentity] = useState<Identity | null>(null);
-  const [cdpOk, setCdpOk] = useState(false);
-  const [sandbox, setSandbox] = useState(false);
   const [amount, setAmount] = useState(initialAmount);
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -62,8 +228,6 @@ export default function FundWalletClient({
     const data = await res.json();
     if (data.ok) {
       setIdentity(data.identity);
-      setCdpOk(Boolean(data.cdp_configured));
-      setSandbox(Boolean(data.sandbox));
       if (data.identity?.phone) setPhone(data.identity.phone);
       if (data.identity?.email) setEmail(data.identity.email);
     } else {
@@ -139,11 +303,8 @@ export default function FundWalletClient({
   const ready = identity?.ready;
 
   return (
-    <div style={{ maxWidth: 480, margin: "0 auto", padding: "24px 16px", fontFamily: "system-ui" }}>
-      <h1 style={{ fontSize: 22, marginBottom: 4 }}>Add funds</h1>
-      <p style={{ color: "#666", fontSize: 14, marginTop: 0 }}>
-        Apple Pay → USDC on Base
-      </p>
+    <>
+      <p style={{ color: "#666", fontSize: 14, marginTop: 0 }}>Apple Pay → USDC on Base</p>
       <p style={{ fontSize: 12, wordBreak: "break-all", color: "#888" }}>{address}</p>
 
       {!cdpOk && (
@@ -286,6 +447,74 @@ export default function FundWalletClient({
       <p style={{ marginTop: 24, fontSize: 12, color: "#888" }}>
         After payment settles (~1–2 min), convert USDC to LLM credits in chat with /buy_credits.
       </p>
+    </>
+  );
+}
+
+export default function FundWalletClient({
+  address,
+  initialAmount,
+}: {
+  address: string;
+  initialAmount: string;
+}) {
+  const [config, setConfig] = useState<FundConfig | null>(null);
+  const [error, setError] = useState("");
+
+  const apiBase = `/api/fund/${encodeURIComponent(address)}`;
+
+  useEffect(() => {
+    void (async () => {
+      const res = await fetch(apiBase + "/identity");
+      const data = await res.json();
+      if (!data.ok) {
+        setError(data.error ?? "Could not load fund page");
+        return;
+      }
+      const swapped = Boolean(data.swapped_configured);
+      const cdp = Boolean(data.cdp_configured);
+      setConfig({
+        provider: swapped ? "swapped" : cdp ? "coinbase" : null,
+        swapped_configured: swapped,
+        swapped_sandbox: Boolean(data.swapped_sandbox),
+        cdp_configured: cdp,
+        sandbox: Boolean(data.sandbox),
+      });
+    })();
+  }, [apiBase]);
+
+  return (
+    <div style={{ maxWidth: 480, margin: "0 auto", padding: "24px 16px", fontFamily: "system-ui" }}>
+      <h1 style={{ fontSize: 22, marginBottom: 4 }}>Add funds</h1>
+
+      {!config && !error && (
+        <p style={{ color: "#666", fontSize: 14 }}>Loading…</p>
+      )}
+
+      {config?.provider === "swapped" && (
+        <SwappedFundPanel
+          address={address}
+          initialAmount={initialAmount}
+          sandbox={config.swapped_sandbox}
+        />
+      )}
+
+      {config?.provider === "coinbase" && (
+        <CoinbaseFundPanel
+          address={address}
+          initialAmount={initialAmount}
+          cdpOk={config.cdp_configured}
+          sandbox={config.sandbox}
+        />
+      )}
+
+      {config && !config.provider && (
+        <p style={{ color: "#c00", fontSize: 14 }}>
+          Card deposits aren&apos;t configured on the server yet.
+        </p>
+      )}
+
+      {error && <p style={{ marginTop: 12, fontSize: 14, color: "#c00" }}>{error}</p>}
     </div>
   );
 }
