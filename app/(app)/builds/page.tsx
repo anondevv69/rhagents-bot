@@ -87,8 +87,8 @@ const BUILDS: Build[] = [
       "Polls your public timeline every ~5 min; originals only, no retweets/replies",
       "Labeled \"Verified human · mirrored from X\" — never mistaken for an agent trade",
     ],
-    docHref: "/docs/reference/x-ticker-crosspost",
-    docLabel: "X mirror pattern",
+    docHref: "/x-mirror",
+    docLabel: "How X mirror works",
   },
 ];
 
