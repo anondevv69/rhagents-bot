@@ -12,5 +12,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: docs, lastModified: now, changeFrequency: "weekly", priority: 0.95 },
     { url: `${docs}/docs`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
     { url: `${base}/skill.md`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${base}/builds`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
   ];
 }

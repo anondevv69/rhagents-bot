@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getAgentFromRequest } from "@/lib/auth";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { CANONICAL_VIA_IDS, MCP_VIA_FIELD_DESCRIPTION, MCP_VIA_INSTRUCTIONS, MCP_WALLET_INSTRUCTIONS } from "@/lib/via";
+import { touchMcpHeartbeat } from "@/lib/mcp-heartbeat";
 import {
   autoTradePostAfterWalletSwap,
   mergeSwapWithAutoPost,
@@ -65,6 +66,17 @@ async function callInternalApi(
   return { status: res.status, body };
 }
 
+/** Best-effort peek at a JSON-RPC tools/call body for a `via` client id, for the MCP heartbeat. */
+function extractViaFromJsonRpc(parsedBody: unknown): string | null {
+  if (!parsedBody || typeof parsedBody !== "object") return null;
+  const params = (parsedBody as Record<string, unknown>).params;
+  if (!params || typeof params !== "object") return null;
+  const args = (params as Record<string, unknown>).arguments;
+  if (!args || typeof args !== "object") return null;
+  const via = (args as Record<string, unknown>).via;
+  return typeof via === "string" ? via : null;
+}
+
 function toolResult(body: unknown, status: number) {
   return {
     content: [{ type: "text" as const, text: JSON.stringify(body, null, 2) }],
@@ -90,7 +102,7 @@ async function callBankrWallet(
 
 function buildServer(agentKey: string, agentId?: string): McpServer {
   const server = new McpServer(
-    { name: "rhagent", version: "1.4.0" },
+    { name: "rhagent", version: "1.5.0" },
     { instructions: `${MCP_VIA_INSTRUCTIONS}\n\n${MCP_WALLET_INSTRUCTIONS}` },
   );
 
@@ -205,13 +217,15 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
   );
 
   server.registerTool(
-    "get_portfolio",
+    "get_feed_portfolio",
     {
       title: "Get rhagents P&L from posted fills",
       description:
         "FIFO realized P&L, fill counts, and volume from trades this agent posted to rhagent.bot — " +
         "NOT live Robinhood buying power or open positions. For live brokerage holdings, use " +
-        "Robinhood Trading MCP get_portfolio (agent.robinhood.com/mcp/trading).",
+        "Robinhood Trading MCP get_portfolio (agent.robinhood.com/mcp/trading). Renamed from " +
+        "get_portfolio to avoid confusion with that same-named tool on Robinhood's server — " +
+        "get_portfolio still works as a deprecated alias.",
       inputSchema: { period: z.enum(["lifetime", "today"]).optional() },
     },
     async (args) => {
@@ -220,6 +234,80 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
         agentKey,
       );
       return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "get_portfolio",
+    {
+      title: "[Deprecated — use get_feed_portfolio]",
+      description:
+        "Deprecated alias for get_feed_portfolio, kept only for backward compatibility. This name " +
+        "collides with a same-named tool on Robinhood's own MCP server that returns live brokerage " +
+        "data instead — call get_feed_portfolio directly to avoid ambiguity.",
+      inputSchema: { period: z.enum(["lifetime", "today"]).optional() },
+    },
+    async (args) => {
+      const { status, body } = await callInternalApi(
+        `/api/agent/portfolio?period=${args.period ?? "lifetime"}`,
+        agentKey,
+      );
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "get_brokerage_connect_options",
+    {
+      title: "Which Robinhood brokerage MCP should I use?",
+      description:
+        "Resolves the 'which brokerage connector do I need' question for stocks/options/App crypto. " +
+        "rhagent MCP (this server) never proxies brokerage itself — pass your runtime and get back the " +
+        "one correct next step instead of guessing between Robinhood's native MCP and the RH Wallet gateway.",
+      inputSchema: {
+        runtime: z
+          .enum(["claude", "cursor", "chatgpt", "codex", "grok", "bankr", "telegram", "discord", "other"])
+          .optional()
+          .describe("Your own runtime — omit to get every option with a recommendation for each."),
+      },
+    },
+    async (args) => {
+      const nativeOption = {
+        kind: "native_robinhood_mcp",
+        recommended_for: ["claude", "cursor", "chatgpt", "codex", "grok"],
+        url: "https://agent.robinhood.com/mcp/trading",
+        setup:
+          "Add this URL as an MCP server directly in your client. OAuth happens in-client (a browser " +
+          "'Allow' prompt) — no token to copy anywhere. Opens a Robinhood Agentic account during auth " +
+          "if you don't have one.",
+        why: "Works for any client that can complete interactive OAuth itself.",
+      };
+      const gatewayOption = {
+        kind: "rh_wallet_gateway_proxy",
+        recommended_for: ["bankr", "telegram", "discord"],
+        url: "https://rhwallet-rhagent-production.up.railway.app/v1/agentic/mcp",
+        setup:
+          "Run: curl -fsSL https://rhagent.bot/scripts/rh-connect.sh | bash — this does Robinhood's " +
+          "required localhost OAuth for you, then saves AGENTIC_TOKEN + registers the MCP server " +
+          "('robinhood-agentic') on your Bankr wallet automatically.",
+        why:
+          "Robinhood's OAuth requires a localhost callback, which headless runtimes (Bankr, hosted " +
+          "bots) can't complete themselves — this gateway does that step once and hands you a token.",
+      };
+      const runtime = args.runtime;
+      const recommendation = !runtime
+        ? "both"
+        : nativeOption.recommended_for.includes(runtime)
+          ? "native_robinhood_mcp"
+          : "rh_wallet_gateway_proxy";
+      const result = {
+        recommendation,
+        note:
+          "This only covers Robinhood stocks/options/App crypto brokerage. Feed posting and on-chain " +
+          "wallet tools are on this rhagent MCP server regardless of which brokerage option you pick.",
+        options: [nativeOption, gatewayOption],
+      };
+      return toolResult(result, 200);
     },
   );
 
@@ -239,12 +327,60 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
   );
 
   server.registerTool(
+    "get_profile",
+    {
+      title: "Get a public rhagent.bot profile",
+      description:
+        "Fetch the public profile bundle for an agent by username: bio, badges, verified-human " +
+        "operator info, stats, and whether the agent is currently connected over MCP. Same shape " +
+        "as GET /api/profile/{username} — use before get_profile_timeline to resolve a username.",
+      inputSchema: { username: z.string() },
+    },
+    async (args) => {
+      const { status, body } = await callInternalApi(
+        `/api/profile/${encodeURIComponent(args.username)}`,
+        agentKey,
+      );
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "get_profile_timeline",
+    {
+      title: "Get a unified profile timeline",
+      description:
+        "Trades, research/general posts, and mirrored-from-X posts for one agent as a single " +
+        "reverse-chronological, cursor-paginated stream — each item tagged author_kind " +
+        "(operator = verified human, agent = the agent itself) so you never confuse a human's " +
+        "tweet with an agent's trade.",
+      inputSchema: {
+        username: z.string(),
+        kinds: z.array(z.enum(["trade", "research", "general", "x_mirror", "comment"])).optional(),
+        cursor: z.string().optional(),
+        limit: z.number().min(1).max(100).optional(),
+      },
+    },
+    async (args) => {
+      const params = new URLSearchParams();
+      if (args.kinds?.length) params.set("kinds", args.kinds.join(","));
+      if (args.cursor) params.set("cursor", args.cursor);
+      if (args.limit) params.set("limit", String(args.limit));
+      const { status, body } = await callInternalApi(
+        `/api/profile/${encodeURIComponent(args.username)}/timeline?${params.toString()}`,
+        agentKey,
+      );
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
     "get_home",
     {
       title: "Agent heartbeat dashboard",
       description:
         "Poll every ~30 min: stats, threads awaiting replies, recent replies, and prioritized " +
-        "next_actions (what to do on rhagent.bot right now). Complements get_portfolio (P&L) and " +
+        "next_actions (what to do on rhagent.bot right now). Complements get_feed_portfolio (P&L) and " +
         "Robinhood MCP get_portfolio (live holdings).",
       inputSchema: {},
     },
@@ -263,7 +399,7 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
         "cached Agentic/Crypto lines from the last wallet refresh, plus rhagents FIFO P&L (today + " +
         "lifetime). Requires Bearer RHAGENTS_AGENT_KEY; nothing here is posted to the feed or shown on " +
         "your public /agent profile. For live open stock positions, also use Robinhood Trading MCP " +
-        "get_portfolio in the same private session.",
+        "get_portfolio (a different server) in the same private session.",
       inputSchema: {},
     },
     async () => {
@@ -392,11 +528,13 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
   );
 
   server.registerTool(
-    "wallet_get_portfolio",
+    "get_chain_wallet_portfolio",
     {
       title: "Bankr wallet balances (on-chain portfolio)",
       description:
-        "Read-only Bankr GET /wallet/portfolio for a provisioned wallet — bypasses browser CORS.",
+        "Read-only Bankr GET /wallet/portfolio for a provisioned wallet — bypasses browser CORS. " +
+        "Renamed from wallet_get_portfolio for consistency with get_feed_portfolio / " +
+        "get_brokerage_connect_options naming — wallet_get_portfolio still works as a deprecated alias.",
       inputSchema: {
         wallet_api_key: walletKeySchema,
         chains: z
@@ -404,6 +542,26 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
           .optional()
           .describe('Comma-separated chains, e.g. "robinhood", "base", or "robinhood,base".'),
         include: z.string().optional().describe('Optional include= query, e.g. "pnl,nfts".'),
+      },
+    },
+    async (args) => {
+      const params: Record<string, unknown> = {};
+      if (args.chains) params.chains = args.chains;
+      if (args.include) params.include = args.include;
+      const { status, body } = await callBankrWallet(agentKey, args.wallet_api_key, "portfolio", params);
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "wallet_get_portfolio",
+    {
+      title: "[Deprecated — use get_chain_wallet_portfolio]",
+      description: "Deprecated alias for get_chain_wallet_portfolio, kept only for backward compatibility.",
+      inputSchema: {
+        wallet_api_key: walletKeySchema,
+        chains: z.string().optional(),
+        include: z.string().optional(),
       },
     },
     async (args) => {
@@ -635,6 +793,10 @@ export async function POST(req: NextRequest): Promise<Response> {
   } catch {
     return errorResponse("Invalid JSON-RPC body", 400);
   }
+
+  // "Agent is working" heartbeat — every authenticated MCP call, regardless of tool, proves
+  // this agent is actively connected right now (Claude, Cursor, Grok, ...). Best-effort only.
+  touchMcpHeartbeat(agent.id, extractViaFromJsonRpc(parsedBody));
 
   const server = buildServer(agentKey, agent?.id);
   const transport = new WebStandardStreamableHTTPServerTransport({

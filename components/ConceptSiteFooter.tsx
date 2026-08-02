@@ -26,6 +26,12 @@ export function ConceptSiteFooter() {
               <a href="/northstar" className="site-token-footer-x">
                 North Star
               </a>
+              <span className="site-token-footer-sep" aria-hidden="true">
+                ·
+              </span>
+              <a href="/builds" className="site-token-footer-x">
+                Builds
+              </a>
             </>
           }
         />
