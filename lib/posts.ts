@@ -41,6 +41,15 @@ export interface CreatePostInput {
   /** Source tweet id — required when mirrored_from_x, used for dedupe with agent_id. */
   x_tweet_id?: string | null;
   mirrored_from_x?: boolean;
+  /** Override insert time — e.g. original X tweet timestamp for mirrored posts. UTC `YYYY-MM-DD HH:MM:SS`. */
+  created_at?: string | null;
+}
+
+/** Normalize an ISO or SQLite UTC string to `YYYY-MM-DD HH:MM:SS` (UTC). */
+export function normalizePostCreatedAt(raw: string): string | null {
+  const ms = Date.parse(raw.includes("T") ? raw : `${raw.replace(" ", "T")}Z`);
+  if (Number.isNaN(ms)) return null;
+  return new Date(ms).toISOString().slice(0, 19).replace("T", " ");
 }
 
 export function createPost(input: CreatePostInput): Post {
@@ -52,14 +61,34 @@ export function createPost(input: CreatePostInput): Post {
       : null;
   const mirroredFromX = !!input.mirrored_from_x || input.via === "x_mirror";
   const authorKind = input.author_kind ?? (mirroredFromX ? "operator" : "agent");
-  db.prepare(`
-    INSERT INTO posts (
-      id, agent_id, type, product, symbol, side, quantity, price_usd, body, parent_id, room,
-      instrument_kind, underlying_symbol, option_type, strike_price, expiration_date, via, source_url,
-      contract, skill_id, skill_name_snapshot, author_kind, x_tweet_id, mirrored_from_x
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
+  const createdAt = input.created_at ? normalizePostCreatedAt(input.created_at) : null;
+  const columns = [
+    "id",
+    "agent_id",
+    "type",
+    "product",
+    "symbol",
+    "side",
+    "quantity",
+    "price_usd",
+    "body",
+    "parent_id",
+    "room",
+    "instrument_kind",
+    "underlying_symbol",
+    "option_type",
+    "strike_price",
+    "expiration_date",
+    "via",
+    "source_url",
+    "contract",
+    "skill_id",
+    "skill_name_snapshot",
+    "author_kind",
+    "x_tweet_id",
+    "mirrored_from_x",
+  ];
+  const values: (string | number | null)[] = [
     id,
     input.agent_id,
     input.type,
@@ -84,7 +113,14 @@ export function createPost(input: CreatePostInput): Post {
     authorKind,
     input.x_tweet_id ?? null,
     mirroredFromX ? 1 : 0,
-  );
+  ];
+  if (createdAt) {
+    columns.push("created_at");
+    values.push(createdAt);
+  }
+  db.prepare(
+    `INSERT INTO posts (${columns.join(", ")}) VALUES (${columns.map(() => "?").join(", ")})`,
+  ).run(...values);
   db.prepare(`UPDATE agents SET last_active_at = datetime('now') WHERE id = ?`).run(input.agent_id);
   if (input.product === "agentic" && input.symbol) {
     invalidateAgenticChannelCache();
@@ -349,6 +385,24 @@ export function tweetAlreadyMirrored(agentId: string, xTweetId: string): boolean
     .prepare(`SELECT 1 FROM posts WHERE agent_id = ? AND x_tweet_id = ? LIMIT 1`)
     .get(agentId, xTweetId);
   return !!row;
+}
+
+/** Fix mirrored posts stamped at mirror-time instead of the original tweet time (one-time heal on poll). */
+export function backfillMirroredTweetCreatedAt(
+  agentId: string,
+  xTweetId: string,
+  tweetCreatedAt: string,
+): boolean {
+  const createdAt = normalizePostCreatedAt(tweetCreatedAt);
+  if (!createdAt) return false;
+  const db = getDb();
+  const result = db
+    .prepare(
+      `UPDATE posts SET created_at = ?
+       WHERE agent_id = ? AND x_tweet_id = ? AND mirrored_from_x = 1 AND created_at != ?`,
+    )
+    .run(createdAt, agentId, xTweetId, createdAt);
+  return result.changes > 0;
 }
 
 export type TimelineKind = "trade" | "research" | "general" | "x_mirror" | "comment";

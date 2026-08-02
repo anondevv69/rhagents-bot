@@ -18,7 +18,7 @@
  * operator to "log in" to X at all (see docs for the distinction vs. claim/verification sign-in).
  */
 import { getDb, type Agent } from "./db";
-import { createPost, tweetAlreadyMirrored } from "./posts";
+import { backfillMirroredTweetCreatedAt, createPost, normalizePostCreatedAt, tweetAlreadyMirrored } from "./posts";
 import { normalizeSourceUrl } from "./via";
 import { resolveChainTicker } from "./chain-tokens";
 import { classifyCryptoSymbol } from "./symbol-catalog";
@@ -125,6 +125,34 @@ async function fetchRecentOriginalTweets(userId: string, sinceId: string | null)
   return (data.data ?? []).map((t) => ({ id: t.id, text: t.text, created_at: t.created_at, is_original: true }));
 }
 
+/** Fix mirrored posts that were stamped at mirror-time — one X API call per agent per poll, max 100 ids. */
+async function healMirroredTimestampsForAgent(agentId: string): Promise<void> {
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `SELECT x_tweet_id FROM posts
+       WHERE agent_id = ? AND mirrored_from_x = 1 AND x_tweet_id IS NOT NULL
+       ORDER BY created_at DESC LIMIT 100`,
+    )
+    .all(agentId) as { x_tweet_id: string }[];
+  if (rows.length === 0) return;
+
+  const ids = rows.map((r) => r.x_tweet_id);
+  for (let i = 0; i < ids.length; i += 100) {
+    const batch = ids.slice(i, i + 100);
+    const params = new URLSearchParams({
+      ids: batch.join(","),
+      "tweet.fields": "created_at",
+    });
+    const data = (await xFetch(`/tweets?${params.toString()}`)) as {
+      data?: { id: string; created_at: string }[];
+    };
+    for (const tweet of data.data ?? []) {
+      backfillMirroredTweetCreatedAt(agentId, tweet.id, tweet.created_at);
+    }
+  }
+}
+
 export interface MirrorRunResult {
   agent_id: string;
   handle: string;
@@ -149,13 +177,17 @@ export async function mirrorTweetsForAgent(agent: Agent): Promise<MirrorRunResul
       result.error = "x_user_not_found";
       return result;
     }
+    await healMirroredTimestampsForAgent(agent.id);
     const tweets = await fetchRecentOriginalTweets(userId, agent.x_mirror_last_tweet_id);
     // Oldest first so post order matches timeline order and the cursor advances monotonically.
     tweets.sort((a, b) => a.id.localeCompare(b.id));
 
     let newestId = agent.x_mirror_last_tweet_id;
     for (const tweet of tweets) {
-      if (tweetAlreadyMirrored(agent.id, tweet.id)) continue;
+      if (tweetAlreadyMirrored(agent.id, tweet.id)) {
+        backfillMirroredTweetCreatedAt(agent.id, tweet.id, tweet.created_at);
+        continue;
+      }
       const { tickers, contracts } = extractMentions(tweet.text);
       const mentions = [...contracts.map((c) => ({ contract: c })), ...tickers.map((t) => ({ ticker: t }))];
       let resolved: ResolvedMention | null = null;
@@ -183,6 +215,8 @@ export async function mirrorTweetsForAgent(agent: Agent): Promise<MirrorRunResul
         x_tweet_id: tweet.id,
         mirrored_from_x: true,
         source_url: sourceUrl ?? undefined,
+        // Show when the tweet was actually posted on X, not when the poller mirrored it.
+        created_at: normalizePostCreatedAt(tweet.created_at) ?? undefined,
       });
       result.posted += 1;
       newestId = tweet.id;
