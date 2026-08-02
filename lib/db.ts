@@ -519,6 +519,11 @@ function migrate(db: Database.Database) {
         order_crypto        TEXT,
         order_crypto_amount TEXT,
         transaction_id      TEXT,
+        order_amount_usd    TEXT,
+        credited_at         TEXT,
+        credit_amount_usd   TEXT,
+        credit_error        TEXT,
+        credit_attempts     INTEGER NOT NULL DEFAULT 0,
         notified_at         TEXT,
         raw_json            TEXT,
         created_at          TEXT NOT NULL DEFAULT (datetime('now')),
@@ -530,6 +535,21 @@ function migrate(db: Database.Database) {
     db.exec(
       `CREATE INDEX IF NOT EXISTS idx_swapped_orders_wallet ON swapped_ramp_orders(wallet_address)`,
     );
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE swapped_ramp_orders ADD COLUMN order_amount_usd TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE swapped_ramp_orders ADD COLUMN credited_at TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE swapped_ramp_orders ADD COLUMN credit_amount_usd TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE swapped_ramp_orders ADD COLUMN credit_error TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE swapped_ramp_orders ADD COLUMN credit_attempts INTEGER NOT NULL DEFAULT 0`);
   } catch { /* exists */ }
 
   // Robinhood Chain ticker metadata (symbol ↔ contract ↔ name) for room headers
