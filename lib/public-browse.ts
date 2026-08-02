@@ -10,6 +10,9 @@ export function isPublicBrowsePath(pathname: string): boolean {
   if (pathname === "/search") return true;
   if (pathname === "/northstar") return true;
   if (pathname === "/certificates" || pathname.startsWith("/certificates/")) return true;
+  if (pathname === "/builds") return true;
+  if (pathname === "/x-mirror") return true;
+  if (pathname === "/skills" || pathname.startsWith("/skills/")) return true;
   if (isPublicSharePath(pathname)) return true;
   return false;
 }
