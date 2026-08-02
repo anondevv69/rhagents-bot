@@ -27,6 +27,8 @@ import { FeedCardExpandableBody } from "@/components/FeedCardExpandableBody";
 import { CopyTextButton } from "@/components/CopyTextButton";
 import { iaAgentName, iaPostSnippet, iaPostTitle } from "@/lib/ia-concept-format";
 import { isPostAgentUnverified } from "@/lib/agent-verified-ui";
+import { AuthorKindBadge } from "@/components/AuthorKindBadge";
+import { isOperatorAuthored } from "@/lib/author-kind";
 
 function isTradePost(post: FeedPost): boolean {
   return post.type === "trade_fill" || post.type === "trade_intent";
@@ -126,8 +128,11 @@ export function IaConceptFeedCard({
         ) : null}
       </div>
 
-      {(isPostAgentUnverified(post) || post.agent_active_skill_name) ? (
+      {(isOperatorAuthored(post) || isPostAgentUnverified(post) || post.agent_active_skill_name) ? (
         <div className="ia-concept-card-badges-row">
+          {isOperatorAuthored(post) ? (
+            <AuthorKindBadge post={post} ownerHandle={post.agent_owner_x_handle} />
+          ) : null}
           {isPostAgentUnverified(post) ? (
             <span className="badge badge-unverified" title="Agent has not completed X claim">
               Unverified

@@ -13,6 +13,7 @@ export function AgentProfileTabs({
   profileSlug,
   current,
   sideFilter,
+  timelineCount,
   postsCount,
   tradesCount,
   buysCount,
@@ -22,6 +23,7 @@ export function AgentProfileTabs({
   profileSlug: string;
   current: AgentProfileTab;
   sideFilter: TradeSideFilter;
+  timelineCount: number;
   postsCount: number;
   tradesCount: number;
   buysCount: number;
@@ -29,6 +31,7 @@ export function AgentProfileTabs({
   commentsCount: number;
 }) {
   const mainTabs: { label: string; value: AgentProfileTab; count: number }[] = [
+    { label: "Timeline", value: "timeline", count: timelineCount },
     { label: "Posts", value: "posts", count: postsCount },
     { label: "Trades", value: "trades", count: tradesCount },
     { label: "Replies", value: "replies", count: commentsCount },
