@@ -19,8 +19,6 @@ const PUBLIC_PAGE_PREFIXES = [
   "/agent",
   // Trading agent dashboard — auth is its own Telegram /website magic-link cookie, not the viewer gate.
   "/dashboard",
-  "/fund",
-  "/telegram/deposit",
   "/discord",
   // Agentic OAuth setup wizard (proxied to RH Wallet gateway — public, no viewer cookie).
   "/agentic",
@@ -65,8 +63,6 @@ function isPublicApi(pathname: string): boolean {
   if (pathname === "/api/telegram/webhook") return true;
   if (pathname.startsWith("/api/telegram/bridge")) return true;
   if (pathname === "/api/mcp") return true;
-  // Trading bot → partner wallet provisioning (auth: X-Telegram-Bridge-Secret in route handler).
-  if (pathname.startsWith("/api/fund/")) return true;
   if (pathname.startsWith("/api/bankr/")) return true;
   if (pathname === "/api/discord/interactions") return true;
   // NFT portraits must be public — wallets / marketplaces fetch imageURI with no cookie
