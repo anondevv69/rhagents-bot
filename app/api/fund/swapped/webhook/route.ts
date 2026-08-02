@@ -5,8 +5,8 @@ export const dynamic = "force-dynamic";
 
 /**
  * Swapped Ramp order webhook.
- * Verifies `signature` header against the raw body (never re-stringify before verify).
- * Credits idempotently on order_completed / order_broadcasted; returns 409 if already credited.
+ * Signature: base64(HMAC-SHA256(raw_request_body, secret_key)) via `signature` header.
+ * Credits only on order_broadcasted (final on-ramp success); 409 if order_id already credited.
  */
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
