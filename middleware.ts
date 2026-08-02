@@ -46,6 +46,8 @@ const PUBLIC_METADATA_PATHS = new Set([
 function isPublicApi(pathname: string): boolean {
   if (pathname === "/api/health") return true;
   if (pathname === "/api/auth/redeem-login-code") return true;
+  // "Continue with X" claim sign-in — runs before any viewer cookie exists.
+  if (pathname.startsWith("/api/auth/x/")) return true;
   // Trading dashboard — session checked in route handlers via rhagent_trading_session cookie.
   if (pathname.startsWith("/api/dashboard/")) return true;
   if (pathname.startsWith("/api/agent/")) return true;
