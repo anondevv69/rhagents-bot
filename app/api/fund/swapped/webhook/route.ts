@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { handleSwappedWebhook } from "@/lib/swapped-ramp/webhook-handler";
+import { fundDepositsEnabled } from "@/lib/fund-deposits";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,10 @@ export const dynamic = "force-dynamic";
  * Credits only on order_broadcasted (final on-ramp success); 409 if order_id already credited.
  */
 export async function POST(req: NextRequest) {
+  if (!fundDepositsEnabled()) {
+    return NextResponse.json({ ok: true, skipped: true, reason: "deposits_disabled" });
+  }
+
   const rawBody = await req.text();
   const signature = req.headers.get("signature");
 
