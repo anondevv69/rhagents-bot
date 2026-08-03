@@ -15,10 +15,15 @@ const SECURITY_HEADERS = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      // challenges.cloudflare.com = Privy's captcha (Turnstile).
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: https://unavatar.io https://pbs.twimg.com",
-      "connect-src 'self' https://api.x.com",
+      "img-src 'self' data: blob: https://unavatar.io https://pbs.twimg.com https://*.privy.io",
+      // auth/api.privy.io = Privy embedded-wallet auth + key ceremony endpoints.
+      "connect-src 'self' https://api.x.com https://auth.privy.io https://api.privy.io wss://relay.walletconnect.com wss://relay.walletconnect.org",
+      // Privy renders its secure auth/signing UI in an iframe from auth.privy.io.
+      "frame-src https://auth.privy.io https://challenges.cloudflare.com",
+      "child-src https://auth.privy.io",
       "frame-ancestors 'none'",
     ].join("; "),
   },
