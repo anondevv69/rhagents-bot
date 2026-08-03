@@ -1736,6 +1736,34 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   border: 1px solid color-mix(in srgb, #a78bfa 24%, var(--border-soft));
 }
 
+.signup-callout--signed-in {
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border-soft));
+  color: var(--text);
+}
+
+.connect-agent-banner {
+  position: relative;
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg));
+}
+
+.connect-agent-banner-dismiss {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0 4px;
+  margin-left: 10px;
+  font: inherit;
+  font-size: var(--text-body);
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.connect-agent-banner-dismiss:hover {
+  color: var(--text);
+}
+
 .gate-path-card--bankr {
   border-color: color-mix(in srgb, #a78bfa 30%, var(--border-soft));
   background: color-mix(in srgb, #a78bfa 5%, var(--surface));

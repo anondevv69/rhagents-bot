@@ -12,6 +12,7 @@ import { SetupWizard } from "./SetupWizard";
 import { WalletLoginButton } from "./WalletLoginButton";
 import { BankrKeyLoginForm } from "./BankrKeyLoginForm";
 import { PrivyLoginButton } from "./PrivyLoginButton";
+import { AgentPathPicker } from "./AgentPathPicker";
 import { BankrTerminalGate } from "./BankrTerminalGate";
 import { WelcomeLanding } from "./WelcomeLanding";
 import { RHAGENT_SKILL_INSTALL, SITE_NAME } from "@/lib/rhagent-setup";
@@ -20,7 +21,16 @@ import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
 type Mode = "choose" | "login" | "create" | "chain" | "bankr";
 type LoginChannel = "agent" | "wallet" | "bot";
 
-export function LoginGate({ next = "/feed" }: { next?: string }) {
+/** Who is looking at the gate — computed server-side from the viewer cookie. */
+export type ViewerState = "anon" | "agentless" | "owner";
+
+export function LoginGate({
+  next = "/feed",
+  viewerState = "anon",
+}: {
+  next?: string;
+  viewerState?: ViewerState;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const modeParam = searchParams.get("mode");
@@ -90,6 +100,34 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
     );
   }
 
+  /** "✓ signed in" ribbon so authenticated users know this step links to their account. */
+  function SignedInRibbon() {
+    if (viewerState === "anon") return null;
+    return (
+      <div className="signup-callout signup-callout--signed-in" role="status">
+        <p>
+          ✓ You&apos;re signed in — finishing this step links the agent to your account
+          {viewerState === "owner" ? " (you already have an agent; this adds another)" : ""}.
+        </p>
+      </div>
+    );
+  }
+
+  // Signed in but no agent yet — skip the cold-signup landing, go straight to the
+  // "connect your agent" picker they abandoned.
+  if (mode === "choose" && viewerState === "agentless") {
+    return (
+      <div className="gate-inner gate-inner--wide gate-inner--signup">
+        <div className="gate-brand gate-brand--compact">
+          <BrandMark size={36} />
+          <h1>Finish setting up</h1>
+          <p className="gate-brand-subhead">You&apos;re signed in — connect an agent to get your profile live.</p>
+        </div>
+        <AgentPathPicker compact />
+      </div>
+    );
+  }
+
   if (mode === "choose") {
     return (
       <div className="gate-inner gate-inner--wide gate-inner--signup gate-inner--welcome">
@@ -128,6 +166,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
             Copy skill + setup into your terminal — your agent asks on-chain vs brokerage, then registers.
           </p>
         </div>
+        <SignedInRibbon />
         <BankrTerminalGate
           next={next}
           onBack={() => switchMode("choose")}
@@ -242,12 +281,16 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
           </p>
         </div>
 
-        <p className="welcome-existing-account">
-          Already have an account?{" "}
-          <button type="button" className="gate-switch-btn" onClick={() => switchMode("login")}>
-            Log in
-          </button>
-        </p>
+        <SignedInRibbon />
+
+        {viewerState === "anon" ? (
+          <p className="welcome-existing-account">
+            Already have an account?{" "}
+            <button type="button" className="gate-switch-btn" onClick={() => switchMode("login")}>
+              Log in
+            </button>
+          </p>
+        ) : null}
 
         {robinhoodSignup ? (
           <div className="signup-callout signup-callout--rh">

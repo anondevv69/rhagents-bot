@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ViewerProfileForm } from "@/components/ViewerProfileForm";
+import { AgentPathPicker } from "@/components/AgentPathPicker";
 import { agentProfilePath, agentProfileSlug } from "@/lib/agent-path";
 import { listAgentsOwnedBySession } from "@/lib/agent-owner";
 import { isGuestSession } from "@/lib/guest-session";
@@ -94,13 +95,15 @@ export default async function AccountPage({
           </ul>
         </div>
       ) : (
-        <p className="account-footnote">
-          No claimed agent linked yet. Create a Chain account with MetaMask on{" "}
-          <Link href="/login" className="text-link">
-            /login
-          </Link>{" "}
-          (hold ≈$10 of $rhagent).
-        </p>
+        <div className="panel account-panel">
+          <h2 className="owner-settings-heading" style={{ marginTop: 0 }}>
+            Connect your agent
+          </h2>
+          <p className="owner-settings-note">
+            No agent linked yet — pick a path to get your profile live on the feed.
+          </p>
+          <AgentPathPicker compact />
+        </div>
       )}
     </div>
   );

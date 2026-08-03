@@ -4,11 +4,14 @@ import { AppShell } from "@/components/AppShell";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerGateEnabled } from "@/lib/viewer";
 import { isGuestSession } from "@/lib/guest-session";
+import { viewerHasIdentity } from "@/lib/agent-identity";
+import { listAgentsOwnedBySession } from "@/lib/agent-owner";
 import { isPublicSharePath, isSocialCrawler } from "@/lib/social-crawlers";
 import { isPublicBrowsePath } from "@/lib/public-browse";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   let readOnly = false;
+  let needsAgent = false;
 
   if (viewerGateEnabled()) {
     const h = await headers();
@@ -26,8 +29,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       }
     } else {
       readOnly = isGuestSession(session);
+      // Signed-in human with no owned agent — keep nudging them to finish setup.
+      if (!readOnly && viewerHasIdentity(session)) {
+        needsAgent = listAgentsOwnedBySession(session).length === 0;
+      }
     }
   }
 
-  return <AppShell readOnly={readOnly}>{children}</AppShell>;
+  return (
+    <AppShell readOnly={readOnly} needsAgent={needsAgent}>
+      {children}
+    </AppShell>
+  );
 }
