@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
-import { RHAGENT_DEXSCREENER_URL, RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
+import { AgentPathPicker } from "./AgentPathPicker";
 import { PRIVY_APP_ID } from "./PrivyAuthProvider";
 
 /**
@@ -12,7 +12,16 @@ import { PRIVY_APP_ID } from "./PrivyAuthProvider";
  * /api/viewer/wallet/login flow as MetaMask — session always, agent only with
  * the $rhagent hold, path picker otherwise.
  */
-export function PrivyLoginButton({ next = "/feed" }: { next?: string }) {
+export function PrivyLoginButton({
+  next = "/feed",
+  onSessionOnly,
+  label = "Continue with email or social →",
+}: {
+  next?: string;
+  /** Called instead of inline path picker — e.g. WelcomeLanding swaps to AgentPathPicker. */
+  onSessionOnly?: () => void;
+  label?: string;
+}) {
   const { ready, authenticated, login, logout } = usePrivy();
   const { wallets } = useWallets();
   const [busy, setBusy] = useState(false);
@@ -70,6 +79,10 @@ export function PrivyLoginButton({ next = "/feed" }: { next?: string }) {
         return;
       }
       if (data.session_only) {
+        if (onSessionOnly) {
+          onSessionOnly();
+          return;
+        }
         setSessionOnly({
           message:
             data.message ??
@@ -98,28 +111,7 @@ export function PrivyLoginButton({ next = "/feed" }: { next?: string }) {
   if (!PRIVY_APP_ID) return null;
 
   if (sessionOnly) {
-    return (
-      <div className="wallet-login-created">
-        <p className="gate-highlight-lead">{sessionOnly.message}</p>
-        <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
-          <a href="/login?mode=create" className="btn btn-primary" style={{ textAlign: "center" }}>
-            Bring your own agent →
-          </a>
-          <a href="/login?mode=bankr" className="btn btn-outline" style={{ textAlign: "center" }}>
-            Start with Bankr →
-          </a>
-          <a
-            href={sessionOnly.buyUrl || RHAGENT_DEXSCREENER_URL}
-            className="btn btn-ghost"
-            target="_blank"
-            rel="noreferrer"
-            style={{ textAlign: "center" }}
-          >
-            Buy {RHAGENT_TOKEN_SYMBOL} for a Chain profile →
-          </a>
-        </div>
-      </div>
-    );
+    return <AgentPathPicker message={sessionOnly.message} buyUrl={sessionOnly.buyUrl} />;
   }
 
   return (
@@ -143,7 +135,7 @@ export function PrivyLoginButton({ next = "/feed" }: { next?: string }) {
           login();
         }}
       >
-        {busy ? "Signing you in…" : "Continue with email or social →"}
+        {busy ? "Signing you in…" : label}
       </button>
       <p className="gate-normie-note">
         No wallet needed — we create one for you behind the scenes (powered by Privy). Log in

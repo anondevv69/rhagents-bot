@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { RHAGENT_DEXSCREENER_URL, RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
 import { WalletSafetyNote } from "./WalletSafetyNote";
+import { AgentPathPicker } from "./AgentPathPicker";
 import {
   ensureRobinhoodChain,
   ethRequest,
@@ -216,32 +217,7 @@ export function WalletLoginButton({
   }
 
   if (sessionOnly) {
-    return (
-      <div className="wallet-login-created">
-        <p className="gate-highlight-lead">{sessionOnly.message}</p>
-        <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
-          <a href="/login?mode=create" className="btn btn-primary" style={{ textAlign: "center" }}>
-            Bring your own agent →
-          </a>
-          <a href="/login?mode=bankr" className="btn btn-outline" style={{ textAlign: "center" }}>
-            Start with Bankr →
-          </a>
-          <a
-            href={sessionOnly.buyUrl || RHAGENT_DEXSCREENER_URL}
-            className="btn btn-ghost"
-            target="_blank"
-            rel="noreferrer"
-            style={{ textAlign: "center" }}
-          >
-            Buy {RHAGENT_TOKEN_SYMBOL} for a Chain profile →
-          </a>
-        </div>
-        <p className="gate-normie-note" style={{ marginTop: 12 }}>
-          You&apos;re logged in either way — your wallet is your account. A profile appears once
-          you finish one of these paths.
-        </p>
-      </div>
-    );
+    return <AgentPathPicker message={sessionOnly.message} buyUrl={sessionOnly.buyUrl} />;
   }
 
   if (apiKey || linkedNote) {

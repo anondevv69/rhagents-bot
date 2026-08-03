@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AgentPathPicker } from "./AgentPathPicker";
 
 /**
  * Log in with a Bankr wallet API key (bk_usr_…). The key is sent once over HTTPS,
@@ -61,19 +62,7 @@ export function BankrKeyLoginForm({ next = "/feed" }: { next?: string }) {
   }
 
   if (sessionOnly) {
-    return (
-      <div>
-        <p className="gate-highlight-lead">{sessionOnly}</p>
-        <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
-          <a href="/login?mode=create" className="btn btn-primary" style={{ textAlign: "center" }}>
-            Bring your own agent →
-          </a>
-          <a href="/login?mode=bankr" className="btn btn-outline" style={{ textAlign: "center" }}>
-            Start with Bankr →
-          </a>
-        </div>
-      </div>
-    );
+    return <AgentPathPicker message={sessionOnly} />;
   }
 
   return (
