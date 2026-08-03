@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AgentPathPicker } from "./AgentPathPicker";
+import { SignedInNext } from "./SignedInNext";
 
 /**
  * Log in with a Bankr wallet API key (bk_usr_…). The key is sent once over HTTPS,
@@ -12,11 +13,9 @@ export function BankrKeyLoginForm({ next = "/feed" }: { next?: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionOnly, setSessionOnly] = useState<string | null>(null);
-
-  function safeNext(n: string): string {
-    if (!n.startsWith("/") || n.startsWith("//")) return "/feed";
-    return n;
-  }
+  const [signedIn, setSignedIn] = useState<{ username: string | null; profileUrl: string | null } | null>(
+    null,
+  );
 
   async function submit() {
     const trimmed = key.trim();
@@ -40,6 +39,7 @@ export function BankrKeyLoginForm({ next = "/feed" }: { next?: string }) {
         message?: string;
         session_only?: boolean;
         profile_url?: string | null;
+        agent?: { username?: string | null } | null;
       };
       if (!res.ok || !data.ok) {
         setError(data.error ?? "Could not sign in with that Bankr key.");
@@ -53,7 +53,7 @@ export function BankrKeyLoginForm({ next = "/feed" }: { next?: string }) {
         );
         return;
       }
-      window.location.assign(safeNext(data.profile_url || next));
+      setSignedIn({ username: data.agent?.username ?? null, profileUrl: data.profile_url ?? null });
     } catch {
       setError("Network error — try again.");
     } finally {
@@ -63,6 +63,10 @@ export function BankrKeyLoginForm({ next = "/feed" }: { next?: string }) {
 
   if (sessionOnly) {
     return <AgentPathPicker message={sessionOnly} />;
+  }
+
+  if (signedIn) {
+    return <SignedInNext created={false} username={signedIn.username} profileUrl={signedIn.profileUrl} next={next} />;
   }
 
   return (

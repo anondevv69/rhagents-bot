@@ -4,6 +4,7 @@ import { useState } from "react";
 import { RHAGENT_DEXSCREENER_URL, RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
 import { WalletSafetyNote } from "./WalletSafetyNote";
 import { AgentPathPicker } from "./AgentPathPicker";
+import { SignedInNext } from "./SignedInNext";
 import {
   ensureRobinhoodChain,
   ethRequest,
@@ -65,6 +66,9 @@ export function WalletLoginButton({
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [profileUrl, setProfileUrl] = useState<string | null>(null);
   const [linkedNote, setLinkedNote] = useState<string | null>(null);
+  const [signedIn, setSignedIn] = useState<{ username: string | null; profileUrl: string | null } | null>(
+    null,
+  );
   const [copied, setCopied] = useState(false);
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -196,8 +200,12 @@ export function WalletLoginButton({
         setProfileUrl(dest);
         return;
       }
-      if (!embed) window.location.assign(dest);
-      else setLinkedNote("Signed in with this wallet.");
+      if (embed) {
+        setLinkedNote("Signed in with this wallet.");
+        return;
+      }
+      // Returning login, no new key — confirm identity instead of silently jumping to /feed.
+      setSignedIn({ username: data.username ?? null, profileUrl: data.profile_url ?? null });
     } catch (err) {
       setError(walletErrorMessage(err));
     } finally {
@@ -218,6 +226,10 @@ export function WalletLoginButton({
 
   if (sessionOnly) {
     return <AgentPathPicker message={sessionOnly.message} buyUrl={sessionOnly.buyUrl} />;
+  }
+
+  if (signedIn) {
+    return <SignedInNext created={false} username={signedIn.username} profileUrl={signedIn.profileUrl} next={next} />;
   }
 
   if (apiKey || linkedNote) {

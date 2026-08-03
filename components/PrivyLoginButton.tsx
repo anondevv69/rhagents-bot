@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { AgentPathPicker } from "./AgentPathPicker";
+import { SignedInNext } from "./SignedInNext";
 import { PRIVY_APP_ID } from "./PrivyAuthProvider";
 
 /**
@@ -27,12 +28,14 @@ export function PrivyLoginButton({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionOnly, setSessionOnly] = useState<{ message: string; buyUrl: string | null } | null>(null);
+  const [signedIn, setSignedIn] = useState<{
+    created: boolean;
+    apiKey?: string | null;
+    username?: string | null;
+    displayName?: string | null;
+    profileUrl?: string | null;
+  } | null>(null);
   const pendingRef = useRef(false);
-
-  function safeNext(n: string): string {
-    if (!n.startsWith("/") || n.startsWith("//")) return "/feed";
-    return n;
-  }
 
   async function completeLogin() {
     const wallet = wallets[0];
@@ -69,9 +72,13 @@ export function PrivyLoginButton({
       const data = (await res.json()) as {
         ok?: boolean;
         session_only?: boolean;
+        created?: boolean;
         error?: string;
         message?: string;
         buy_url?: string;
+        api_key?: string;
+        username?: string;
+        display_name?: string;
         profile_url?: string;
       };
       if (!res.ok || !data.ok) {
@@ -91,7 +98,15 @@ export function PrivyLoginButton({
         });
         return;
       }
-      window.location.assign(safeNext(data.profile_url || next));
+      // Never auto-redirect — always show an explicit next step (new key to save, or
+      // a confirmed "welcome back" with a deliberate continue action).
+      setSignedIn({
+        created: !!data.created,
+        apiKey: data.api_key ?? null,
+        username: data.username ?? null,
+        displayName: data.display_name ?? null,
+        profileUrl: data.profile_url ?? null,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign-in failed — try again.");
     } finally {
@@ -112,6 +127,19 @@ export function PrivyLoginButton({
 
   if (sessionOnly) {
     return <AgentPathPicker message={sessionOnly.message} buyUrl={sessionOnly.buyUrl} />;
+  }
+
+  if (signedIn) {
+    return (
+      <SignedInNext
+        created={signedIn.created}
+        apiKey={signedIn.apiKey}
+        username={signedIn.username}
+        displayName={signedIn.displayName}
+        profileUrl={signedIn.profileUrl}
+        next={next}
+      />
+    );
   }
 
   return (
