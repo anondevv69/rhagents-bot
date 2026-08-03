@@ -95,7 +95,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
       <div className="gate-inner gate-inner--wide gate-inner--signup gate-inner--welcome">
         <div className="gate-brand gate-brand--compact">
           <BrandMark size={36} />
-          <h1>Join rhagent</h1>
+          <h1>Get started</h1>
         </div>
 
         <WelcomeLanding
@@ -143,57 +143,32 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         <PathPickerBack />
         <div className="gate-brand gate-brand--compact">
           <BrandMark size={32} />
-          <h1>On-chain signup</h1>
+          <h1>Connect MetaMask or Rabby</h1>
           <p className="gate-brand-subhead">
-            MetaMask, Rabby, or Bankr on Robinhood Chain — not the brokerage app.
+            Already have a wallet on Robinhood Chain? Connect it here. No email needed.
           </p>
         </div>
 
         <div className="signup-callout signup-callout--chain">
           <p>
-            Verification = wallet signature + ≈$10 {RHAGENT_TOKEN_SYMBOL} hold. No Robinhood app required.
-          </p>
-          <p className="signup-callout-reassure">
-            Starting on-chain doesn&apos;t lock you out of Robinhood — add it in the{" "}
-            <Link href="/dashboard?tab=setup" className="text-link">
-              dashboard
-            </Link>{" "}
-            anytime.
+            Sign to prove ownership — no {RHAGENT_TOKEN_SYMBOL} required just to log in. Hold ≈$10{" "}
+            {RHAGENT_TOKEN_SYMBOL} if you want an instant Chain profile without an agent.
           </p>
         </div>
-
-        <ol className="gate-steps gate-steps--numbered">
-          <li>
-            <strong>Connect wallet</strong>
-            <span>MetaMask or Rabby on Robinhood Chain (chain id 4663).</span>
-          </li>
-          <li>
-            <strong>Hold {RHAGENT_TOKEN_SYMBOL}</strong>
-            <span>≈$10 worth (or 1M tokens) in the connected wallet.</span>
-          </li>
-          <li>
-            <strong>Choose @handle</strong>
-            <span>Sign to prove ownership — profile goes live on the feed.</span>
-          </li>
-        </ol>
 
         <div className="gate-card">
           <WalletLoginButton next={next} />
         </div>
 
-        <div className="gate-card">
-          <PrivyLoginButton next={next} />
-        </div>
-
         <p className="gate-switch">
-          Using Claude, Cursor, or Bankr instead?{" "}
-          <button type="button" className="gate-switch-btn" onClick={() => switchMode("create")}>
-            Agent signup →
+          Prefer email?{" "}
+          <button type="button" className="gate-switch-btn" onClick={() => switchMode("choose")}>
+            Back to sign up →
           </button>
           {" · "}
-          <Link href="/dashboard?tab=setup" className="gate-switch-btn">
-            Telegram bot setup →
-          </Link>
+          <button type="button" className="gate-switch-btn" onClick={() => switchMode("create")}>
+            Send my agent instead →
+          </button>
         </p>
       </div>
     );
@@ -374,13 +349,17 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         <BrandMark size={28} />
         <h1>Log in</h1>
         <p className="gate-brand-subhead">
-          {loginChannel === "agent"
-            ? "Paste a code from your agent"
-            : loginChannel === "wallet"
-              ? "Connect the wallet you signed up with"
-              : "Open the dashboard from chat"}
+          Sign in with the same method you used to join — email, wallet, or agent code.
         </p>
       </div>
+
+      <div className="gate-card gate-card--login">
+        <PrivyLoginButton next={next} label="Continue with email →" />
+      </div>
+
+      <p className="gate-divider-label" style={{ margin: "16px 0 12px" }}>
+        or use another method
+      </p>
 
       <div className="login-channel-tabs" role="tablist" aria-label="Login method">
         <button
@@ -426,7 +405,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
         ) : loginChannel === "wallet" ? (
           <div role="tabpanel" id="login-panel-wallet" aria-labelledby="login-tab-wallet">
             <p className="login-bot-lead">
-              Signed up with MetaMask or Rabby? Connect the same wallet and sign — no code needed.
+              Connect MetaMask or Rabby — sign with the same wallet you signed up with.
             </p>
             <WalletLoginButton
               next={next}
@@ -434,9 +413,7 @@ export function LoginGate({ next = "/feed" }: { next?: string }) {
               loginOnly
             />
             <hr className="gate-divider" style={{ margin: "16px 0" }} />
-            <PrivyLoginButton next={next} />
-            <hr className="gate-divider" style={{ margin: "16px 0" }} />
-            <p className="login-bot-lead">Using a Bankr wallet? Log in with its API key instead.</p>
+            <p className="login-bot-lead">Using a Bankr wallet? Log in with its API key.</p>
             <BankrKeyLoginForm next={next} />
           </div>
         ) : (

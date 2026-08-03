@@ -2020,6 +2020,97 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   gap: 12px;
 }
 
+/* Post-human-login agent path picker (Privy / wallet / Bankr key) */
+.agent-path-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.agent-path-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+@media (min-width: 560px) {
+  .agent-path-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.agent-path-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: var(--bg);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .agent-path-card:hover {
+    border-color: color-mix(in srgb, var(--accent-blue) 40%, var(--border-soft));
+    background: color-mix(in srgb, var(--accent) 4%, var(--bg));
+  }
+}
+
+.agent-path-emoji {
+  font-size: var(--text-h3);
+  line-height: 1;
+}
+
+.agent-path-title {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.agent-path-summary {
+  font-size: var(--text-caption);
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.gate-divider {
+  border: none;
+  border-top: 1px solid var(--border-soft);
+  margin: 0;
+}
+
+.gate-divider-label {
+  margin: 0;
+  font-size: var(--text-caption);
+  color: var(--muted);
+  text-align: center;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.welcome-privy-hero {
+  margin-bottom: 16px;
+}
+
+.welcome-alt-paths {
+  margin-top: 8px;
+}
+
 .welcome-advanced {
   margin-top: 8px;
   padding-top: 12px;
