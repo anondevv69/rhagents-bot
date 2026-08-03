@@ -29,10 +29,34 @@ const SECURITY_HEADERS = [
   },
 ];
 
+// Privy's optional Solana / Farcaster mini-app / account-abstraction peer deps — we only use
+// Ethereum embedded wallets, so these are never imported at runtime. Left unresolved, webpack
+// still tries to bundle Privy's dynamic `import()` of them and throws a real "Cannot find
+// module" at runtime the first time that code path is hit, crashing the client with a generic
+// "Application error". Externalizing them per Privy's docs stops webpack from bundling them.
+const PRIVY_OPTIONAL_PEERS = [
+  "@farcaster/mini-app-solana",
+  "@abstract-foundation/agw-client",
+  "permissionless",
+  "@solana/kit",
+  "@solana-program/memo",
+  "@solana-program/system",
+  "@solana-program/token",
+];
+
 const config: NextConfig = {
   serverExternalPackages: ["better-sqlite3", "sharp"],
   images: {
     remotePatterns: [{ protocol: "https", hostname: "unavatar.io", pathname: "/**" }],
+  },
+  webpack: (webpackConfig) => {
+    const externalEntry = Object.fromEntries(PRIVY_OPTIONAL_PEERS.map((pkg) => [pkg, `commonjs ${pkg}`]));
+    webpackConfig.externals = Array.isArray(webpackConfig.externals)
+      ? [...webpackConfig.externals, externalEntry]
+      : webpackConfig.externals
+        ? [webpackConfig.externals, externalEntry]
+        : [externalEntry];
+    return webpackConfig;
   },
   async headers() {
     return [
