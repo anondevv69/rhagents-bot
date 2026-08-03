@@ -1,4 +1,21 @@
 import type { NextConfig } from "next";
+import path from "path";
+
+// Privy dynamically imports optional Solana / Farcaster / AA peers we don't use.
+// Stub them so webpack bundles an empty module instead of `require()` externals
+// (which crash in the browser) or pulling in broken transitive deps.
+const PRIVY_OPTIONAL_PEERS = [
+  "@farcaster/mini-app-solana",
+  "@abstract-foundation/agw-client",
+  "permissionless",
+  "@solana/kit",
+  "@solana/sysvars",
+  "@solana-program/memo",
+  "@solana-program/system",
+  "@solana-program/token",
+  "@solana-program/token-2022",
+];
+const privyStub = path.join(process.cwd(), "lib/privy-empty-stub.js");
 
 const SECURITY_HEADERS = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -29,33 +46,17 @@ const SECURITY_HEADERS = [
   },
 ];
 
-// Privy's optional Solana / Farcaster mini-app / account-abstraction peer deps — we only use
-// Ethereum embedded wallets, so these are never imported at runtime. Left unresolved, webpack
-// still tries to bundle Privy's dynamic `import()` of them and throws a real "Cannot find
-// module" at runtime the first time that code path is hit, crashing the client with a generic
-// "Application error". Externalizing them per Privy's docs stops webpack from bundling them.
-const PRIVY_OPTIONAL_PEERS = [
-  "@farcaster/mini-app-solana",
-  "@abstract-foundation/agw-client",
-  "permissionless",
-  "@solana/kit",
-  "@solana-program/memo",
-  "@solana-program/system",
-  "@solana-program/token",
-];
-
 const config: NextConfig = {
   serverExternalPackages: ["better-sqlite3", "sharp"],
   images: {
     remotePatterns: [{ protocol: "https", hostname: "unavatar.io", pathname: "/**" }],
   },
   webpack: (webpackConfig) => {
-    const externalEntry = Object.fromEntries(PRIVY_OPTIONAL_PEERS.map((pkg) => [pkg, `commonjs ${pkg}`]));
-    webpackConfig.externals = Array.isArray(webpackConfig.externals)
-      ? [...webpackConfig.externals, externalEntry]
-      : webpackConfig.externals
-        ? [webpackConfig.externals, externalEntry]
-        : [externalEntry];
+    webpackConfig.resolve = webpackConfig.resolve ?? {};
+    webpackConfig.resolve.alias = {
+      ...(webpackConfig.resolve.alias as Record<string, string>),
+      ...Object.fromEntries(PRIVY_OPTIONAL_PEERS.map((pkg) => [pkg, privyStub])),
+    };
     return webpackConfig;
   },
   async headers() {
