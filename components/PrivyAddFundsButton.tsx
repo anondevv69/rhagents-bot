@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useAddFunds } from "@privy-io/react-auth";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import {
   BASE_CAIP2,
   BASE_USDC,
-  PRIVY_FUND_DEFAULT_USD,
+  PRIVY_FIAT_ASSETS,
+  PRIVY_FUND_DEFAULT_AMOUNT,
+  defaultPrivyFiatAsset,
+  privyFundLabel,
+  type PrivyFiatAsset,
 } from "@/lib/privy-funding-constants";
 import { PRIVY_APP_ID } from "@/components/PrivyAuthProvider";
 
@@ -15,7 +19,7 @@ import { PRIVY_APP_ID } from "@/components/PrivyAuthProvider";
  * Enable funding in the Privy dashboard (Account Funding → Stripe / MoonPay).
  */
 export function PrivyAddFundsButton({
-  label = `Add $${PRIVY_FUND_DEFAULT_USD} with card →`,
+  label,
   walletAddress,
   onFunded,
 }: {
@@ -30,6 +34,9 @@ export function PrivyAddFundsButton({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  const defaultFiat = useMemo(() => defaultPrivyFiatAsset(), []);
+  const buttonLabel = label ?? privyFundLabel(PRIVY_FUND_DEFAULT_AMOUNT, defaultFiat);
 
   if (!PRIVY_APP_ID) return null;
 
@@ -46,6 +53,7 @@ export function PrivyAddFundsButton({
     }
     setBusy(true);
     try {
+      const fiat: PrivyFiatAsset = defaultPrivyFiatAsset();
       await addFunds({
         destination: {
           address: wallet.address,
@@ -53,8 +61,12 @@ export function PrivyAddFundsButton({
           asset: BASE_USDC,
         },
         fiat: {
-          source: { assets: ["usd"], defaultAsset: "usd" },
-          defaultAmount: PRIVY_FUND_DEFAULT_USD,
+          source: {
+            assets: [...PRIVY_FIAT_ASSETS],
+            defaultAsset: fiat,
+          },
+          environment: "production",
+          defaultAmount: PRIVY_FUND_DEFAULT_AMOUNT,
         },
       });
       setDone(true);
@@ -62,7 +74,13 @@ export function PrivyAddFundsButton({
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       if (!/cancel|exit|closed/i.test(msg)) {
-        setError(msg || "Funding did not complete — try again.");
+        if (/region|not currently supported|coming soon/i.test(msg)) {
+          setError(
+            "Card deposits aren't available in your region yet via MoonPay/Stripe. Try another currency in the payment modal, or send crypto to your wallet address above.",
+          );
+        } else {
+          setError(msg || "Funding did not complete — try again.");
+        }
       }
     } finally {
       setBusy(false);
@@ -77,7 +95,7 @@ export function PrivyAddFundsButton({
           <code className="account-wallet-address-inline">
             {walletAddress.slice(0, 6)}…{walletAddress.slice(-4)}
           </code>{" "}
-          (USDC on Base via Privy).
+          (USDC on Base via Privy · pays in {defaultFiat.toUpperCase()} where supported).
         </p>
       ) : null}
       <button
@@ -87,11 +105,12 @@ export function PrivyAddFundsButton({
         disabled={!ready || busy}
         onClick={() => void onClick()}
       >
-        {busy ? "Opening payment…" : done ? "Add more funds →" : label}
+        {busy ? "Opening payment…" : done ? "Add more funds →" : buttonLabel}
       </button>
       <p className="gate-normie-note">
-        Card or Apple Pay via Privy — USDC lands in your wallet on Base. We then send a small amount
-        of ETH on Robinhood Chain so you can swap for {`$rhagent`}.
+        Card or Apple Pay via Privy (MoonPay / Stripe). Currency follows your locale (e.g. EUR in
+        France) — not a country code. USDC lands on Base; we send starter ETH on Robinhood Chain for
+        the {`$rhagent`} swap.
       </p>
       {error ? <p className="login-code-error">{error}</p> : null}
     </div>
