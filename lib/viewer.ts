@@ -94,15 +94,22 @@ export function setViewerCookie(
     chain_wallet?: string;
     guest_id?: string;
   },
+  opts?: { merge?: ViewerSession | null },
 ): NextResponse {
-  const x = input.x_handle?.replace(/^@/, "").toLowerCase();
-  const wallet = input.chain_wallet?.trim().toLowerCase();
+  const prev = opts?.merge ?? null;
+  const x = (input.x_handle ?? prev?.x_handle)?.replace(/^@/, "").toLowerCase();
+  const wallet = (input.chain_wallet ?? prev?.chain_wallet)?.trim().toLowerCase();
+  const telegram_id = input.telegram_id ?? prev?.telegram_id;
+  const discord_id = input.discord_id ?? prev?.discord_id;
+  const hasRealIdentity = !!(x || telegram_id || discord_id || wallet);
+  const guest_id = hasRealIdentity ? undefined : input.guest_id ?? prev?.guest_id;
+
   const token = createViewerSession({
-    x_handle: x,
-    telegram_id: input.telegram_id,
-    discord_id: input.discord_id,
-    chain_wallet: wallet,
-    guest_id: input.guest_id,
+    ...(x ? { x_handle: x } : {}),
+    ...(telegram_id ? { telegram_id } : {}),
+    ...(discord_id ? { discord_id } : {}),
+    ...(wallet ? { chain_wallet: wallet } : {}),
+    ...(guest_id ? { guest_id } : {}),
   });
   res.cookies.set(VIEWER_COOKIE, token, {
     httpOnly: true,

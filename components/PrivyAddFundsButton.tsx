@@ -16,9 +16,12 @@ import { PRIVY_APP_ID } from "@/components/PrivyAuthProvider";
  */
 export function PrivyAddFundsButton({
   label = `Add $${PRIVY_FUND_DEFAULT_USD} with card →`,
+  walletAddress,
   onFunded,
 }: {
   label?: string;
+  /** Show which address receives funds (Privy embedded wallet). */
+  walletAddress?: string | null;
   onFunded?: () => void;
 }) {
   const { ready, authenticated, login } = usePrivy();
@@ -68,6 +71,15 @@ export function PrivyAddFundsButton({
 
   return (
     <div>
+      {walletAddress ? (
+        <p className="owner-settings-note" style={{ marginBottom: 8 }}>
+          Deposits go to{" "}
+          <code className="account-wallet-address-inline">
+            {walletAddress.slice(0, 6)}…{walletAddress.slice(-4)}
+          </code>{" "}
+          (USDC on Base via Privy).
+        </p>
+      ) : null}
       <button
         type="button"
         className="btn btn-primary"

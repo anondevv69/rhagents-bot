@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isRateLimited, noteRedeemFailure, redeemLoginCode } from "@/lib/login-code";
 import { setViewerCookie } from "@/lib/viewer";
+import { getViewerSession } from "@/lib/viewerSession";
 
 /**
  * POST /api/auth/redeem-login-code
@@ -46,6 +47,7 @@ export async function POST(req: NextRequest) {
       agent_name: result.agent_name,
       owner_handle: result.owner_handle,
     }),
-    { x_handle: result.x_handle }
+    { x_handle: result.x_handle },
+    { merge: await getViewerSession() },
   );
 }
