@@ -166,7 +166,11 @@ export function AccountWalletPanel({
 
       {PRIVY_APP_ID ? (
         <div className="account-wallet-deposit" style={{ marginTop: 16 }}>
-          <p className="login-code-step-label">Deposit with card</p>
+          <p className="login-code-step-label">Deposit funds</p>
+          <p className="owner-settings-note" style={{ marginBottom: 8 }}>
+            Card blocked in your state? Use <strong>Transfer crypto</strong> and send USDC on Base to
+            your address — no MoonPay required.
+          </p>
           <PrivyAddFundsButton walletAddress={wallet} onFunded={() => void refresh()} />
         </div>
       ) : null}
