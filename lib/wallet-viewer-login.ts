@@ -226,3 +226,50 @@ export async function loginOrRegisterWithChainWallet(opts: {
     },
   };
 }
+
+/** Session already proved wallet ownership — create Chain profile when $rhagent hold passes. */
+export async function activateChainProfileForWallet(walletRaw: string): Promise<
+  | {
+      ok: true;
+      created: boolean;
+      agent_id: string;
+      username: string | null;
+      display_name: string | null;
+      api_key?: string;
+      profile_url: string;
+    }
+  | { ok: false; status: number; body: Record<string, unknown> }
+> {
+  const hold = await checkRhagentHoldings(walletRaw);
+  if (!hold.ok) {
+    return { ok: false, status: 403, body: holdFailResponse(hold) };
+  }
+
+  const wallet = hold.wallet;
+  const existing = findAgentByChainWallet(wallet);
+  if (existing) {
+    return {
+      ok: true,
+      created: false,
+      agent_id: existing.id,
+      username: existing.username,
+      display_name: existing.display_name ?? existing.owner_display_name,
+      profile_url: existing.username ? `/agent/${existing.username}` : "/account",
+    };
+  }
+
+  const created = createChainAgentFromWallet(wallet, hold);
+  if ("error" in created) {
+    return { ok: false, status: 400, body: { ok: false, error: created.error } };
+  }
+
+  return {
+    ok: true,
+    created: true,
+    agent_id: created.agent.id,
+    username: created.agent.username,
+    display_name: created.agent.display_name,
+    api_key: created.api_key,
+    profile_url: created.agent.username ? `/agent/${created.agent.username}` : "/account",
+  };
+}

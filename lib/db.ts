@@ -509,6 +509,18 @@ function migrate(db: Database.Database) {
     `);
   } catch { /* exists */ }
 
+  // One-time RH Chain ETH seed for Privy / wallet-first $rhagent onboarding.
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS chain_onboard_seeds (
+        wallet     TEXT PRIMARY KEY,
+        tx_hash    TEXT NOT NULL,
+        amount_eth TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+  } catch { /* exists */ }
+
   // Swapped Ramp onramp — webhook idempotency + notify dedupe.
   try {
     db.exec(`

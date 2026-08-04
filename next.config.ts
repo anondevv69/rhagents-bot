@@ -33,13 +33,13 @@ const SECURITY_HEADERS = [
     value: [
       "default-src 'self'",
       // challenges.cloudflare.com = Privy's captcha (Turnstile).
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://js.stripe.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://unavatar.io https://pbs.twimg.com https://*.privy.io",
       // auth/api.privy.io = Privy embedded-wallet auth + key ceremony endpoints.
-      "connect-src 'self' https://api.x.com https://auth.privy.io https://api.privy.io wss://relay.walletconnect.com wss://relay.walletconnect.org",
+      "connect-src 'self' https://api.x.com https://auth.privy.io https://api.privy.io https://api.stripe.com https://crypto.stripe.com wss://relay.walletconnect.com wss://relay.walletconnect.org",
       // Privy renders its secure auth/signing UI in an iframe from auth.privy.io.
-      "frame-src https://auth.privy.io https://challenges.cloudflare.com",
+      "frame-src https://auth.privy.io https://challenges.cloudflare.com https://js.stripe.com https://crypto.stripe.com",
       "child-src https://auth.privy.io",
       "frame-ancestors 'none'",
     ].join("; "),
