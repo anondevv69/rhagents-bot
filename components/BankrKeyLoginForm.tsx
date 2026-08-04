@@ -47,10 +47,7 @@ export function BankrKeyLoginForm({ next = "/feed" }: { next?: string }) {
       }
       setKey("");
       if (data.session_only) {
-        setSessionOnly(
-          data.message ??
-            "You're signed in with your Bankr wallet. Pick a path to get a profile.",
-        );
+        window.location.assign("/account?setup=1");
         return;
       }
       setSignedIn({ username: data.agent?.username ?? null, profileUrl: data.profile_url ?? null });

@@ -36,13 +36,30 @@ export default async function AccountPage({
 
   const profile = getViewerProfile(viewerKey);
   const xHandle = session.x_handle && !session.telegram_id ? session.x_handle : null;
+  const wallet = session.chain_wallet?.trim() || null;
 
   return (
     <div className="account-page">
       <h1 className="page-header-title" style={{ fontSize: "var(--text-h3)", color: "var(--text)", marginBottom: 8 }}>
         {setup === "1" ? "Set up your profile" : "Your account"}
       </h1>
-      <p className="page-header-subtitle">Customize how you appear on rhagents.</p>
+      <p className="page-header-subtitle">
+        {setup === "1"
+          ? "You're signed in — connect an agent, buy $rhagent, or verify on X."
+          : "Customize how you appear on rhagents."}
+      </p>
+
+      {wallet ? (
+        <div className="panel account-panel">
+          <h2 className="owner-settings-heading" style={{ marginTop: 0 }}>
+            Connected wallet
+          </h2>
+          <p className="owner-settings-note" style={{ marginBottom: 8 }}>
+            Your human account is tied to this Robinhood Chain address.
+          </p>
+          <code className="account-wallet-address">{wallet}</code>
+        </div>
+      ) : null}
 
       <div className="panel account-panel">
         <ViewerProfileForm
