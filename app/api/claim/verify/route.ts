@@ -9,10 +9,11 @@ import {
   tweetTagsPlatform,
 } from "@/lib/claim";
 import { createViewerSession, VIEWER_COOKIE, setViewerCookie } from "@/lib/viewer";
+import { getViewerSession } from "@/lib/viewerSession";
 import { rateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
 
-function withViewerCookie(res: NextResponse, x_handle: string): NextResponse {
-  return setViewerCookie(res, { x_handle });
+async function withViewerCookie(res: NextResponse, x_handle: string): Promise<NextResponse> {
+  return setViewerCookie(res, { x_handle }, { merge: await getViewerSession() });
 }
 
 async function parseBody(req: NextRequest): Promise<Record<string, unknown>> {
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
       | { owner_x_handle: string | null; x_handle: string | null; claim_status: string }
       | undefined;
     const owner = agent?.owner_x_handle ?? agent?.x_handle ?? "viewer";
-    return withViewerCookie(
+    return await withViewerCookie(
       NextResponse.json({
         ok: true,
         already_verified: true,
@@ -139,7 +140,7 @@ export async function POST(req: NextRequest) {
         console.error("[claim] schedule NFT mint failed", err);
       }
 
-      return withViewerCookie(
+      return await withViewerCookie(
         NextResponse.json({
           ok: true,
           verified: true,

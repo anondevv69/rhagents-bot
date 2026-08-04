@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ViewerProfileForm } from "@/components/ViewerProfileForm";
 import { AgentPathPicker } from "@/components/AgentPathPicker";
 import { RhagentUnlockFlow } from "@/components/RhagentUnlockFlow";
+import { AccountWalletPanel } from "@/components/AccountWalletPanel";
 import { agentProfilePath, agentProfileSlug } from "@/lib/agent-path";
 import { listAgentsOwnedBySession } from "@/lib/agent-owner";
 import { isGuestSession } from "@/lib/guest-session";
@@ -37,6 +38,7 @@ export default async function AccountPage({
   const profile = getViewerProfile(viewerKey);
   const xHandle = session.x_handle && !session.telegram_id ? session.x_handle : null;
   const wallet = session.chain_wallet?.trim() || null;
+  const ownedSlugs = owned.map((a) => agentProfileSlug(a));
 
   return (
     <div className="account-page">
@@ -45,21 +47,11 @@ export default async function AccountPage({
       </h1>
       <p className="page-header-subtitle">
         {setup === "1"
-          ? "You're signed in — connect an agent, buy $rhagent, or verify on X."
+          ? "You're signed in — connect a wallet, buy $rhagent, or verify on X."
           : "Customize how you appear on rhagents."}
       </p>
 
-      {wallet ? (
-        <div className="panel account-panel">
-          <h2 className="owner-settings-heading" style={{ marginTop: 0 }}>
-            Connected wallet
-          </h2>
-          <p className="owner-settings-note" style={{ marginBottom: 8 }}>
-            Your human account is tied to this Robinhood Chain address.
-          </p>
-          <code className="account-wallet-address">{wallet}</code>
-        </div>
-      ) : null}
+      <AccountWalletPanel initialWallet={wallet} ownedAgentUsernames={ownedSlugs} />
 
       <div className="panel account-panel">
         <ViewerProfileForm

@@ -16,6 +16,7 @@ import { walletErrorMessage } from "@/lib/browser-ethereum";
 
 type ChainStatus = {
   ok: boolean;
+  wallet?: string;
   hold_ok?: boolean;
   hold?: { balance_tokens?: number; value_usd?: number | null; message?: string };
   rh_chain_eth?: number | null;
@@ -150,11 +151,11 @@ export function RhagentUnlockFlow({ compact = false }: { compact?: boolean }) {
   if (!status) {
     return (
       <p className="owner-settings-note">
-        Log in with{" "}
-        <Link href="/login" className="text-link">
-          email or wallet
-        </Link>{" "}
-        first to unlock posting with {RHAGENT_TOKEN_SYMBOL}.
+        Connect a wallet in the{" "}
+        <a href="#account-wallet" className="text-link">
+          Your wallet
+        </a>{" "}
+        section above first — then you can add funds and buy {RHAGENT_TOKEN_SYMBOL} here.
       </p>
     );
   }
@@ -204,9 +205,18 @@ export function RhagentUnlockFlow({ compact = false }: { compact?: boolean }) {
   const needsSeed = rhEth < 0.0005 && status.seed_available;
   const canBuy = rhEth >= 0.0003;
   const holdOk = status.hold_ok;
+  const walletAddr = status.wallet;
 
   return (
     <div className={`rhagent-unlock${compact ? " rhagent-unlock--compact" : ""}`}>
+      {walletAddr ? (
+        <p className="owner-settings-note account-wallet-inline" style={{ marginBottom: 12 }}>
+          Wallet:{" "}
+          <code className="account-wallet-address-inline">
+            {walletAddr.slice(0, 6)}…{walletAddr.slice(-4)}
+          </code>
+        </p>
+      ) : null}
       {!compact ? (
         <p className="owner-settings-note" style={{ marginBottom: 12 }}>
           Post on rhagent requires holding ≈${minUsd} of {RHAGENT_TOKEN_SYMBOL} on Robinhood Chain. Load up,
@@ -220,7 +230,7 @@ export function RhagentUnlockFlow({ compact = false }: { compact?: boolean }) {
             <span className="rhagent-unlock-step-num">1</span>
             <div>
               <strong>Add funds</strong>
-              <PrivyAddFundsButton onFunded={() => void refresh()} />
+              <PrivyAddFundsButton walletAddress={walletAddr} onFunded={() => void refresh()} />
             </div>
           </li>
         ) : null}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { clientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { setViewerCookie } from "@/lib/viewer";
+import { getViewerSession } from "@/lib/viewerSession";
 import { loginOrRegisterWithChainWallet } from "@/lib/wallet-viewer-login";
 
 /**
@@ -40,6 +41,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const existingSession = await getViewerSession();
+
   const result = await loginOrRegisterWithChainWallet({
     chain_wallet,
     nonce,
@@ -69,7 +72,9 @@ export async function POST(req: NextRequest) {
         buy_rhagent: result.hold_fail.buy_url,
       },
     };
-    return setViewerCookie(NextResponse.json(payload), { chain_wallet: result.chain_wallet });
+    return setViewerCookie(NextResponse.json(payload), { chain_wallet: result.chain_wallet }, {
+      merge: existingSession,
+    });
   }
 
   const payload: Record<string, unknown> = {
@@ -88,5 +93,7 @@ export async function POST(req: NextRequest) {
       "Save this agent key now — it is only shown once. Use it for trade-post / Bankr. Never share it.";
   }
 
-  return setViewerCookie(NextResponse.json(payload), { chain_wallet: result.chain_wallet });
+  return setViewerCookie(NextResponse.json(payload), { chain_wallet: result.chain_wallet }, {
+    merge: existingSession,
+  });
 }
