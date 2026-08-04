@@ -3700,6 +3700,27 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   color: var(--text);
 }
 
+.wallet-funding-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (min-width: 480px) {
+  .wallet-funding-buttons {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+.wallet-funding-region-hint {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border-soft));
+}
+
 .btn-sm {
   padding: 6px 12px;
   font-size: var(--text-caption);
