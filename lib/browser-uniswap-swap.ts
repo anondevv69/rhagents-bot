@@ -112,17 +112,19 @@ async function ensureErc20Approval(input: {
 
 export async function executeChainSwap(
   quote: SwapQuoteClient,
-  opts?: { onStatus?: (msg: string) => void },
+  opts?: { onStatus?: (msg: string) => void; provider?: EthereumProvider; fromAddress?: string },
 ): Promise<SwapResult> {
-  const eth = getEthereum();
+  const eth = opts?.provider ?? getEthereum();
   if (!eth) {
-    throw new Error("MetaMask not found — install MetaMask and refresh.");
+    throw new Error("No wallet found — connect Privy or install MetaMask.");
   }
 
   await ensureRobinhoodChain(eth);
-  const accounts = await connectedAccounts(eth);
+  const accounts = opts?.fromAddress
+    ? [opts.fromAddress]
+    : await connectedAccounts(eth);
   const from = accounts[0];
-  if (!from) throw new Error("No wallet account — unlock MetaMask and try again.");
+  if (!from) throw new Error("No wallet account — unlock your wallet and try again.");
 
   const to = quote.router as `0x${string}`;
   if (!to || !/^0x[a-fA-F0-9]{40}$/i.test(to)) {
@@ -142,11 +144,11 @@ export async function executeChainSwap(
     if (amountRaw <= BigInt(0)) {
       throw new Error("Invalid sell amount.");
     }
-    opts?.onStatus?.("Approve token in MetaMask…");
+    opts?.onStatus?.("Approve token in wallet…");
     await ensureErc20Approval({ eth, from, token, spender, amountRaw });
   }
 
-  opts?.onStatus?.("Confirm swap in MetaMask…");
+  opts?.onStatus?.("Confirm swap in wallet…");
   const valueWei = BigInt(quote.valueWei || "0");
   const txHash = await ethRequest(
     eth,

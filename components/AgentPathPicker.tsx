@@ -57,9 +57,19 @@ export function AgentPathPicker({
           </span>
           <span className="agent-path-title">Chain profile via {RHAGENT_TOKEN_SYMBOL}</span>
           <span className="agent-path-summary">
-            Hold ≈$10 of {RHAGENT_TOKEN_SYMBOL} in your wallet — instant on-chain profile, no agent needed.
+            Hold ≈$10 of {RHAGENT_TOKEN_SYMBOL} — instant on-chain profile on DexScreener.
           </span>
         </a>
+
+        <Link href="/account?setup=1#rhagent-unlock" className="agent-path-card agent-path-card--fund">
+          <span className="agent-path-emoji" aria-hidden>
+            💳
+          </span>
+          <span className="agent-path-title">Load up & buy {RHAGENT_TOKEN_SYMBOL}</span>
+          <span className="agent-path-summary">
+            Add ~$15 with card (Privy), swap for {RHAGENT_TOKEN_SYMBOL}, and post — guided on your account page.
+          </span>
+        </Link>
       </div>
 
       <p className="gate-normie-note">

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ViewerProfileForm } from "@/components/ViewerProfileForm";
 import { AgentPathPicker } from "@/components/AgentPathPicker";
+import { RhagentUnlockFlow } from "@/components/RhagentUnlockFlow";
 import { agentProfilePath, agentProfileSlug } from "@/lib/agent-path";
 import { listAgentsOwnedBySession } from "@/lib/agent-owner";
 import { isGuestSession } from "@/lib/guest-session";
@@ -64,6 +65,13 @@ export default async function AccountPage({
         <Link href="/dashboard" className="btn btn-outline profile-edit-btn">
           Open dashboard
         </Link>
+      </div>
+
+      <div className="panel account-panel" id="rhagent-unlock">
+        <h2 className="owner-settings-heading" style={{ marginTop: 0 }}>
+          Post on the feed — {`$rhagent`}
+        </h2>
+        <RhagentUnlockFlow />
       </div>
 
       {owned.length > 0 ? (

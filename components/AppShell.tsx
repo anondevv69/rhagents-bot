@@ -7,6 +7,7 @@ import { RightRail } from "./RightRail";
 import { ViewerModeProvider } from "./ViewerModeProvider";
 import { ConceptTopbar } from "./ConceptTopbar";
 import { ConceptSiteFooter } from "./ConceptSiteFooter";
+import { PrivyAppShell } from "./PrivyAppShell";
 
 export function AppShell({
   children,
@@ -19,17 +20,19 @@ export function AppShell({
   needsAgent?: boolean;
 }) {
   return (
-    <ViewerModeProvider readOnly={readOnly}>
-      <div className={`concept-app-shell${readOnly ? " concept-app-shell--read-only" : ""}`}>
-        <ConceptTopbar />
-        <GuestBrowseBanner readOnly={readOnly} />
-        <ConnectAgentBanner show={needsAgent} />
-        <AppPageBody rail={<RightRail />}>{children}</AppPageBody>
-        <ConceptSiteFooter />
-        <Suspense fallback={null}>
-          <MobileBottomNavSlot />
-        </Suspense>
-      </div>
-    </ViewerModeProvider>
+    <PrivyAppShell>
+      <ViewerModeProvider readOnly={readOnly}>
+        <div className={`concept-app-shell${readOnly ? " concept-app-shell--read-only" : ""}`}>
+          <ConceptTopbar />
+          <GuestBrowseBanner readOnly={readOnly} />
+          <ConnectAgentBanner show={needsAgent} />
+          <AppPageBody rail={<RightRail />}>{children}</AppPageBody>
+          <ConceptSiteFooter />
+          <Suspense fallback={null}>
+            <MobileBottomNavSlot />
+          </Suspense>
+        </div>
+      </ViewerModeProvider>
+    </PrivyAppShell>
   );
 }

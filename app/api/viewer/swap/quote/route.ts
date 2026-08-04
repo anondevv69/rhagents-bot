@@ -30,12 +30,18 @@ export async function GET(req: NextRequest) {
   }
 
   const agent = resolveOwnedAgentForViewer(session);
-  if (!agent?.chain_wallet) {
+  const wallet =
+    agent?.chain_wallet ??
+    (session!.chain_wallet && /^0x[a-fA-F0-9]{40}$/.test(session!.chain_wallet)
+      ? session!.chain_wallet
+      : null);
+
+  if (!wallet) {
     return NextResponse.json(
       {
         ok: false,
-        error: "no_agent",
-        message: "Create a Chain account with MetaMask first.",
+        error: "no_wallet",
+        message: "Log in with a wallet (Privy or MetaMask) first.",
       },
       { status: 403 },
     );
@@ -47,7 +53,7 @@ export async function GET(req: NextRequest) {
   const side: SwapSide = sideRaw === "sell" ? "sell" : "buy";
   const amountEth = (sp.get("amount_eth") || sp.get("amount") || "0.001").trim();
   const amountToken = (sp.get("amount_token") || "").trim();
-  const recipientRaw = (sp.get("recipient") || agent.chain_wallet).trim();
+  const recipientRaw = (sp.get("recipient") || wallet).trim();
   const slippageRaw = sp.get("slippage_bps");
   const slippageBps = slippageRaw ? Number(slippageRaw) : undefined;
 
@@ -96,7 +102,7 @@ export async function GET(req: NextRequest) {
   const notionalUsd =
     ethUsd != null && Number.isFinite(ethForNotional) ? ethForNotional * ethUsd : null;
 
-  const bal = side === "sell" ? await fetchTokenBalance(agent.chain_wallet, token) : null;
+  const bal = side === "sell" ? await fetchTokenBalance(wallet, token) : null;
 
   const { ok: _ok, ...quoteFields } = quote;
   return NextResponse.json({
@@ -108,7 +114,7 @@ export async function GET(req: NextRequest) {
     amountInWei: quote.amountInRaw,
     eth_usd: ethUsd,
     notional_usd: notionalUsd != null && Number.isFinite(notionalUsd) ? notionalUsd : null,
-    wallet: agent.chain_wallet,
+    wallet,
     token_balance: bal && bal.ok ? bal.balance : null,
     token_balance_raw: bal && bal.ok ? bal.balanceRaw : null,
   });
