@@ -156,13 +156,7 @@ export function WalletLoginButton({
       };
 
       if (res.ok && data.ok && data.session_only) {
-        // Signed in, but no agent + no $rhagent hold — show the path picker.
-        setSessionOnly({
-          message:
-            data.message ??
-            "You're signed in. Pick a path to get a profile: bring your own agent, start with Bankr, or hold $rhagent.",
-          buyUrl: data.buy_url ?? null,
-        });
+        window.location.assign("/account?setup=1");
         return;
       }
 

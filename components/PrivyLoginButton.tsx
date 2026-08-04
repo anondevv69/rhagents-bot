@@ -90,12 +90,7 @@ export function PrivyLoginButton({
           onSessionOnly();
           return;
         }
-        setSessionOnly({
-          message:
-            data.message ??
-            "You're signed in. Pick a path to get a profile: bring your own agent, start with Bankr, or hold $rhagent.",
-          buyUrl: data.buy_url ?? null,
-        });
+        window.location.assign("/account?setup=1");
         return;
       }
       // Never auto-redirect — always show an explicit next step (new key to save, or

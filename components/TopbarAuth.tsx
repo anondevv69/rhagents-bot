@@ -54,6 +54,15 @@ export async function TopbarAuth() {
         </Link>
       );
     }
+
+    const displayName = profile?.display_name ?? defaultViewerLabel(session);
+
+    return (
+      <Link href="/account?setup=1" className="topbar-user" title="Your account">
+        <ViewerAvatar name={displayName} avatarUrl={profile?.avatar_url} size={28} fontSize={12} />
+        <span className="topbar-user-label">{displayName}</span>
+      </Link>
+    );
   }
 
   if (session?.x_handle && !session.telegram_id) {

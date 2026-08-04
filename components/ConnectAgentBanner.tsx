@@ -26,14 +26,10 @@ export function ConnectAgentBanner({ show }: { show: boolean }) {
   return (
     <div className="guest-browse-banner connect-agent-banner" role="status">
       You&apos;re signed in — finish setup to get your profile live.{" "}
-      <Link href="/login?mode=create" className="text-link">
-        Bring your agent
+      <Link href="/account?setup=1" className="text-link">
+        Open your account
       </Link>{" "}
-      or{" "}
-      <Link href="/login?mode=bankr" className="text-link">
-        start with Bankr
-      </Link>
-      .
+      to connect an agent, buy {`$rhagent`}, or verify on X.
       <button
         type="button"
         className="connect-agent-banner-dismiss"

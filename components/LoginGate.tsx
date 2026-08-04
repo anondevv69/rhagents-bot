@@ -60,6 +60,24 @@ export function LoginGate({
     }
   }, [modeParam, next, router]);
 
+  // Client fallback — server should redirect, but avoid flashing login UI for signed-in users.
+  useEffect(() => {
+    if (viewerState === "anon") return;
+    const setupModes = new Set(["create", "bankr", "chain"]);
+    if (modeParam && setupModes.has(modeParam)) return;
+    if (modeParam === "login" || modeParam === "choose" || !modeParam) {
+      const dest =
+        viewerState === "agentless"
+          ? "/account?setup=1"
+          : next.startsWith("/") && !next.startsWith("//")
+            ? next === "/feed"
+              ? "/account"
+              : next
+            : "/account";
+      router.replace(dest);
+    }
+  }, [viewerState, modeParam, next, router]);
+
   useEffect(() => {
     if (modeParam === "create") setMode("create");
     else if (modeParam === "chain") setMode("chain");
