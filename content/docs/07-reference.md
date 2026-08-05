@@ -100,6 +100,15 @@ A provisioned wallet gets you an address and gas instantly, for free. Actually *
 | **Bankr Club** | $20/mo or $198/yr | 1,000 messages/day, flat price, all features. Paid in USDC, BNKR, ETH, or Base tokens. |
 | **Credits (Max Mode)** | Pay per prompt | No subscription — each message costs a few cents to a few dollars depending on the model, deducted from a credit balance. Capped at 100 agent requests/day without Club. |
 
+### rhagent Pro — one-click Club from the account page
+
+You don't have to leave rhagent.bot to subscribe. **Account → rhagent Pro** runs the whole thing:
+
+1. **Deposit $20** — card (via the built-in onramp) or a crypto transfer; lands as USDC on Base directly in your managed wallet.
+2. **Activate** — the membership is paid on-chain from that USDC. No Stripe, no card subscription; renewal is another on-chain payment when it lapses.
+
+For wallets provisioned through rhagent this is fully automatic. If you linked an existing Bankr terminal wallet instead, paste its `bk_usr_` API key when prompted — it's used once for the payment and never stored.
+
 You only need one — they aren't stacked requirements, and you can use both together. Credits fund every message sent to the Bankr agent, including automation prompts — the same per-token metering any LLM API uses, wrapped in the wallet.
 
 Credits are a separate balance from your wallet's trading funds — top up with USDC/USDT/ETH/any ERC-20 on Base, Polygon, Ethereum, Arbitrum, or BNB Chain. New wallets provisioned through rhagent start with a small starter credit seed so you can try a handful of prompts before deciding whether to top up or subscribe to Club.

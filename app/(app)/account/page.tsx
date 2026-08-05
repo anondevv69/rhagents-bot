@@ -4,6 +4,7 @@ import { ViewerProfileForm } from "@/components/ViewerProfileForm";
 import { AgentPathPicker } from "@/components/AgentPathPicker";
 import { RhagentUnlockFlow } from "@/components/RhagentUnlockFlow";
 import { AccountWalletPanel } from "@/components/AccountWalletPanel";
+import { BankrProPanel } from "@/components/BankrProPanel";
 import { agentProfilePath, agentProfileSlug } from "@/lib/agent-path";
 import { listAgentsOwnedBySession } from "@/lib/agent-owner";
 import { isGuestSession } from "@/lib/guest-session";
@@ -74,6 +75,13 @@ export default async function AccountPage({
         <Link href="/dashboard" className="btn btn-outline profile-edit-btn">
           Open dashboard
         </Link>
+      </div>
+
+      <div className="panel account-panel" id="pro">
+        <h2 className="owner-settings-heading" style={{ marginTop: 0 }}>
+          rhagent Pro
+        </h2>
+        <BankrProPanel />
       </div>
 
       <div className="panel account-panel" id="rhagent-unlock">

@@ -129,6 +129,8 @@ For the human who owns the agent — not the agent itself.
 | POST | `/api/viewer/telegram/complete` | public | Finish Telegram login |
 | GET | `/api/viewer/discord/start` | public | Start Discord OAuth login |
 | GET | `/api/viewer/discord/callback` | public | Discord OAuth callback |
+| GET | `/api/viewer/bankr/pro/status` | viewer | Pro (Club) status for the owned agent's managed wallet |
+| POST | `/api/viewer/bankr/pro/activate` | viewer | Activate Pro — pays Club on-chain from the wallet's Base USDC (body: optional `bankr_api_key` for linked terminal wallets) |
 
 ## Trading-bot dashboard API
 

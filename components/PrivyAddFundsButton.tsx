@@ -30,10 +30,17 @@ function regionFundingHint(): string | null {
 export function PrivyAddFundsButton({
   label,
   walletAddress,
+  destinationAddress,
+  amountUsd,
+  note,
   onFunded,
 }: {
   label?: string;
   walletAddress?: string | null;
+  /** Override deposit target — e.g. a managed Bankr wallet instead of the Privy embedded wallet. */
+  destinationAddress?: string | null;
+  amountUsd?: number;
+  note?: string | null;
   onFunded?: () => void;
 }) {
   const { ready, authenticated, login } = usePrivy();
@@ -45,12 +52,14 @@ export function PrivyAddFundsButton({
   const [copied, setCopied] = useState(false);
 
   const defaultFiat = useMemo(() => defaultPrivyFiatAsset(), []);
-  const cardLabel = label ?? privyFundLabel(PRIVY_FUND_DEFAULT_AMOUNT, defaultFiat);
+  const fundAmount = amountUsd != null ? String(amountUsd) : PRIVY_FUND_DEFAULT_AMOUNT;
+  const cardLabel = label ?? privyFundLabel(fundAmount, defaultFiat);
   const regionHint = useMemo(() => regionFundingHint(), []);
 
   if (!PRIVY_APP_ID) return null;
 
-  async function resolveWallet() {
+  async function resolveDestination(): Promise<string | null> {
+    if (destinationAddress) return destinationAddress;
     if (!authenticated) {
       login();
       return null;
@@ -60,19 +69,19 @@ export function PrivyAddFundsButton({
       setError("Wallet not ready yet — wait a moment and try again.");
       return null;
     }
-    return wallet;
+    return wallet.address;
   }
 
   async function fund(mode: "card" | "crypto" | "both") {
     setError(null);
-    const wallet = await resolveWallet();
-    if (!wallet) return;
+    const address = await resolveDestination();
+    if (!address) return;
 
     setBusy(mode);
     try {
       const fiat: PrivyFiatAsset = defaultPrivyFiatAsset();
       const destination = {
-        address: wallet.address,
+        address,
         chain: BASE_CAIP2,
         asset: BASE_USDC,
       };
@@ -91,7 +100,7 @@ export function PrivyAddFundsButton({
               defaultAsset: fiat,
             },
             environment: "production",
-            defaultAmount: PRIVY_FUND_DEFAULT_AMOUNT,
+            defaultAmount: fundAmount,
           },
         });
       } else {
@@ -103,7 +112,7 @@ export function PrivyAddFundsButton({
               defaultAsset: fiat,
             },
             environment: "production",
-            defaultAmount: PRIVY_FUND_DEFAULT_AMOUNT,
+            defaultAmount: fundAmount,
           },
           crypto: { slippageBps: 100 },
         });
@@ -128,7 +137,7 @@ export function PrivyAddFundsButton({
   }
 
   async function copyAddress() {
-    const addr = walletAddress ?? wallets[0]?.address;
+    const addr = destinationAddress ?? walletAddress ?? wallets[0]?.address;
     if (!addr) return;
     try {
       await navigator.clipboard.writeText(addr);
@@ -139,7 +148,7 @@ export function PrivyAddFundsButton({
     }
   }
 
-  const displayAddress = walletAddress ?? wallets[0]?.address ?? null;
+  const displayAddress = destinationAddress ?? walletAddress ?? wallets[0]?.address ?? null;
 
   return (
     <div className="wallet-funding-actions">
@@ -183,10 +192,14 @@ export function PrivyAddFundsButton({
       </div>
 
       <p className="gate-normie-note">
-        <strong>Card</strong> — Privy routes to Stripe, MoonPay, or Coinbase (depends on your Privy
-        dashboard). USDC lands on <strong>Base</strong>.{" "}
-        <strong>Transfer crypto</strong> — send from Coinbase, MetaMask, etc. when card is blocked.
-        We then send starter ETH on Robinhood Chain for the {`$rhagent`} swap.
+        {note ?? (
+          <>
+            <strong>Card</strong> — Privy routes to Stripe, MoonPay, or Coinbase (depends on your
+            Privy dashboard). USDC lands on <strong>Base</strong>.{" "}
+            <strong>Transfer crypto</strong> — send from Coinbase, MetaMask, etc. when card is
+            blocked. We then send starter ETH on Robinhood Chain for the {`$rhagent`} swap.
+          </>
+        )}
       </p>
 
       {regionHint ? (

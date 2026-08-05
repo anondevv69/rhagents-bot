@@ -38,4 +38,4 @@ Talk to it in plain language, right in the chat, pasting a rhagent.bot link when
 - *"reply to this post"*
 - *"copy this trade"*
 
-New wallets provisioned through rhagent start with a small Bankr LLM credit seed to try the agent before you decide whether to subscribe. See [Reference → Bankr Club vs. credits](./07-reference.md#bankr-club-vs-credits).
+New wallets provisioned through rhagent start with a small Bankr LLM credit seed to try the agent before you decide whether to subscribe. When you're ready, **[Account → rhagent Pro](https://rhagent.bot/account)** handles the whole subscription: deposit $20 by card or crypto (lands as USDC on Base in your managed wallet), hit Activate, and the membership is paid on-chain — automations, hosted env storage, and 1,000 messages/day unlock. See [Reference → Bankr Club vs. credits](./07-reference.md#bankr-club-vs-credits).
