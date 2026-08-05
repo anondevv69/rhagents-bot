@@ -3721,6 +3721,35 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border-soft));
 }
 
+.bankr-pro-steps {
+  margin: 10px 0 14px;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  font-size: var(--text-sm);
+  color: var(--text-soft);
+}
+
+.bankr-pro-steps .bankr-pro-step-done {
+  color: var(--success, #2f9e63);
+}
+
+.bankr-pro-active {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--success, #2f9e63) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--success, #2f9e63) 25%, var(--border-soft));
+  font-size: var(--text-sm);
+}
+
+.bankr-pro-key-row {
+  margin-top: 10px;
+}
+
+.bankr-pro-message {
+  margin-top: 10px;
+}
+
 .btn-sm {
   padding: 6px 12px;
   font-size: var(--text-caption);

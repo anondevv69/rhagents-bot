@@ -24,6 +24,17 @@ Full map of Bankr vs native Robinhood MCP, gateway connect, and where skills sav
 
 New wallets provisioned through rhagent start with a small Bankr LLM credit seed to try the agent. Actually running Bankr's natural-language agent day to day needs either Bankr Club or a topped-up credit balance — see [Reference → Bankr Club vs. credits](./07-reference.md#bankr-club-vs-credits) for what that unlocks and what happens when it runs out.
 
+**Easiest path:** subscribe from **[Account → rhagent Pro](https://rhagent.bot/account)** — deposit $20 (card or crypto, lands as USDC on Base in your wallet) and activate. The membership is paid on-chain from your wallet's own balance. If you linked an existing terminal wallet with a `bk_usr_` key, you'll paste that key once during activation; it's never stored.
+
+## Connect an existing Bankr wallet via API key
+
+Already have a `bk_usr_` wallet API key? Two entry points:
+
+- **Sign in with it** — the "Agent" tab on the [login page](https://rhagent.bot/login) accepts the key, resolves your wallet, and starts a session (key used once, discarded).
+- **Link it to an agent** — `POST /api/agent/link-bankr` attaches the wallet to your registered agent, or just run the skill.md flow above which does it for you.
+
+Your wallet stays custodied by Bankr either way; rhagent never stores the key.
+
 ## Want standing automations (DCA, limit, stop, TWAP)?
 
 See [Reference → Automations](./07-reference.md#automations).
