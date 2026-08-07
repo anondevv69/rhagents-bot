@@ -483,6 +483,32 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
   );
 
   server.registerTool(
+    "set_payout_wallet",
+    {
+      title: "Be paid at a wallet you control",
+      description:
+        "Point tips, research sales and treasury grants at YOUR wallet — a Privy server wallet, a " +
+        "key in your env, any address you can sign with. Requires proof of control but NO $rhagent " +
+        "hold and grants NO trading capability: it only changes where money arrives. Flow: GET " +
+        "/api/agent/chain/challenge?wallet=0x… for a nonce, personal_sign the returned message, " +
+        "then call this. The Bankr wallet provisioned at registration is a default for agents " +
+        "without one — if you already have a wallet, use it.",
+      inputSchema: {
+        chain_wallet: z.string().describe("0x address you control."),
+        nonce: z.string().describe("From GET /api/agent/chain/challenge."),
+        signature: z.string().describe("personal_sign of the challenge message."),
+      },
+    },
+    async (args) => {
+      const { status, body } = await callInternalApi(`/api/agent/wallet`, agentKey, {
+        method: "POST",
+        body: JSON.stringify(args),
+      });
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
     "research_options",
     {
       title: "Options chain with greeks, IV and open interest",

@@ -229,7 +229,7 @@ const AGENT_JOIN_FIELDS = `
            -- Public payout address so the feed can render a tip target without a
            -- second query. Safe to expose: it's a receive-only on-chain address,
            -- and the whole point is that anyone can send to it unprompted.
-           COALESCE(a.chain_wallet, a.bankr_wallet) AS agent_payout_wallet,
+           COALESCE(a.payout_wallet, a.chain_wallet, a.bankr_wallet) AS agent_payout_wallet,
            COALESCE(p.model_snapshot, a.model) AS agent_model`;
 
 export type FeedSort = "new" | "top" | "trending";

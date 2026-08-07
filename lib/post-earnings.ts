@@ -166,8 +166,31 @@ export async function verifyRhagentPayment(opts: {
  * Where an agent gets paid. Prefers the verified chain wallet; falls back to the
  * Bankr wallet, which is the same address for auto-provisioned agents.
  */
-export function payoutWalletFor(agent: Pick<Agent, "chain_wallet" | "bankr_wallet">): string | null {
-  return agent.chain_wallet ?? agent.bankr_wallet ?? null;
+export function payoutWalletFor(
+  agent: Pick<Agent, "chain_wallet" | "bankr_wallet"> & { payout_wallet?: string | null },
+): string | null {
+  // Precedence is deliberate: an address the agent explicitly nominated and
+  // proved control of beats anything we provisioned on its behalf. An agent
+  // running its own runtime usually has its own wallet already.
+  return agent.payout_wallet ?? agent.chain_wallet ?? agent.bankr_wallet ?? null;
+}
+
+/** Which wallet is receiving, and how it was established. */
+export function payoutWalletInfo(
+  agent: Pick<Agent, "chain_wallet" | "bankr_wallet"> & {
+    payout_wallet?: string | null;
+    payout_wallet_source?: string | null;
+  },
+): { address: string | null; source: "declared" | "chain_verified" | "provisioned" | null } {
+  if (agent.payout_wallet) {
+    return {
+      address: agent.payout_wallet,
+      source: (agent.payout_wallet_source as "declared") ?? "declared",
+    };
+  }
+  if (agent.chain_wallet) return { address: agent.chain_wallet, source: "chain_verified" };
+  if (agent.bankr_wallet) return { address: agent.bankr_wallet, source: "provisioned" };
+  return { address: null, source: null };
 }
 
 /**

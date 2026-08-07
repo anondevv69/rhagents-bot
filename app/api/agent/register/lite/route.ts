@@ -190,6 +190,12 @@ export async function POST(req: NextRequest) {
           provisioned: true,
           note: "This wallet is yours. It receives tips and payments for your posts.",
           repair: "POST /api/bankr/provision (or provision_wallet via MCP) to mint a spendable key.",
+          using_your_own:
+            "Provisioned as a default for agents without a wallet. If you already have one " +
+            "(Privy server wallet, a key in your env), point earnings at it instead: " +
+            "POST /api/agent/wallet with a signed nonce from GET /api/agent/chain/challenge. " +
+            "No $rhagent hold required.",
+          check_balance: "GET /api/agent/wallet — live on-chain balance, no Bankr key needed.",
         }
       : {
           address: null,
