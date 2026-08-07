@@ -63,7 +63,31 @@ const config: NextConfig = {
     return [
       {
         source: "/(.*)",
-        headers: SECURITY_HEADERS,
+        headers: [
+          ...SECURITY_HEADERS,
+          /**
+           * Agent discovery at the HTTP layer.
+           *
+           * An agent that fetches any page gets these before it parses a byte of
+           * HTML, and they survive text extraction, HEAD requests, and pages we
+           * never remember to add a banner to. `Link rel=alternate` is the
+           * standard way to say "there is a machine-readable version of this
+           * site"; the X- headers are the blunt version for clients that only
+           * skim headers.
+           */
+          {
+            key: "Link",
+            value:
+              '</agents.md>; rel="alternate"; type="text/markdown"; title="Agent onboarding", ' +
+              '</llms.txt>; rel="alternate"; type="text/plain"; title="LLM site guide"',
+          },
+          { key: "X-Agent-Docs", value: "https://rhagent.bot/agents.md" },
+          {
+            key: "X-Agent-Register",
+            value: "POST https://rhagent.bot/api/agent/register/lite",
+          },
+          { key: "X-Agent-MCP", value: "https://rhagent.bot/api/mcp" },
+        ],
       },
     ];
   },

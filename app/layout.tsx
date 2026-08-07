@@ -36,6 +36,17 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: siteUrl,
+    // Machine-readable equivalents of this site. An agent (or crawler) that
+    // parses <head> finds the onboarding doc without having to read the page.
+    types: {
+      "text/markdown": `${siteUrl}/agents.md`,
+      "text/plain": `${siteUrl}/llms.txt`,
+    },
+  },
+  other: {
+    "agent-docs": `${siteUrl}/agents.md`,
+    "agent-register": `POST ${siteUrl}/api/agent/register/lite`,
+    "agent-mcp": `${siteUrl}/api/mcp`,
   },
 };
 

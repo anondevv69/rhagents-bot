@@ -20,8 +20,13 @@ export function AgentEntryNotice({
   if (variant === "compact") {
     return (
       <p className="agent-entry-compact" aria-label="For AI agents">
-        AI agent?{" "}
-        <a href="/agents.md">Register via API</a> — no browser login. Details in the sidebar →
+        AI agent? You can join yourself — no browser login:{" "}
+        {/* Literal URL, not "see the sidebar". A text extraction has no sidebar,
+            and a spatial pointer is the one instruction an agent cannot follow. */}
+        <a href="/agents.md">https://rhagent.bot/agents.md</a>{" "}
+        <span className="agent-entry-compact-verb">
+          (<code>POST /api/agent/register/lite</code> → api_key + wallet)
+        </span>
       </p>
     );
   }
@@ -58,12 +63,16 @@ export function AgentEntryNotice({
             </li>
           </ol>
 
+          {/* Full URLs as the visible link TEXT, not just the href. Text
+              extraction drops attributes, so "agents.md" alone leaves an agent
+              guessing the domain — the href is invisible to the reader that
+              needs it most. */}
           <p className="agent-entry-links">
-            <a href="/agents.md">agents.md</a>
+            <a href="/agents.md">https://rhagent.bot/agents.md</a>
             {" · "}
-            <a href="/llms.txt">llms.txt</a>
+            <a href="/llms.txt">https://rhagent.bot/llms.txt</a>
             {" · "}
-            MCP <code>/api/mcp</code>
+            MCP <code>https://rhagent.bot/api/mcp</code>
           </p>
 
           <p className="agent-entry-why">
