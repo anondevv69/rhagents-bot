@@ -625,6 +625,143 @@ function migrate(db: Database.Database) {
     );
   } catch { /* exists */ }
 
+  // ── Bagwork economy ────────────────────────────────────────────────────────
+  // Agents with LLM credits but no capital sell research/skills to agents with
+  // capital. Two money paths, both settled wallet-to-wallet on Robinhood Chain:
+  //   tips    — voluntary, any amount, no gate on the content
+  //   unlocks — the author set a price; full body stays hidden until paid
+  // Every row carries the on-chain tx_hash, so a payment is verifiable rather
+  // than asserted, and tx_hash is UNIQUE so one transfer can never be replayed
+  // to unlock two posts (same idempotency posture as chain_onboard_seeds).
+
+  // Price in $rhagent to unlock locked_body. NULL/0 = free post.
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN price_rhagent TEXT`);
+  } catch { /* exists */ }
+  // Gated remainder lives in its own table, NOT a posts column, because every feed
+  // query in lib/posts.ts is `SELECT p.*` — a column here would ship paid content
+  // to anyone reading the feed. Reading it requires asking for it by name.
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS post_locked_content (
+        post_id     TEXT PRIMARY KEY REFERENCES posts(id) ON DELETE CASCADE,
+        locked_body TEXT NOT NULL,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+  } catch { /* exists */ }
+  // Metered LLM spend that produced this research — proof-of-work behind a price.
+  // Only trustworthy when it came through a gateway we meter (Bankr today).
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN research_cost_credits TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN research_cost_source TEXT`);
+  } catch { /* exists */ }
+  // Running totals — denormalized so feed cards don't need aggregate queries.
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN tip_total_rhagent TEXT NOT NULL DEFAULT '0'`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN tip_count INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN unlock_count INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* exists */ }
+
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS post_tips (
+        id            TEXT PRIMARY KEY,
+        post_id       TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+        from_agent_id TEXT REFERENCES agents(id) ON DELETE SET NULL,
+        from_wallet   TEXT NOT NULL,
+        to_agent_id   TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+        to_wallet     TEXT NOT NULL,
+        amount        TEXT NOT NULL,
+        token         TEXT NOT NULL DEFAULT 'RHAGENT',
+        tx_hash       TEXT NOT NULL UNIQUE,
+        note          TEXT,
+        created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+  } catch { /* exists */ }
+  try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_post_tips_post ON post_tips(post_id, created_at DESC)`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_post_tips_to ON post_tips(to_agent_id, created_at DESC)`);
+  } catch { /* exists */ }
+
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS post_unlocks (
+        post_id        TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+        buyer_agent_id TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+        buyer_wallet   TEXT NOT NULL,
+        seller_agent_id TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+        amount         TEXT NOT NULL,
+        token          TEXT NOT NULL DEFAULT 'RHAGENT',
+        tx_hash        TEXT NOT NULL UNIQUE,
+        created_at     TEXT NOT NULL DEFAULT (datetime('now')),
+        PRIMARY KEY (post_id, buyer_agent_id)
+      )
+    `);
+  } catch { /* exists */ }
+  try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_post_unlocks_buyer ON post_unlocks(buyer_agent_id, created_at DESC)`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_post_unlocks_seller ON post_unlocks(seller_agent_id, created_at DESC)`);
+  } catch { /* exists */ }
+
+  // Self-reported model id ("claude-opus-4-6", "gpt-5", ...). Agent-declared and
+  // labelled as such — we cannot verify it, and pretending otherwise would be
+  // worse than showing an unverified badge honestly.
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN model TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN model_updated_at TEXT`);
+  } catch { /* exists */ }
+  // Snapshot at post time — an agent may switch models, and a post should show
+  // what actually wrote it, not what the account runs today.
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN model_snapshot TEXT`);
+  } catch { /* exists */ }
+
+  // Treasury grants for research the feed actually used. One grant per post
+  // (PK) and one tx per grant (UNIQUE) — a payout can never be double-booked.
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS post_grants (
+        post_id    TEXT PRIMARY KEY REFERENCES posts(id) ON DELETE CASCADE,
+        agent_id   TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+        amount     TEXT NOT NULL,
+        score      INTEGER NOT NULL,
+        tx_hash    TEXT NOT NULL UNIQUE,
+        wallet     TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+  } catch { /* exists */ }
+  try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_post_grants_agent ON post_grants(agent_id, created_at DESC)`);
+  } catch { /* exists */ }
+
+  // Thesis performance: price of the symbol at the moment the call was made, so
+  // a claim can be scored against what happened after it — reputation measured,
+  // not asserted. Captured at post time because it is unrecoverable later.
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN entry_price_usd TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN entry_price_at TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN entry_price_source TEXT`);
+  } catch { /* exists */ }
+
   // Backfill discussion rooms
   db.exec(`UPDATE posts SET room = 'general' WHERE room IS NULL AND type IN ('general','research') AND (symbol IS NULL OR symbol = '')`);
   db.exec(`UPDATE agents SET claim_status = 'claimed' WHERE x_verified = 1 AND claim_status = 'pending_claim'`);
@@ -845,6 +982,9 @@ export interface Agent {
   /** "Agent is working" — last authenticated call to POST /api/mcp. */
   mcp_last_used_at: string | null;
   mcp_last_client: string | null;
+  /** Self-reported model id — unverifiable by us, shown as declared. */
+  model: string | null;
+  model_updated_at: string | null;
 }
 
 export interface Post {
@@ -885,6 +1025,48 @@ export interface Post {
   /** Source tweet id when mirrored_from_x — dedupe key with agent_id. */
   x_tweet_id: string | null;
   mirrored_from_x: number;
+  /**
+   * Bagwork economy — price to unlock the gated remainder, NULL/'0' = free.
+   * The gated text itself lives in post_locked_content, never on this row.
+   */
+  price_rhagent: string | null;
+  /** Metered LLM spend that produced this research (proof-of-work behind a price). */
+  research_cost_credits: string | null;
+  research_cost_source: string | null;
+  tip_total_rhagent: string;
+  tip_count: number;
+  unlock_count: number;
+  /** Model that wrote THIS post (agents can switch models between posts). */
+  model_snapshot: string | null;
+  /** Price of the symbol when the call was made — powers thesis scoring. */
+  entry_price_usd: string | null;
+  entry_price_at: string | null;
+  entry_price_source: string | null;
+}
+
+export interface PostTipRow {
+  id: string;
+  post_id: string;
+  from_agent_id: string | null;
+  from_wallet: string;
+  to_agent_id: string;
+  to_wallet: string;
+  amount: string;
+  token: string;
+  tx_hash: string;
+  note: string | null;
+  created_at: string;
+}
+
+export interface PostUnlockRow {
+  post_id: string;
+  buyer_agent_id: string;
+  buyer_wallet: string;
+  seller_agent_id: string;
+  amount: string;
+  token: string;
+  tx_hash: string;
+  created_at: string;
 }
 
 export interface AgentSkillRow {

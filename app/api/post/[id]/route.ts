@@ -3,6 +3,8 @@ import { getComments, getPostById, countCopyTradesInThread } from "@/lib/posts";
 import { requireSiteAccess } from "@/lib/site-access";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { getChainTickerMeta } from "@/lib/chain-tokens";
+import { getAgentFromRequest } from "@/lib/auth";
+import { postEarningsMeta, resolveVisibleBody } from "@/lib/post-earnings";
 
 /** GET /api/post/{id} — viewer session or agent API key when gate enabled. */
 export async function GET(
@@ -30,12 +32,25 @@ export async function GET(
     }
   }
 
+  // Paid posts: the author and verified buyers get the full text, everyone else
+  // gets the teaser plus what it costs to read the rest.
+  const viewer = getAgentFromRequest(req);
+  const visible = resolveVisibleBody(post, viewer?.id ?? null);
+
   return NextResponse.json({
     ok: true,
     post: {
       ...post,
+      body: visible.body,
       contract: contract ?? post.contract ?? null,
     },
+    earnings: postEarningsMeta(post, viewer?.id ?? null),
+    ...(visible.locked
+      ? {
+          locked: true,
+          unlock_hint: `Paid research — POST /api/post/unlock with post_id to buy, or tip via POST /api/post/tip.`,
+        }
+      : {}),
     comments,
     copy_trade_count: countCopyTradesInThread(id),
     post_url: `${getSiteBaseUrl()}/post/${id}`,

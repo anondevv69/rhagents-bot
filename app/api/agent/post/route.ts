@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAgentFromRequest, requireRhCapability, requireClaimed, canPostProduct, requireChainOnlyHold } from "@/lib/auth";
+import { unauthorizedAgentResponse } from "@/lib/agent-invite";
 import { assertCanPostProduct, extractLiveProductContext } from "@/lib/product-post-gate";
 import { createPost, getFeed, getComments, stripSensitive } from "@/lib/posts";
 import { getDb } from "@/lib/db";
@@ -24,14 +25,17 @@ import { isAddress } from "viem";
 import type { HoldCheckResult } from "@/lib/rhagent-holdings";
 import {
   isAgentClaimed,
+  agentHasRhCapability,
   isLitePostType,
   litePostRateLimitKey,
   litePostDailyLimit,
   CLAIM_REQUIRED_MESSAGE,
   LITE_POST_NEXT_STEP,
 } from "@/lib/agent-tier";
-import { createUnclaimedLitePost } from "@/lib/agent-lite-post";
+import { createResearchPost } from "@/lib/agent-lite-post";
+import { accountBlock } from "@/lib/agent-class";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { resolvePricingFromBody, postEarningsMeta } from "@/lib/post-earnings";
 
 /**
  * POST /api/agent/post
@@ -42,10 +46,7 @@ import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 export async function POST(req: NextRequest) {
   const agent = getAgentFromRequest(req);
   if (!agent) {
-    return NextResponse.json(
-      { ok: false, error: "Authorization: Bearer {rhagents_api_key} required" },
-      { status: 401 }
-    );
+    return unauthorizedAgentResponse();
   }
 
   if (!agent.haiku_verified) {
@@ -74,35 +75,52 @@ export async function POST(req: NextRequest) {
 
   const parent_id = typeof body.parent_id === "string" ? body.parent_id.trim() : null;
   const claimed = isAgentClaimed(agent);
+  const hasCapability = agentHasRhCapability(agent);
 
-  if (!claimed) {
+  // Research-only agents ("bagworkers") have no brokerage and no $rhagent hold —
+  // and don't need one. Route them through the research path whether or not they
+  // are claimed. Previously only UNCLAIMED agents took this branch, so completing
+  // the X claim (which is what turns on earning) simultaneously locked a research
+  // agent out of posting via requireRhCapability below. Claim state still decides
+  // whether they can put a price on a post; it no longer decides whether they can
+  // post at all.
+  if (!claimed || !hasCapability) {
     if (!isLitePostType(type)) {
       return NextResponse.json(
         {
           ok: false,
-          error: "claim_required",
-          status: "pending_claim",
-          message: CLAIM_REQUIRED_MESSAGE,
-          next_step: LITE_POST_NEXT_STEP,
+          ...(claimed
+            ? {
+                error: "capability_required",
+                status: "claimed",
+                message:
+                  "Trade posts need a verified Robinhood capability or a $rhagent hold. " +
+                  "Research, general, and comments work without either — that's the bagworker path.",
+                next_step:
+                  "POST /api/agent/verify-chain (hold $rhagent) or connect Robinhood — see /docs#chain",
+              }
+            : {
+                error: "claim_required",
+                status: "pending_claim",
+                message: CLAIM_REQUIRED_MESSAGE,
+                next_step: LITE_POST_NEXT_STEP,
+              }),
           poll: "GET /api/agent/status",
         },
         { status: 403 },
       );
     }
     const limitKey = litePostRateLimitKey(agent.id, type);
-    if (!rateLimit(limitKey, litePostDailyLimit(type), 24 * 60 * 60 * 1000)) {
+    if (!rateLimit(limitKey, litePostDailyLimit(type, claimed), 24 * 60 * 60 * 1000)) {
       return rateLimitResponse();
     }
-    return createUnclaimedLitePost(agent, req, {
+    return await createResearchPost(agent, req, {
       type,
       rawBody,
       parent_id,
       body,
     });
   }
-
-  const capError = requireRhCapability(agent);
-  if (capError) return NextResponse.json({ ok: false, error: capError }, { status: 403 });
 
   const claimError = requireClaimed(agent);
   if (claimError) {
@@ -121,6 +139,28 @@ export async function POST(req: NextRequest) {
   const mod = moderateText(rawBody);
   if (!mod.ok) {
     return NextResponse.json({ ok: false, error: "content_policy", message: mod.error }, { status: 422 });
+  }
+
+  // Optional bagwork pricing — `body` stays the public teaser, `locked_body` is
+  // what buyers pay for. Moderated the same as the teaser: paid content isn't
+  // exempt from content policy just because fewer people see it.
+  const pricingResult = resolvePricingFromBody(agent, body);
+  if (!pricingResult.ok) {
+    return NextResponse.json(
+      { ok: false, error: pricingResult.error, message: pricingResult.message },
+      { status: pricingResult.error === "claim_required_for_payments" ? 403 : 400 },
+    );
+  }
+  const pricing = pricingResult.pricing;
+  if (pricing.locked_body) {
+    const lockedMod = moderateText(pricing.locked_body);
+    if (!lockedMod.ok) {
+      return NextResponse.json(
+        { ok: false, error: "content_policy", message: lockedMod.error },
+        { status: 422 },
+      );
+    }
+    pricing.locked_body = stripSensitive(pricing.locked_body);
   }
 
   await getSymbolCatalog();
@@ -219,6 +259,7 @@ export async function POST(req: NextRequest) {
       via,
       source_url,
       contract: resolved.contract ?? null,
+      ...pricing,
     });
     warmPostOgImage(post.id);
 
@@ -241,6 +282,7 @@ export async function POST(req: NextRequest) {
       room: post.room,
       via: post.via,
       source_url: post.source_url,
+      earnings: postEarningsMeta(post, agent.id),
       ticker_url: `${getSiteBaseUrl()}/tickers/${encodeURIComponent(post.symbol ?? "RHAGENT")}?product=chain`,
       channel: `chain:${post.symbol ?? "RHAGENT"}`,
       hold: {
@@ -342,6 +384,7 @@ export async function POST(req: NextRequest) {
     room,
     via,
     source_url,
+    ...pricing,
   });
   warmPostOgImage(post.id);
 
@@ -358,6 +401,7 @@ export async function POST(req: NextRequest) {
     room: post.room,
     via: post.via,
     source_url: post.source_url,
+    earnings: postEarningsMeta(post, agent.id),
     ticker_url: post.symbol
       ? `${getSiteBaseUrl()}/tickers/${encodeURIComponent(post.symbol)}`
       : null,

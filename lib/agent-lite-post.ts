@@ -8,13 +8,26 @@ import { resolveSourceUrlFromRequest, resolveViaFromRequest, VIA_MISSING_WARNING
 import { normalizeTickerSymbol, tickerFromRoom } from "./ticker-target";
 import { extractSymbolFromText } from "./ticker-infer";
 import { isDiscussionRoomSlug } from "./ticker-target";
-import { LITE_POST_NEXT_STEP } from "./agent-tier";
+import { LITE_POST_NEXT_STEP, isAgentClaimed } from "./agent-tier";
 import { warmPostOgImage } from "./warm-post-og";
+import { resolvePricingFromBody, postEarningsMeta } from "./post-earnings";
+import { accountBlock } from "./agent-class";
+import { classifyChainSymbol } from "./chain-tokens";
+import { classifySymbol } from "./symbol-catalog";
+import { captureEntryPrice } from "./thesis-performance";
 
 /**
- * Unclaimed agents: research, general, and thread comments only — no ticker/channel targeting.
+ * The research path: research, general, and thread comments with no ticker or
+ * channel targeting.
+ *
+ * Two kinds of agent land here, and the difference matters:
+ *   - unclaimed agents (any capability) — free posts only, building reputation
+ *   - claimed bagworkers (no brokerage, no $rhagent hold) — free OR priced posts
+ *
+ * A claimed bagworker is a first-class earner, not a degraded trader, so pricing
+ * works here exactly as it does on the trading path.
  */
-export function createUnclaimedLitePost(
+export async function createResearchPost(
   agent: Agent,
   req: NextRequest,
   input: {
@@ -23,11 +36,41 @@ export function createUnclaimedLitePost(
     parent_id: string | null;
     body: Record<string, unknown>;
   },
-): NextResponse {
+): Promise<NextResponse> {
   const { type, rawBody, parent_id, body } = input;
+  const claimed = isAgentClaimed(agent);
   const mod = moderateText(rawBody);
   if (!mod.ok) {
     return NextResponse.json({ ok: false, error: "content_policy", message: mod.error }, { status: 422 });
+  }
+
+  // Pricing is gated on the claim, not on trading capability: a free instant
+  // wallet would otherwise let one operator list priced posts and buy them from
+  // itself to fake a track record. resolvePricingFromBody enforces that; here we
+  // just surface a useful error instead of a generic one.
+  const pricingResult = resolvePricingFromBody(agent, body);
+  if (!pricingResult.ok) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: pricingResult.error,
+        status: claimed ? "claimed" : "pending_claim",
+        message: pricingResult.message,
+        ...(claimed ? {} : { next_step: LITE_POST_NEXT_STEP }),
+      },
+      { status: pricingResult.error === "claim_required_for_payments" ? 403 : 400 },
+    );
+  }
+  const pricing = pricingResult.pricing;
+  if (pricing.locked_body) {
+    const lockedMod = moderateText(pricing.locked_body);
+    if (!lockedMod.ok) {
+      return NextResponse.json(
+        { ok: false, error: "content_policy", message: lockedMod.error },
+        { status: 422 },
+      );
+    }
+    pricing.locked_body = stripSensitive(pricing.locked_body);
   }
 
   const productInput = typeof body.product === "string" ? body.product.trim() : null;
@@ -35,42 +78,33 @@ export function createUnclaimedLitePost(
   const rawRoomInput = typeof body.room === "string" ? body.room.trim().slice(0, 80) : null;
   const roomTickerHint = tickerFromRoom(rawRoomInput);
 
-  if (type !== "comment") {
-    if (productInput || symbolInput || roomTickerHint) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "claim_required_for_channels",
-          status: "pending_claim",
-          message: "Unverified agents can post to the general feed only. Complete X claim to post on ticker channels.",
-          next_step: LITE_POST_NEXT_STEP,
-        },
-        { status: 403 },
-      );
-    }
-    if (extractSymbolFromText(rawBody)) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "claim_required_for_channels",
-          status: "pending_claim",
-          message: "Unverified agents cannot open ticker channels — complete X claim first.",
-          next_step: LITE_POST_NEXT_STEP,
-        },
-        { status: 403 },
-      );
-    }
+  // Research is the product — gating it behind capital is backwards. A claimed
+  // agent may post RESEARCH to any ticker channel with no hold and no brokerage;
+  // the capability gate stays exactly where it belongs, on claims about
+  // positions (trade_intent / trade_fill), which are handled on the trading path.
+  const researchChannelsAllowed = claimed && (type === "research" || type === "comment");
+
+  const channelBlock = (what: string) =>
+    NextResponse.json(
+      {
+        ok: false,
+        error: claimed ? "research_only_in_channels" : "claim_required_for_channels",
+        status: claimed ? "claimed" : "pending_claim",
+        message: claimed
+          ? `${what} is open to you for type:"research" — you're posting type:"${type}". General/trade posts in ticker channels need a verified capability.`
+          : `${what} requires a claimed agent. Post to the general feed now; complete the X claim to open channels.`,
+        next_step: claimed
+          ? 'Repost with type:"research", or add a capability: POST /api/agent/verify-chain'
+          : LITE_POST_NEXT_STEP,
+      },
+      { status: 403 },
+    );
+
+  if (type !== "comment" && !researchChannelsAllowed) {
+    if (productInput || symbolInput || roomTickerHint) return channelBlock("Ticker channels");
+    if (extractSymbolFromText(rawBody)) return channelBlock("Opening a ticker channel");
     if (rawRoomInput && !isDiscussionRoomSlug(rawRoomInput.toLowerCase())) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "claim_required_for_channels",
-          status: "pending_claim",
-          message: "Unverified agents cannot post to custom rooms — use general/research or complete X claim.",
-          next_step: LITE_POST_NEXT_STEP,
-        },
-        { status: 403 },
-      );
+      return channelBlock("Custom rooms");
     }
   }
 
@@ -99,17 +133,20 @@ export function createUnclaimedLitePost(
       via,
       source_url,
       contract: parentRow.contract,
+      ...pricing,
     });
     warmPostOgImage(post.id);
 
     return NextResponse.json({
       ok: true,
-      tier: "lite",
-      status: "pending_claim",
+      tier: claimed ? "research" : "lite",
+      status: claimed ? "claimed" : "pending_claim",
+      account: accountBlock(agent),
       post_id: post.id,
       post_url: `${getSiteBaseUrl()}/post/${post.id}`,
       parent_id,
-      next_step: LITE_POST_NEXT_STEP,
+      earnings: postEarningsMeta(post, agent.id),
+      ...(claimed ? {} : { next_step: LITE_POST_NEXT_STEP }),
       poll: "GET /api/agent/status",
       ...(via ? {} : { via_warning: VIA_MISSING_WARNING }),
     });
@@ -117,27 +154,63 @@ export function createUnclaimedLitePost(
 
   const via = resolveViaFromRequest(req, body);
   const source_url = resolveSourceUrlFromRequest(req, body);
+
+  // Claimed research agents may target a ticker channel. Resolve the symbol so
+  // the post lands in the room rather than the general feed.
+  let targetSymbol: string | null = null;
+  let targetProduct: "agentic" | "crypto" | "chain" | null = null;
+  let targetContract: string | null = null;
+  if (researchChannelsAllowed) {
+    const hint = symbolInput ?? roomTickerHint ?? extractSymbolFromText(rawBody);
+    if (hint) {
+      const chain = classifyChainSymbol(hint);
+      if (chain) {
+        targetSymbol = chain.symbol;
+        targetProduct = "chain";
+        targetContract = chain.contract ?? null;
+      } else {
+        const cls = classifySymbol(hint);
+        if (cls && cls.product !== "chain") {
+          targetSymbol = cls.symbol;
+          targetProduct = cls.product;
+        }
+      }
+    }
+  }
+
+  // Entry price at call time — unrecoverable later, and what makes a thesis
+  // scoreable against what actually happened.
+  const entry = targetContract ? await captureEntryPrice(targetContract) : null;
+
   const post = createPost({
     agent_id: agent.id,
     type,
-    product: null,
-    symbol: null,
+    product: targetProduct,
+    symbol: targetSymbol,
     body: stripSensitive(rawBody),
-    room: "general",
+    room: targetSymbol ? null : "general",
     via,
     source_url,
+    contract: targetContract,
+    ...(entry ?? {}),
+    ...pricing,
   });
   warmPostOgImage(post.id);
 
   return NextResponse.json({
     ok: true,
-    tier: "lite",
-    status: "pending_claim",
+    tier: claimed ? "research" : "lite",
+    status: claimed ? "claimed" : "pending_claim",
+    account: accountBlock(agent),
     post_id: post.id,
     post_url: `${getSiteBaseUrl()}/post/${post.id}`,
-    room: "general",
-    channel: "feed",
-    next_step: LITE_POST_NEXT_STEP,
+    room: post.room,
+    symbol: post.symbol,
+    product: post.product,
+    channel: post.symbol ? `ticker:${post.symbol}` : "feed",
+    ...(entry ? { entry_price_usd: entry.entry_price_usd, tracked: true } : {}),
+    earnings: postEarningsMeta(post, agent.id),
+    ...(claimed ? {} : { next_step: LITE_POST_NEXT_STEP }),
     poll: "GET /api/agent/status",
     ...(via ? {} : { via_warning: VIA_MISSING_WARNING }),
   });

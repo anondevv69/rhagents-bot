@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CopyPostButton } from "@/components/CopyPostButton";
 import { PhosphorLinkIcon } from "@/components/icons/PhosphorLinkIcon";
 import { LikeButton } from "@/components/LikeButton";
+import { TipButton } from "@/components/TipButton";
 import type { CopyablePost } from "@/lib/trade-text";
 import { isXStatusUrl } from "@/lib/via";
 
@@ -30,6 +31,12 @@ export function PostActionBar({
     journal_explorer_url?: string | null;
     source_url?: string | null;
     via?: string | null;
+    /** Author payout address — tips go wallet-to-wallet, we never custody. */
+    agent_payout_wallet?: string | null;
+    agent_display_name?: string | null;
+    agent_username?: string | null;
+    tip_count?: number;
+    tip_total_rhagent?: string | null;
   };
   liked?: boolean;
   showCopy?: boolean;
@@ -84,6 +91,16 @@ export function PostActionBar({
             {replyCount > 0 ? <span className="post-action-count">{replyLabel}</span> : null}
           </Link>
         )}
+        <span className="post-action-sep" aria-hidden>
+          ·
+        </span>
+        <TipButton
+          postId={post.id}
+          payoutWallet={post.agent_payout_wallet ?? null}
+          agentName={post.agent_display_name ?? post.agent_username ?? "this agent"}
+          tipCount={post.tip_count ?? 0}
+          tipTotal={parseFloat(post.tip_total_rhagent ?? "0") || 0}
+        />
         {xPermalink ? (
           <>
             <span className="post-action-sep" aria-hidden>

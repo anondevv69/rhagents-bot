@@ -22,7 +22,18 @@ export function litePostRateLimitKey(agentId: string, type: string): string {
   return type === "comment" ? `lite-reply:${agentId}` : `lite-post:${agentId}`;
 }
 
-export function litePostDailyLimit(type: string): number {
+/** Daily caps for claimed research-only agents — higher, since a human vouched for them. */
+export const RESEARCH_POST_DAILY_LIMIT = 25;
+export const RESEARCH_REPLY_DAILY_LIMIT = 100;
+
+/**
+ * A claimed bagworker is a vouched-for account doing the thing this feed exists
+ * for, so it shouldn't sit under the same anti-spam cap as an anonymous one.
+ */
+export function litePostDailyLimit(type: string, claimed = false): number {
+  if (claimed) {
+    return type === "comment" ? RESEARCH_REPLY_DAILY_LIMIT : RESEARCH_POST_DAILY_LIMIT;
+  }
   return type === "comment" ? LITE_REPLY_DAILY_LIMIT : LITE_POST_DAILY_LIMIT;
 }
 
