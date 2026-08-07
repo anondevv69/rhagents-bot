@@ -75,6 +75,10 @@
   --path-chain: #5eead4;
   --path-brokerage: #fb923c;
   --path-agent: #a78bfa;
+  /* Category hues — used by docs badges to distinguish credential types. */
+  --hue-amber: #fcd34d;
+  --hue-violet: #c4b5fd;
+  --hue-pink: #f9a8d4;
 
   --sidebar-width: 240px;
   --layout-gutter: 32px;
@@ -165,6 +169,9 @@
 
 [data-theme="light"] {
   color-scheme: light;
+  --hue-amber: #b45309;
+  --hue-violet: #6d28d9;
+  --hue-pink: #be185d;
   --path-chain: #0d9488;
   --path-brokerage: #c2620f;
   --path-agent: #6d5bd0;
@@ -223,6 +230,9 @@
    ══════════════════════════════════════════════════════════════════════════ */
 [data-theme="paper"] {
   color-scheme: light;
+  --hue-amber: #8A5A1B;
+  --hue-violet: #5B4CA8;
+  --hue-pink: #A03A63;
   --path-chain: #1B6B66;
   --path-brokerage: #B5761F;
   --path-agent: #5B4CA8;
@@ -2883,8 +2893,8 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   width: 100%;
   margin: 0;
   overflow: hidden;
-  padding: 32px 20px calc(28px + var(--token-footer-height) + env(safe-area-inset-bottom, 0px));
-  background-color: #111111;
+  padding: var(--space-8) var(--space-5) calc(var(--space-7) + var(--token-footer-height) + env(safe-area-inset-bottom, 0px));
+  background-color: var(--bg);
 }
 
 .landing-hero-bg {
@@ -3182,7 +3192,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 .landing-card--cta .landing-card-text {
   font-size: var(--text-sm);
   line-height: 1.6;
-  color: #444444;
+  color: var(--muted);
   margin-bottom: var(--space-4);
 }
 
@@ -3198,8 +3208,8 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: var(--text-caption);
   line-height: 1.55;
-  color: #111111;
-  background: #F3F3F3;
+  color: var(--text);
+  background: var(--surface-2);
   border-radius: var(--radius-lg);
   padding: var(--space-3-5) var(--space-4);
   word-break: break-word;
@@ -3218,7 +3228,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #888888;
+  color: var(--muted-faint);
   margin-bottom: 0;
 }
 
@@ -3229,20 +3239,20 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 .landing-card-foot {
   font-size: var(--text-caption);
   line-height: 1.55;
-  color: #666666;
+  color: var(--muted);
   margin: 0;
 }
 
 .landing-card--empty {
   text-align: center;
   font-size: var(--text-sm);
-  color: #444444;
+  color: var(--muted);
 }
 
 .landing-card--onboard .btn-copy {
-  color: #111111;
-  border-color: #DDDDDD;
-  background: #F5F5F5;
+  color: var(--text);
+  border-color: var(--border);
+  background: var(--surface-2);
 }
 
 .landing-stats {
@@ -3274,7 +3284,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 
 .landing-stat-label {
   font-size: var(--text-caption);
-  color: #888888;
+  color: var(--muted-faint);
   text-transform: lowercase;
 }
 
@@ -3904,14 +3914,14 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 }
 
 .bankr-pro-steps .bankr-pro-step-done {
-  color: var(--success, #2f9e63);
+  color: var(--success);
 }
 
 .bankr-pro-active {
   padding: var(--space-3) var(--space-3-5);
   border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--success, #2f9e63) 10%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--success, #2f9e63) 25%, var(--border-soft));
+  background: color-mix(in srgb, var(--success) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--success) 25%, var(--border-soft));
   font-size: var(--text-sm);
 }
 
@@ -3924,7 +3934,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 }
 
 .post-action-btn--endorse {
-  color: var(--success, #2f9e63);
+  color: var(--success);
 }
 
 .btn-sm {
@@ -4239,9 +4249,9 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 }
 
 .docs-auth-badge--public {
-  color: #86efac;
-  border-color: #166534;
-  background: rgba(22, 101, 52, 0.15);
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 45%, var(--border-soft));
+  background: color-mix(in srgb, var(--success) 12%, var(--surface));
 }
 
 .docs-auth-badge--gated {
@@ -4251,21 +4261,21 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 }
 
 .docs-auth-badge--bearer {
-  color: #fcd34d;
-  border-color: #92400e;
-  background: rgba(146, 64, 14, 0.15);
+  color: var(--hue-amber);
+  border-color: color-mix(in srgb, var(--hue-amber) 45%, var(--border-soft));
+  background: color-mix(in srgb, var(--hue-amber) 12%, var(--surface));
 }
 
 .docs-auth-badge--viewer {
-  color: #c4b5fd;
-  border-color: #5b21b6;
-  background: rgba(91, 33, 182, 0.15);
+  color: var(--hue-violet);
+  border-color: color-mix(in srgb, var(--hue-violet) 45%, var(--border-soft));
+  background: color-mix(in srgb, var(--hue-violet) 12%, var(--surface));
 }
 
 .docs-auth-badge--session {
-  color: #f9a8d4;
-  border-color: #9d174d;
-  background: rgba(157, 23, 77, 0.15);
+  color: var(--hue-pink);
+  border-color: color-mix(in srgb, var(--hue-pink) 45%, var(--border-soft));
+  background: color-mix(in srgb, var(--hue-pink) 12%, var(--surface));
 }
 
 .text-link {
@@ -4614,7 +4624,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   right: 3px;
   width: 13px;
   height: 13px;
-  background: #22c55e;
+  background: var(--success);
   border-radius: 50%;
   border: 2px solid var(--surface);
   box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.4);
@@ -4636,7 +4646,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   align-items: center;
   font-size: var(--text-caption);
   font-weight: 600;
-  color: #22c55e;
+  color: var(--success);
   letter-spacing: 0.03em;
   margin-left: var(--space-2);
 }
@@ -6774,7 +6784,7 @@ a.post-via--link:hover {
 }
 
 .setup-privacy-link a {
-  color: var(--accent-blue, #3b82f6);
+  color: var(--accent-blue);
 }
 
 .setup-progress {
@@ -6799,7 +6809,7 @@ a.post-via--link:hover {
 
 .setup-progress-item--active {
   color: var(--text);
-  border-color: var(--accent-blue, #3b82f6);
+  border-color: var(--accent-blue);
 }
 
 .setup-progress-item--done {
@@ -6848,7 +6858,7 @@ a.post-via--link:hover {
 }
 
 .setup-agent-card:hover {
-  border-color: var(--accent-blue, #3b82f6);
+  border-color: var(--accent-blue);
 }
 
 .setup-agent-card strong {
@@ -6866,7 +6876,7 @@ a.post-via--link:hover {
   margin-top: var(--space-3);
   background: none;
   border: none;
-  color: var(--accent-blue, #3b82f6);
+  color: var(--accent-blue);
   font-size: var(--text-sm);
   cursor: pointer;
   padding: 0;
@@ -6924,8 +6934,8 @@ a.post-via--link:hover {
 }
 
 .setup-verify-card--active {
-  border-color: var(--accent-blue, #3b82f6);
-  background: color-mix(in srgb, var(--accent-blue, #3b82f6) 8%, var(--surface));
+  border-color: var(--accent-blue);
+  background: color-mix(in srgb, var(--accent-blue) 8%, var(--surface));
 }
 
 .setup-verify-card strong {
@@ -7308,7 +7318,7 @@ a.post-via--link:hover {
 }
 
 .onboarding-wizard-progress-seg.is-active {
-  background: var(--accent, #c8ff00);
+  background: var(--accent);
 }
 
 .onboarding-wizard-nav {
@@ -7329,7 +7339,7 @@ a.post-via--link:hover {
 
 .onboarding-wizard-checklist li::before {
   content: "✓ ";
-  color: var(--accent, #c8ff00);
+  color: var(--accent);
 }
 
 .onboarding-wizard-connect-list {
@@ -7636,7 +7646,7 @@ a.post-via--link:hover {
 
 .trading-dash-toast.is-error {
   border-color: rgba(255, 80, 80, 0.5);
-  color: #ffb4b4;
+  color: var(--danger);
 }
 
 .muted {
@@ -9167,7 +9177,7 @@ a.post-via--link:hover {
 }
 
 .docs-path-card-tag--provided {
-  color: #93c5fd;
+  color: var(--accent-blue);
   border-color: rgba(99, 179, 237, 0.4);
   background: rgba(99, 179, 237, 0.08);
 }
