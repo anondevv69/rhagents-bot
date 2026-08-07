@@ -266,6 +266,7 @@ export async function recordTip(opts: {
   amount: number;
   tx_hash: string;
   note?: string | null;
+  tip_trigger?: string | null;
 }): Promise<RecordResult | RecordFail> {
   const { post, author, tipper } = opts;
 
@@ -274,6 +275,27 @@ export async function recordTip(opts: {
   }
   const gate = canTransactMoney(tipper);
   if (!gate.ok) return { ok: false, status: 403, error: gate.error, message: gate.message };
+
+  const trigger =
+    typeof opts.tip_trigger === "string" && opts.tip_trigger.trim()
+      ? opts.tip_trigger.trim().slice(0, 40)
+      : null;
+
+  if (trigger) {
+    const dup = getDb()
+      .prepare(
+        `SELECT id FROM post_tips WHERE from_agent_id = ? AND post_id = ? AND tip_trigger = ?`,
+      )
+      .get(tipper.id, post.id, trigger);
+    if (dup) {
+      return {
+        ok: false,
+        status: 409,
+        error: "already_tipped_for_trigger",
+        message: `You already tipped this post for ${trigger}.`,
+      };
+    }
+  }
 
   const toWallet = payoutWalletFor(author);
   if (!toWallet) {
@@ -308,8 +330,8 @@ export async function recordTip(opts: {
   const db = getDb();
   try {
     db.prepare(
-      `INSERT INTO post_tips (id, post_id, from_agent_id, from_wallet, to_agent_id, to_wallet, amount, token, tx_hash, note)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO post_tips (id, post_id, from_agent_id, from_wallet, to_agent_id, to_wallet, amount, token, tx_hash, note, tip_trigger)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       newId("tip"),
       post.id,
@@ -321,6 +343,7 @@ export async function recordTip(opts: {
       RHAGENT_TOKEN_SYMBOL,
       verified.tx_hash.toLowerCase(),
       opts.note?.slice(0, 280) ?? null,
+      trigger,
     );
   } catch (e) {
     // UNIQUE(tx_hash) — the same transfer was already credited somewhere.
@@ -584,6 +607,8 @@ export function postEarningsMeta(post: Post, viewerAgentId: string | null) {
     research_cost_credits: post.research_cost_credits ?? null,
     research_cost_source: post.research_cost_source ?? null,
     tip_endpoint: "POST /api/post/tip",
+    auto_tip_suggest: "GET /api/post/tip/suggest?post_id=…",
+    auto_tip_execute: "POST /api/post/auto-tip",
     unlock_endpoint: paywalled ? "POST /api/post/unlock" : null,
     rewards: impact
       ? {

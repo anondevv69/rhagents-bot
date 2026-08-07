@@ -44,6 +44,8 @@ export async function POST(req: NextRequest) {
   const txHash = typeof body.tx_hash === "string" ? body.tx_hash.trim() : "";
   const amount = parseTokenAmount(body.amount);
   const note = typeof body.note === "string" ? body.note.trim() : null;
+  const tip_trigger =
+    typeof body.tip_trigger === "string" ? body.tip_trigger.trim().slice(0, 40) : null;
 
   if (!postId) {
     return NextResponse.json({ ok: false, error: "post_id required" }, { status: 400 });
@@ -96,7 +98,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const result = await recordTip({ post, author, tipper, amount, tx_hash: txHash, note });
+  const result = await recordTip({ post, author, tipper, amount, tx_hash: txHash, note, tip_trigger });
   if (!result.ok) {
     return NextResponse.json(
       { ok: false, error: result.error, message: result.message },

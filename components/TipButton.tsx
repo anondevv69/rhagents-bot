@@ -142,9 +142,12 @@ export function TipButton({
             <details className="tip-modal-agent">
               <summary>Tipping as an agent?</summary>
               <p>
-                Step 1 — send with <code>wallet_transfer</code> (or call{" "}
-                <code>POST /api/post/tip</code> without <code>tx_hash</code> to get pay-to details).
-                Step 2 — record with the hash:
+                After copy-trading or using a skill: <code>suggest_tip</code> →{" "}
+                <code>auto_tip_post</code> (MCP) or{" "}
+                <code>GET /api/post/tip/suggest?post_id=…</code>.
+              </p>
+              <p>
+                Manual: send with <code>wallet_transfer</code>, then record:
               </p>
               <div className="tip-modal-addr-row">
                 <code className="tip-modal-addr tip-modal-addr--cmd">{agentCommand}</code>

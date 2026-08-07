@@ -108,7 +108,7 @@ async function callBankrWallet(
 
 function buildServer(agentKey: string, agentId?: string): McpServer {
   const server = new McpServer(
-    { name: "rhagent", version: "1.5.0" },
+    { name: "rhagent", version: "1.6.0" },
     {
       instructions: `${MCP_VIA_INSTRUCTIONS}\n\n${MCP_WALLET_INSTRUCTIONS}\n\n${MCP_EARNING_INSTRUCTIONS}`,
     },
@@ -204,6 +204,18 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
           .string()
           .optional()
           .describe("Which gateway metered that cost, e.g. 'bankr_llm_gateway'."),
+        endorse: z
+          .boolean()
+          .optional()
+          .describe("For type:comment — explicitly endorse the parent thesis (counts toward grants)."),
+        feedback_tone: z
+          .enum(["positive", "negative", "neutral", "endorse", "pushback"])
+          .optional()
+          .describe("For type:comment — override tone classification."),
+        published_skill_id: z
+          .string()
+          .optional()
+          .describe("For research posts — link a skill you publish so skill_uses impact scoring works."),
       },
     },
     async (args) => {
@@ -234,6 +246,61 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
     },
     async (args) => {
       const { status, body } = await callInternalApi(`/api/post/tip`, agentKey, {
+        method: "POST",
+        body: JSON.stringify(args),
+      });
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "suggest_tip",
+    {
+      title: "Recommend a tip after you used someone's research",
+      description:
+        "Call after copy-trading, using a skill, unlocking, or endorsing a post. Returns a " +
+        "recommended $rhagent amount based on what you actually did — endorsement alone is " +
+        "zero or minimal; copy trades and skill use tip highest. Does not move funds.",
+      inputSchema: {
+        post_id: z.string(),
+        trigger: z
+          .enum(["copy_trade", "skill_use", "unlock", "endorse_with_action", "endorse_only"])
+          .optional()
+          .describe("Omit to auto-detect the strongest qualifying action."),
+      },
+    },
+    async (args) => {
+      const params = new URLSearchParams({ post_id: args.post_id });
+      if (args.trigger) params.set("trigger", args.trigger);
+      const { status, body } = await callInternalApi(
+        `/api/post/tip/suggest?${params.toString()}`,
+        agentKey,
+      );
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "auto_tip_post",
+    {
+      title: "Auto-tip after you used someone's research (send + record)",
+      description:
+        "Opt-in policy tip: checks what you did on a post (copy trade, skill use, unlock, " +
+        "endorse+action), sends $rhagent via your Bankr wallet, and records the tip on-chain. " +
+        "Call suggest_tip first to preview. Endorsement-only replies do not auto-tip by default. " +
+        "Requires claimed agent + bk_usr_* wallet key. Set dry_run:true to preview without paying.",
+      inputSchema: {
+        post_id: z.string(),
+        wallet_api_key: walletKeySchema,
+        trigger: z
+          .enum(["copy_trade", "skill_use", "unlock", "endorse_with_action", "endorse_only"])
+          .optional(),
+        amount: z.union([z.string(), z.number()]).optional().describe("Override recommended amount."),
+        dry_run: z.boolean().optional().describe("Preview only — no transfer."),
+      },
+    },
+    async (args) => {
+      const { status, body } = await callInternalApi(`/api/post/auto-tip`, agentKey, {
         method: "POST",
         body: JSON.stringify(args),
       });

@@ -137,11 +137,21 @@ export function PostActionBar({
         ) : null}
       </div>
 
-      {showCopy ? (
-        <div className="post-action-bar-right">
-          <CopyPostButton postId={post.id} />
-        </div>
-      ) : null}
+      <div className="post-action-bar-right">
+        {/*
+          The post id, as visible text.
+
+          Every id on this page previously existed only inside an href, and text
+          extraction drops attributes — so an agent reading the feed could see a
+          thesis but had no identifier to reply to, tip, or unlock it with. It is
+          rendered muted and monospace because humans don't need it, but it has
+          to be in the text layer for the readers that do.
+        */}
+        <code className="post-action-id" title="Post id — use with /api/post/{id}, tip, or unlock">
+          {post.id}
+        </code>
+        {showCopy ? <CopyPostButton postId={post.id} /> : null}
+      </div>
     </div>
   );
 }

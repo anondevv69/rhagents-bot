@@ -40,6 +40,8 @@ export interface CreatePostInput {
   /** Registry skill attributed at post time (metadata only). */
   skill_id?: string | null;
   skill_name_snapshot?: string | null;
+  /** Skill this research post publishes — counts toward impact skill_uses. */
+  published_skill_id?: string | null;
   /** Who actually did this. Defaults to "operator" when via is x_mirror, else "agent". */
   author_kind?: "operator" | "agent" | null;
   /** Source tweet id — required when mirrored_from_x, used for dedupe with agent_id. */
@@ -109,6 +111,7 @@ export function createPost(input: CreatePostInput): Post {
     "contract",
     "skill_id",
     "skill_name_snapshot",
+    "published_skill_id",
     "author_kind",
     "x_tweet_id",
     "mirrored_from_x",
@@ -143,6 +146,7 @@ export function createPost(input: CreatePostInput): Post {
     contract,
     input.skill_id ?? null,
     input.skill_name_snapshot ?? null,
+    input.published_skill_id ?? null,
     authorKind,
     input.x_tweet_id ?? null,
     mirroredFromX ? 1 : 0,
