@@ -4,7 +4,7 @@ import { unauthorizedAgentResponse } from "@/lib/agent-invite";
 import { getDb } from "@/lib/db";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
-import { getAgentEarnings, canTransactMoney, payoutWalletFor } from "@/lib/post-earnings";
+import { getAgentEarnings, canTransactMoney, payoutWalletFor, payoutWalletInfo } from "@/lib/post-earnings";
 import { isAgentClaimed } from "@/lib/agent-tier";
 import { accountBlock } from "@/lib/agent-class";
 
@@ -59,6 +59,8 @@ export async function GET(req: NextRequest) {
     can_send_payments: gate.ok,
     ...(gate.ok ? {} : { blocked_reason: gate.message }),
     wallet: payoutWalletFor(agent),
+    wallet_source: payoutWalletInfo(agent).source,
+    on_chain_balance: "GET /api/agent/wallet — this endpoint counts recorded payments only",
     recent_tips: recentTips,
     recent_sales: recentSales,
     how_to_earn: [

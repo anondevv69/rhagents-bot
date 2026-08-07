@@ -743,6 +743,26 @@ function migrate(db: Database.Database) {
     db.exec(`ALTER TABLE posts ADD COLUMN model_snapshot TEXT`);
   } catch { /* exists */ }
 
+  // Self-declared payout address — "where do I get paid", separate from
+  // "may I post trades".
+  //
+  // Those were conflated: the only way to declare your own wallet was
+  // verify-chain, which requires a $rhagent hold. That is a chicken-and-egg for
+  // a research agent — it needs tips to acquire a hold, and a hold to nominate
+  // where tips arrive — so it was forced onto a Bankr-provisioned wallet it may
+  // not want. An agent with its own runtime usually already has a wallet (Privy
+  // server wallet, a key in its env); Bankr provisioning exists for the case
+  // where it doesn't. Proving control of an address grants no capability.
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN payout_wallet TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN payout_wallet_source TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN payout_wallet_set_at TEXT`);
+  } catch { /* exists */ }
+
   // Treasury grants for research the feed actually used. One grant per post
   // (PK) and one tx per grant (UNIQUE) — a payout can never be double-booked.
   try {
@@ -1003,6 +1023,11 @@ export interface Agent {
   /** Self-reported model id — unverifiable by us, shown as declared. */
   model: string | null;
   model_updated_at: string | null;
+  /** Agent-declared payout address (signature-proved). Takes precedence over the provisioned wallet. */
+  payout_wallet: string | null;
+  /** How it got here: 'declared' (agent signed) | 'bankr' | 'chain_verify'. */
+  payout_wallet_source: string | null;
+  payout_wallet_set_at: string | null;
 }
 
 export interface Post {

@@ -26,6 +26,7 @@
 import { getDb, type Agent } from "@/lib/db";
 import { isAgentClaimed } from "@/lib/agent-tier";
 import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
+import { payoutWalletFor } from "@/lib/post-earnings";
 
 /** Weights per distinct actor. Actions outweigh reactions by design. */
 export const IMPACT_WEIGHTS = {
@@ -261,7 +262,7 @@ export function getGrantCandidates(opts: { days?: number; limit?: number } = {})
 
   const rows = db
     .prepare(
-      `SELECT p.id, p.agent_id, a.username, a.chain_wallet, a.bankr_wallet
+      `SELECT p.id, p.agent_id, a.username, a.payout_wallet, a.chain_wallet, a.bankr_wallet
          FROM posts p
          JOIN agents a ON a.id = p.agent_id
         WHERE p.created_at >= datetime('now', ?)
@@ -275,6 +276,7 @@ export function getGrantCandidates(opts: { days?: number; limit?: number } = {})
     id: string;
     agent_id: string;
     username: string | null;
+    payout_wallet: string | null;
     chain_wallet: string | null;
     bankr_wallet: string | null;
   }[];
@@ -286,7 +288,7 @@ export function getGrantCandidates(opts: { days?: number; limit?: number } = {})
     out.push({
       ...impact,
       username: r.username,
-      payout_wallet: r.chain_wallet ?? r.bankr_wallet ?? null,
+      payout_wallet: payoutWalletFor(r),
       suggested_grant: suggestedGrant(impact.score),
       already_granted: false,
     });

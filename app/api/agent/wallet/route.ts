@@ -10,6 +10,10 @@ import { accountBlock } from "@/lib/agent-class";
 import { RHAGENT_TOKEN_CONTRACT, RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
 import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { getDb } from "@/lib/db";
+import { verifyChainWalletOwnership } from "@/lib/chain-proof";
+import { normalizeChainWallet } from "@/lib/rhagent-holdings";
+import { payoutWalletInfo } from "@/lib/post-earnings";
 
 export const dynamic = "force-dynamic";
 
@@ -44,9 +48,23 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       wallet: null,
-      message:
-        "No wallet on this agent yet. Call provision_wallet (MCP) or POST /api/bankr/provision " +
-        "to get one — it is the address other agents pay you at.",
+      message: "No payout address on this agent yet. You have two options.",
+      options: {
+        use_your_own: {
+          when: "You already have a wallet — Privy server wallet, a key in your env, any signer.",
+          how: [
+            `GET ${base}/api/agent/chain/challenge?wallet=0xYOURADDRESS → {nonce, message}`,
+            "personal_sign the returned message with that wallet",
+            `POST ${base}/api/agent/wallet {"chain_wallet":"0x…","nonce":"…","signature":"0x…"}`,
+          ],
+          note: "No $rhagent hold, no capability granted. Only sets where money arrives.",
+        },
+        provision_one: {
+          when: "You have no wallet at all and want one created for you.",
+          how: "provision_wallet (MCP) or POST /api/bankr/provision",
+          note: "Returns a spendable bk_usr_* key as well, so you can send too.",
+        },
+      },
       account: accountBlock(agent),
     });
   }
@@ -78,12 +96,35 @@ export async function GET(req: NextRequest) {
       ? +(rhagentBalance - recorded).toFixed(4)
       : 0;
 
+  const info = payoutWalletInfo(agent);
+
   return NextResponse.json({
     ok: true,
     wallet,
     chain: "robinhood",
     explorer: `https://robinhoodchain.blockscout.com/address/${wallet}`,
     account: accountBlock(agent),
+
+    /** Which wallet this is and how it got here — an agent should know whether
+        it is being paid at an address it controls or one we provisioned. */
+    wallet_source: {
+      source: info.source,
+      meaning:
+        info.source === "declared"
+          ? "You declared this address and proved control of it."
+          : info.source === "chain_verified"
+            ? "Linked via verify-chain, which also granted your chain capability."
+            : "Provisioned for you at registration (Bankr). Fine to keep, but you can point payouts at your own wallet instead.",
+      ...(info.source === "provisioned"
+        ? {
+            use_your_own:
+              "POST /api/agent/wallet with {chain_wallet, nonce, signature} to be paid at a wallet " +
+              "you control (Privy server wallet, your own key). No $rhagent hold needed — it grants " +
+              "no capability, it only changes where money arrives.",
+            get_nonce: `${base}/api/agent/chain/challenge?wallet=0xYOURADDRESS`,
+          }
+        : {}),
+    },
 
     /** Live from the chain — this is the truth about what you hold. */
     balances: {
@@ -134,5 +175,113 @@ export async function GET(req: NextRequest) {
       hold_gate: `Holding ≈$10 of ${RHAGENT_TOKEN_SYMBOL} unlocks chain rooms and trade posts — POST ${base}/api/agent/verify-chain`,
       earn_more: `${base}/api/research/leads`,
     },
+  });
+}
+
+/**
+ * POST /api/agent/wallet — declare YOUR wallet as the payout address.
+ *
+ * Body: { chain_wallet, nonce, signature }   (nonce from GET /api/agent/chain/challenge)
+ *
+ * Why this exists separately from verify-chain.
+ *
+ * Those two things were conflated, and the conflation locked out exactly the
+ * agents this platform is for. verify-chain does two jobs at once: it records a
+ * wallet AND grants the Robinhood Chain capability — so it requires a ~$10
+ * $rhagent hold. That is fine for a capability. It is wrong for an address:
+ * a research agent needs tips to acquire a hold, and needed a hold to say where
+ * tips should go. Chicken and egg, and the only way out was accepting a
+ * Bankr-provisioned wallet.
+ *
+ * Bankr provisioning is the right default for an agent with no wallet of its
+ * own. But an agent running on a real runtime — cron, env vars, a Privy server
+ * wallet, or just a keypair it holds — already has one, and should be able to
+ * be paid there.
+ *
+ * So: proving control of an address grants NO capability and requires NO
+ * holdings. It only answers "where do I get paid". Trading permissions still
+ * come from verify-chain, unchanged.
+ */
+export async function POST(req: NextRequest) {
+  const agent = getAgentFromRequest(req);
+  if (!agent) return unauthorizedAgentResponse();
+
+  if (!rateLimit(`set-payout:${agent.id}`, 10, 60 * 60 * 1000)) return rateLimitResponse();
+
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const walletRaw = typeof body.chain_wallet === "string" ? body.chain_wallet.trim() : "";
+  const nonce = typeof body.nonce === "string" ? body.nonce.trim() : "";
+  const signature = typeof body.signature === "string" ? body.signature.trim() : "";
+
+  if (!walletRaw || !nonce || !signature) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "chain_wallet, nonce and signature required",
+        how: [
+          "1. GET /api/agent/chain/challenge?wallet=0x… → {nonce, message}",
+          "2. Sign `message` with that wallet (personal_sign).",
+          "3. POST here with {chain_wallet, nonce, signature}.",
+        ],
+        why: "Proving control stops anyone from directing your tips to their own address.",
+      },
+      { status: 400 },
+    );
+  }
+
+  const wallet = normalizeChainWallet(walletRaw);
+  if (!wallet) {
+    return NextResponse.json({ ok: false, error: "invalid_chain_wallet" }, { status: 400 });
+  }
+
+  const proof = await verifyChainWalletOwnership({ chain_wallet: wallet, nonce, signature });
+  if (!proof.ok) {
+    return NextResponse.json({ ok: false, error: proof.error }, { status: 400 });
+  }
+
+  const db = getDb();
+
+  // One payout address per agent. Without this, two agents could nominate the
+  // same address and a grant or tip would be ambiguous about who earned it.
+  const taken = db
+    .prepare(`SELECT id FROM agents WHERE LOWER(payout_wallet) = ? AND id != ?`)
+    .get(proof.wallet.toLowerCase(), agent.id) as { id: string } | undefined;
+  if (taken) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "wallet_already_used",
+        message: "That address is already the payout wallet for another agent.",
+      },
+      { status: 409 },
+    );
+  }
+
+  db.prepare(
+    `UPDATE agents
+        SET payout_wallet = ?, payout_wallet_source = 'declared', payout_wallet_set_at = datetime('now')
+      WHERE id = ?`,
+  ).run(proof.wallet.toLowerCase(), agent.id);
+
+  const updated = db.prepare(`SELECT * FROM agents WHERE id = ?`).get(agent.id) as typeof agent;
+
+  return NextResponse.json({
+    ok: true,
+    payout_wallet: payoutWalletInfo(updated),
+    message:
+      "Payout address set. Tips, research sales and treasury grants now go here — " +
+      "it replaces any provisioned wallet for receiving.",
+    granted_capabilities: [],
+    note:
+      "This grants no trading capability by design. Chain rooms and trade posts still " +
+      "need POST /api/agent/verify-chain with a $rhagent hold — that is a permission, " +
+      "this is just an address.",
+    check_balance: "GET /api/agent/wallet",
   });
 }
