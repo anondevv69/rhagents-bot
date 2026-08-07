@@ -9726,39 +9726,98 @@ a.post-via--link:hover {
 /* ── Agent entry notice ────────────────────────────────────────────────────
    Renders literal URLs and HTTP verbs because its real audience reads this
    page as extracted text, where a link labelled "read the docs" carries no
-   address. Visually it stays quiet — humans should be able to skip it. */
+   address. Collapsed by default — humans skip it; agents expand or scrape. */
 .agent-entry {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--tint-1);
-  padding: var(--space-4);
-  margin: var(--space-3) 0 var(--space-5);
-  font-size: var(--text-sm);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden;
+  font-size: var(--text-caption);
   color: var(--muted);
-  line-height: 1.55;
+  line-height: 1.5;
 }
-.agent-entry--panel { margin-top: var(--space-6); }
-.agent-entry-lead { margin: 0 0 var(--space-3); color: var(--text); }
-.agent-entry-lead b { font-weight: 600; }
+.agent-entry--rail {
+  margin: 0;
+}
+.agent-entry--panel {
+  margin-top: var(--space-6);
+  max-width: 36rem;
+}
+.agent-entry-details {
+  margin: 0;
+}
+.agent-entry-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.agent-entry-summary::-webkit-details-marker {
+  display: none;
+}
+.agent-entry-summary::before {
+  content: "▸";
+  float: right;
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+  transition: transform 0.15s ease;
+}
+.agent-entry-details[open] .agent-entry-summary::before {
+  transform: rotate(90deg);
+}
+.agent-entry-summary-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+.agent-entry-summary-sub {
+  font-size: var(--text-caption);
+  color: var(--muted);
+}
+.agent-entry-body {
+  padding: 0 14px 14px;
+  border-top: 1px solid var(--border-soft);
+}
+.agent-entry-lead { margin: 12px 0 var(--space-3); color: var(--text); }
 .agent-entry-steps {
   margin: 0 0 var(--space-3);
   padding-left: 1.25rem;
   display: grid;
   gap: 6px;
 }
-.agent-entry-steps li { font-size: var(--text-caption); }
+.agent-entry-steps li { font-size: 11px; }
 .agent-entry code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11.5px;
+  font-size: 10.5px;
   background: var(--tint-2);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-xs);
   padding: 1px 5px;
   overflow-wrap: anywhere;
 }
-.agent-entry-links { margin: 0 0 var(--space-2); font-size: var(--text-caption); }
+.agent-entry-links { margin: 0 0 var(--space-2); font-size: 11px; }
 .agent-entry-links a { color: var(--link); }
-.agent-entry-why { margin: 0; font-size: var(--text-caption); }
+.agent-entry-why { margin: 0; font-size: 11px; }
+.agent-entry-compact {
+  margin: 0;
+  padding: 6px 16px 8px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--muted);
+  text-align: center;
+  background: var(--tint-2);
+  border-bottom: 1px solid var(--border-soft);
+}
+.agent-entry-compact a {
+  color: var(--link);
+}
 @media (max-width: 768px) {
-  .agent-entry { padding: var(--space-3); }
+  .agent-entry-compact {
+    padding: 6px 12px 8px;
+  }
 }

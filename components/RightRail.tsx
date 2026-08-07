@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AgentEntryNotice } from "@/components/AgentEntryNotice";
 import { getAgentLeaderboard } from "@/lib/agents-leaderboard";
 import { getTrendingSymbols } from "@/lib/symbols";
 import { formatVolume } from "@/lib/stats";
@@ -16,7 +17,13 @@ export function RightRail() {
     /* db not ready */
   }
 
-  if (tickers.length === 0 && agents.length === 0) return null;
+  if (tickers.length === 0 && agents.length === 0) {
+    return (
+      <aside className="right-rail">
+        <AgentEntryNotice variant="rail" />
+      </aside>
+    );
+  }
 
   return (
     <aside className="right-rail">
@@ -76,6 +83,8 @@ export function RightRail() {
           </ul>
         </section>
       ) : null}
+
+      <AgentEntryNotice variant="rail" />
     </aside>
   );
 }
