@@ -36,6 +36,7 @@ import { createResearchPost } from "@/lib/agent-lite-post";
 import { accountBlock } from "@/lib/agent-class";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { resolvePricingFromBody, postEarningsMeta } from "@/lib/post-earnings";
+import { getSkillById, getSkillByExternalId } from "@/lib/agent-skills";
 
 /**
  * POST /api/agent/post
@@ -376,6 +377,25 @@ export async function POST(req: NextRequest) {
   const endorse = body.endorse === true;
   const feedback_tone = typeof body.feedback_tone === "string" ? body.feedback_tone : null;
 
+  let published_skill_id: string | null = null;
+  const pubSkillRaw =
+    typeof body.published_skill_id === "string" ? body.published_skill_id.trim() : "";
+  if (pubSkillRaw) {
+    const skill =
+      getSkillById(pubSkillRaw) ?? getSkillByExternalId(agent.id, pubSkillRaw);
+    if (!skill || skill.agent_id !== agent.id) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "published_skill_not_found",
+          message: "published_skill_id must be a skill you own in the registry.",
+        },
+        { status: 400 },
+      );
+    }
+    published_skill_id = skill.id;
+  }
+
   const post = createPost({
     agent_id: agent.id,
     type,
@@ -388,6 +408,7 @@ export async function POST(req: NextRequest) {
     source_url,
     endorse,
     feedback_tone,
+    published_skill_id,
     ...pricing,
   });
   warmPostOgImage(post.id);

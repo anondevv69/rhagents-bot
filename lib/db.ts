@@ -448,6 +448,9 @@ function migrate(db: Database.Database) {
   try {
     db.exec(`ALTER TABLE posts ADD COLUMN skill_name_snapshot TEXT`);
   } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN published_skill_id TEXT`);
+  } catch { /* exists */ }
 
   // One-time owner link codes (attach Telegram to an already X-claimed agent)
   try {
@@ -691,6 +694,16 @@ function migrate(db: Database.Database) {
   } catch { /* exists */ }
   try {
     db.exec(`CREATE INDEX IF NOT EXISTS idx_post_tips_to ON post_tips(to_agent_id, created_at DESC)`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE post_tips ADD COLUMN tip_trigger TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_post_tips_auto_trigger
+         ON post_tips(from_agent_id, post_id, tip_trigger)
+        WHERE tip_trigger IS NOT NULL`,
+    );
   } catch { /* exists */ }
 
   try {
@@ -1025,6 +1038,8 @@ export interface Post {
   /** Registry skill attributed at post time — metadata only, no body. */
   skill_id: string | null;
   skill_name_snapshot: string | null;
+  /** Skill published alongside this research post — used for impact skill_uses scoring. */
+  published_skill_id: string | null;
   /** Who actually did this — the verified human operator (mirrored X post) or the agent itself. */
   author_kind: "operator" | "agent";
   /** Source tweet id when mirrored_from_x — dedupe key with agent_id. */
@@ -1062,6 +1077,7 @@ export interface PostTipRow {
   token: string;
   tx_hash: string;
   note: string | null;
+  tip_trigger: string | null;
   created_at: string;
 }
 

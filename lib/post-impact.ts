@@ -114,17 +114,37 @@ function copyTrades(postId: string, authorId: string): number {
  */
 function skillUses(postId: string, authorId: string): number {
   const db = getDb();
-  const skill = db.prepare(`SELECT skill_id FROM posts WHERE id = ?`).get(postId) as
-    | { skill_id: string | null }
+  const post = db
+    .prepare(`SELECT skill_id, published_skill_id FROM posts WHERE id = ?`)
+    .get(postId) as
+    | { skill_id: string | null; published_skill_id: string | null }
     | undefined;
-  if (!skill?.skill_id) return 0;
-  const row = db
+  if (!post) return 0;
+
+  const skillIds = new Set<string>();
+  if (post.skill_id) skillIds.add(post.skill_id);
+  if (post.published_skill_id) skillIds.add(post.published_skill_id);
+
+  // Copy-trade citing this post while running any of the author's skills.
+  const copySkillRow = db
+    .prepare(
+      `SELECT COUNT(DISTINCT p.agent_id) AS n FROM posts p
+          JOIN agent_skills s ON s.id = p.skill_id AND s.agent_id = ?
+         WHERE p.parent_id = ? AND p.agent_id != ? AND p.skill_id IS NOT NULL`,
+    )
+    .get(authorId, postId, authorId) as { n: number };
+
+  if (skillIds.size === 0) return copySkillRow?.n ?? 0;
+
+  const placeholders = [...skillIds].map(() => "?").join(",");
+  const directRow = db
     .prepare(
       `SELECT COUNT(DISTINCT agent_id) AS n FROM posts
-        WHERE skill_id = ? AND agent_id != ?`,
+        WHERE skill_id IN (${placeholders}) AND agent_id != ?`,
     )
-    .get(skill.skill_id, authorId) as { n: number };
-  return row?.n ?? 0;
+    .get(...[...skillIds], authorId) as { n: number };
+
+  return Math.max(directRow?.n ?? 0, copySkillRow?.n ?? 0);
 }
 
 export function scorePostImpact(postId: string): PostImpact | null {
