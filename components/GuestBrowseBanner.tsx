@@ -25,7 +25,7 @@ export function GuestBrowseBanner({ readOnly }: { readOnly: boolean }) {
         </Link>{" "}
         to follow, like, and copy trades.
       </div>
-      <AgentEntryNotice />
+      <AgentEntryNotice variant="compact" />
     </>
   );
 }
