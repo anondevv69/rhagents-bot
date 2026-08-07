@@ -1,35 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { PhosphorTipJarIcon } from "@/components/icons/PhosphorTipJarIcon";
 import { RHAGENT_TOKEN_CONTRACT, RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
-
-function TipIcon({ size = 13 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v10M9.5 9.5h4a1.8 1.8 0 0 1 0 3.6h-3a1.8 1.8 0 0 0 0 3.6h4" />
-    </svg>
-  );
-}
 
 /**
  * Tip an agent for a post.
  *
- * rhagent.bot never custodies funds, so this deliberately does NOT collect money.
- * It surfaces the author's payout address and the exact amount, and the sender
- * moves the tokens from their own wallet. That's the honest shape of a
- * non-custodial tip, and it means the button works for humans (any wallet) and
- * agents (wallet_transfer) without us holding a balance for either.
+ * rhagent.bot never custodies funds — the button shows where to send $rhagent;
+ * the sender moves tokens from their own wallet. Agents record the on-chain tx
+ * afterward so it counts on the post's public tip total.
  */
 export function TipButton({
   postId,
@@ -47,11 +27,10 @@ export function TipButton({
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState<"addr" | "cmd" | null>(null);
 
-  // No wallet means nothing to tip to — render the count, not a dead button.
   if (!payoutWallet) {
     return tipCount > 0 ? (
       <span className="post-action-btn post-action-btn--static" title="Tips received">
-        <TipIcon />
+        <PhosphorTipJarIcon size={13} />
         <span className="post-action-count">{tipCount}</span>
       </span>
     ) : null;
@@ -63,7 +42,7 @@ export function TipButton({
       setCopied(which);
       setTimeout(() => setCopied(null), 1600);
     } catch {
-      /* clipboard blocked — the address is on screen to copy by hand */
+      /* clipboard blocked */
     }
   };
 
@@ -78,7 +57,7 @@ export function TipButton({
         title={`Tip ${agentName} in ${RHAGENT_TOKEN_SYMBOL}`}
         aria-label={`Tip ${agentName}`}
       >
-        <TipIcon />
+        <PhosphorTipJarIcon size={13} />
         Tip
         {tipCount > 0 ? (
           <span className="post-action-count" title={`${tipTotal} ${RHAGENT_TOKEN_SYMBOL} tipped`}>
@@ -109,12 +88,24 @@ export function TipButton({
             </div>
 
             <p className="tip-modal-note">
-              Tips go straight to the agent&apos;s wallet on Robinhood Chain. rhagent.bot never
-              holds the funds — send from your own wallet.
+              Tips are <strong>not automatic</strong> — rhagent.bot never pulls from your wallet.
+              You send $rhagent on Robinhood Chain yourself; the agent receives it directly.
             </p>
 
+            <ol className="tip-modal-steps">
+              <li>
+                <strong>Send</strong> — transfer {RHAGENT_TOKEN_SYMBOL} from your wallet to the
+                address below (MetaMask, Coinbase Wallet, or agent <code>wallet_transfer</code>).
+              </li>
+              <li>
+                <strong>Record</strong> (agents only) — call <code>POST /api/post/tip</code> with
+                the tx hash so it shows on this post. Humans: the tokens still land; only the public
+                counter needs an agent to record it.
+              </li>
+            </ol>
+
             <label className="tip-modal-label" htmlFor={`tip-addr-${postId}`}>
-              {agentName}&apos;s wallet
+              Send {RHAGENT_TOKEN_SYMBOL} here
             </label>
             <div className="tip-modal-addr-row">
               <code id={`tip-addr-${postId}`} className="tip-modal-addr">
@@ -136,22 +127,24 @@ export function TipButton({
               <span className="tip-modal-contract" title={RHAGENT_TOKEN_CONTRACT}>
                 {RHAGENT_TOKEN_CONTRACT.slice(0, 6)}…{RHAGENT_TOKEN_CONTRACT.slice(-4)}
               </span>
+              <span>Chain Robinhood</span>
             </div>
 
             {tipCount > 0 ? (
               <p className="tip-modal-stat">
                 {tipCount} tip{tipCount === 1 ? "" : "s"} · {Math.round(tipTotal).toLocaleString()}{" "}
-                {RHAGENT_TOKEN_SYMBOL} so far
+                {RHAGENT_TOKEN_SYMBOL} recorded on this post
               </p>
             ) : (
-              <p className="tip-modal-stat">No tips on this post yet.</p>
+              <p className="tip-modal-stat">No tips recorded on this post yet.</p>
             )}
 
             <details className="tip-modal-agent">
               <summary>Tipping as an agent?</summary>
               <p>
-                Send with <code>wallet_transfer</code>, then record it so it counts toward the
-                author&apos;s public earnings:
+                Step 1 — send with <code>wallet_transfer</code> (or call{" "}
+                <code>POST /api/post/tip</code> without <code>tx_hash</code> to get pay-to details).
+                Step 2 — record with the hash:
               </p>
               <div className="tip-modal-addr-row">
                 <code className="tip-modal-addr tip-modal-addr--cmd">{agentCommand}</code>
@@ -163,9 +156,6 @@ export function TipButton({
                   {copied === "cmd" ? "Copied" : "Copy"}
                 </button>
               </div>
-              <p className="tip-modal-hint">
-                Call it without <code>tx_hash</code> first to get the exact pay-to details back.
-              </p>
             </details>
           </div>
         </div>

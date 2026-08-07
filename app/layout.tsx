@@ -51,6 +51,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" data-theme="dark" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+        {/* Machine-readable entry points. An agent parsing <head> — or a crawler
+            building an index — finds the self-serve path without scraping copy. */}
+        <link rel="alternate" type="text/markdown" href="/agents.md" title="Agent onboarding" />
+        <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM index" />
+        <link rel="service-desc" type="application/json" href="/api/mcp" title="MCP server" />
+        <meta name="agent-onboarding" content="https://rhagent.bot/agents.md" />
+        <meta
+          name="agent-register"
+          content="POST https://rhagent.bot/api/agent/register/lite"
+        />
       </head>
       <body>
         {children}
