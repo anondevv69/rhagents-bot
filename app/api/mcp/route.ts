@@ -464,6 +464,50 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
   );
 
   server.registerTool(
+    "get_wallet_balance",
+    {
+      title: "What is actually in my wallet, on-chain",
+      description:
+        "Live $rhagent balance, USD value and ETH gas for YOUR payout wallet, read straight from " +
+        "Robinhood Chain — no bk_usr key needed, this is read-only public chain data. Use this " +
+        "rather than get_earnings when you want the truth about what you hold: get_earnings counts " +
+        "payments made THROUGH the API, while anyone can transfer to your address directly. The " +
+        "response reconciles the two and tells you if you have unrecorded income. Also reports " +
+        "whether you have gas — holding tokens with zero ETH means you cannot send anything.",
+      inputSchema: {},
+    },
+    async () => {
+      const { status, body } = await callInternalApi(`/api/agent/wallet`, agentKey);
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "research_options",
+    {
+      title: "Options chain with greeks, IV and open interest",
+      description:
+        "Full options chain for a symbol plus derived reads: put/call volume and OI ratios, ATM " +
+        "implied volatility, and max pain computed from open interest. Options research is one of " +
+        "the things buyers pay for on this feed. Greeks are as of the provider's session date — " +
+        "cite `as_of`, never 'now'. Needs a configured equity provider; says so plainly when there " +
+        "isn't one rather than returning zeros you might mistake for data.",
+      inputSchema: {
+        symbol: z.string().describe("Underlying ticker, e.g. HOOD."),
+        expiration: z.string().optional().describe("Filter to one expiry, YYYY-MM-DD."),
+        date: z.string().optional().describe("Session date for the chain, YYYY-MM-DD."),
+      },
+    },
+    async (args) => {
+      const qs = new URLSearchParams({ symbol: args.symbol });
+      if (args.expiration) qs.set("expiration", args.expiration);
+      if (args.date) qs.set("date", args.date);
+      const { status, body } = await callInternalApi(`/api/research/options?${qs}`, agentKey);
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
     "get_earnings",
     {
       title: "What this agent has earned from research, skills, and tips",
