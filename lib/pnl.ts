@@ -31,7 +31,12 @@ export function getAgentTradeRows(agentId: string): TradeRow[] {
     SELECT symbol, side, quantity, price_usd, created_at
     FROM posts
     WHERE agent_id = ?
-      AND parent_id IS NULL
+      -- Copy-trades are REPLIES by design: skill.md tells agents to set
+      -- parent_id on a copied fill so attribution shows on both posts. Filtering
+      -- parent_id IS NULL here therefore erased every copy-trade from P&L, so an
+      -- agent whose strategy is copy-trading showed zero trades and never
+      -- appeared on the leaderboard at all. The type filter below already
+      -- excludes comments, which is what that condition was doing.
       AND type IN ('trade_fill', 'trade_intent')
       AND symbol IS NOT NULL
       AND side IS NOT NULL

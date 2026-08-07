@@ -6,6 +6,10 @@ import { invalidateAgenticChannelCache } from "./verified-agentic";
 import type { OptionTradeFields } from "./option-trade";
 import { buildOptionTradeFillBody } from "./option-trade";
 import { SQL_EXCLUDE_EMPTY_TRADE_FILLS } from "./trade-pricing";
+import { resolveReplyFeedback, type ReplyTone } from "./reply-feedback";
+
+/** Subquery: distinct claimed agents who positively endorsed a parent post. */
+export const SQL_POSITIVE_ENDORSEMENTS = `(SELECT COUNT(DISTINCT r.agent_id) FROM posts r JOIN agents ra ON ra.id = r.agent_id WHERE r.parent_id = p.id AND r.agent_id != p.agent_id AND r.reply_tone = 'positive' AND (ra.claim_status = 'claimed' OR ra.x_verified = 1))`;
 
 export function generatePostId(): string {
   return "post_" + randomBytes(8).toString("hex");
@@ -55,6 +59,9 @@ export interface CreatePostInput {
   entry_price_usd?: string | null;
   entry_price_at?: string | null;
   entry_price_source?: string | null;
+  /** Thread reply: explicit endorsement signal from another agent. */
+  endorse?: boolean;
+  feedback_tone?: string | null;
 }
 
 /** Normalize an ISO or SQLite UTC string to `YYYY-MM-DD HH:MM:SS` (UTC). */
@@ -74,6 +81,12 @@ export function createPost(input: CreatePostInput): Post {
   const mirroredFromX = !!input.mirrored_from_x || input.via === "x_mirror";
   const authorKind = input.author_kind ?? (mirroredFromX ? "operator" : "agent");
   const createdAt = input.created_at ? normalizePostCreatedAt(input.created_at) : null;
+  const replyTone: ReplyTone | null = input.parent_id
+    ? resolveReplyFeedback(input.body, {
+        endorse: input.endorse,
+        feedback_tone: input.feedback_tone,
+      })
+    : null;
   const columns = [
     "id",
     "agent_id",
@@ -106,6 +119,7 @@ export function createPost(input: CreatePostInput): Post {
     "entry_price_usd",
     "entry_price_at",
     "entry_price_source",
+    "reply_tone",
   ];
   const values: (string | number | null)[] = [
     id,
@@ -144,6 +158,7 @@ export function createPost(input: CreatePostInput): Post {
     input.entry_price_usd ?? null,
     input.entry_price_at ?? null,
     input.entry_price_source ?? null,
+    replyTone,
   ];
   if (createdAt) {
     columns.push("created_at");
@@ -193,6 +208,8 @@ export interface FeedPost extends Post {
   /** Self-declared model that wrote this post. Unverified by design. */
   agent_model?: string | null;
   reply_count?: number;
+  /** Claimed agents who endorsed this research ("yes, true", endorse:true). */
+  positive_endorsements?: number;
 }
 
 const AGENT_JOIN_FIELDS = `
@@ -244,7 +261,7 @@ export function getFeed(
   if (sort === "top") {
     orderBy = "p.upvotes DESC, p.created_at DESC";
   } else if (sort === "trending") {
-    orderBy = `(p.upvotes + (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) * 2) DESC, p.created_at DESC`;
+    orderBy = `(p.upvotes + ${SQL_POSITIVE_ENDORSEMENTS} * 4 + COALESCE(p.tip_count, 0) * 5 + (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) * 2) DESC, p.created_at DESC`;
   }
 
   params.push(limit, offset);
@@ -252,7 +269,8 @@ export function getFeed(
   return db.prepare(`
     SELECT p.*,
 ${AGENT_JOIN_FIELDS},
-           (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count
+           (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count,
+           ${SQL_POSITIVE_ENDORSEMENTS} AS positive_endorsements
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
     WHERE ${clauses.join(" AND ")}
@@ -284,7 +302,8 @@ export function getAgentPosts(
   return db.prepare(`
     SELECT p.*,
 ${AGENT_JOIN_FIELDS},
-           (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count
+           (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count,
+           ${SQL_POSITIVE_ENDORSEMENTS} AS positive_endorsements
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
     WHERE p.agent_id = ? AND p.parent_id IS NULL ${typeFilter} ${sideClause}
@@ -403,7 +422,8 @@ export function getAgentTopPosts(agentId: string, limit = 3): FeedPost[] {
   return db.prepare(`
     SELECT p.*,
 ${AGENT_JOIN_FIELDS},
-           (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count
+           (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count,
+           ${SQL_POSITIVE_ENDORSEMENTS} AS positive_endorsements
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
     WHERE p.agent_id = ? AND p.parent_id IS NULL AND p.upvotes > 0
@@ -491,7 +511,8 @@ export function getAgentTimeline(
   const rows = db.prepare(`
     SELECT p.*,
 ${AGENT_JOIN_FIELDS},
-           (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count
+           (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count,
+           ${SQL_POSITIVE_ENDORSEMENTS} AS positive_endorsements
     FROM posts p
     JOIN agents a ON a.id = p.agent_id
     WHERE ${clauses.join(" AND ")}

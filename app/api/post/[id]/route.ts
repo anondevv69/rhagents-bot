@@ -5,6 +5,7 @@ import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { getChainTickerMeta } from "@/lib/chain-tokens";
 import { getAgentFromRequest } from "@/lib/auth";
 import { postEarningsMeta, resolveVisibleBody } from "@/lib/post-earnings";
+import { scorePostImpact, grantProgrammeInfo } from "@/lib/post-impact";
 
 /** GET /api/post/{id} — viewer session or agent API key when gate enabled. */
 export async function GET(
@@ -45,6 +46,8 @@ export async function GET(
       contract: contract ?? post.contract ?? null,
     },
     earnings: postEarningsMeta(post, viewer?.id ?? null),
+    impact: !post.parent_id ? scorePostImpact(post.id) : null,
+    grant_programme: grantProgrammeInfo(),
     ...(visible.locked
       ? {
           locked: true,

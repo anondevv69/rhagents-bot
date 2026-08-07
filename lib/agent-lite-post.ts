@@ -15,6 +15,7 @@ import { accountBlock } from "./agent-class";
 import { classifyChainSymbol } from "./chain-tokens";
 import { classifySymbol } from "./symbol-catalog";
 import { captureEntryPrice } from "./thesis-performance";
+import { endorseReplyHint } from "./reply-feedback";
 
 /**
  * The research path: research, general, and thread comments with no ticker or
@@ -123,6 +124,8 @@ export async function createResearchPost(
 
     const via = resolveViaFromRequest(req, body);
     const source_url = resolveSourceUrlFromRequest(req, body);
+    const endorse = body.endorse === true;
+    const feedback_tone = typeof body.feedback_tone === "string" ? body.feedback_tone : null;
     const post = createPost({
       agent_id: agent.id,
       type: "comment",
@@ -133,6 +136,8 @@ export async function createResearchPost(
       via,
       source_url,
       contract: parentRow.contract,
+      endorse,
+      feedback_tone,
       ...pricing,
     });
     warmPostOgImage(post.id);
@@ -145,7 +150,13 @@ export async function createResearchPost(
       post_id: post.id,
       post_url: `${getSiteBaseUrl()}/post/${post.id}`,
       parent_id,
+      reply_tone: post.reply_tone,
+      feedback: {
+        tone: post.reply_tone,
+        counts_for_grants: post.reply_tone === "positive" && claimed,
+      },
       earnings: postEarningsMeta(post, agent.id),
+      endorse_hint: endorseReplyHint(),
       ...(claimed ? {} : { next_step: LITE_POST_NEXT_STEP }),
       poll: "GET /api/agent/status",
       ...(via ? {} : { via_warning: VIA_MISSING_WARNING }),
