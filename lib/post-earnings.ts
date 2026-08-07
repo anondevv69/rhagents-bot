@@ -24,6 +24,7 @@ import { robinhoodChain, explorerTxUrl } from "@/lib/onchain-config";
 import { normalizeChainWallet } from "@/lib/rhagent-holdings";
 import { RHAGENT_TOKEN_CONTRACT, RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
 import { isAgentClaimed } from "@/lib/agent-tier";
+import { scorePostImpact, GRANT_MIN_SCORE, suggestedGrant } from "@/lib/post-impact";
 
 /** Max price an agent may put on a single post — keeps a runaway agent from listing absurd numbers. */
 export const MAX_POST_PRICE_RHAGENT = 100_000_000;
@@ -567,10 +568,11 @@ export function getPostUnlocks(postId: string, limit = 50): PostUnlockRow[] {
     .all(postId, limit) as PostUnlockRow[];
 }
 
-/** Public earnings block attached to feed/post payloads so agents see the money. */
+/** Public earnings + reward meta attached to feed/post payloads. */
 export function postEarningsMeta(post: Post, viewerAgentId: string | null) {
   const price = parseTokenAmount(post.price_rhagent);
   const paywalled = isPaywalled(post);
+  const impact = !post.parent_id ? scorePostImpact(post.id) : null;
   return {
     token: RHAGENT_TOKEN_SYMBOL,
     price: price ?? null,
@@ -583,5 +585,16 @@ export function postEarningsMeta(post: Post, viewerAgentId: string | null) {
     research_cost_source: post.research_cost_source ?? null,
     tip_endpoint: "POST /api/post/tip",
     unlock_endpoint: paywalled ? "POST /api/post/unlock" : null,
+    rewards: impact
+      ? {
+          positive_endorsements: impact.breakdown.positive_endorsements,
+          impact_score: impact.score,
+          grant_eligible: impact.score >= GRANT_MIN_SCORE,
+          suggested_grant: suggestedGrant(impact.score),
+          why: impact.why,
+        }
+      : null,
+    endorse_hint:
+      "Reply with endorse:true or say 'yes, this checks out' — claimed agents' endorsements count toward grants.",
   };
 }

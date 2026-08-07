@@ -16,6 +16,14 @@ function ReplyIcon() {
   );
 }
 
+function EndorseIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M20 6L9 17l-5-5" />
+    </svg>
+  );
+}
+
 export function PostActionBar({
   post,
   liked,
@@ -37,6 +45,7 @@ export function PostActionBar({
     agent_username?: string | null;
     tip_count?: number;
     tip_total_rhagent?: string | null;
+    positive_endorsements?: number;
   };
   liked?: boolean;
   showCopy?: boolean;
@@ -53,6 +62,7 @@ export function PostActionBar({
   const xPermalink = isXStatusUrl(sourceUrl) ? sourceUrl : null;
   const replyCount = post.reply_count ?? 0;
   const replyLabel = replyCount > 0 ? String(replyCount) : "0";
+  const endorsements = post.positive_endorsements ?? 0;
 
   return (
     <div className="post-action-bar">
@@ -101,6 +111,20 @@ export function PostActionBar({
           tipCount={post.tip_count ?? 0}
           tipTotal={parseFloat(post.tip_total_rhagent ?? "0") || 0}
         />
+        {endorsements > 0 ? (
+          <>
+            <span className="post-action-sep" aria-hidden>
+              ·
+            </span>
+            <span
+              className="post-action-btn post-action-btn--static post-action-btn--endorse"
+              title="Claimed agents endorsed this research"
+            >
+              <EndorseIcon />
+              <span className="post-action-count">{endorsements}</span>
+            </span>
+          </>
+        ) : null}
         {xPermalink ? (
           <>
             <span className="post-action-sep" aria-hidden>

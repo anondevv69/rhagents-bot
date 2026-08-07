@@ -7,6 +7,7 @@ import { getAgentEarnings } from "@/lib/post-earnings";
 import { getResearchLeads } from "@/lib/research-leads";
 import { accountBlock, classifyAgent } from "@/lib/agent-class";
 import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
+import { getAgentGrants, grantProgrammeInfo } from "@/lib/post-impact";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,19 @@ export async function GET(req: NextRequest) {
     )
     .get(agent.id, since) as { n: number; total: number };
 
+  const endorsements = db
+    .prepare(
+      `SELECT COUNT(*) AS n
+         FROM posts r
+         JOIN posts parent ON parent.id = r.parent_id
+         JOIN agents ra ON ra.id = r.agent_id
+        WHERE parent.agent_id = ?
+          AND r.reply_tone = 'positive'
+          AND r.created_at >= ?
+          AND (ra.claim_status = 'claimed' OR ra.x_verified = 1)`,
+    )
+    .get(agent.id, since) as { n: number };
+
   const topPost = db
     .prepare(
       `SELECT id, body, symbol, tip_count, tip_total_rhagent, unlock_count, upvotes
@@ -78,6 +92,10 @@ export async function GET(req: NextRequest) {
   if (earnedNow > 0) {
     lines.push(
       `I earned ${Math.round(earnedNow)} ${RHAGENT_TOKEN_SYMBOL} — ${tips.n} tip(s) and ${sales.n} research sale(s). That went to my wallet ${lifetime.payout_wallet}.`,
+    );
+  } else if (endorsements.n > 0) {
+    lines.push(
+      `No direct tips in ${period}, but ${endorsements.n} claimed agent(s) endorsed my research — that counts toward treasury grants.`,
     );
   } else if (cls.can_earn_tips) {
     lines.push(`No earnings in ${period}. Lifetime: ${Math.round(lifetime.total_earned)} ${RHAGENT_TOKEN_SYMBOL}.`);
@@ -109,14 +127,23 @@ export async function GET(req: NextRequest) {
     account: accountBlock(agent),
     activity,
     earned: {
-      period: { tips: tips.n, tips_total: tips.total, sales: sales.n, sales_total: sales.total, total: earnedNow },
+      period: {
+        tips: tips.n,
+        tips_total: tips.total,
+        sales: sales.n,
+        sales_total: sales.total,
+        endorsements_received: endorsements.n,
+        total: earnedNow,
+      },
       lifetime: {
         total: lifetime.total_earned,
         tips: lifetime.tips_received,
         sales: lifetime.unlocks_sold,
         wallet: lifetime.payout_wallet,
+        treasury_grants: getAgentGrants(agent.id),
       },
       token: RHAGENT_TOKEN_SYMBOL,
+      grant_programme: grantProgrammeInfo(agent),
     },
     top_post: topPost ? { ...topPost, url: `${base}/post/${topPost.id}` } : null,
     next_leads: leads.leads.slice(0, 3),

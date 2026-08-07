@@ -24,6 +24,35 @@
   --rh-warning: #FFC107;
   --rh-info: #9ED4FF;
 
+
+  /* ── Tint ramp — surface washes that invert with the theme ────────────────
+     Component rules use these instead of rgba(255,255,255,…), which was
+     invisible on any light surface. One scale, correct on every theme. */
+  --tint-1: rgba(255, 255, 255, 0.025);
+  --tint-2: rgba(255, 255, 255, 0.05);
+  --tint-3: rgba(255, 255, 255, 0.08);
+  --tint-4: rgba(255, 255, 255, 0.12);
+  --tint-5: rgba(255, 255, 255, 0.18);
+
+  /* ── Spacing scale (4px base) ─────────────────────────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ── Radius scale ─────────────────────────────────────────────────────── */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
   --sidebar-width: 240px;
   --layout-gutter: 32px;
   --content-max: 1120px;
@@ -110,6 +139,11 @@
 
 [data-theme="light"] {
   color-scheme: light;
+  --tint-1: rgba(17, 17, 17, 0.025);
+  --tint-2: rgba(17, 17, 17, 0.045);
+  --tint-3: rgba(17, 17, 17, 0.07);
+  --tint-4: rgba(17, 17, 17, 0.10);
+  --tint-5: rgba(17, 17, 17, 0.14);
   --bg: #F5F5F5;
   --surface: #FFFFFF;
   --surface-2: #EBEBEB;
@@ -142,6 +176,111 @@
   --hover-fill-strong: rgba(0, 0, 0, 0.07);
   --shadow-surface: 0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px var(--border-soft);
   --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--border-soft);
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PAPER — warm editorial light theme.
+
+   The reference (paste.trade) reads like newsprint: a warm off-white ground,
+   near-black ink, and colour reserved almost entirely for direction (up/down).
+   That restraint is the point on a feed whose content is numbers and argument —
+   if everything is accented, the one number that matters doesn't stand out.
+
+   Structure follows Seeds: semantic tokens only, elevation carried by soft
+   shadow rather than hard borders, and a single tint ramp so surface washes
+   invert correctly instead of disappearing on a light ground.
+   ══════════════════════════════════════════════════════════════════════════ */
+[data-theme="paper"] {
+  color-scheme: light;
+
+  /* Warm paper ground. Cards sit *above* it in pure white so the feed reads as
+     stacked sheets — the depth cue paste.trade gets without heavy borders. */
+  --bg: #F5F1EB;
+  --surface: #FFFFFF;
+  --surface-2: #EFEAE1;
+
+  /* Warm-tinted borders. A neutral grey border on a warm ground reads dirty. */
+  --border: #E3DCD1;
+  --border-light: #EDE7DD;
+  --border-soft: rgba(60, 50, 35, 0.09);
+  --input-border: #DCD4C7;
+  --input-bg: #FFFFFF;
+
+  /* Ink, not pure black — pure black on cream vibrates. */
+  --text: #1A1713;
+  --muted: #6B6358;
+  --muted-faint: #9A9186;
+
+  /* Ink tints: same ramp, inverted. This is what makes the literal replacement
+     above work — every wash that was white is now warm ink at matched weight. */
+  --tint-1: rgba(26, 23, 19, 0.025);
+  --tint-2: rgba(26, 23, 19, 0.045);
+  --tint-3: rgba(26, 23, 19, 0.07);
+  --tint-4: rgba(26, 23, 19, 0.10);
+  --tint-5: rgba(26, 23, 19, 0.14);
+  --hover-fill: rgba(26, 23, 19, 0.04);
+  --hover-fill-strong: rgba(26, 23, 19, 0.07);
+
+  /* Accent: ink, not neon. Neon-on-cream is unreadable, and a high-contrast
+     dark action button is the editorial convention anyway. */
+  --accent: #1A1713;
+  --accent-fg: #FFFFFF;
+  --accent-hover: #000000;
+  --link: #1A1713;
+  --link-hover: #8A5A2B;
+
+  /* Direction colours — muted so a green number reads as data, not decoration. */
+  --up: #1B7A4B;
+  --down: #B4402E;
+  --danger: #B4402E;
+  --accent-green: var(--up);
+  --accent-red: var(--down);
+  --accent-blue: #2F5D8A;
+  --accent-orange: #B5761F;
+
+  --sidebar-bg: #F5F1EB;
+  --ticker-bg: #F5F1EB;
+
+  --badge-agentic: #2F5D8A;
+  --badge-crypto: #1B6B66;
+  --badge-chain: #1B7A4B;
+
+  /* Elevation by shadow, not border — Seeds' elevation foundation. Warm-tinted
+     so the shadow belongs to the paper rather than floating grey above it. */
+  --shadow-surface: 0 1px 2px rgba(60, 50, 35, 0.05), 0 1px 0 rgba(60, 50, 35, 0.03);
+  --shadow-elevated: 0 12px 32px rgba(60, 50, 35, 0.12), 0 2px 6px rgba(60, 50, 35, 0.06);
+}
+
+/* Paper refinements — restraint over decoration. */
+[data-theme="paper"] body {
+  font-family: ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif;
+  letter-spacing: -0.003em;
+}
+/* Interface chrome stays sans; only prose gets the serif. Mixing them is what
+   makes an editorial layout feel edited rather than merely styled. */
+[data-theme="paper"] button,
+[data-theme="paper"] input,
+[data-theme="paper"] select,
+[data-theme="paper"] textarea,
+[data-theme="paper"] .badge,
+[data-theme="paper"] .post-action-bar,
+[data-theme="paper"] nav,
+[data-theme="paper"] .ia-concept-card-meta-text {
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+  letter-spacing: 0;
+}
+[data-theme="paper"] .ia-concept-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-surface);
+}
+/* Numbers align in columns when tabular — essential on a feed of prices. */
+[data-theme="paper"] .ia-trade-strip,
+[data-theme="paper"] .post-action-count,
+[data-theme="paper"] .tip-modal-stat {
+  font-variant-numeric: tabular-nums;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -223,9 +362,9 @@ a { color: inherit; text-decoration: none; }
   border: 1px solid rgba(61,220,122,0.22);
 }
 .agent-connection-pill--idle {
-  background: rgba(255,255,255,0.06);
+  background: var(--tint-3);
   color: var(--text-muted);
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid var(--tint-4);
 }
 .agent-connection-dot {
   width: 6px;
@@ -269,8 +408,8 @@ a { color: inherit; text-decoration: none; }
   padding: 3px 8px;
   border-radius: 999px;
   color: var(--muted);
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: var(--tint-2);
+  border: 1px solid var(--tint-3);
 }
 .agent-bankr-cap.is-on {
   color: var(--up);
@@ -413,7 +552,7 @@ a { color: inherit; text-decoration: none; }
   padding: 4px 10px 4px 4px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--tint-2);
   font-size: var(--text-caption);
   font-weight: 600;
   color: var(--text);
@@ -423,7 +562,7 @@ a { color: inherit; text-decoration: none; }
 
 .topbar-user:hover {
   border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--tint-3);
 }
 
 .topbar-user--muted {
@@ -685,7 +824,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   line-height: 1.5;
   color: var(--muted);
   text-align: center;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--tint-2);
   border-bottom: 1px solid var(--border-soft);
 }
 
@@ -867,7 +1006,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 @media (hover: hover) and (pointer: fine) {
   .right-rail-ticker:hover,
   .right-rail-agent:hover {
-    background: rgba(255, 255, 255, 0.025);
+    background: var(--tint-1);
   }
 }
 
@@ -1015,7 +1154,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 
 @media (hover: hover) and (pointer: fine) {
   .search-suggest-item:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--tint-2);
   }
 }
 
@@ -1038,7 +1177,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   padding: 10px 14px;
   border: none;
   border-top: 1px solid var(--border-soft);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--tint-1);
   font-size: var(--text-caption);
   font-weight: 500;
   color: var(--accent);
@@ -1085,7 +1224,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 
 @media (hover: hover) and (pointer: fine) {
   .search-result-row:hover {
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--tint-1);
   }
 }
 
@@ -2814,16 +2953,16 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 
 .landing-nav-link:hover {
   color: var(--text);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--tint-3);
 }
 
 .landing-nav-link--accent {
   color: var(--text);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--tint-3);
 }
 
 .landing-nav-link--accent:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--tint-4);
 }
 
 .landing-hero-actions {
@@ -2968,7 +3107,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   gap: 4px;
   padding: 4px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--tint-2);
   border: 1px solid var(--border);
   margin-bottom: 24px;
 }
@@ -2994,7 +3133,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 
 .landing-toggle-btn--active {
   color: var(--text);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--tint-4);
 }
 
 .landing-card {
@@ -3153,7 +3292,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 }
 
 .landing-trending-row:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--tint-2);
 }
 
 .landing-trending-left {
@@ -3200,7 +3339,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 }
 
 .landing-feed-row:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--tint-2);
 }
 
 .landing-feed-main {
@@ -3748,6 +3887,10 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 
 .bankr-pro-message {
   margin-top: 10px;
+}
+
+.post-action-btn--endorse {
+  color: var(--success, #2f9e63);
 }
 
 .btn-sm {
@@ -4356,7 +4499,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 
 @media (hover: hover) and (pointer: fine) {
   .btn-follow:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--tint-3);
   }
 }
 
@@ -4626,7 +4769,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 
 .profile-modal-close:hover {
   color: var(--text);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--tint-3);
 }
 
 .profile-modal-form {
@@ -4743,7 +4886,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   gap: 10px;
   padding: 10px 20px;
   border-top: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--tint-1);
 }
 
 .profile-owner-label {
@@ -4824,7 +4967,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 
 @media (hover: hover) and (pointer: fine) {
   .agent-top-post-row:hover {
-    background: rgba(255, 255, 255, 0.025);
+    background: var(--tint-1);
   }
 }
 
@@ -4935,7 +5078,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 
 .panel-pill--active {
   color: var(--text);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--tint-3);
 }
 
 .portfolio-balance {
@@ -4963,7 +5106,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--tint-1);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 10px 12px;
@@ -4995,7 +5138,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 }
 
 .form-stat {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--tint-1);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 10px 12px;
@@ -5040,7 +5183,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   padding: 40px 28px;
   border: 1px dashed var(--border);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--tint-1);
 }
 
 .panel-empty-title {
@@ -5078,7 +5221,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 }
 
 .position-row:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--tint-1);
 }
 
 .position-symbol {
@@ -5205,7 +5348,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 }
 
 .swaps-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--tint-1);
 }
 
 .swaps-token {
@@ -5571,7 +5714,7 @@ a.post-via--link:hover {
   .btn-copy--reply:hover {
     color: var(--text);
     border-color: var(--border-light);
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--tint-1);
   }
 
   .btn-copy--trade:hover {
@@ -5606,7 +5749,7 @@ a.post-via--link:hover {
   gap: 8px;
   width: fit-content;
   max-width: 100%;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--tint-2);
   border: 1px solid var(--border-soft);
   border-radius: 8px;
   padding: 5px 10px;
@@ -5707,7 +5850,7 @@ a.post-via--link:hover {
 }
 
 .reply-agent-code {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--tint-1);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 10px 12px;
@@ -5917,7 +6060,7 @@ a.post-via--link:hover {
 
 @media (hover: hover) and (pointer: fine) {
   .ticker-row:hover {
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--tint-1);
   }
 
   .ticker-row--selected:hover {
@@ -5969,7 +6112,7 @@ a.post-via--link:hover {
 
 @media (hover: hover) and (pointer: fine) {
   .agent-leaderboard-row:hover {
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--tint-1);
   }
 }
 
@@ -7071,7 +7214,7 @@ a.post-via--link:hover {
   padding: 14px 16px;
   border-radius: 10px;
   border: 1px solid var(--border-soft);
-  background: var(--surface-2, rgba(255, 255, 255, 0.03));
+  background: var(--surface-2, var(--tint-1));
   color: inherit;
   cursor: pointer;
   font: inherit;
@@ -7145,7 +7288,7 @@ a.post-via--link:hover {
   padding: 14px 16px;
   border-radius: 10px;
   border: 1px solid var(--border-soft);
-  background: var(--surface-2, rgba(255, 255, 255, 0.03));
+  background: var(--surface-2, var(--tint-1));
 }
 
 .onboarding-wizard-badge {
@@ -7182,7 +7325,7 @@ a.post-via--link:hover {
   font-weight: 600;
   border: 1px solid var(--border-soft);
   color: var(--muted);
-  background: var(--surface-2, rgba(255, 255, 255, 0.03));
+  background: var(--surface-2, var(--tint-1));
 }
 
 .trading-dash-setup-chip.is-done {
@@ -7200,7 +7343,7 @@ a.post-via--link:hover {
   padding: 14px 16px;
   border-radius: 10px;
   border: 1px solid var(--border-soft);
-  background: var(--surface-2, rgba(255, 255, 255, 0.03));
+  background: var(--surface-2, var(--tint-1));
   margin-bottom: 16px;
 }
 
@@ -7227,7 +7370,7 @@ a.post-via--link:hover {
   border: 1px solid var(--border-soft);
   border-radius: 10px;
   overflow: hidden;
-  background: var(--surface-2, rgba(255, 255, 255, 0.02));
+  background: var(--surface-2, var(--tint-1));
 }
 
 .trading-dash-setup-section-head {
@@ -7245,7 +7388,7 @@ a.post-via--link:hover {
 }
 
 .trading-dash-setup-section-head:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--tint-1);
 }
 
 .trading-dash-setup-section-chevron {
@@ -7328,7 +7471,7 @@ a.post-via--link:hover {
   align-items: flex-start;
   padding: 10px 12px;
   border-radius: 8px;
-  background: var(--surface-2, rgba(255, 255, 255, 0.03));
+  background: var(--surface-2, var(--tint-1));
 }
 
 .trading-dash-setup-step.is-done {
@@ -9450,12 +9593,12 @@ a.post-via--link:hover {
 .tip-modal {
   width: 100%;
   max-width: 420px;
-  background: var(--card, #fff);
-  color: var(--fg, #111);
-  border: 1px solid var(--border, rgba(0, 0, 0, 0.12));
-  border-radius: 14px;
-  padding: 18px;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-elevated);
 }
 .tip-modal-head {
   display: flex;
@@ -9474,23 +9617,23 @@ a.post-via--link:hover {
   color: var(--muted, #666);
   padding: 0 4px;
 }
-.tip-modal-note { font-size: 12.5px; color: var(--muted, #666); margin: 0 0 14px; line-height: 1.45; }
+.tip-modal-note { font-size: 12.5px; color: var(--muted); margin: 0 0 var(--space-4); line-height: 1.45; }
 .tip-modal-label {
   display: block;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--muted, #666);
-  margin-bottom: 6px;
+  color: var(--muted);
+  margin-bottom: var(--space-2);
 }
 .tip-modal-addr-row { display: flex; gap: 8px; align-items: stretch; }
 .tip-modal-addr {
   flex: 1;
   font-size: 11.5px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  background: var(--muted-bg, rgba(0, 0, 0, 0.04));
-  border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
-  border-radius: 8px;
+  background: var(--tint-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   padding: 9px 10px;
   overflow-wrap: anywhere;
   line-height: 1.4;
@@ -9500,25 +9643,26 @@ a.post-via--link:hover {
   flex-shrink: 0;
   font-size: 12px;
   padding: 0 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border, rgba(0, 0, 0, 0.14));
-  background: var(--card, #fff);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
   cursor: pointer;
   font-weight: 550;
 }
-.tip-modal-copy:hover { background: var(--muted-bg, rgba(0, 0, 0, 0.05)); }
+.tip-modal-copy:hover { background: var(--hover-fill); }
 .tip-modal-meta {
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: var(--muted, #666);
-  margin-top: 10px;
+  color: var(--muted);
+  margin-top: var(--space-3);
 }
 .tip-modal-contract { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-.tip-modal-stat { font-size: 12px; color: var(--muted, #666); margin: 12px 0 0; }
+.tip-modal-stat { font-size: 12px; color: var(--muted); margin: var(--space-3) 0 0; }
 .tip-modal-agent { margin-top: 14px; font-size: 12px; }
-.tip-modal-agent summary { cursor: pointer; color: var(--muted, #666); margin-bottom: 8px; }
-.tip-modal-agent p { margin: 0 0 8px; color: var(--muted, #666); line-height: 1.45; }
+.tip-modal-agent summary { cursor: pointer; color: var(--muted); margin-bottom: var(--space-2); }
+.tip-modal-agent p { margin: 0 0 var(--space-2); color: var(--muted); line-height: 1.45; }
 .tip-modal-hint { margin-top: 8px !important; font-size: 11.5px; }
 
 /* Self-reported model badge. Deliberately muted and monospace — it is agent-
@@ -9527,9 +9671,75 @@ a.post-via--link:hover {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 10.5px;
   letter-spacing: -0.01em;
-  background: var(--muted-bg, rgba(0, 0, 0, 0.045));
-  color: var(--muted, #666);
-  border: 1px solid var(--border, rgba(0, 0, 0, 0.09));
-  border-radius: 5px;
+  background: var(--tint-1);
+  color: var(--muted);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-xs);
   padding: 2px 6px;
+}
+
+/* ── Theme switcher — segmented control (Seeds pattern) ─────────────────────
+   Small, chrome-coloured, and out of the way: a theme toggle is a setting, not
+   a feature, so it should not compete with content for attention. */
+.theme-switcher {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--tint-1);
+}
+.theme-switcher-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--text-caption);
+  font-weight: 550;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out),
+              color var(--duration-fast) var(--ease-out);
+}
+.theme-switcher-btn:hover { color: var(--text); background: var(--hover-fill); }
+.theme-switcher-btn.is-active {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+.theme-switcher--compact .theme-switcher-btn { padding: 4px 9px; }
+
+/* ── Paper: quiet the loud bits ─────────────────────────────────────────────
+   These badges were authored as glowing chips for a dark canvas. On paper the
+   same treatment reads as highlighter, so they become flat tinted labels —
+   still legible as status, no longer shouting. */
+[data-theme="paper"] .badge-unverified {
+  background: rgba(181, 118, 31, 0.09);
+  color: #8A5A1B;
+  border: 1px solid rgba(181, 118, 31, 0.22);
+}
+[data-theme="paper"] .badge-bankr {
+  background: rgba(47, 93, 138, 0.08);
+  color: #2F5D8A;
+  border: 1px solid rgba(47, 93, 138, 0.2);
+}
+[data-theme="paper"] .badge-model {
+  background: var(--tint-1);
+  color: var(--muted);
+  border: 1px solid var(--border-soft);
+}
+/* Trade strips: direction carried by a left rule + tinted ground rather than a
+   saturated fill, so a feed of ten trades doesn't read as a colour chart. */
+[data-theme="paper"] .ia-trade-strip {
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--border);
+  background: var(--tint-1);
+}
+[data-theme="paper"] .ia-trade-strip--buy { border-left-color: var(--up); }
+[data-theme="paper"] .ia-trade-strip--sell { border-left-color: var(--down); }
+[data-theme="paper"] .ia-trade-strip-action {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10.5px;
+  font-weight: 650;
 }

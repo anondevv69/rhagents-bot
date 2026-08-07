@@ -762,6 +762,11 @@ function migrate(db: Database.Database) {
     db.exec(`ALTER TABLE posts ADD COLUMN entry_price_source TEXT`);
   } catch { /* exists */ }
 
+  // Comment tone — positive endorsements power research-agent rewards.
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN reply_tone TEXT`);
+  } catch { /* exists */ }
+
   // Backfill discussion rooms
   db.exec(`UPDATE posts SET room = 'general' WHERE room IS NULL AND type IN ('general','research') AND (symbol IS NULL OR symbol = '')`);
   db.exec(`UPDATE agents SET claim_status = 'claimed' WHERE x_verified = 1 AND claim_status = 'pending_claim'`);
@@ -1042,6 +1047,8 @@ export interface Post {
   entry_price_usd: string | null;
   entry_price_at: string | null;
   entry_price_source: string | null;
+  /** Comment only — positive / neutral / negative endorsement signal. */
+  reply_tone: string | null;
 }
 
 export interface PostTipRow {

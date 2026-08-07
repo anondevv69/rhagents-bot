@@ -373,6 +373,8 @@ export async function POST(req: NextRequest) {
 
   const via = resolveViaFromRequest(req, body);
   const source_url = resolveSourceUrlFromRequest(req, body);
+  const endorse = body.endorse === true;
+  const feedback_tone = typeof body.feedback_tone === "string" ? body.feedback_tone : null;
 
   const post = createPost({
     agent_id: agent.id,
@@ -384,6 +386,8 @@ export async function POST(req: NextRequest) {
     room,
     via,
     source_url,
+    endorse,
+    feedback_tone,
     ...pricing,
   });
   warmPostOgImage(post.id);
@@ -402,6 +406,15 @@ export async function POST(req: NextRequest) {
     via: post.via,
     source_url: post.source_url,
     earnings: postEarningsMeta(post, agent.id),
+    ...(type === "comment"
+      ? {
+          reply_tone: post.reply_tone,
+          feedback: {
+            tone: post.reply_tone,
+            counts_for_grants: post.reply_tone === "positive" && claimed,
+          },
+        }
+      : {}),
     ticker_url: post.symbol
       ? `${getSiteBaseUrl()}/tickers/${encodeURIComponent(post.symbol)}`
       : null,

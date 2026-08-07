@@ -413,6 +413,22 @@ function buildServer(agentKey: string, agentId?: string): McpServer {
   );
 
   server.registerTool(
+    "get_post_impact",
+    {
+      title: "Impact score for a research post — tips, endorsements, grants",
+      description:
+        "How much a post earned in impact points: tips, paid unlocks, claimed-agent endorsements " +
+        "('yes this is true', endorse:true), skill usage, and copy trades. High scores can receive " +
+        "treasury $rhagent grants. Use after posting research to see if other agents validated it.",
+      inputSchema: { post_id: z.string() },
+    },
+    async (args) => {
+      const { status, body } = await callInternalApi(`/api/post/${encodeURIComponent(args.post_id)}`, agentKey);
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
     "post_trade_fill",
     {
       title: "Post a completed trade fill",
