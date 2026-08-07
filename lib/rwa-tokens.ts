@@ -1,76 +1,70 @@
 /**
- * Tokenized equities on Robinhood Chain — the assets a ticker thesis can be paid in.
+ * Tokenized equities on Robinhood Chain — canonical registry + quotes.
  *
- * ─────────────────────────────────────────────────────────────────────────────
- * Why this is an address allowlist and never a symbol lookup
+ * Resolution is by **contract address from Robinhood's official asset API**,
+ * never by searching ERC-20 symbols on-chain. Symbols on a permissionless chain
+ * are self-declared and non-unique (22 distinct tokens call themselves HOOD).
  *
- * Resolving a payout asset by ERC-20 symbol is not merely imprecise here, it is
- * exploitable. A live search for symbol "HOOD" on Robinhood Chain returns 22
- * distinct tokens — "Hood Inu", "foreskin", "HOOD4663", "Ponzi Hood",
- * "RobbingHood" — several of them holding $8k–$20k of real liquidity, which is
- * more than enough to clear any plausible liquidity floor. Exactly one of them
- * trades near the actual share price.
+ * Source of truth: GET https://api.robinhood.com/rhj/assets
+ * Docs: https://docs.robinhood.com/chain/stock-token-apis/
+ *       https://docs.robinhood.com/chain/contracts
  *
- * Symbols on a permissionless chain are self-declared and non-unique. Anyone can
- * deploy `symbol() = "NVDA"`, seed a pool, post a thesis on NVDA and have the
- * treasury denominate — or worse, deliver — in their own token. So the mapping
- * from ticker to contract is curated below and may only be extended by the
- * operator through env. Discovery is used for PRICE of a known address, never to
- * decide WHICH address a ticker means.
- *
- * ─────────────────────────────────────────────────────────────────────────────
- * How the genuine ones are recognised
- *
- * Robinhood's issued equity tokens follow a naming convention on-chain:
- *
- *     name() = "<Company> • Robinhood Token"     e.g. "NVIDIA • Robinhood Token"
- *
- * Every address in the verified set below was read directly from the chain and
- * matches it. `HOOD` is deliberately NOT in the verified set: the token trading
- * at Robinhood's own share price reports `name() = "HOOD"` with no issuer
- * marker, so it does not satisfy the convention and is not something this module
- * will pay out on its own. An operator who has confirmed it by hand can add it
- * through RHAGENT_RWA_TOKENS — that is a deliberate manual step, not an
- * oversight.
- *
- * ─────────────────────────────────────────────────────────────────────────────
- * What an operator should know before enabling payouts
- *
- * These tokens are debt securities issued by Robinhood Assets (Jersey) Limited.
- * They confer no shareholder rights, and they are not registered under US
- * securities law — they may not be offered, sold or delivered to US persons, and
- * are further restricted in the UK, Canada and Switzerland. Agents here
- * self-register with no KYC and no declared jurisdiction, so paying a grant in
- * one of these is a distribution to a counterparty whose eligibility is unknown.
- *
- * That is a decision for the operator, not for this file, which is why RWA
- * payouts are OFF by default and gated behind their own flag rather than riding
- * on RHAGENT_GRANTS_ENABLED. Nothing here routes to an RWA until someone sets
- * RHAGENT_RWA_PAYOUTS_ENABLED=true.
+ * Prices: RHJ /prices (official bid/ask) + Dexscreener liquidity for payout depth.
  */
 
+import { robinhoodChain } from "@/lib/onchain-config";
+
+const RHJ_ASSETS_URL = "https://api.robinhood.com/rhj/assets";
+const RHJ_PRICES_URL = "https://api.robinhood.com/rhj/prices";
+const RH_CHAIN_ID = robinhoodChain.id;
+
+/** Issuer marker in tokenName from RHJ — auditable on-chain too. */
+const ISSUER_MARKER = "• Robinhood Token";
+
 export interface RwaToken {
-  /** Equity ticker, uppercase. The channel/symbol an agent posts research under. */
   symbol: string;
   contract: `0x${string}`;
   decimals: number;
-  /** on-chain name(), kept so the issuer convention is auditable from the record. */
   onchain_name: string;
-  /**
-   * True only when name() carries the "• Robinhood Token" issuer marker.
-   * Unverified entries are payable ONLY if an operator added them explicitly.
-   */
   verified: boolean;
+  source: "rhj" | "operator" | "seed";
+  status?: string;
+  asset_id?: string;
+  logo_url?: string;
+  current_multiplier?: string;
 }
 
-/** Issuer marker in name() for Robinhood-issued equity tokens. */
-const ISSUER_MARKER = "• Robinhood Token";
+export interface RwaQuote {
+  symbol: string;
+  contract: `0x${string}`;
+  price_usd: number | null;
+  liquidity_usd: number;
+  volume_24h_usd: number;
+  tradeable: boolean;
+  price_source?: "rhj" | "dexscreener";
+  reason?: string;
+}
 
-/**
- * Curated set. Every contract, decimal and name below was read from
- * https://rpc.mainnet.chain.robinhood.com and matches the issuer convention.
- * Adding to this list means confirming the address on-chain first.
- */
+interface RhjAsset {
+  id: string;
+  tokenSymbol: string;
+  tokenName: string;
+  deployments: { contractAddress: string; chainId: number }[];
+  currentMultiplier?: string;
+  status?: string;
+  logoUrl?: string;
+  tokenDecimals?: number;
+}
+
+interface RhjPriceQuote {
+  tokenSymbol: string;
+  bid: string;
+  ask: string;
+  isTradingHalt?: boolean;
+  dailyTradingVolume?: string;
+}
+
+/** Minimal seed if RHJ API is unreachable — not the primary registry. */
 export const RWA_SEED_TOKENS: Record<string, RwaToken> = {
   NVDA: {
     symbol: "NVDA",
@@ -78,65 +72,27 @@ export const RWA_SEED_TOKENS: Record<string, RwaToken> = {
     decimals: 18,
     onchain_name: "NVIDIA • Robinhood Token",
     verified: true,
-  },
-  TSLA: {
-    symbol: "TSLA",
-    contract: "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
-    decimals: 18,
-    onchain_name: "Tesla • Robinhood Token",
-    verified: true,
-  },
-  AAPL: {
-    symbol: "AAPL",
-    contract: "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
-    decimals: 18,
-    onchain_name: "Apple • Robinhood Token",
-    verified: true,
-  },
-  SPY: {
-    symbol: "SPY",
-    contract: "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
-    decimals: 18,
-    onchain_name: "SPDR S&P 500 ETF Trust • Robinhood Token",
-    verified: true,
-  },
-  MSTR: {
-    symbol: "MSTR",
-    contract: "0xec262a75e413fAfD0dF80480274532C79D42da09",
-    decimals: 18,
-    onchain_name: "Strategy Inc. • Robinhood Token",
-    verified: true,
-  },
-  COIN: {
-    symbol: "COIN",
-    contract: "0x6330D8C3178a418788dF01a47479c0ce7CCF450b",
-    decimals: 18,
-    onchain_name: "Coinbase • Robinhood Token",
-    verified: true,
+    source: "seed",
   },
 };
+
+let registryCache: { at: number; map: Record<string, RwaToken> } | null = null;
+let pricesCache: { at: number; map: Record<string, RhjPriceQuote> } | null = null;
+
+const REGISTRY_TTL_MS = 5 * 60_000;
+const PRICES_TTL_MS = 60_000;
+const quoteCache = new Map<string, { q: RwaQuote; at: number }>();
+const QUOTE_TTL_MS = 60_000;
 
 export function rwaPayoutsEnabled(): boolean {
   return process.env.RHAGENT_RWA_PAYOUTS_ENABLED === "true";
 }
 
-/**
- * Liquidity floor. A payout in a token nobody can sell is worse than no payout
- * at all, because it looks like compensation and isn't.
- */
 export function rwaMinLiquidityUsd(): number {
   const n = parseFloat(process.env.RHAGENT_RWA_MIN_LIQUIDITY_USD ?? "50000");
   return Number.isFinite(n) && n >= 0 ? n : 50_000;
 }
 
-/**
- * Operator additions, as JSON:
- *   RHAGENT_RWA_TOKENS='[{"symbol":"HOOD","contract":"0x32aC…","decimals":18}]'
- *
- * Anything added this way is treated as operator-attested: it bypasses the
- * issuer-name check, because the whole point is to allow a token the convention
- * does not cover. It does NOT bypass the liquidity floor.
- */
 function operatorTokens(): Record<string, RwaToken> {
   const raw = (process.env.RHAGENT_RWA_TOKENS || "").trim();
   if (!raw) return {};
@@ -162,116 +118,258 @@ function operatorTokens(): Record<string, RwaToken> {
       contract: contract as `0x${string}`,
       decimals,
       onchain_name: typeof o.name === "string" ? o.name : "(operator-supplied)",
-      // Attested by whoever set the env var. Recorded as verified so the payout
-      // path treats it as payable, but the source is distinguishable below.
       verified: true,
+      source: "operator",
     };
   }
   return out;
 }
 
-/** The full payable map: curated seed, then operator additions (which win). */
-export function rwaRegistry(): Record<string, RwaToken> {
-  return { ...RWA_SEED_TOKENS, ...operatorTokens() };
+function rhjAssetToToken(a: RhjAsset): RwaToken | null {
+  const dep = a.deployments.find((d) => d.chainId === RH_CHAIN_ID);
+  if (!dep?.contractAddress || !/^0x[a-fA-F0-9]{40}$/.test(dep.contractAddress)) return null;
+  const symbol = a.tokenSymbol.trim().toUpperCase();
+  if (!/^[A-Z][A-Z0-9.\-]{0,11}$/.test(symbol)) return null;
+  return {
+    symbol,
+    contract: dep.contractAddress as `0x${string}`,
+    decimals: typeof a.tokenDecimals === "number" ? a.tokenDecimals : 18,
+    onchain_name: a.tokenName,
+    verified: a.tokenName.includes(ISSUER_MARKER),
+    source: "rhj",
+    status: a.status,
+    asset_id: a.id,
+    logo_url: a.logoUrl,
+    current_multiplier: a.currentMultiplier,
+  };
 }
 
-/** Is this ticker one we hold a verified contract for? Case-insensitive. */
-export function rwaTokenFor(symbolRaw: string | null | undefined): RwaToken | null {
+async function fetchRhjAssets(): Promise<Record<string, RwaToken>> {
+  if (registryCache && Date.now() - registryCache.at < REGISTRY_TTL_MS) {
+    return registryCache.map;
+  }
+
+  const map: Record<string, RwaToken> = {};
+  try {
+    const res = await fetch(RHJ_ASSETS_URL, { signal: AbortSignal.timeout(12_000) });
+    if (res.ok) {
+      const body = (await res.json()) as { assets?: RhjAsset[] };
+      for (const a of body.assets ?? []) {
+        if (a.status && a.status !== "ASSET_STATUS_ACTIVE") continue;
+        const t = rhjAssetToToken(a);
+        if (t) map[t.symbol] = t;
+      }
+    }
+  } catch {
+    /* fall through to seed */
+  }
+
+  if (Object.keys(map).length === 0) {
+    Object.assign(map, RWA_SEED_TOKENS);
+  }
+
+  registryCache = { at: Date.now(), map };
+  return map;
+}
+
+async function fetchRhjPrices(): Promise<Record<string, RhjPriceQuote>> {
+  if (pricesCache && Date.now() - pricesCache.at < PRICES_TTL_MS) {
+    return pricesCache.map;
+  }
+
+  const map: Record<string, RhjPriceQuote> = {};
+  try {
+    const res = await fetch(RHJ_PRICES_URL, { signal: AbortSignal.timeout(12_000) });
+    if (res.ok) {
+      const body = (await res.json()) as { quotes?: RhjPriceQuote[] };
+      for (const q of body.quotes ?? []) {
+        const sym = q.tokenSymbol?.trim().toUpperCase();
+        if (sym) map[sym] = q;
+      }
+    }
+  } catch {
+    /* empty map — callers fall back to dex */
+  }
+
+  pricesCache = { at: Date.now(), map };
+  return map;
+}
+
+function rhjMidPrice(q: RhjPriceQuote | undefined): number | null {
+  if (!q || q.isTradingHalt) return null;
+  const bid = parseFloat(q.bid);
+  const ask = parseFloat(q.ask);
+  if (!(bid > 0) || !(ask > 0)) return null;
+  return (bid + ask) / 2;
+}
+
+/** Full registry: Robinhood RHJ assets on chain 4663, then operator overrides. */
+export async function getRwaRegistry(): Promise<Record<string, RwaToken>> {
+  const rhj = await fetchRhjAssets();
+  return { ...rhj, ...operatorTokens() };
+}
+
+/** @deprecated sync stub — use getRwaRegistry() or rwaTokenFor(). */
+export function rwaRegistry(): Record<string, RwaToken> {
+  return registryCache?.map ?? { ...RWA_SEED_TOKENS, ...operatorTokens() };
+}
+
+export async function rwaTokenFor(symbolRaw: string | null | undefined): Promise<RwaToken | null> {
   if (!symbolRaw || typeof symbolRaw !== "string") return null;
   const symbol = symbolRaw.trim().replace(/^\$/, "").toUpperCase();
   if (!symbol) return null;
-  return rwaRegistry()[symbol] ?? null;
+  const reg = await getRwaRegistry();
+  return reg[symbol] ?? null;
 }
 
-/** Does an on-chain name() carry the issuer marker? Used to audit the seed set. */
 export function looksIssuerMinted(onchainName: string | null | undefined): boolean {
   return typeof onchainName === "string" && onchainName.includes(ISSUER_MARKER);
 }
 
-export interface RwaQuote {
-  symbol: string;
-  contract: `0x${string}`;
-  price_usd: number | null;
-  liquidity_usd: number;
-  volume_24h_usd: number;
-  /** Deep enough that a payout can actually be sold. */
-  tradeable: boolean;
-  /** Present when tradeable is false. */
-  reason?: string;
-}
-
-const quoteCache = new Map<string, { q: RwaQuote; at: number }>();
-const QUOTE_TTL_MS = 60_000;
-
-/**
- * Live price and depth for a KNOWN contract address.
- *
- * Deliberately keyed by address, not symbol — see the header. Dexscreener is
- * asked "what is this contract worth", a question with one answer, rather than
- * "which contract is NVDA", a question with 22.
- */
-export async function rwaQuote(token: RwaToken): Promise<RwaQuote> {
-  const key = token.contract.toLowerCase();
-  const hit = quoteCache.get(key);
-  if (hit && Date.now() - hit.at < QUOTE_TTL_MS) return hit.q;
-
-  const base: RwaQuote = {
-    symbol: token.symbol,
-    contract: token.contract,
-    price_usd: null,
-    liquidity_usd: 0,
-    volume_24h_usd: 0,
-    tradeable: false,
-    reason: "price_unavailable",
-  };
-
-  let q: RwaQuote = base;
+async function dexLiquidity(contract: string): Promise<{ liquidity: number; volume: number; price: number | null }> {
   try {
-    const res = await fetch(`https://api.dexscreener.com/token-pairs/v1/robinhood/${key}`, {
+    const res = await fetch(`https://api.dexscreener.com/token-pairs/v1/robinhood/${contract.toLowerCase()}`, {
       signal: AbortSignal.timeout(8000),
     });
-    if (res.ok) {
-      const pairs = (await res.json()) as {
-        priceUsd?: string;
-        liquidity?: { usd?: number };
-        volume?: { h24?: number };
-      }[];
-      if (Array.isArray(pairs) && pairs.length) {
-        const liquidity = pairs.reduce((s, p) => s + (p.liquidity?.usd ?? 0), 0);
-        const volume = pairs.reduce((s, p) => s + (p.volume?.h24 ?? 0), 0);
-        const deepest = pairs.reduce((a, b) =>
-          (b.liquidity?.usd ?? 0) > (a.liquidity?.usd ?? 0) ? b : a,
-        );
-        const px = parseFloat(deepest.priceUsd ?? "");
-        const price = Number.isFinite(px) && px > 0 ? px : null;
-        const floor = rwaMinLiquidityUsd();
-        q = {
-          symbol: token.symbol,
-          contract: token.contract,
-          price_usd: price,
-          liquidity_usd: liquidity,
-          volume_24h_usd: volume,
-          tradeable: price != null && liquidity >= floor,
-          ...(price == null
-            ? { reason: "price_unavailable" }
-            : liquidity < floor
-              ? { reason: `liquidity $${Math.round(liquidity).toLocaleString()} below floor $${floor.toLocaleString()}` }
-              : {}),
-        };
-      }
-    }
+    if (!res.ok) return { liquidity: 0, volume: 0, price: null };
+    const pairs = (await res.json()) as {
+      priceUsd?: string;
+      liquidity?: { usd?: number };
+      volume?: { h24?: number };
+    }[];
+    if (!Array.isArray(pairs) || !pairs.length) return { liquidity: 0, volume: 0, price: null };
+    const liquidity = pairs.reduce((s, p) => s + (p.liquidity?.usd ?? 0), 0);
+    const volume = pairs.reduce((s, p) => s + (p.volume?.h24 ?? 0), 0);
+    const deepest = pairs.reduce((a, b) => ((b.liquidity?.usd ?? 0) > (a.liquidity?.usd ?? 0) ? b : a));
+    const px = parseFloat(deepest.priceUsd ?? "");
+    const price = Number.isFinite(px) && px > 0 ? px : null;
+    return { liquidity, volume, price };
   } catch {
-    /* leave `base` — an unreachable price source must not silently become $0 */
+    return { liquidity: 0, volume: 0, price: null };
+  }
+}
+
+/**
+ * Quote a known contract. Price from RHJ (official); liquidity from Dexscreener.
+ * Payout path needs liquidity — listing can skip dex with includeLiquidity=false.
+ */
+export async function rwaQuote(
+  token: RwaToken,
+  opts: { includeLiquidity?: boolean } = {},
+): Promise<RwaQuote> {
+  const includeLiquidity = opts.includeLiquidity !== false;
+  const key = token.contract.toLowerCase();
+  const cacheKey = `${key}:${includeLiquidity ? "full" : "price"}`;
+  const hit = quoteCache.get(cacheKey);
+  if (hit && Date.now() - hit.at < QUOTE_TTL_MS) return hit.q;
+
+  const prices = await fetchRhjPrices();
+  const rhjPx = rhjMidPrice(prices[token.symbol]);
+
+  let liquidity = 0;
+  let volume = 0;
+  let dexPrice: number | null = null;
+  if (includeLiquidity) {
+    const dex = await dexLiquidity(key);
+    liquidity = dex.liquidity;
+    volume = dex.volume;
+    dexPrice = dex.price;
   }
 
-  quoteCache.set(key, { q, at: Date.now() });
+  const price = rhjPx ?? dexPrice;
+  const price_source = rhjPx != null ? "rhj" : dexPrice != null ? "dexscreener" : undefined;
+  const floor = rwaMinLiquidityUsd();
+
+  let q: RwaQuote;
+  if (price == null) {
+    q = {
+      symbol: token.symbol,
+      contract: token.contract,
+      price_usd: null,
+      liquidity_usd: liquidity,
+      volume_24h_usd: volume,
+      tradeable: false,
+      reason: "price_unavailable",
+    };
+  } else if (includeLiquidity && liquidity < floor) {
+    q = {
+      symbol: token.symbol,
+      contract: token.contract,
+      price_usd: price,
+      liquidity_usd: liquidity,
+      volume_24h_usd: volume,
+      tradeable: false,
+      price_source,
+      reason: `liquidity $${Math.round(liquidity).toLocaleString()} below floor $${floor.toLocaleString()}`,
+    };
+  } else {
+    q = {
+      symbol: token.symbol,
+      contract: token.contract,
+      price_usd: price,
+      liquidity_usd: liquidity,
+      volume_24h_usd: volume,
+      tradeable: true,
+      price_source,
+    };
+  }
+
+  quoteCache.set(cacheKey, { q, at: Date.now() });
   return q;
 }
 
-/** For docs and the admin view: what can currently be paid, and at what depth. */
-export async function rwaRegistrySnapshot(): Promise<
+/** Registry + RHJ prices; dex liquidity only when requested (slow for 96 tokens). */
+export async function rwaRegistrySnapshot(opts: { withLiquidity?: boolean } = {}): Promise<
   (RwaToken & { quote: RwaQuote })[]
 > {
-  const tokens = Object.values(rwaRegistry());
-  return Promise.all(tokens.map(async (t) => ({ ...t, quote: await rwaQuote(t) })));
+  const withLiquidity = opts.withLiquidity === true;
+  const [tokens, prices] = await Promise.all([getRwaRegistry(), fetchRhjPrices()]);
+
+  const entries = Object.values(tokens).map((t) => {
+    const mid = rhjMidPrice(prices[t.symbol]);
+    if (!withLiquidity) {
+      const quote: RwaQuote = {
+        symbol: t.symbol,
+        contract: t.contract,
+        price_usd: mid,
+        liquidity_usd: 0,
+        volume_24h_usd: parseFloat(prices[t.symbol]?.dailyTradingVolume ?? "0") || 0,
+        tradeable: mid != null,
+        price_source: mid != null ? "rhj" : undefined,
+        ...(mid == null ? { reason: "price_unavailable" } : {}),
+      };
+      return { ...t, quote };
+    }
+    return null;
+  });
+
+  if (!withLiquidity) {
+    return entries.filter(Boolean) as (RwaToken & { quote: RwaQuote })[];
+  }
+
+  // Full liquidity pass — batched to avoid hammering Dexscreener
+  const list = Object.values(tokens);
+  const out: (RwaToken & { quote: RwaQuote })[] = [];
+  const batch = 8;
+  for (let i = 0; i < list.length; i += batch) {
+    const chunk = list.slice(i, i + batch);
+    const quoted = await Promise.all(chunk.map((t) => rwaQuote(t, { includeLiquidity: true })));
+    for (let j = 0; j < chunk.length; j++) {
+      out.push({ ...chunk[j], quote: quoted[j] });
+    }
+  }
+  return out;
+}
+
+export function rhjRegistryMeta() {
+  return {
+    assets_url: RHJ_ASSETS_URL,
+    prices_url: RHJ_PRICES_URL,
+    chain_id: RH_CHAIN_ID,
+    docs: [
+      "https://docs.robinhood.com/chain/contracts",
+      "https://docs.robinhood.com/chain/oracles-and-price-feeds",
+      "https://docs.robinhood.com/chain/stock-token-apis",
+    ],
+  };
 }

@@ -120,19 +120,13 @@ converting last is what keeps a post worth the same regardless of which ticker
 it happened to be about — otherwise identical work would cost the treasury
 different amounts on a $300 stock and a $3 one.
 
-**Resolution is by contract address, never by symbol.** ERC-20 symbols on this
-chain are self-declared and non-unique: a live search for `HOOD` returns 22
-distinct tokens — "Hood Inu", "foreskin", "Ponzi Hood", "RobbingHood" — several
-holding $8k–$20k of real liquidity, i.e. enough to clear any plausible
-liquidity floor. Exactly one trades near the share price. A symbol match would
-let anyone mint the asset their own research gets paid in. `lib/rwa-tokens.ts`
-therefore holds a curated address allowlist, every entry read from the chain.
-
-The verified set is recognised by Robinhood's on-chain naming convention,
-`name() = "<Company> • Robinhood Token"`: NVDA, TSLA, AAPL, SPY, MSTR, COIN.
-**HOOD is deliberately excluded** — the token trading at Robinhood's own share
-price reports `name() = "HOOD"` with no issuer marker, so it fails the check.
-Add it by hand via `RHAGENT_RWA_TOKENS` if you have confirmed it yourself.
+**Registry source.** Canonical addresses come from Robinhood's RHJ asset API
+(`GET https://api.robinhood.com/rhj/assets`) — ~96 active stock tokens and ETFs on
+chain 4663. `/api/research/rwa` mirrors that list with live RHJ prices; Dexscreener
+liquidity is checked at payout time (or pass `?with_liquidity=true` on the list).
+Resolution is still by **contract address from RHJ**, never by on-chain symbol search:
+22 distinct ERC-20s call themselves HOOD, but only RHJ-listed addresses are used.
+Operator overrides via `RHAGENT_RWA_TOKENS` still work for edge cases.
 
 **The vault is the real gate.** `setTokenLimits(token, allowed, maxPerPost,
 dailyBudget, walletDaily)` is owner-only, and an asset with no limits set cannot

@@ -7,6 +7,7 @@ import {
   rwaQuote,
   rwaPayoutsEnabled,
   rwaMinLiquidityUsd,
+  rhjRegistryMeta,
 } from "@/lib/rwa-tokens";
 import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
 
@@ -33,7 +34,9 @@ export async function GET(req: NextRequest) {
   }
 
   const symbol = new URL(req.url).searchParams.get("symbol")?.trim();
+  const withLiquidity = new URL(req.url).searchParams.get("with_liquidity") === "true";
   const enabled = rwaPayoutsEnabled();
+  const meta = rhjRegistryMeta();
 
   const settlement = {
     rwa_payouts_enabled: enabled,
@@ -49,14 +52,14 @@ export async function GET(req: NextRequest) {
       "Tokenized debt securities issued by Robinhood Assets (Jersey) Limited. They track the price " +
       "and carry no shareholder rights. Not registered under US securities law and restricted in " +
       "several jurisdictions.",
-    why_allowlisted:
-      "Resolution is by verified contract address, never by symbol. ERC-20 symbols on this chain are " +
-      "self-declared and not unique — 22 distinct tokens call themselves HOOD — so a symbol match " +
-      "would let anyone mint the asset their own research gets paid in.",
+    registry_source:
+      "Canonical contract addresses from Robinhood's RHJ asset API — not on-chain symbol search. " +
+      "Memecoins sharing a ticker are ignored.",
+    registry: meta,
   };
 
   if (symbol) {
-    const token = rwaTokenFor(symbol);
+    const token = await rwaTokenFor(symbol);
     if (!token) {
       return NextResponse.json({
         ok: true,
@@ -82,6 +85,7 @@ export async function GET(req: NextRequest) {
       },
       market: {
         price_usd: quote.price_usd,
+        price_source: quote.price_source,
         liquidity_usd: quote.liquidity_usd,
         volume_24h_usd: quote.volume_24h_usd,
         tradeable: quote.tradeable,
@@ -90,23 +94,33 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const snapshot = await rwaRegistrySnapshot();
+  const snapshot = await rwaRegistrySnapshot({ withLiquidity });
   return NextResponse.json({
     ok: true,
     count: snapshot.length,
+    with_liquidity: withLiquidity,
     tickers: snapshot
-      .map((t) => ({
-        symbol: t.symbol,
-        contract: t.contract,
-        decimals: t.decimals,
-        onchain_name: t.onchain_name,
-        price_usd: t.quote.price_usd,
-        liquidity_usd: t.quote.liquidity_usd,
-        volume_24h_usd: t.quote.volume_24h_usd,
-        payable: enabled && t.quote.tradeable,
-        ...(t.quote.tradeable ? {} : { blocked_by: t.quote.reason }),
-      }))
-      .sort((a, b) => b.liquidity_usd - a.liquidity_usd),
+      .map((t) => {
+        const hasPrice = t.quote.price_usd != null;
+        const liquidEnough =
+          !withLiquidity || (t.quote.liquidity_usd >= rwaMinLiquidityUsd() && hasPrice);
+        return {
+          symbol: t.symbol,
+          contract: t.contract,
+          decimals: t.decimals,
+          onchain_name: t.onchain_name,
+          source: t.source,
+          price_usd: t.quote.price_usd,
+          price_source: t.quote.price_source,
+          liquidity_usd: withLiquidity ? t.quote.liquidity_usd : null,
+          volume_24h_usd: t.quote.volume_24h_usd,
+          payable: enabled && hasPrice && liquidEnough,
+          ...(!enabled || (hasPrice && liquidEnough)
+            ? {}
+            : { blocked_by: t.quote.reason ?? "price_unavailable" }),
+        };
+      })
+      .sort((a, b) => (b.liquidity_usd || 0) - (a.liquidity_usd || 0) || (b.price_usd ?? 0) - (a.price_usd ?? 0)),
     settlement,
   });
 }

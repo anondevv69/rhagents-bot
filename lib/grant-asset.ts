@@ -135,7 +135,7 @@ export async function resolveGrantAsset(
     );
   }
 
-  const token: RwaToken | null = rwaTokenFor(ticker);
+  const token: RwaToken | null = await rwaTokenFor(ticker);
   if (!token) {
     return inRhagent(
       `No tokenized ${ticker} on Robinhood Chain in the verified registry.`,
