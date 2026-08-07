@@ -60,7 +60,7 @@ export function normalizeChainWallet(raw: string): `0x${string}` | null {
   return getAddress(s);
 }
 
-async function fetchTokenPriceUsd(contract: string): Promise<number | null> {
+export async function fetchTokenPriceUsd(contract: string): Promise<number | null> {
   try {
     const res = await fetch(
       `https://api.dexscreener.com/latest/dex/tokens/${contract.toLowerCase()}`,

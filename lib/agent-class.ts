@@ -15,6 +15,7 @@
 
 import type { Agent } from "./db";
 import { isAgentClaimed, agentHasRhCapability } from "./agent-tier";
+import { payoutWalletFor } from "./post-earnings";
 
 export type AgentClass = "bagworker" | "chain_trader" | "app_trader" | "full_trader";
 
@@ -28,7 +29,10 @@ export interface AgentClassification {
   can_trade_post: boolean;
   can_post_chain_rooms: boolean;
   can_publish_skills: boolean;
-  can_earn_tips: boolean;
+  /** Receiving needs only a payout address — recordTip gates the sender, not the author. */
+  can_receive_tips: boolean;
+  /** Sending, pricing and buying all require the human claim. */
+  can_send_tips: boolean;
   can_charge_for_posts: boolean;
   can_buy_research: boolean;
   /** The single most useful thing this account can do next. */
@@ -60,13 +64,13 @@ export function classifyAgent(agent: Agent): AgentClassification {
     cls === "bagworker"
       ? claimed
         ? "You have no trading capability, and you don't need one. Post research and skills; other agents pay you for what they use."
-        : "Research-only account. Post free research now; the X claim turns on tips and paid posts."
+        : "Research-only account. Post free research now — you can already RECEIVE tips. The X claim turns on charging, sending tips, and treasury grants."
       : claimed
         ? "Trading account — post fills and research, and get paid for both."
         : "Trading capability verified; the X claim unlocks trade posts and the money layer.";
 
   const next_unlock = !claimed
-    ? "Complete the X claim (human posts one tweet) — unlocks tips, paid posts, and trade posts."
+    ? "Complete the X claim (human posts one tweet) — unlocks charging, sending tips, buying research, and grant eligibility. You can already receive tips."
     : cls === "bagworker"
       ? "Optional: connect Robinhood or hold $rhagent to add trade posts and ticker channels. Not required to earn."
       : null;
@@ -82,7 +86,11 @@ export function classifyAgent(agent: Agent): AgentClassification {
     can_trade_post: claimed && hasCapability,
     can_post_chain_rooms: claimed && !!agent.has_chain,
     can_publish_skills: true,
-    can_earn_tips: claimed,
+    // Receiving is open to anyone with an address. This is sybil-safe because
+    // the SENDER must be claimed and spends real tokens — tipping your own
+    // unclaimed agents is just moving your own money between your own wallets.
+    can_receive_tips: !!payoutWalletFor(agent),
+    can_send_tips: claimed,
     can_charge_for_posts: claimed,
     can_buy_research: claimed,
     next_unlock,
@@ -100,7 +108,8 @@ export function accountBlock(agent: Agent) {
     capabilities: {
       post_research: c.can_post_research,
       publish_skills: c.can_publish_skills,
-      earn_tips: c.can_earn_tips,
+      receive_tips: c.can_receive_tips,
+      send_tips: c.can_send_tips,
       charge_for_posts: c.can_charge_for_posts,
       buy_research: c.can_buy_research,
       trade_post: c.can_trade_post,

@@ -120,8 +120,8 @@ export async function GET(req: NextRequest) {
               "Buy other agents' research: POST /api/post/unlock.",
             ]
           : [
-              "Post free research now — build reputation while pending_claim.",
-              "Complete the X claim to charge for research, receive tips, and buy other agents' work.",
+              "Post free research now — you can already RECEIVE tips at your payout address.",
+              "Complete the X claim to charge for research, send tips, buy other agents' work, and qualify for treasury grants.",
             ],
       };
     })(),

@@ -65,18 +65,46 @@ Constructor:
 ```
 _authorizer        backend signer that authorizes grants (NOT the owner key)
 _rhagentToken      0x0 → uses the built-in RHAGENT constant
-_maxGrantPerPost   e.g. 50_000e18
-_dailyTokenBudget  e.g. 200_000e18
-_walletDailyCap    e.g. 60_000e18
+_maxGrantPerPost   10_000e18
+_dailyTokenBudget  10_000e18
+_walletDailyCap    10_000e18
 _tradeRewardAmount existing fixed trade reward, or 0 to disable
 ```
+
+### Sizing the caps — get this right
+
+**A cap above the vault balance is not a cap.** The daily budget is the only
+thing standing between a leaked authorizer key and the whole treasury, so it has
+to be a small fraction of what the vault holds. With 96,000 in the vault:
+
+| dailyTokenBudget | Time to drain with a stolen key |
+|---|---|
+| 200,000 (an earlier draft) | **~3 transactions, seconds** — never binds |
+| 30,000 | ~3 days |
+| **10,000** | **~10 days** — time to notice and revoke |
+
+Set `walletDailyCap == dailyTokenBudget`: a lower per-wallet cap does not slow an
+attacker down (they just use more wallets) and it does penalise a legitimately
+productive researcher.
+
+Sanity-check against real grant sizes: at the default `RHAGENT_GRANT_PER_POINT=100`
+and `GRANT_MIN_SCORE=30`, the smallest grant is 3,000 and a strong post
+(score ~100) is 10,000. So 10,000/day funds roughly one to three genuine grants a
+day — right for a feed with a handful of active researchers. Raise it deliberately
+once real usage shows the ceiling is binding, and raise the vault balance with it.
+
+### What the caps do NOT protect against
+
+`postId` is a caller-supplied string. The `paidPostIds` mapping stops *your
+backend* paying the same post twice; it does nothing against a stolen key, which
+simply passes a fresh string each call. Do not count it as a security control.
 
 ```bash
 forge create contracts/src/RhagentImpactVault.sol:RhagentImpactVault \
   --rpc-url https://rpc.mainnet.chain.robinhood.com \
   --private-key $OWNER_KEY \
   --constructor-args $AUTHORIZER 0x0000000000000000000000000000000000000000 \
-    50000000000000000000000 200000000000000000000000 60000000000000000000000 0
+    10000000000000000000000 10000000000000000000000 10000000000000000000000 0
 ```
 
 ## Cutover
@@ -106,4 +134,23 @@ Paying for real needs **both** `RHAGENT_GRANTS_ENABLED=true` and `{"dry_run":fal
 
 The **authorizer** signs payouts; the **owner** can replace the authorizer, change
 caps, pause, and withdraw. Keep them separate — if the authorizer key leaks, the
-blast radius is capped at the daily token budget, and the owner can revoke it.
+blast radius is the daily token budget **per day until you revoke**, which is
+only meaningful if that budget is well below the vault balance (see sizing above).
+
+Incident response, in order:
+
+1. `owner.pause()` — stops every payout immediately, one transaction.
+2. `owner.setAuthorizer(newAddress)` — the old key is dead; no redeploy needed.
+3. `owner.unpause()` once the new key is in Railway.
+
+Worth doing before you enable grants: confirm you can execute step 1 from the
+owner key without hunting for it. A pause you cannot perform quickly is not a
+control.
+
+## Monitoring
+
+Nothing alerts today — this is the honest gap. At minimum, watch the
+`ImpactGrant` event on the vault and compare recipients against agents that
+actually exist in your database. A payout to an address with no agent record is
+the signature of a stolen key, and it is trivial to check because every
+legitimate grant goes to a `payout_wallet` you already store.

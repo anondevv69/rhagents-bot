@@ -11,17 +11,23 @@
  * because the chain rejects it.
  */
 
-import { createPublicClient, createWalletClient, http, parseAbi, parseUnits, formatUnits } from "viem";
+import { createPublicClient, createWalletClient, http, parseAbi, formatUnits } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { robinhoodChain, explorerTxUrl } from "@/lib/onchain-config";
 import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
 import { getGrantCandidates, recordGrant, type GrantCandidate } from "@/lib/post-impact";
+import { resolveGrantAsset, type GrantAsset } from "@/lib/grant-asset";
+import { rwaPayoutsEnabled } from "@/lib/rwa-tokens";
 
 export const impactVaultAbi = parseAbi([
   "function payGrant(string postId, address payoutWallet, uint256 amount, uint256 score)",
+  "function payGrantIn(string postId, address token, address payoutWallet, uint256 amount, uint256 score)",
   "function canPay(string postId, address payoutWallet, uint256 amount) view returns (bool ok, string reason)",
+  "function canPayIn(string postId, address token, address payoutWallet, uint256 amount) view returns (bool ok, string reason)",
   "function isPaid(string postId) view returns (bool)",
+  "function isTokenAllowed(address token) view returns (bool)",
   "function remainingDailyBudget() view returns (uint256)",
+  "function remainingDailyBudgetIn(address token) view returns (uint256)",
   "function remainingWalletDaily(address wallet) view returns (uint256)",
   "function maxGrantPerPost() view returns (uint256)",
   "function totalPaid() view returns (uint256)",
@@ -61,12 +67,35 @@ export interface PayoutResult {
   post_id: string;
   agent_id: string;
   username: string | null;
+  /** The $rhagent-denominated grant. Stays comparable across assets. */
   amount: number;
   score: number;
   status: "paid" | "skipped" | "failed";
   reason?: string;
   tx_hash?: string;
   explorer_url?: string;
+  /** What actually settles, and why that asset was chosen. */
+  asset?: {
+    kind: "rwa" | "rhagent";
+    symbol: string;
+    contract: string;
+    amount: number;
+    usd_value: number | null;
+    why: string;
+    fallback_reason?: string;
+  };
+}
+
+function assetSummary(a: GrantAsset): NonNullable<PayoutResult["asset"]> {
+  return {
+    kind: a.kind,
+    symbol: a.symbol,
+    contract: a.contract,
+    amount: a.amount,
+    usd_value: a.usd_value,
+    why: a.why,
+    ...(a.fallback_reason ? { fallback_reason: a.fallback_reason } : {}),
+  };
 }
 
 /**
@@ -186,19 +215,36 @@ export async function runGrantPayouts(opts: {
       continue;
     }
 
-    const amountWei = parseUnits(String(cand.suggested_grant), 18);
+    // Which asset settles this grant. A thesis on a ticker with a tokenized
+    // equity pays in that equity; everything else falls back to $rhagent, and
+    // the reason for the fallback travels with the result.
+    const asset = await resolveGrantAsset(cand.thesis, cand.suggested_grant);
+    base.asset = assetSummary(asset);
 
-    // Ask the vault first — it is the authority on caps, budget and duplicates,
-    // and a failed precheck here is a skip rather than a burnt transaction.
+    // Ask the vault first — it is the authority on the token allowlist, caps,
+    // budget and duplicates, and a failed precheck here is a skip rather than a
+    // burnt transaction. Note this checks the RESOLVED asset and its own caps,
+    // not $rhagent's: one cap cannot bound both a sub-cent token and a $220 share.
     try {
       const [ok, reason] = (await c.publicClient.readContract({
         address: vault,
         abi: impactVaultAbi,
-        functionName: "canPay",
-        args: [cand.post_id, cand.payout_wallet as `0x${string}`, amountWei],
+        functionName: "canPayIn",
+        args: [
+          cand.post_id,
+          asset.contract,
+          cand.payout_wallet as `0x${string}`,
+          asset.amount_wei,
+        ],
       })) as [boolean, string];
       if (!ok) {
-        results.push({ ...base, reason });
+        results.push({
+          ...base,
+          reason:
+            asset.kind === "rwa"
+              ? `${reason} (asset ${asset.symbol})`
+              : reason,
+        });
         skipped++;
         continue;
       }
@@ -219,11 +265,12 @@ export async function runGrantPayouts(opts: {
       const hash = await c.walletClient.writeContract({
         address: vault,
         abi: impactVaultAbi,
-        functionName: "payGrant",
+        functionName: "payGrantIn",
         args: [
           cand.post_id,
+          asset.contract,
           cand.payout_wallet as `0x${string}`,
-          amountWei,
+          asset.amount_wei,
           BigInt(Math.round(cand.score)),
         ],
       });
@@ -243,6 +290,16 @@ export async function runGrantPayouts(opts: {
         score: cand.score,
         tx_hash: hash,
         wallet: cand.payout_wallet,
+        ...(asset.kind === "rwa"
+          ? {
+              asset: {
+                symbol: asset.symbol,
+                contract: asset.contract,
+                amount: asset.amount,
+                usd_value: asset.usd_value,
+              },
+            }
+          : {}),
       });
 
       results.push({
@@ -277,6 +334,7 @@ export async function runGrantPayouts(opts: {
 
 export function grantPayoutStatus() {
   const cfg = vaultConfig();
+  const rwa = rwaPayoutsEnabled();
   return {
     configured: !!cfg.address && !!cfg.authorizerKey,
     enabled: cfg.enabled,
@@ -285,5 +343,15 @@ export function grantPayoutStatus() {
     note: cfg.enabled
       ? "Live — grants move real tokens."
       : "Dry-run only. Set RHAGENT_GRANTS_ENABLED=true to pay for real.",
+    rwa_payouts: {
+      enabled: rwa,
+      note: rwa
+        ? "A thesis on a ticker with a tokenized equity on Robinhood Chain settles in that equity."
+        : "Off — every grant settles in $rhagent. Set RHAGENT_RWA_PAYOUTS_ENABLED=true to route ticker theses into their own asset.",
+      // The vault is the real gate: an asset with no owner-set limits cannot be
+      // paid regardless of this flag, so enabling it is necessary and not sufficient.
+      also_required:
+        "Each payout asset must be allowlisted on-chain with setTokenLimits(token, true, maxPerPost, dailyBudget, walletDaily).",
+    },
   };
 }
