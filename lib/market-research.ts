@@ -563,6 +563,177 @@ export async function getEquitySnapshot(symbolRaw: string): Promise<EquitySnapsh
   };
 }
 
+export interface OptionContract {
+  contract_id: string | null;
+  expiration: string | null;
+  strike: number | null;
+  type: "call" | "put" | null;
+  last: number | null;
+  bid: number | null;
+  ask: number | null;
+  volume: number | null;
+  open_interest: number | null;
+  implied_volatility: number | null;
+  delta: number | null;
+  gamma: number | null;
+  theta: number | null;
+  vega: number | null;
+}
+
+export interface OptionChain {
+  symbol: string;
+  date: string | null;
+  contracts: OptionContract[];
+  expirations: string[];
+  /** Derived reads so agents reason from the same arithmetic. */
+  stats: {
+    total_volume: number | null;
+    total_open_interest: number | null;
+    put_call_volume_ratio: number | null;
+    put_call_oi_ratio: number | null;
+    atm_iv: number | null;
+    max_pain_strike: number | null;
+  };
+  source: string;
+  note: string;
+}
+
+/**
+ * Options chain with greeks and IV.
+ *
+ * agents.md tells agents that "options and stock metrics" is one of the things
+ * that sells here, so the platform owed them a way to actually get it — until
+ * now `option_type`/`strike_price` existed only as fields on a post an agent
+ * could describe, with no data source behind them.
+ *
+ * Alpha Vantage HISTORICAL_OPTIONS returns the full chain with greeks. Realtime
+ * is a premium tier; the historical endpoint covers the previous session, which
+ * is what most research is built on anyway. As everywhere else here, an
+ * unavailable field says so instead of returning a plausible-looking zero.
+ */
+export async function getOptionChain(
+  symbolRaw: string,
+  opts: { date?: string } = {},
+): Promise<OptionChain | { error: string; message: string; alternatives?: string[] }> {
+  const symbol = symbolRaw.trim().toUpperCase().replace(/^\$/, "");
+  const provider = process.env.EQUITY_DATA_PROVIDER?.trim();
+  const apiKey = process.env.EQUITY_DATA_API_KEY?.trim();
+
+  if (!apiKey || !(provider === "alphavantage" || provider === "alpha_vantage")) {
+    return {
+      error: "options_unavailable",
+      message:
+        "No options data provider configured (set EQUITY_DATA_PROVIDER=alphavantage + " +
+        "EQUITY_DATA_API_KEY). Do not state strikes, IV or greeks you could not read.",
+      alternatives: [
+        "Connect Alpha Vantage's own MCP with your key for your own quota: https://mcp.alphavantage.co/mcp?apikey=YOUR_KEY",
+        "On-chain flow needs no provider: GET /api/research/token",
+      ],
+    };
+  }
+
+  const params = new URLSearchParams({ function: "HISTORICAL_OPTIONS", symbol, apikey: apiKey });
+  if (opts.date) params.set("date", opts.date);
+
+  try {
+    const res = await fetch(`${AV}?${params}`, {
+      signal: AbortSignal.timeout(15000),
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) return { error: "provider_error", message: `Alpha Vantage returned ${res.status}.` };
+    const data = (await res.json()) as {
+      data?: Record<string, string>[];
+      message?: string;
+      Note?: string;
+      Information?: string;
+      ["Error Message"]?: string;
+    };
+
+    if (data.Note || data.Information) {
+      return {
+        error: "rate_limited",
+        message: "Alpha Vantage quota exhausted — no chain this cycle. Do not infer greeks you could not read.",
+        alternatives: ["GET /api/research/token — on-chain metrics have no quota."],
+      };
+    }
+    if (data["Error Message"] || !Array.isArray(data.data)) {
+      return { error: "invalid_symbol", message: `No options chain available for "${symbol}".` };
+    }
+
+    const contracts: OptionContract[] = data.data.map((c) => ({
+      contract_id: c.contractID ?? null,
+      expiration: c.expiration ?? null,
+      strike: num(c.strike),
+      type: c.type === "call" || c.type === "put" ? c.type : null,
+      last: num(c.last),
+      bid: num(c.bid),
+      ask: num(c.ask),
+      volume: num(c.volume),
+      open_interest: num(c.open_interest),
+      implied_volatility: num(c.implied_volatility),
+      delta: num(c.delta),
+      gamma: num(c.gamma),
+      theta: num(c.theta),
+      vega: num(c.vega),
+    }));
+
+    if (contracts.length === 0) {
+      return { error: "no_contracts", message: `Chain for ${symbol} came back empty.` };
+    }
+
+    const calls = contracts.filter((c) => c.type === "call");
+    const puts = contracts.filter((c) => c.type === "put");
+    const sum = (xs: OptionContract[], k: "volume" | "open_interest") =>
+      xs.reduce((a, c) => a + (c[k] ?? 0), 0);
+
+    const callVol = sum(calls, "volume");
+    const putVol = sum(puts, "volume");
+    const callOi = sum(calls, "open_interest");
+    const putOi = sum(puts, "open_interest");
+
+    // ATM IV: the contract whose delta is closest to 0.5 in magnitude.
+    const withDelta = contracts.filter((c) => c.delta != null && c.implied_volatility != null);
+    const atm = withDelta.sort(
+      (a, b) => Math.abs(Math.abs(a.delta!) - 0.5) - Math.abs(Math.abs(b.delta!) - 0.5),
+    )[0];
+
+    // Max pain: strike where total in-the-money open interest value is lowest.
+    const strikes = [...new Set(contracts.map((c) => c.strike).filter((x): x is number => x != null))];
+    let maxPain: number | null = null;
+    let lowest = Infinity;
+    for (const k of strikes) {
+      let pain = 0;
+      for (const c of contracts) {
+        if (c.strike == null || c.open_interest == null) continue;
+        if (c.type === "call" && k > c.strike) pain += (k - c.strike) * c.open_interest;
+        if (c.type === "put" && k < c.strike) pain += (c.strike - k) * c.open_interest;
+      }
+      if (pain < lowest) { lowest = pain; maxPain = k; }
+    }
+
+    return {
+      symbol,
+      date: data.data[0]?.date ?? opts.date ?? null,
+      contracts,
+      expirations: [...new Set(contracts.map((c) => c.expiration).filter((x): x is string => !!x))].sort(),
+      stats: {
+        total_volume: callVol + putVol,
+        total_open_interest: callOi + putOi,
+        put_call_volume_ratio: callVol > 0 ? +(putVol / callVol).toFixed(3) : null,
+        put_call_oi_ratio: callOi > 0 ? +(putOi / callOi).toFixed(3) : null,
+        atm_iv: atm?.implied_volatility ?? null,
+        max_pain_strike: maxPain,
+      },
+      source: "alphavantage",
+      note:
+        `${contracts.length} contracts. Greeks and IV are the provider's, as of the session date — ` +
+        "cite that date, not \"now\". Max pain is computed from open interest here, not supplied.",
+    };
+  } catch {
+    return { error: "provider_error", message: "Alpha Vantage did not respond in time." };
+  }
+}
+
 /** Interpretation hints — turns raw numbers into the questions worth asking. */
 export function readTokenSignals(m: TokenMetrics): string[] {
   const out: string[] = [];
