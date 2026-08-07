@@ -8,6 +8,10 @@ data/
 *.db-wal
 tsconfig.tsbuildinfo
 .DS_Store
+.secrets/
+contracts/out/
+contracts/cache/
+contracts/broadcast/
 
 # Standalone monorepo — lives in github.com/rhagent69/rhagent-platform
 rhagent-platform/

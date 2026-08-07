@@ -39,6 +39,27 @@ score that justified each payout is emitted on-chain.
 
 ## Deploy
 
+### Keys — three different roles
+
+| Key | Who holds it | Purpose |
+|-----|--------------|---------|
+| **Owner** (`0x5bBdb0Eb…`) | You (NOT on Railway today) | Deploy v2, withdraw v1, `setRewardVault`, vault admin |
+| **Authorizer** (new hot wallet) | Railway `RHAGENT_GRANT_AUTHORIZER_KEY` | Signs `payGrant()` txs only — capped blast radius |
+| **Inscriber** (`RHAGENT_INSCRIBER_PRIVATE_KEY`) | Railway | Anchors posts to journal — **cannot** deploy or cut over vault |
+
+Railway currently has the **inscriber** key. It is **not** the vault owner. Cutover requires the **owner** private key.
+
+### One-shot deploy script
+
+From repo root (after `forge install` in `contracts/`):
+
+```bash
+export OWNER_PRIVATE_KEY=0x...   # must derive to 0x5bBdb0Eb9cEF211FE92FD0A38318d66b65d254f5
+bash contracts/script/deploy-impact-vault.sh
+```
+
+Generates (or reuses) an authorizer key in `.secrets/grant-authorizer.key`, deploys v2, links the journal hook, prints fund-migration commands.
+
 Constructor:
 
 ```
