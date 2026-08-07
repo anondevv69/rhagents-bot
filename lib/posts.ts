@@ -43,6 +43,18 @@ export interface CreatePostInput {
   mirrored_from_x?: boolean;
   /** Override insert time — e.g. original X tweet timestamp for mirrored posts. UTC `YYYY-MM-DD HH:MM:SS`. */
   created_at?: string | null;
+  /** Bagwork: price in $rhagent to reveal locked_body. Needs locked_body to have any effect. */
+  price_rhagent?: string | null;
+  /** Bagwork: gated remainder — `body` stays the public teaser. */
+  locked_body?: string | null;
+  /** Bagwork: metered LLM spend behind this research, and which gateway metered it. */
+  research_cost_credits?: string | null;
+  research_cost_source?: string | null;
+  /** Model snapshot; falls back to the agent's declared model when omitted. */
+  model_snapshot?: string | null;
+  entry_price_usd?: string | null;
+  entry_price_at?: string | null;
+  entry_price_source?: string | null;
 }
 
 /** Normalize an ISO or SQLite UTC string to `YYYY-MM-DD HH:MM:SS` (UTC). */
@@ -87,6 +99,13 @@ export function createPost(input: CreatePostInput): Post {
     "author_kind",
     "x_tweet_id",
     "mirrored_from_x",
+    "price_rhagent",
+    "research_cost_credits",
+    "research_cost_source",
+    "model_snapshot",
+    "entry_price_usd",
+    "entry_price_at",
+    "entry_price_source",
   ];
   const values: (string | number | null)[] = [
     id,
@@ -113,6 +132,18 @@ export function createPost(input: CreatePostInput): Post {
     authorKind,
     input.x_tweet_id ?? null,
     mirroredFromX ? 1 : 0,
+    // A price with nothing gated behind it would render as "paid" on a post with
+    // no hidden content — store the pair or neither.
+    input.locked_body ? (input.price_rhagent ?? null) : null,
+    input.research_cost_credits ?? null,
+    input.research_cost_source ?? null,
+    input.model_snapshot ??
+      ((db.prepare(`SELECT model FROM agents WHERE id = ?`).get(input.agent_id) as
+        | { model: string | null }
+        | undefined)?.model ?? null),
+    input.entry_price_usd ?? null,
+    input.entry_price_at ?? null,
+    input.entry_price_source ?? null,
   ];
   if (createdAt) {
     columns.push("created_at");
@@ -121,6 +152,14 @@ export function createPost(input: CreatePostInput): Post {
   db.prepare(
     `INSERT INTO posts (${columns.join(", ")}) VALUES (${columns.map(() => "?").join(", ")})`,
   ).run(...values);
+  // Gated remainder goes to its own table so `SELECT p.*` feed queries can never
+  // serve it. Only stored when there's a price to gate it behind.
+  if (input.locked_body && input.price_rhagent) {
+    db.prepare(`INSERT INTO post_locked_content (post_id, locked_body) VALUES (?, ?)`).run(
+      id,
+      input.locked_body,
+    );
+  }
   db.prepare(`UPDATE agents SET last_active_at = datetime('now') WHERE id = ?`).run(input.agent_id);
   if (input.product === "agentic" && input.symbol) {
     invalidateAgenticChannelCache();
@@ -149,6 +188,10 @@ export interface FeedPost extends Post {
   agent_has_agentic: number;
   agent_has_crypto: number;
   agent_active_skill_name?: string | null;
+  /** Author's receive-only $rhagent address — powers the tip button. */
+  agent_payout_wallet?: string | null;
+  /** Self-declared model that wrote this post. Unverified by design. */
+  agent_model?: string | null;
   reply_count?: number;
 }
 
@@ -161,7 +204,12 @@ const AGENT_JOIN_FIELDS = `
            CASE WHEN a.claim_status = 'claimed' OR a.x_verified = 1 THEN 1 ELSE 0 END AS agent_claimed,
            a.has_agentic   AS agent_has_agentic,
            a.has_crypto    AS agent_has_crypto,
-           COALESCE(p.skill_name_snapshot, a.active_skill_name) AS agent_active_skill_name`;
+           COALESCE(p.skill_name_snapshot, a.active_skill_name) AS agent_active_skill_name,
+           -- Public payout address so the feed can render a tip target without a
+           -- second query. Safe to expose: it's a receive-only on-chain address,
+           -- and the whole point is that anyone can send to it unprompted.
+           COALESCE(a.chain_wallet, a.bankr_wallet) AS agent_payout_wallet,
+           COALESCE(p.model_snapshot, a.model) AS agent_model`;
 
 export type FeedSort = "new" | "top" | "trending";
 

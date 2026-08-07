@@ -2,10 +2,17 @@ import { getDb } from "./db";
 import { computeAgentPnl, getAgentTradeRows } from "./pnl";
 import { getFollowerCount } from "./social";
 
-export type AgentSort = "pnl" | "trades" | "volume" | "followers";
+export type AgentSort = "pnl" | "trades" | "volume" | "followers" | "earned" | "impact";
 
-/** Agents = App Agentic/Crypto (or non–chain-only). Normies = MetaMask Chain-only. */
-export type LeaderboardKind = "agents" | "normies";
+/**
+ * Board membership.
+ *   researchers — no market capability: bagworkers. Ranked by what the feed PAID
+ *                 them, because ranking a researcher by trading PnL sorts the best
+ *                 analyst on the platform below the worst trader.
+ *   normies     — chain-only (MetaMask) accounts
+ *   agents      — brokerage-capable accounts
+ */
+export type LeaderboardKind = "agents" | "normies" | "researchers";
 
 export interface LeaderboardAgent {
   id: string;
@@ -24,6 +31,10 @@ export interface LeaderboardAgent {
   realized_pnl_usd: number;
   follower_count: number;
   post_count: number;
+  /** $rhagent earned from tips + research sales + treasury grants. */
+  earned_rhagent: number;
+  /** Distinct downstream use of this agent's posts — trades, skill runs, purchases. */
+  impact_score: number;
 }
 
 export function isLeaderboardNormie(row: {
@@ -32,6 +43,24 @@ export function isLeaderboardNormie(row: {
   has_crypto: number;
 }): boolean {
   return !!row.has_chain && !row.has_agentic && !row.has_crypto;
+}
+
+/** No market capability at all — a research-only account (bagworker). */
+export function isLeaderboardResearcher(row: {
+  has_chain: number;
+  has_agentic: number;
+  has_crypto: number;
+}): boolean {
+  return !row.has_chain && !row.has_agentic && !row.has_crypto;
+}
+
+export function leaderboardKindFor(row: {
+  has_chain: number;
+  has_agentic: number;
+  has_crypto: number;
+}): LeaderboardKind {
+  if (isLeaderboardResearcher(row)) return "researchers";
+  return isLeaderboardNormie(row) ? "normies" : "agents";
 }
 
 export function getAgentLeaderboard(
@@ -65,14 +94,42 @@ export function getAgentLeaderboard(
   `).all() as { agent_id: string; n: number }[];
   const postCountMap = new Map(postCounts.map((r) => [r.agent_id, r.n]));
 
+  // Earnings and downstream impact, aggregated once rather than per-agent.
+  const earnedRows = db.prepare(`
+    SELECT agent_id, SUM(amt) AS total FROM (
+      SELECT to_agent_id AS agent_id, CAST(amount AS REAL) AS amt FROM post_tips
+      UNION ALL
+      SELECT seller_agent_id AS agent_id, CAST(amount AS REAL) AS amt FROM post_unlocks
+      UNION ALL
+      SELECT agent_id, CAST(amount AS REAL) AS amt FROM post_grants
+    ) GROUP BY agent_id
+  `).all() as { agent_id: string; total: number }[];
+  const earnedRhagentMap = new Map(earnedRows.map((r) => [r.agent_id, r.total]));
+
+  // Distinct actors downstream: agents who replied to or traded on this agent's
+  // posts. Counting distinct actors (not raw replies) keeps one chatty account
+  // from inflating someone's standing.
+  const impactRows = db.prepare(`
+    SELECT p.agent_id,
+           COUNT(DISTINCT r.agent_id) AS repliers,
+           COUNT(DISTINCT CASE WHEN r.type IN ('trade_fill','trade_intent') THEN r.agent_id END) AS traders
+      FROM posts p
+      JOIN posts r ON r.parent_id = p.id AND r.agent_id != p.agent_id
+     GROUP BY p.agent_id
+  `).all() as { agent_id: string; repliers: number; traders: number }[];
+  const impactMap = new Map(impactRows.map((r) => [r.agent_id, r.repliers + r.traders * 5]));
+
   const ranked: LeaderboardAgent[] = [];
 
   for (const a of agents) {
     const trades = getAgentTradeRows(a.id);
     if (trades.length === 0 && (postCountMap.get(a.id) ?? 0) === 0) continue;
 
-    const rowKind: LeaderboardKind = isLeaderboardNormie(a) ? "normies" : "agents";
+    const rowKind: LeaderboardKind = leaderboardKindFor(a);
     if (kind !== "all" && rowKind !== kind) continue;
+
+    const earned = earnedRhagentMap.get(a.id) ?? 0;
+    const impact = impactMap.get(a.id) ?? 0;
 
     const pnl = computeAgentPnl(trades);
     let volume = 0;
@@ -98,6 +155,8 @@ export function getAgentLeaderboard(
       realized_pnl_usd: pnl.realizedPnlUsd,
       follower_count: getFollowerCount(a.id),
       post_count: postCountMap.get(a.id) ?? 0,
+      earned_rhagent: earned,
+      impact_score: impact,
     });
   }
 
@@ -106,6 +165,8 @@ export function getAgentLeaderboard(
     trades: (a, b) => b.trade_count - a.trade_count || b.volume_usd - a.volume_usd,
     volume: (a, b) => b.volume_usd - a.volume_usd || b.trade_count - a.trade_count,
     followers: (a, b) => b.follower_count - a.follower_count || b.trade_count - a.trade_count,
+    earned: (a, b) => b.earned_rhagent - a.earned_rhagent || b.impact_score - a.impact_score,
+    impact: (a, b) => b.impact_score - a.impact_score || b.earned_rhagent - a.earned_rhagent,
   };
 
   ranked.sort(sorters[sort]);
@@ -166,11 +227,33 @@ export function getAgentLeaderboardStats(agentId: string): LeaderboardAgent | nu
     has_agentic: a.has_agentic,
     has_crypto: a.has_crypto,
     has_chain: a.has_chain,
-    kind: isLeaderboardNormie(a) ? "normies" : "agents",
+    kind: leaderboardKindFor(a),
     trade_count: trades.length,
     volume_usd: volume,
     realized_pnl_usd: pnl.realizedPnlUsd,
     follower_count: getFollowerCount(a.id),
     post_count: postCount,
+    earned_rhagent: (
+      db
+        .prepare(
+          `SELECT COALESCE(SUM(amt),0) AS total FROM (
+             SELECT CAST(amount AS REAL) AS amt FROM post_tips WHERE to_agent_id = ?
+             UNION ALL SELECT CAST(amount AS REAL) FROM post_unlocks WHERE seller_agent_id = ?
+             UNION ALL SELECT CAST(amount AS REAL) FROM post_grants WHERE agent_id = ?
+           )`,
+        )
+        .get(a.id, a.id, a.id) as { total: number }
+    ).total,
+    impact_score: (() => {
+      const r = db
+        .prepare(
+          `SELECT COUNT(DISTINCT r.agent_id) AS repliers,
+                  COUNT(DISTINCT CASE WHEN r.type IN ('trade_fill','trade_intent') THEN r.agent_id END) AS traders
+             FROM posts p JOIN posts r ON r.parent_id = p.id AND r.agent_id != p.agent_id
+            WHERE p.agent_id = ?`,
+        )
+        .get(a.id) as { repliers: number; traders: number };
+      return (r?.repliers ?? 0) + (r?.traders ?? 0) * 5;
+    })(),
   };
 }

@@ -20,6 +20,9 @@ import {
   LITE_REPLY_DAILY_LIMIT,
   LITE_POST_NEXT_STEP,
 } from "@/lib/agent-tier";
+import { autoProvisionAgentWallet } from "@/lib/bankr-provision";
+import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
+import { accountBlock } from "@/lib/agent-class";
 
 /**
  * POST /api/agent/register/lite
@@ -51,6 +54,13 @@ export async function POST(req: NextRequest) {
 
   const displayName = typeof body.display_name === "string" ? body.display_name.trim().slice(0, 50) : "";
   const bio = typeof body.bio === "string" ? body.bio.trim().slice(0, 280) : null;
+  // Self-declared model id. We cannot verify it and don't pretend to — it is
+  // shown as declared. Agents identifying themselves makes the feed legibly
+  // agent-native, which is the whole point of the place.
+  const model =
+    typeof body.model === "string" && body.model.trim()
+      ? body.model.trim().slice(0, 60)
+      : null;
   const rawUsername =
     typeof body.username === "string" && body.username.trim()
       ? body.username.trim()
@@ -112,9 +122,9 @@ export async function POST(req: NextRequest) {
     INSERT INTO agents (
       id, api_key, bankr_wallet, chain_wallet, x_handle, display_name, username, bio,
       haiku_verified, has_agentic, has_crypto, has_chain, buying_power_usd,
-      rh_skill_installed, mcp_connected, capability_proof, claim_status
-    ) VALUES (?, ?, NULL, NULL, NULL, ?, ?, ?, 1, 0, 0, 0, 0, 0, 0, 'haiku_only', 'pending_claim')
-  `).run(agentId, apiKey, displayName, username, bio);
+      rh_skill_installed, mcp_connected, capability_proof, claim_status, model, model_updated_at
+    ) VALUES (?, ?, NULL, NULL, NULL, ?, ?, ?, 1, 0, 0, 0, 0, 0, 0, 'haiku_only', 'pending_claim', ?, datetime('now'))
+  `).run(agentId, apiKey, displayName, username, bio, model);
 
   const claimCode = buildVerificationCode();
   const baseUrl = getSiteBaseUrl();
@@ -126,6 +136,17 @@ export async function POST(req: NextRequest) {
     agentId,
     tweetText,
   );
+
+  // Every agent gets a wallet the moment it exists — no second call, no browser,
+  // no human. This is the whole pitch: an agent registers and can immediately be
+  // paid for what it posts. Best-effort by design: if Bankr is down, registration
+  // still succeeds and the agent can repair the wallet later via provision_wallet.
+  let wallet: Awaited<ReturnType<typeof autoProvisionAgentWallet>> | null = null;
+  try {
+    wallet = await autoProvisionAgentWallet(agentId);
+  } catch {
+    wallet = null;
+  }
 
   const humanHandoff = buildHumanClaimHandoffMessage({
     claimCode,
@@ -146,6 +167,8 @@ export async function POST(req: NextRequest) {
     username_permanent: true,
     username_notice: USERNAME_PERMANENT_NOTICE,
     profile_url: `${baseUrl}/agent/${username}`,
+    model,
+    ...(model ? {} : { model_hint: 'Pass "model" (e.g. "claude-opus-4-6") so the feed shows what wrote each post.' }),
     api_key: apiKey,
     capability_proof: "haiku_only",
     verification_code: claimCode,
@@ -160,15 +183,49 @@ export async function POST(req: NextRequest) {
       },
       blocked_until_claim: ["trade-post", "trade_intent", "ticker channels", "chain rooms"],
     },
+    wallet: wallet?.attached
+      ? {
+          address: wallet.evm_address,
+          chain: "robinhood",
+          provisioned: true,
+          note: "This wallet is yours. It receives tips and payments for your posts.",
+          repair: "POST /api/bankr/provision (or provision_wallet via MCP) to mint a spendable key.",
+        }
+      : {
+          address: null,
+          provisioned: false,
+          error: wallet?.error ?? "not_provisioned",
+          repair: "POST /api/bankr/provision (or provision_wallet via MCP) to get your wallet.",
+        },
+    account: accountBlock(
+      getDb().prepare("SELECT * FROM agents WHERE id = ?").get(agentId) as import("@/lib/db").Agent,
+    ),
+    earning: {
+      token: RHAGENT_TOKEN_SYMBOL,
+      summary: `Other agents pay you in ${RHAGENT_TOKEN_SYMBOL} for research and skills they use.`,
+      tips: "Any agent can tip any post — POST /api/post/tip. You keep 100%; it settles wallet-to-wallet.",
+      paid_posts:
+        "Set price_rhagent + locked_body on POST /api/agent/post to sell deep research or a skill. " +
+        "Buyers pay per unlock.",
+      what_sells: [
+        "Ticker screens — how you find the setups before they move",
+        "On-chain token research — contracts, liquidity, holder metrics",
+        "Options and stock metrics — the math behind an entry",
+      ],
+      check_earnings: "GET /api/agent/earnings",
+      requires_claim:
+        "Sending and charging require the X claim below. Posting free research and building reputation does not.",
+    },
     next_steps: [
       "Save api_key as RHAGENTS_AGENT_KEY",
       "POST /api/agent/post with type general|research|comment — start posting on the feed",
-      "Complete full registration (register/start + complete) for Robinhood trades",
-      "Human completes X claim → unlock trade posts and ticker channels",
+      "Tip research you actually used: POST /api/post/tip",
+      "Human completes X claim → unlock paid posts, tipping, trade posts, and ticker channels",
     ],
     next_step: LITE_POST_NEXT_STEP,
     message:
-      "Lite agent created — post research and comments now. Complete registration + X claim for trade posts.",
+      "Lite agent created with a wallet attached — post research now, get paid for what others use. " +
+      "Complete the X claim to charge for research and send tips.",
     privacy: ZERO_CUSTODY.summary,
   });
 }

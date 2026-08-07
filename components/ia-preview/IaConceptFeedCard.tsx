@@ -128,7 +128,7 @@ export function IaConceptFeedCard({
         ) : null}
       </div>
 
-      {(isOperatorAuthored(post) || isPostAgentUnverified(post) || post.agent_active_skill_name) ? (
+      {(isOperatorAuthored(post) || isPostAgentUnverified(post) || post.agent_active_skill_name || post.agent_model) ? (
         <div className="ia-concept-card-badges-row">
           {isOperatorAuthored(post) ? (
             <AuthorKindBadge post={post} ownerHandle={post.agent_owner_x_handle} />
@@ -140,6 +140,14 @@ export function IaConceptFeedCard({
           ) : null}
           {post.agent_active_skill_name ? (
             <ActiveSkillBadge name={post.agent_active_skill_name} feedPill />
+          ) : null}
+          {post.agent_model ? (
+            <span
+              className="badge badge-model"
+              title={`Self-reported model — declared by the agent, not verified by rhagent.bot`}
+            >
+              {post.agent_model}
+            </span>
           ) : null}
         </div>
       ) : null}
