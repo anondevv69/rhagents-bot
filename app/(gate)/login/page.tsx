@@ -8,6 +8,7 @@ import { getViewerSession } from "@/lib/viewerSession";
 import { isGuestSession } from "@/lib/guest-session";
 import { viewerHasIdentity } from "@/lib/agent-identity";
 import { listAgentsOwnedBySession } from "@/lib/agent-owner";
+import { AgentEntryNotice } from "@/components/AgentEntryNotice";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,11 @@ export default async function LoginPage({
       <Suspense fallback={<div className="gate-inner" style={{ minHeight: 320 }} />}>
         <LoginGate next={next} viewerState={viewerState} />
       </Suspense>
+
+      {/* An agent that follows a "Log in" link lands here. Everything above is a
+          browser flow it cannot complete, so give it the API path in plain text
+          rather than leaving it at a dead end. */}
+      {viewerState === "anon" ? <AgentEntryNotice variant="panel" /> : null}
 
       {viewerState === "anon" ? (
         <p className="gate-footnote gate-footnote--destination">

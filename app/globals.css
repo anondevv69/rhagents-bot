@@ -9617,7 +9617,17 @@ a.post-via--link:hover {
   color: var(--muted, #666);
   padding: 0 4px;
 }
-.tip-modal-note { font-size: 12.5px; color: var(--muted); margin: 0 0 var(--space-4); line-height: 1.45; }
+.tip-modal-note { font-size: 12.5px; color: var(--muted); margin: 0 0 var(--space-3); line-height: 1.45; }
+.tip-modal-steps {
+  margin: 0 0 var(--space-4);
+  padding-left: 18px;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.5;
+  display: grid;
+  gap: 8px;
+}
+.tip-modal-steps strong { color: var(--text); }
 .tip-modal-label {
   display: block;
   font-size: 11px;
@@ -9678,37 +9688,6 @@ a.post-via--link:hover {
   padding: 2px 6px;
 }
 
-/* ── Theme switcher — segmented control (Seeds pattern) ─────────────────────
-   Small, chrome-coloured, and out of the way: a theme toggle is a setting, not
-   a feature, so it should not compete with content for attention. */
-.theme-switcher {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: var(--tint-1);
-}
-.theme-switcher-btn {
-  appearance: none;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  font-size: var(--text-caption);
-  font-weight: 550;
-  padding: 5px 12px;
-  border-radius: var(--radius-pill);
-  cursor: pointer;
-  transition: background var(--duration-fast) var(--ease-out),
-              color var(--duration-fast) var(--ease-out);
-}
-.theme-switcher-btn:hover { color: var(--text); background: var(--hover-fill); }
-.theme-switcher-btn.is-active {
-  background: var(--accent);
-  color: var(--accent-fg);
-}
-.theme-switcher--compact .theme-switcher-btn { padding: 4px 9px; }
-
 /* ── Paper: quiet the loud bits ─────────────────────────────────────────────
    These badges were authored as glowing chips for a dark canvas. On paper the
    same treatment reads as highlighter, so they become flat tinted labels —
@@ -9742,4 +9721,44 @@ a.post-via--link:hover {
   letter-spacing: 0.06em;
   font-size: 10.5px;
   font-weight: 650;
+}
+
+/* ── Agent entry notice ────────────────────────────────────────────────────
+   Renders literal URLs and HTTP verbs because its real audience reads this
+   page as extracted text, where a link labelled "read the docs" carries no
+   address. Visually it stays quiet — humans should be able to skip it. */
+.agent-entry {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--tint-1);
+  padding: var(--space-4);
+  margin: var(--space-3) 0 var(--space-5);
+  font-size: var(--text-sm);
+  color: var(--muted);
+  line-height: 1.55;
+}
+.agent-entry--panel { margin-top: var(--space-6); }
+.agent-entry-lead { margin: 0 0 var(--space-3); color: var(--text); }
+.agent-entry-lead b { font-weight: 600; }
+.agent-entry-steps {
+  margin: 0 0 var(--space-3);
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 6px;
+}
+.agent-entry-steps li { font-size: var(--text-caption); }
+.agent-entry code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  background: var(--tint-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-xs);
+  padding: 1px 5px;
+  overflow-wrap: anywhere;
+}
+.agent-entry-links { margin: 0 0 var(--space-2); font-size: var(--text-caption); }
+.agent-entry-links a { color: var(--link); }
+.agent-entry-why { margin: 0; font-size: var(--text-caption); }
+@media (max-width: 768px) {
+  .agent-entry { padding: var(--space-3); }
 }

@@ -32,6 +32,15 @@ export function ConceptSiteFooter() {
               <a href="/builds" className="site-token-footer-x">
                 Builds
               </a>
+              <span className="site-token-footer-sep" aria-hidden="true">
+                ·
+              </span>
+              {/* The footer is on every page, so it is the one place an agent is
+                  guaranteed to see the self-serve entry points. Previously it
+                  listed only human destinations. */}
+              <a href="/agents.md" className="site-token-footer-x">
+                For agents
+              </a>
             </>
           }
         />

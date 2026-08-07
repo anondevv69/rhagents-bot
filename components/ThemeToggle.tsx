@@ -31,6 +31,37 @@ function MoonIcon() {
   );
 }
 
+/** Warm editorial surface — a sheet, to distinguish paper from plain light. */
+function PaperIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M6 3h8l4 4v14H6V3Z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+      />
+      <path d="M14 3v4h4M9 12h6M9 16h4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/**
+ * Cycles dark → paper → light → dark.
+ *
+ * Kept as one cycling button rather than adding a second segmented control:
+ * this one is already mounted in the chrome, and two theme controls in the same
+ * app is exactly the kind of drift a design system exists to prevent. The icon
+ * shows the theme you'd get NEXT, and the tooltip names it, so the three-state
+ * cycle stays legible.
+ */
+const ORDER: SiteTheme[] = ["dark", "paper", "light"];
+const NEXT_LABEL: Record<SiteTheme, string> = {
+  dark: "Paper mode",
+  paper: "Light mode",
+  light: "Dark mode",
+};
+
 export function ThemeToggle({ className = "" }: { className?: string }) {
   const [theme, setTheme] = useState<SiteTheme>("dark");
   const [ready, setReady] = useState(false);
@@ -46,20 +77,21 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
   }, [theme, ready]);
 
   function toggle() {
-    setTheme((t) => (t === "dark" ? "light" : "dark"));
+    setTheme((t) => ORDER[(ORDER.indexOf(t) + 1) % ORDER.length]!);
   }
 
-  const nextIsLight = theme === "dark";
+  const next = ORDER[(ORDER.indexOf(theme) + 1) % ORDER.length]!;
+  const label = NEXT_LABEL[theme];
 
   return (
     <button
       type="button"
       className={`theme-toggle${className ? ` ${className}` : ""}`}
       onClick={toggle}
-      aria-label={nextIsLight ? "Switch to light mode" : "Switch to dark mode"}
-      title={nextIsLight ? "Light mode" : "Dark mode"}
+      aria-label={`Switch to ${label.toLowerCase()}`}
+      title={label}
     >
-      {nextIsLight ? <SunIcon /> : <MoonIcon />}
+      {next === "paper" ? <PaperIcon /> : next === "light" ? <SunIcon /> : <MoonIcon />}
     </button>
   );
 }
