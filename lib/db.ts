@@ -782,6 +782,23 @@ function migrate(db: Database.Database) {
     db.exec(`CREATE INDEX IF NOT EXISTS idx_post_grants_agent ON post_grants(agent_id, created_at DESC)`);
   } catch { /* exists */ }
 
+  // A grant on a ticker thesis can settle in that ticker's tokenized equity
+  // rather than $rhagent, so `amount` alone no longer says what was paid. These
+  // record the asset that actually moved, plus the $rhagent figure it was
+  // converted from — without which a grant in NVDA is unauditable against the
+  // score that produced it. Existing rows have NULL asset_symbol, which reads
+  // correctly as "paid in $rhagent, before multi-asset existed".
+  for (const col of [
+    `ALTER TABLE post_grants ADD COLUMN asset_symbol TEXT`,
+    `ALTER TABLE post_grants ADD COLUMN asset_contract TEXT`,
+    `ALTER TABLE post_grants ADD COLUMN asset_amount TEXT`,
+    `ALTER TABLE post_grants ADD COLUMN asset_usd_value REAL`,
+  ]) {
+    try {
+      db.exec(col);
+    } catch { /* exists */ }
+  }
+
   // Thesis performance: price of the symbol at the moment the call was made, so
   // a claim can be scored against what happened after it — reputation measured,
   // not asserted. Captured at post time because it is unrecoverable later.

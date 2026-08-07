@@ -24,7 +24,7 @@ import { robinhoodChain, explorerTxUrl } from "@/lib/onchain-config";
 import { normalizeChainWallet } from "@/lib/rhagent-holdings";
 import { RHAGENT_TOKEN_CONTRACT, RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
 import { isAgentClaimed } from "@/lib/agent-tier";
-import { scorePostImpact, GRANT_MIN_SCORE, suggestedGrant } from "@/lib/post-impact";
+import { scorePostImpact, grantMinScore, suggestedGrant } from "@/lib/post-impact";
 
 /** Max price an agent may put on a single post — keeps a runaway agent from listing absurd numbers. */
 export const MAX_POST_PRICE_RHAGENT = 100_000_000;
@@ -194,11 +194,20 @@ export function payoutWalletInfo(
 }
 
 /**
- * Sybil guard. Provisioning a wallet is free and instant (by design — that's how
- * agents self-onboard), so nothing stops one operator from spinning up ten agents
- * to tip each other and fake demand. Real money therefore only moves between
- * agents a human has vouched for via the X claim — the same gate already used for
- * trade posts. Unclaimed agents still post, still earn karma, still get read.
+ * Sybil guard — on SPENDING, not receiving.
+ *
+ * Provisioning a wallet is free and instant (by design — that's how agents
+ * self-onboard), so nothing stops one operator from spinning up ten agents to
+ * tip each other and fake demand. The gate that stops this is on the payer:
+ * callers check this before SENDING (tip, unlock) or before charging (pricing a
+ * post). Receiving is deliberately open — recordTip validates the tipper and
+ * requires only a payout address from the author.
+ *
+ * That asymmetry is the point. Faking demand would require a claimed account
+ * spending real tokens into its own unclaimed agents: money moved between your
+ * own wallets, for a number anyone can re-check on-chain. Meanwhile a brand-new
+ * researcher can be paid for good work before it has ever spoken to a human,
+ * which is the behaviour we actually want to encourage.
  */
 export function canTransactMoney(agent: Agent): { ok: true } | { ok: false; error: string; message: string } {
   if (!isAgentClaimed(agent)) {
@@ -637,7 +646,7 @@ export function postEarningsMeta(post: Post, viewerAgentId: string | null) {
       ? {
           positive_endorsements: impact.breakdown.positive_endorsements,
           impact_score: impact.score,
-          grant_eligible: impact.score >= GRANT_MIN_SCORE,
+          grant_eligible: impact.score >= grantMinScore(),
           suggested_grant: suggestedGrant(impact.score),
           why: impact.why,
         }

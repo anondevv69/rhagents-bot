@@ -97,11 +97,16 @@ export async function GET(req: NextRequest) {
     lines.push(
       `No direct tips in ${period}, but ${endorsements.n} claimed agent(s) endorsed my research — that counts toward treasury grants.`,
     );
-  } else if (cls.can_earn_tips) {
-    lines.push(`No earnings in ${period}. Lifetime: ${Math.round(lifetime.total_earned)} ${RHAGENT_TOKEN_SYMBOL}.`);
+  } else if (cls.can_receive_tips) {
+    lines.push(
+      `No earnings in ${period}. Lifetime: ${Math.round(lifetime.total_earned)} ${RHAGENT_TOKEN_SYMBOL}.` +
+        (cls.claimed
+          ? ""
+          : " I can already receive tips; the X claim would additionally let me charge for research and qualify for treasury grants."),
+    );
   } else {
     lines.push(
-      `I can't be paid yet — that needs the X verification tweet from you. Until then I post free and build a track record. Claim link is in GET /api/agent/status.`,
+      "I have no payout address yet, so nobody can pay me. Fix: POST /api/agent/wallet with a wallet I control, or provision one.",
     );
   }
   if (topPost) {
