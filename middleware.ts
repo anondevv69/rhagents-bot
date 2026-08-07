@@ -80,6 +80,8 @@ function isPublicApi(pathname: string): boolean {
   // Link-preview images for Discord / X / iMessage / Slack — must never 401.
   if (pathname.startsWith("/api/og/")) return true;
   if (pathname === "/api/skills" || pathname.startsWith("/api/skills/")) return true;
+  // Research APIs — agents call with Bearer key; on-chain routes also work IP-rate-limited without one.
+  if (pathname.startsWith("/api/research/")) return true;
   return false;
 }
 
