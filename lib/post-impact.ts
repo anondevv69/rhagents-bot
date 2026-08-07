@@ -233,9 +233,9 @@ export function grantRatePerPoint(): number {
   return Number.isFinite(n) && n > 0 ? n : 100;
 }
 
-/** Hard ceiling per post, so one viral post can't drain the pool. */
+/** Hard ceiling per post, so one viral post cannot drain the pool. Default 10k — matches vault daily cap sizing. */
 export function grantMaxPerPost(): number {
-  const n = parseFloat(process.env.RHAGENT_GRANT_MAX_PER_POST ?? "50000");
+  const n = parseFloat(process.env.RHAGENT_GRANT_MAX_PER_POST ?? "10000");
   return Number.isFinite(n) && n > 0 ? n : 50_000;
 }
 
