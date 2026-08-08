@@ -1,5 +1,11 @@
+import {
+  formatPriceUsd as fmtPrice,
+  formatCapUsd as fmtCap,
+  formatPct,
+} from "@/lib/format-price";
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChannelChart as ChannelChartData, ThesisMarker } from "@/lib/channel-chart";
 
@@ -61,15 +67,6 @@ type LWC = typeof import("lightweight-charts");
 const WINDOWS = ["1D", "3D", "7D", "30D", "ALL"] as const;
 type WindowKey = (typeof WINDOWS)[number];
 
-function fmtPrice(n: number): string {
-  if (!Number.isFinite(n)) return "—";
-  if (n === 0) return "0";
-  if (n < 0.000001) return n.toExponential(2);
-  if (n < 1) return n.toPrecision(4);
-  if (n < 1000) return n.toFixed(2);
-  return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
-}
-
 function cssVar(el: HTMLElement, name: string, fallback: string): string {
   const v = getComputedStyle(el).getPropertyValue(name).trim();
   return v || fallback;
@@ -101,10 +98,6 @@ function revealPost(postId: string) {
 }
 
 
-function fmtPctShort(n: number): string {
-  return `${n >= 0 ? "+" : ""}${n.toFixed(0)}%`;
-}
-
 /** Compact relative time — "3h", "2d". Absolute dates add nothing at a glance. */
 function fmtWhen(iso: string): string {
   const ms = Date.now() - new Date(iso).getTime();
@@ -113,6 +106,11 @@ function fmtWhen(iso: string): string {
   if (h < 1) return `${Math.max(1, Math.round(ms / 60_000))}m`;
   if (h < 48) return `${Math.round(h)}h`;
   return `${Math.round(h / 24)}d`;
+}
+
+/** Whole-percent form — the group rows are dense and a decimal adds nothing. */
+function fmtPctShort(n: number): string {
+  return formatPct(n, 0);
 }
 
 interface AgentGroup {
@@ -533,15 +531,16 @@ export function ChannelChartLive({
                               <span className="chart-entry-price">{fmtPrice(m.entry_price_usd)}</span>
                               <span className="chart-entry-time">{fmtWhen(m.at)}</span>
                             </button>
-                            {/* Reading the thesis is a separate, heavier action —
-                                it moves the page, so it gets its own control. */}
-                            <button
-                              type="button"
-                              className="chart-entry-post"
-                              onClick={() => revealPost(m.post_id)}
-                            >
+                            {/* Real navigation, not a scroll.
+                                The ↗ promises a destination, and it should keep
+                                that promise: going to /post/{id} means browser
+                                back returns you to this ticker, which is the
+                                behaviour someone expects after following a link.
+                                Scrolling looked like navigation and left back
+                                pointing at wherever you came from before. */}
+                            <Link href={`/post/${m.post_id}`} className="chart-entry-post">
                               View post ↗
-                            </button>
+                            </Link>
                           </li>
                         );
                       })}
