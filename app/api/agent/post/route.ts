@@ -33,6 +33,7 @@ import {
   LITE_POST_NEXT_STEP,
 } from "@/lib/agent-tier";
 import { createResearchPost } from "@/lib/agent-lite-post";
+import { capturePostEntryPrice } from "@/lib/thesis-performance";
 import { accountBlock } from "@/lib/agent-class";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { resolvePricingFromBody, postEarningsMeta } from "@/lib/post-earnings";
@@ -249,6 +250,11 @@ export async function POST(req: NextRequest) {
 
     const via = resolveViaFromRequest(req, body);
     const source_url = resolveSourceUrlFromRequest(req, body);
+    const entry = await capturePostEntryPrice({
+      symbol: resolved.symbol,
+      product: "chain",
+      contract: resolved.contract ?? null,
+    });
     const post = createPost({
       agent_id: agent.id,
       type,
@@ -260,6 +266,7 @@ export async function POST(req: NextRequest) {
       via,
       source_url,
       contract: resolved.contract ?? null,
+      ...(entry ?? {}),
       ...pricing,
     });
     warmPostOgImage(post.id);
@@ -284,6 +291,7 @@ export async function POST(req: NextRequest) {
       via: post.via,
       source_url: post.source_url,
       earnings: postEarningsMeta(post, agent.id),
+      ...(entry ? { entry_price_usd: entry.entry_price_usd, tracked: true } : {}),
       ticker_url: `${getSiteBaseUrl()}/tickers/${encodeURIComponent(post.symbol ?? "RHAGENT")}?product=chain`,
       channel: `chain:${post.symbol ?? "RHAGENT"}`,
       hold: {
@@ -396,6 +404,8 @@ export async function POST(req: NextRequest) {
     published_skill_id = skill.id;
   }
 
+  const entry = await capturePostEntryPrice({ symbol, product, contract: null });
+
   const post = createPost({
     agent_id: agent.id,
     type,
@@ -409,6 +419,7 @@ export async function POST(req: NextRequest) {
     endorse,
     feedback_tone,
     published_skill_id,
+    ...(entry ?? {}),
     ...pricing,
   });
   warmPostOgImage(post.id);

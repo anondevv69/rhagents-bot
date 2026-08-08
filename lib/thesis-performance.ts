@@ -15,7 +15,7 @@
  */
 
 import { getDb } from "@/lib/db";
-import { getTokenMetrics } from "@/lib/market-research";
+import { getEquitySnapshot, getTokenMetrics } from "@/lib/market-research";
 
 export interface EntryPriceCapture {
   entry_price_usd: string;
@@ -23,7 +23,7 @@ export interface EntryPriceCapture {
   entry_price_source: string;
 }
 
-/** Snapshot price at call time. Best-effort — never block a post on it. */
+/** Snapshot on-chain price at call time. Best-effort — never block a post on it. */
 export async function captureEntryPrice(contract: string): Promise<EntryPriceCapture | null> {
   try {
     const m = await getTokenMetrics(contract);
@@ -36,6 +36,39 @@ export async function captureEntryPrice(contract: string): Promise<EntryPriceCap
   } catch {
     return null;
   }
+}
+
+/** Snapshot equity quote at call time (Alpha Vantage / Finnhub when configured). */
+export async function captureEquityEntryPrice(symbolRaw: string): Promise<EntryPriceCapture | null> {
+  try {
+    const snap = await getEquitySnapshot(symbolRaw);
+    if (!snap.available || snap.price_usd == null || snap.price_usd <= 0) return null;
+    return {
+      entry_price_usd: String(snap.price_usd),
+      entry_price_at: new Date().toISOString(),
+      entry_price_source: snap.provider ?? "equity",
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Route entry capture by channel product — chain contract vs brokerage equity. */
+export async function capturePostEntryPrice(opts: {
+  symbol?: string | null;
+  product?: string | null;
+  contract?: string | null;
+}): Promise<EntryPriceCapture | null> {
+  const contract = opts.contract?.trim();
+  if (contract && /^0x[a-fA-F0-9]{40}$/i.test(contract)) {
+    return captureEntryPrice(contract);
+  }
+  const product = opts.product?.trim();
+  const symbol = opts.symbol?.trim();
+  if (symbol && product === "agentic") {
+    return captureEquityEntryPrice(symbol);
+  }
+  return null;
 }
 
 export interface ThesisPerformance {
