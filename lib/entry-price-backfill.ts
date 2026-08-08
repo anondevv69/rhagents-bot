@@ -28,7 +28,7 @@
 import { getDb } from "@/lib/db";
 import { getChainTickerMeta } from "@/lib/chain-tokens";
 import { rwaTokenFor } from "@/lib/rwa-tokens";
-import { candlesForContract, type ChartInterval } from "@/lib/channel-chart";
+import { candlesForContract, type ChartInterval, type ThesisMarker } from "@/lib/channel-chart";
 
 export const BACKFILL_SOURCE = "backfill_ohlc";
 
@@ -54,8 +54,25 @@ interface Candidate {
   id: string;
   symbol: string;
   product: string | null;
+  contract: string | null;
   type: string;
   created_at: string;
+}
+
+interface PostEntryRow {
+  id: string;
+  symbol: string;
+  product: string | null;
+  contract: string | null;
+  type: string;
+  side: string | null;
+  body: string;
+  entry_price_usd: string | null;
+  entry_price_at: string | null;
+  created_at: string;
+  agent_id: string;
+  username: string | null;
+  display_name: string | null;
 }
 
 /** SQLite writes UTC without a marker; JS would read that as local time. */
@@ -100,12 +117,131 @@ async function priceAtMoment(
   return null;
 }
 
-function contractFor(symbol: string, product: string | null): string | null {
+function contractFor(
+  symbol: string,
+  product: string | null,
+  storedContract?: string | null,
+): string | null {
+  const stored = storedContract?.trim();
+  if (stored && /^0x[a-fA-F0-9]{40}$/.test(stored)) return stored;
   if (product === "chain" || product == null) {
     const meta = getChainTickerMeta(symbol);
     if (meta?.contract) return meta.contract;
   }
   return null;
+}
+
+/** Resolve the on-chain contract for a post — stored column first, then registry. */
+export async function contractForPost(
+  symbol: string,
+  product: string | null,
+  storedContract?: string | null,
+): Promise<string | null> {
+  const rwa = await rwaTokenFor(symbol);
+  return rwa?.contract ?? contractFor(symbol, product, storedContract);
+}
+
+/**
+ * Entry price for one post — live column first, OHLC backfill second.
+ *
+ * Used by the thesis chart on read so older calls (written before capture
+ * existed) still score without a manual ops run. Trade fills are excluded.
+ */
+export async function resolvePostEntryPrice(
+  postId: string,
+  opts: { persist?: boolean } = {},
+): Promise<{ price_usd: number; at: string; source: string } | null> {
+  const db = getDb();
+  const row = db
+    .prepare(
+      `SELECT id, symbol, product, contract, type, entry_price_usd, entry_price_at, created_at
+         FROM posts WHERE id = ?`,
+    )
+    .get(postId) as
+    | Pick<
+        PostEntryRow,
+        "id" | "symbol" | "product" | "contract" | "type" | "entry_price_usd" | "entry_price_at" | "created_at"
+      >
+    | undefined;
+
+  if (!row?.symbol || row.type === "trade_fill" || row.type === "trade_intent") return null;
+
+  if (row.entry_price_usd) {
+    const n = parseFloat(String(row.entry_price_usd).replace(/,/g, ""));
+    if (Number.isFinite(n) && n > 0) {
+      return {
+        price_usd: n,
+        at: row.entry_price_at ?? row.created_at,
+        source: "live",
+      };
+    }
+  }
+
+  const contract = await contractForPost(row.symbol, row.product, row.contract);
+  if (!contract) return null;
+
+  const atMs = asUtcMs(row.created_at);
+  if (!Number.isFinite(atMs)) return null;
+
+  const hit = await priceAtMoment(contract, atMs);
+  if (!hit) return null;
+
+  const at = new Date(atMs).toISOString();
+  if (opts.persist) {
+    db.prepare(
+      `UPDATE posts
+          SET entry_price_usd = ?, entry_price_at = ?, entry_price_source = ?
+        WHERE id = ? AND entry_price_usd IS NULL`,
+    ).run(String(hit.price), at, BACKFILL_SOURCE, postId);
+  }
+
+  return { price_usd: hit.price, at, source: BACKFILL_SOURCE };
+}
+
+/** Build a chart marker for one post, backfilling entry from OHLC when needed. */
+export async function thesisMarkerForPost(
+  postId: string,
+  latestPrice: number | null,
+  opts: { persist?: boolean } = {},
+): Promise<ThesisMarker | null> {
+  const db = getDb();
+  const row = db
+    .prepare(
+      `SELECT p.id, p.agent_id, p.type, p.side, p.body,
+              p.entry_price_usd, p.entry_price_at, p.created_at,
+              a.username, a.display_name
+         FROM posts p
+         JOIN agents a ON a.id = p.agent_id
+        WHERE p.id = ?`,
+    )
+    .get(postId) as PostEntryRow | undefined;
+
+  if (!row || row.type === "trade_fill" || row.type === "trade_intent") return null;
+
+  const entry = await resolvePostEntryPrice(postId, opts);
+  if (!entry) return null;
+
+  const movePct = latestPrice != null ? ((latestPrice - entry.price_usd) / entry.price_usd) * 100 : 0;
+  const side = row.side === "buy" || row.side === "sell" ? row.side : null;
+
+  return {
+    post_id: row.id,
+    agent_id: row.agent_id,
+    username: row.username,
+    display_name: row.display_name,
+    at: asUtcIso(entry.at),
+    entry_price_usd: entry.price_usd,
+    side,
+    excerpt: row.body.split("\n")[0].slice(0, 140),
+    return_pct: latestPrice == null || side == null ? null : side === "sell" ? -movePct : movePct,
+    move_pct: movePct,
+  };
+}
+
+function asUtcIso(raw: string): string {
+  const s = raw.trim().replace(" ", "T");
+  const d = new Date(/(?:Z|[+-]\d{2}:?\d{2})$/.test(s) ? s : `${s}Z`);
+  return d.toISOString();
 }
 
 /**
@@ -124,7 +260,7 @@ export async function backfillEntryPrices(
   // Research only. Trade fills are excluded on purpose — see the header.
   const rows = db
     .prepare(
-      `SELECT id, symbol, product, type, created_at
+      `SELECT id, symbol, product, contract, type, created_at
          FROM posts
         WHERE entry_price_usd IS NULL
           AND symbol IS NOT NULL
@@ -152,8 +288,7 @@ export async function backfillEntryPrices(
 
     // An RWA-registry hit means the channel is a tokenised equity; chart the
     // token, matching how the channel chart resolves the same symbol.
-    const rwa = await rwaTokenFor(r.symbol);
-    const contract = rwa?.contract ?? contractFor(r.symbol, r.product);
+    const contract = await contractForPost(r.symbol, r.product, r.contract);
     if (!contract) {
       results.push({ ...base, status: "skipped", reason: "no on-chain contract for this symbol" });
       skipped++;

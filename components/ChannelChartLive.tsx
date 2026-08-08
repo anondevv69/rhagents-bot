@@ -1,10 +1,10 @@
+"use client";
+
 import {
   formatPriceUsd as fmtPrice,
   formatCapUsd as fmtCap,
   formatPct,
 } from "@/lib/format-price";
-"use client";
-
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChannelChart as ChannelChartData, ThesisMarker } from "@/lib/channel-chart";
