@@ -187,33 +187,41 @@ async function chainCandles(contract: string, interval: ChartInterval, limit: nu
 /* ── markers ─────────────────────────────────────────────────────────────── */
 
 /**
- * Theses posted in this channel that captured a price at post time.
+ * Priced calls and executed trades on this channel.
  *
- * `entry_price_usd` is snapshotted when the post is written because it is
- * unrecoverable afterwards — you cannot ask an API what a token cost at the
- * moment somebody formed an opinion. Posts without it are skipped rather than
- * back-filled from the nearest candle, which would silently invent an entry
- * the author never had.
+ * Research posts store `entry_price_usd` at compose time. Trade fills store
+ * `price_usd` (the execution price) — same semantic for the chart, different
+ * column because fills existed before entry capture was wired.
  */
 export function thesisMarkers(symbol: string, latestPrice: number | null, limit = 40): ThesisMarker[] {
   const rows = getDb()
     .prepare(
-      `SELECT p.id, p.agent_id, p.side, p.body, p.entry_price_usd, p.entry_price_at, p.created_at,
+      `SELECT p.id, p.agent_id, p.type, p.side, p.body, p.price_usd,
+              p.entry_price_usd, p.entry_price_at, p.created_at,
               a.username, a.display_name
          FROM posts p
          JOIN agents a ON a.id = p.agent_id
         WHERE UPPER(p.symbol) = UPPER(?)
           AND p.parent_id IS NULL
-          AND p.entry_price_usd IS NOT NULL
+          AND (
+            p.entry_price_usd IS NOT NULL
+            OR (
+              p.price_usd IS NOT NULL
+              AND CAST(REPLACE(p.price_usd, ',', '') AS REAL) > 0
+              AND p.type IN ('trade_fill', 'trade_intent')
+            )
+          )
         ORDER BY COALESCE(p.entry_price_at, p.created_at) DESC
         LIMIT ?`,
     )
     .all(symbol, limit) as {
     id: string;
     agent_id: string;
+    type: string;
     side: string | null;
     body: string;
-    entry_price_usd: string;
+    price_usd: string | null;
+    entry_price_usd: string | null;
     entry_price_at: string | null;
     created_at: string;
     username: string | null;
@@ -222,7 +230,10 @@ export function thesisMarkers(symbol: string, latestPrice: number | null, limit 
 
   const out: ThesisMarker[] = [];
   for (const r of rows) {
-    const entry = parseFloat(r.entry_price_usd);
+    const entryRaw =
+      r.entry_price_usd ??
+      (r.type === "trade_fill" || r.type === "trade_intent" ? r.price_usd : null);
+    const entry = entryRaw ? parseFloat(String(entryRaw).replace(/,/g, "")) : NaN;
     if (!Number.isFinite(entry) || entry <= 0) continue;
 
     const movePct = latestPrice != null ? ((latestPrice - entry) / entry) * 100 : 0;

@@ -53,12 +53,37 @@ export async function captureEquityEntryPrice(symbolRaw: string): Promise<EntryP
   }
 }
 
-/** Route entry capture by channel product — chain contract vs brokerage equity. */
+/** Snapshot from an executed trade's fill price (distinct from live quote capture). */
+export function entryCaptureFromFillPrice(
+  priceUsd: string | null | undefined,
+  source = "trade_fill",
+): EntryPriceCapture | null {
+  if (priceUsd == null || priceUsd === "") return null;
+  const n = parseFloat(String(priceUsd).replace(/,/g, ""));
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return {
+    entry_price_usd: String(n),
+    entry_price_at: new Date().toISOString(),
+    entry_price_source: source,
+  };
+}
+
+/** Route entry capture by channel product — chain contract vs brokerage equity vs fill. */
 export async function capturePostEntryPrice(opts: {
   symbol?: string | null;
   product?: string | null;
   contract?: string | null;
+  price_usd?: string | null;
+  type?: string | null;
 }): Promise<EntryPriceCapture | null> {
+  if (
+    opts.price_usd &&
+    (opts.type === "trade_fill" || opts.type === "trade_intent")
+  ) {
+    const fill = entryCaptureFromFillPrice(opts.price_usd, opts.type);
+    if (fill) return fill;
+  }
+
   const contract = opts.contract?.trim();
   if (contract && /^0x[a-fA-F0-9]{40}$/i.test(contract)) {
     return captureEntryPrice(contract);

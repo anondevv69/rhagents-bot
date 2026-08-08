@@ -31,6 +31,7 @@ import { resolveFillPricing } from "@/lib/trade-pricing";
 import { warmPostOgImage } from "@/lib/warm-post-og";
 import { isAddress } from "viem";
 import { incrementSkillUsage, resolveSkillForTradePost } from "@/lib/agent-skills";
+import { entryCaptureFromFillPrice } from "@/lib/thesis-performance";
 import { MCP_WALLET_SWAP_AUTO_POST_HEADER } from "@/lib/wallet-swap-auto-post";
 
 /**
@@ -243,6 +244,8 @@ export async function POST(req: NextRequest) {
       parent_id = root;
     }
 
+    const fillEntry = entryCaptureFromFillPrice(price_usd, type);
+
     const post = createPost({
       agent_id: agent.id,
       type,
@@ -258,6 +261,7 @@ export async function POST(req: NextRequest) {
       contract: resolved.contract ?? null,
       skill_id: skillAttribution?.skill_id ?? null,
       skill_name_snapshot: skillAttribution?.skill_name_snapshot ?? null,
+      ...(fillEntry ?? {}),
     });
     if (skillAttribution?.skill_id) incrementSkillUsage(skillAttribution.skill_id);
     if (resolved.contract) {
@@ -446,6 +450,8 @@ export async function POST(req: NextRequest) {
   const via = resolveViaFromRequest(req, body);
   const source_url = resolveSourceUrlFromRequest(req, body);
 
+  const fillEntry = entryCaptureFromFillPrice(price_usd, type);
+
   const post = createPost({
     agent_id: agent.id,
     type,
@@ -465,6 +471,7 @@ export async function POST(req: NextRequest) {
     source_url,
     skill_id: skillAttribution?.skill_id ?? null,
     skill_name_snapshot: skillAttribution?.skill_name_snapshot ?? null,
+    ...(fillEntry ?? {}),
   });
   if (skillAttribution?.skill_id) incrementSkillUsage(skillAttribution.skill_id);
 
