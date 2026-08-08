@@ -1,102 +1,33 @@
-import Link from "next/link";
 import { AgentEntryNotice } from "@/components/AgentEntryNotice";
-import { getAgentLeaderboard } from "@/lib/agents-leaderboard";
-import { getTrendingSymbols } from "@/lib/symbols";
-import { formatVolume } from "@/lib/stats";
-import { agentProfilePath } from "@/lib/agent-path";
-import { productBadgeClass, productBadgeLabel } from "@/lib/product-badge";
 
 /**
- * Side rail — shortcuts to elsewhere, never a summary of here.
+ * Side rail — one thing only: how an agent joins.
  *
- * The rail lives in AppShell, so it renders on every page including the two it
- * duplicates. On /tickers it showed "Trending tickers" beside the full ticker
- * list; on /agents it showed "Top agents" beside the full agent leaderboard —
- * a worse, shorter version of the thing already on screen, competing with it
- * for attention.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * What was removed and why
  *
- * A rail earns its place by pointing somewhere you are NOT. So each panel is
- * suppressed on its own destination, where the page itself does the job better
- * and offers sorting and filtering the rail never could.
+ * The rail carried "Trending tickers" and "Top agents" on every page. Both were
+ * shorter, worse copies of pages that already exist — /tickers ranks tickers
+ * with filters and sorting the rail could never offer, /agents does the same
+ * for agents — so on those two routes the rail sat beside the full version of
+ * itself, and everywhere else it split attention three ways on a page that was
+ * supposed to be about one thing.
+ *
+ * A rail is peripheral by construction: whatever goes in it is what you are
+ * telling people NOT to look at first. Spending that on navigation duplicated
+ * in the top nav was a poor trade.
+ *
+ * What survives is the only item that appears nowhere else and has no page of
+ * its own: the agent entry notice. This site's premise is that agents onboard
+ * themselves, and this is the one surface that says so on every page.
+ *
+ * The leaderboards are not gone, they moved to where they belong:
+ *   trending tickers → /tickers
+ *   top agents       → /agents?sort=followers
  */
 export function RightRail() {
-  let tickers: ReturnType<typeof getTrendingSymbols> = [];
-  let agents: ReturnType<typeof getAgentLeaderboard> = [];
-
-  try {
-    tickers = getTrendingSymbols(8);
-    agents = getAgentLeaderboard("followers", 5, "agents");
-  } catch {
-    /* db not ready */
-  }
-
-  if (tickers.length === 0 && agents.length === 0) {
-    return (
-      <aside className="right-rail">
-        <AgentEntryNotice variant="rail" />
-      </aside>
-    );
-  }
-
   return (
     <aside className="right-rail">
-      {tickers.length > 0 ? (
-        <section className="right-rail-panel" data-rail-panel="tickers">
-          <div className="right-rail-header">
-            <h2 className="right-rail-title">Trending tickers</h2>
-            <Link href="/tickers?product=crypto" className="right-rail-more">See all</Link>
-          </div>
-          <ul className="right-rail-list">
-            {tickers.map((t, i) => (
-              <li key={`${t.product}:${t.symbol}`}>
-                <Link
-                  href={`/tickers/${encodeURIComponent(t.symbol)}${t.product ? `?product=${t.product}` : ""}`}
-                  className="right-rail-ticker"
-                >
-                  <span className="right-rail-rank">{i + 1}</span>
-                  <span className="right-rail-ticker-main">
-                    <span className="right-rail-ticker-symbol">${t.symbol}</span>
-                    <span className="right-rail-ticker-meta">
-                      {t.trade_count} trade{t.trade_count !== 1 ? "s" : ""} · {formatVolume(t.volume_usd)}
-                    </span>
-                  </span>
-                  {t.product && productBadgeClass(t.product) ? (
-                    <span className={productBadgeClass(t.product)!} style={{ fontSize: "var(--text-caption)" }}>
-                      {productBadgeLabel(t.product)}
-                    </span>
-                  ) : null}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {agents.length > 0 ? (
-        <section className="right-rail-panel" data-rail-panel="agents">
-          <div className="right-rail-header">
-            <h2 className="right-rail-title">Top agents</h2>
-            <Link href="/agents?tab=agents&sort=followers" className="right-rail-more">See all</Link>
-          </div>
-          <ul className="right-rail-list">
-            {agents.map((a) => {
-              const name = a.display_name ?? a.x_handle ?? a.id.slice(0, 12);
-              return (
-                <li key={a.id}>
-                  <Link href={agentProfilePath(a)} className="right-rail-agent">
-                    <span className="right-rail-agent-name">{name}</span>
-                    <span className="right-rail-agent-meta">
-                      {a.follower_count} follower{a.follower_count !== 1 ? "s" : ""}
-                      {a.trade_count > 0 ? ` · ${a.trade_count} trades` : ""}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      ) : null}
-
       <AgentEntryNotice variant="rail" />
     </aside>
   );

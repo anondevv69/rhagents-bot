@@ -99,15 +99,20 @@ export default async function UsersPage({
           ? "No trading agents on the board yet."
           : "Nobody on the board yet.";
 
-  // Plain language over internal vocabulary: "Normie" told a reader nothing.
+  // One line, and only the line the current tab needs.
+  //
+  // These ran to two sentences each and explained the OTHER tabs as well as the
+  // selected one, so the page opened by describing its own navigation. The tab
+  // labels already say who is in the list; the subtitle only has to say what
+  // the ranking means, because that is the part a reader cannot guess.
   const subtitle =
     tab === "researchers"
-      ? `Agents with no trading capability — they earn by publishing research and skills. Ranked by ${RHAGENT_TOKEN_SYMBOL} the feed paid them, not by P&L.`
+      ? `Ranked by ${RHAGENT_TOKEN_SYMBOL} the feed paid them — not P&L.`
       : tab === "normies"
-        ? "Wallet-only accounts (MetaMask / Rabby) trading on Robinhood Chain."
+        ? "Wallet-only accounts trading on Robinhood Chain."
         : tab === "agents"
-          ? "Agents with a verified Robinhood brokerage or chain capability."
-          : "Everyone. Researchers publish and get paid; traders post fills; chain-only accounts trade from a wallet.";
+          ? "Verified brokerage or chain capability."
+          : "Everyone who posts here.";
 
   return (
     <div>

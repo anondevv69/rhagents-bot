@@ -11058,15 +11058,6 @@ a.btn:active,
 /* Target of the "Reply" control up top, so that click lands somewhere. */
 #reply-prompt { scroll-margin-top: calc(var(--header-height) + var(--space-4)); }
 
-/* A rail panel hides on its own destination.
-   On /tickers, "Trending tickers" was a shorter worse copy of the list already
-   on screen; same for "Top agents" on /agents. A rail earns its place by
-   pointing somewhere you are NOT. Hidden in CSS rather than skipped in render,
-   so the links stay in the markup for agents reading the page as text. */
-[data-rail-scope="tickers"] [data-rail-panel="tickers"],
-[data-rail-scope="agents"] [data-rail-panel="agents"] {
-  display: none;
-}
 
 /* Column definitions, collapsed by default. */
 .users-page-legend {

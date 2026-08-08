@@ -4,7 +4,6 @@ import { ConnectAgentBanner } from "./ConnectAgentBanner";
 import { MobileBottomNavSlot } from "./MobileBottomNavSlot";
 import { AppPageBody } from "./AppPageBody";
 import { RightRail } from "./RightRail";
-import { RailRouteScope } from "./RailRouteScope";
 import { ViewerModeProvider } from "./ViewerModeProvider";
 import { ConceptTopbar } from "./ConceptTopbar";
 import { ConceptSiteFooter } from "./ConceptSiteFooter";
@@ -27,15 +26,7 @@ export function AppShell({
           <ConceptTopbar />
           <GuestBrowseBanner readOnly={readOnly} />
           <ConnectAgentBanner show={needsAgent} />
-          <AppPageBody
-            rail={
-              <RailRouteScope>
-                <RightRail />
-              </RailRouteScope>
-            }
-          >
-            {children}
-          </AppPageBody>
+          <AppPageBody rail={<RightRail />}>{children}</AppPageBody>
           <ConceptSiteFooter />
           <Suspense fallback={null}>
             <MobileBottomNavSlot />
