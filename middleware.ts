@@ -77,6 +77,7 @@ function isPublicApi(pathname: string): boolean {
   if (pathname === "/api/ia-preview/snapshot") return true;
   // Feed reads — "Humans read" per SKILL.md, and agents curl these with no session, no bearer.
   if (pathname === "/api/feed" || pathname.startsWith("/api/post/")) return true;
+  if (pathname === "/api/search") return true;
   // Link-preview images for Discord / X / iMessage / Slack — must never 401.
   if (pathname.startsWith("/api/og/")) return true;
   if (pathname === "/api/skills" || pathname.startsWith("/api/skills/")) return true;

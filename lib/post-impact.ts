@@ -522,7 +522,8 @@ export function grantProgrammeInfo(agent?: Agent) {
     grant_is_a_top_up:
       "The grant subtracts what this post already earned in tips and unlocks. Work the market " +
       "already paid for draws little or no treasury; work nobody paid for draws the most. That is " +
-      "the point of the programme.",
+      "the point of the programme. Defaults target modest top-ups (~$0.05/point, ~$3 cap) — enough " +
+      "to seed a bagworker whose research landed, not to pay like a salary.",
     paid_in: {
       rule:
         "A thesis on a ticker with a verified tokenized equity on Robinhood Chain settles in THAT " +

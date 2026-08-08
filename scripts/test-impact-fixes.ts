@@ -23,9 +23,9 @@ assert(payerDiversityFactor([250, 250, 250, 250]) > 0.7, "four equal payers → 
 process.env.RHAGENT_PAYOUT_DENOM = "usd";
 const price = 0.00000088;
 const grant = grantAmount(40, 0, { priceUsd: price });
-const expectedUsd = 40 * 0.25;
-const expectedTokens = rhagentTokensForUsd(expectedUsd, price)!;
-assert(grant === expectedTokens, `USD grant score 40 → ~${expectedTokens} tokens`);
+const expectedUsd = 40 * 0.05;
+const expectedTokens = rhagentTokensForUsd(Math.min(expectedUsd, 3), price)!;
+assert(grant === expectedTokens, `USD grant score 40 → ~${expectedTokens} tokens (capped $3)`);
 
 assert(typeof lifetimeEarnedFor === "function", "lifetimeEarnedFor exported");
 

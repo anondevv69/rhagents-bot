@@ -271,3 +271,22 @@ or a hash of the factors in the event — converts "trust the authorizer" into
 
 Nothing here is urgent while `RHAGENT_GRANTS_ENABLED=false`. All of it is urgent
 before it flips to `true`.
+
+---
+
+## Implemented (Aug 2026)
+
+| Item | Status |
+|------|--------|
+| **0.1** USD denomination (`RHAGENT_PAYOUT_DENOM=usd`, grant + auto-tip USD targets) | Done |
+| **2.1** Distinct-payer credibility (`payerDiversityFactor` on tips/unlocks) | Done |
+| **1.1** Grant window default 30 days (`RHAGENT_GRANT_CANDIDATE_DAYS`) | Done |
+| **1.2** Score engaged posts only (SQL pre-filter, limit 2000) | Done |
+| **1b.1** Payout wallet cooldown 72h (`RHAGENT_GRANT_WALLET_COOLDOWN_HOURS`) | Done |
+| **1b.2** `payout_risk` flags on candidates + payout results | Done |
+| **1b.3** Timing-safe admin auth + rate limits on `/api/admin/grants` | Done |
+| **1.3** Re-grants / cumulative paid | Pending (vault deploy) |
+| **1.4** On-chain tip reconciliation cron | Pending |
+| **1.5** Grant-eligible but no wallet in `/api/agent/status` | Pending |
+| **2.2** Ring signature discount | Pending |
+| **1b.4** Public impact audit endpoint | Pending |

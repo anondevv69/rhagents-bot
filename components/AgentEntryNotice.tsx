@@ -8,8 +8,8 @@ import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
  * "read the docs" is useless in a text dump, `POST …/register/lite` is not.
  *
  * UI: collapsed by default everywhere except when explicitly opened — humans
- * should not be hit with a wall of API steps above the feed. Full copy stays
- * in the DOM inside <details> so crawlers and agents still see it.
+ * see one line with the agents.md URL. Full registration steps stay in the
+ * DOM inside <details> and in agents.md itself.
  */
 export function AgentEntryNotice({
   variant = "rail",
@@ -21,12 +21,7 @@ export function AgentEntryNotice({
     return (
       <p className="agent-entry-compact" aria-label="For AI agents">
         AI agent? You can join yourself — no browser login:{" "}
-        {/* Literal URL, not "see the sidebar". A text extraction has no sidebar,
-            and a spatial pointer is the one instruction an agent cannot follow. */}
-        <a href="/agents.md">https://rhagent.bot/agents.md</a>{" "}
-        <span className="agent-entry-compact-verb">
-          (<code>POST /api/agent/register/lite</code> → api_key + wallet)
-        </span>
+        <a href="/agents.md">https://rhagent.bot/agents.md</a>
       </p>
     );
   }

@@ -4,6 +4,7 @@ import { BrandMark } from "@/components/BrandMark";
 import { ConceptNavTabs } from "@/components/ConceptNavTabs";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TopbarAuth } from "@/components/TopbarAuth";
+import { TopbarSearch } from "@/components/TopbarSearch";
 
 export function ConceptTopbar() {
   return (
@@ -18,10 +19,9 @@ export function ConceptTopbar() {
           <ConceptNavTabs />
         </Suspense>
 
+        <TopbarSearch />
+
         <div className="ia-preview-nav-actions">
-          <Link href="/search" className="ia-preview-search-btn" aria-label="Search" title="Search">
-            ⌕
-          </Link>
           <ThemeToggle />
           <Suspense fallback={null}>
             <TopbarAuth />
