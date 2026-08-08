@@ -12,6 +12,7 @@ import {
 } from "@/lib/auto-tip";
 import { extractTxHashFromBankrResult } from "@/lib/bankr-tx-hash";
 import { relayBankrWalletApi, isWalletUserApiKey } from "@/lib/bankr-wallet-relay";
+import { fetchRhagentUsdPrice } from "@/lib/rhagent-payout-denom";
 
 export const dynamic = "force-dynamic";
 
@@ -66,11 +67,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "post_not_found" }, { status: 404 });
   }
 
+  const priceUsd = await fetchRhagentUsdPrice();
   const suggestion = suggestTip({
     post: loaded.post,
     author: loaded.author,
     tipper,
     trigger,
+    rhagentPriceUsd: priceUsd,
   });
 
   if (!suggestion.ok) {

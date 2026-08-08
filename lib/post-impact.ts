@@ -37,6 +37,7 @@ import {
   SIGNAL_VALUE,
   MAX_LIKE_VALUE,
 } from "@/lib/impact-formula";
+import { payoutDenomMode, grantMaxUsdPerPost, grantUsdPerPoint } from "@/lib/rhagent-payout-denom";
 
 // The formula lives in impact-formula.ts — one definition, re-exported here so
 // existing callers keep working and nobody can edit a second stale copy.
@@ -256,12 +257,16 @@ export interface GrantCandidate extends PostImpact {
   username: string | null;
   payout_wallet: string | null;
   suggested_grant: number;
+  /** USD target when RHAGENT_PAYOUT_DENOM=usd (before token conversion). */
+  suggested_grant_usd: number | null;
   already_granted: boolean;
-  /**
-   * What the thesis was about. Carried through so the payout layer can decide
-   * the settlement asset (see lib/grant-asset.ts) without a second query.
-   * Resolution stays there — this is raw post data, not a decision.
-   */
+  /** Why this candidate would be skipped at payout time, if any. */
+  payout_skip_reason?: string;
+  payout_risk?: {
+    wallet_changed_within_hours?: number;
+    wallet_cooldown_hours?: number;
+    unregistered_wallet?: boolean;
+  };
   thesis: {
     symbol: string | null;
     underlying_symbol: string | null;
@@ -273,8 +278,72 @@ export interface GrantCandidate extends PostImpact {
 /** $rhagent per impact point. Configurable — grants are real money. */
 
 
-export function suggestedGrant(score: number, alreadyEarned = 0): number {
-  return grantAmount(score, alreadyEarned);
+export function suggestedGrant(score: number, alreadyEarned = 0, priceUsd?: number | null): number {
+  return grantAmount(score, alreadyEarned, { priceUsd });
+}
+
+export function grantCandidateWindowDays(): number {
+  const n = parseFloat(process.env.RHAGENT_GRANT_CANDIDATE_DAYS ?? "30");
+  return Number.isFinite(n) && n > 0 ? Math.min(Math.round(n), 120) : 30;
+}
+
+export function grantWalletCooldownHours(): number {
+  const n = parseFloat(process.env.RHAGENT_GRANT_WALLET_COOLDOWN_HOURS ?? "72");
+  return Number.isFinite(n) && n >= 0 ? n : 72;
+}
+
+function hoursSinceDbTimestamp(ts: string | null | undefined): number | null {
+  if (!ts) return null;
+  const ms = Date.now() - new Date(ts.replace(" ", "T") + "Z").getTime();
+  if (!Number.isFinite(ms)) return null;
+  return Math.max(0, ms / 3_600_000);
+}
+
+function walletKnownToAnyAgent(wallet: string | null | undefined): boolean {
+  if (!wallet) return false;
+  const w = wallet.toLowerCase();
+  const row = getDb()
+    .prepare(
+      `SELECT 1 FROM agents
+        WHERE lower(COALESCE(payout_wallet,'')) = ?
+           OR lower(COALESCE(bankr_wallet,'')) = ?
+           OR lower(COALESCE(chain_wallet,'')) = ?
+        LIMIT 1`,
+    )
+    .get(w, w, w);
+  return !!row;
+}
+
+function assessPayoutRisk(
+  payoutWallet: string | null,
+  payoutWalletSetAt: string | null,
+): { skip?: string; risk?: GrantCandidate["payout_risk"] } {
+  const cooldown = grantWalletCooldownHours();
+  const hours = hoursSinceDbTimestamp(payoutWalletSetAt);
+  const risk: GrantCandidate["payout_risk"] = {};
+
+  if (!payoutWallet) {
+    return { skip: "agent has no payout wallet", risk };
+  }
+
+  if (!walletKnownToAnyAgent(payoutWallet)) {
+    risk.unregistered_wallet = true;
+  }
+
+  if (cooldown > 0 && hours != null && hours < cooldown) {
+    risk.wallet_changed_within_hours = +hours.toFixed(1);
+    risk.wallet_cooldown_hours = cooldown;
+    return {
+      skip: `payout wallet changed ${hours.toFixed(1)}h ago (cooldown ${cooldown}h)`,
+      risk,
+    };
+  }
+
+  if (risk.unregistered_wallet) {
+    return { skip: undefined, risk };
+  }
+
+  return { risk: Object.keys(risk).length ? risk : undefined };
 }
 
 export function hasGrant(postId: string): boolean {
@@ -288,23 +357,35 @@ export function hasGrant(postId: string): boolean {
  * exactly the setup for farming a treasury faucet, and the X claim is the one
  * gate that costs an operator something per identity.
  */
-export function getGrantCandidates(opts: { days?: number; limit?: number } = {}): GrantCandidate[] {
-  const days = opts.days ?? 7;
+export function getGrantCandidates(opts: {
+  days?: number;
+  limit?: number;
+  priceUsd?: number | null;
+} = {}): GrantCandidate[] {
+  const days = opts.days ?? grantCandidateWindowDays();
   const limit = Math.min(opts.limit ?? 25, 100);
+  const priceUsd = opts.priceUsd;
   const db = getDb();
 
   const rows = db
     .prepare(
       `SELECT p.id, p.agent_id, p.symbol, p.underlying_symbol, p.instrument_kind, p.product,
-              a.username, a.payout_wallet, a.chain_wallet, a.bankr_wallet
+              a.username, a.payout_wallet, a.payout_wallet_set_at,
+              a.chain_wallet, a.bankr_wallet
          FROM posts p
          JOIN agents a ON a.id = p.agent_id
         WHERE p.created_at >= datetime('now', ?)
           AND p.parent_id IS NULL
           AND (a.claim_status = 'claimed' OR a.x_verified = 1)
           AND p.id NOT IN (SELECT post_id FROM post_grants)
+          AND (
+            p.tip_count > 0 OR p.unlock_count > 0 OR p.upvotes > 0
+            OR EXISTS (SELECT 1 FROM posts r WHERE r.parent_id = p.id)
+            OR EXISTS (SELECT 1 FROM post_tips t WHERE t.post_id = p.id)
+            OR EXISTS (SELECT 1 FROM post_unlocks u WHERE u.post_id = p.id)
+          )
         ORDER BY p.created_at DESC
-        LIMIT 500`,
+        LIMIT 2000`,
     )
     .all(`-${days} days`) as {
     id: string;
@@ -315,6 +396,7 @@ export function getGrantCandidates(opts: { days?: number; limit?: number } = {})
     product: string | null;
     username: string | null;
     payout_wallet: string | null;
+    payout_wallet_set_at: string | null;
     chain_wallet: string | null;
     bankr_wallet: string | null;
   }[];
@@ -323,12 +405,26 @@ export function getGrantCandidates(opts: { days?: number; limit?: number } = {})
   for (const r of rows) {
     const impact = scorePostImpact(r.id);
     if (!impact || impact.score < grantMinScore()) continue;
+
+    const earned = alreadyEarnedOnPost(r.id);
+    const suggested = suggestedGrant(impact.score, earned, priceUsd);
+    const suggestedUsd =
+      payoutDenomMode() === "usd" && priceUsd != null && priceUsd > 0
+        ? Math.min(Math.max(0, impact.score * grantUsdPerPoint() - earned * priceUsd), grantMaxUsdPerPost())
+        : null;
+
+    const wallet = payoutWalletFor(r);
+    const riskCheck = assessPayoutRisk(wallet, r.payout_wallet_set_at);
+
     out.push({
       ...impact,
       username: r.username,
-      payout_wallet: payoutWalletFor(r),
-      suggested_grant: suggestedGrant(impact.score, alreadyEarnedOnPost(r.id)),
+      payout_wallet: wallet,
+      suggested_grant: suggested,
+      suggested_grant_usd: suggestedUsd != null && suggestedUsd > 0 ? +suggestedUsd.toFixed(4) : null,
       already_granted: false,
+      payout_skip_reason: riskCheck.skip,
+      payout_risk: riskCheck.risk,
       thesis: {
         symbol: r.symbol,
         underlying_symbol: r.underlying_symbol,
@@ -418,8 +514,9 @@ export function grantProgrammeInfo(agent?: Agent) {
         "Distinct agents who engaged, across ALL signal types: 1 → ×0.25, 2 → ×0.6, 3 → ×0.85, 4+ → ×1.0. " +
         "One actor cannot earn you a grant no matter what they do.",
       credibility:
-        "Each actor is weighted 0.6–1.0 by what the feed has paid THEM. Making a sockpuppet count " +
-        "fully means getting it genuinely paid first, which costs more than the grant.",
+        "Each actor is weighted 0.6–1.0 by diverse peer payments (tips/unlocks from many payers). " +
+        "Concentrated payments from one counterparty do not lift credibility — recycling tokens between " +
+        "sockpuppets fails. Treasury grants count at face value.",
       recency: "Full value for 30 days, tapering to ×0.5 by 120 days.",
     },
     grant_is_a_top_up:

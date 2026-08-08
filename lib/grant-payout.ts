@@ -15,9 +15,10 @@ import { createPublicClient, createWalletClient, http, parseAbi, formatUnits } f
 import { privateKeyToAccount } from "viem/accounts";
 import { robinhoodChain, explorerTxUrl } from "@/lib/onchain-config";
 import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
-import { getGrantCandidates, recordGrant, type GrantCandidate } from "@/lib/post-impact";
+import { getGrantCandidates, recordGrant, grantCandidateWindowDays, type GrantCandidate } from "@/lib/post-impact";
 import { resolveGrantAsset, type GrantAsset } from "@/lib/grant-asset";
 import { rwaPayoutsEnabled } from "@/lib/rwa-tokens";
+import { fetchRhagentUsdPrice, payoutDenomSummary } from "@/lib/rhagent-payout-denom";
 
 export const impactVaultAbi = parseAbi([
   "function payGrant(string postId, address payoutWallet, uint256 amount, uint256 score)",
@@ -84,6 +85,8 @@ export interface PayoutResult {
     why: string;
     fallback_reason?: string;
   };
+  suggested_grant_usd?: number | null;
+  payout_risk?: GrantCandidate["payout_risk"];
 }
 
 function assetSummary(a: GrantAsset): NonNullable<PayoutResult["asset"]> {
@@ -117,6 +120,7 @@ export async function runGrantPayouts(opts: {
   remaining_daily_budget: number | null;
   results: PayoutResult[];
   totals: { paid: number; skipped: number; failed: number; tokens: number };
+  payout_denom?: ReturnType<typeof payoutDenomSummary>;
   error?: string;
 }> {
   const dryRun = opts.dryRun ?? true;
@@ -191,9 +195,11 @@ export async function runGrantPayouts(opts: {
     };
   }
 
+  const priceUsd = await fetchRhagentUsdPrice();
   const candidates: GrantCandidate[] = getGrantCandidates({
-    days: opts.days ?? 7,
+    days: opts.days ?? grantCandidateWindowDays(),
     limit: opts.limit ?? 20,
+    priceUsd,
   });
 
   const results: PayoutResult[] = [];
@@ -207,12 +213,36 @@ export async function runGrantPayouts(opts: {
       amount: cand.suggested_grant,
       score: cand.score,
       status: "skipped",
+      suggested_grant_usd: cand.suggested_grant_usd,
+      payout_risk: cand.payout_risk,
     };
+
+    if (cand.payout_skip_reason) {
+      results.push({ ...base, reason: cand.payout_skip_reason });
+      skipped++;
+      continue;
+    }
 
     if (!cand.payout_wallet) {
       results.push({ ...base, reason: "agent has no payout wallet" });
       skipped++;
       continue;
+    }
+
+    if (cand.suggested_grant <= 0) {
+      results.push({
+        ...base,
+        reason:
+          priceUsd == null || priceUsd <= 0
+            ? "could not price $rhagent for USD-denominated grant"
+            : "grant top-up is zero (already earned or below threshold)",
+      });
+      skipped++;
+      continue;
+    }
+
+    if (cand.payout_risk?.unregistered_wallet) {
+      base.reason = "warning: payout wallet not matched to any agent record";
     }
 
     // Which asset settles this grant. A thesis on a ticker with a tokenized
@@ -327,6 +357,7 @@ export async function runGrantPayouts(opts: {
     vault,
     vault_balance: vaultBalance,
     remaining_daily_budget: remainingBudget,
+    payout_denom: payoutDenomSummary(priceUsd),
     results,
     totals: { paid, skipped, failed, tokens },
   };

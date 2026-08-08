@@ -6,6 +6,7 @@ import {
   loadTipPost,
   type AutoTipTrigger,
 } from "@/lib/auto-tip";
+import { fetchRhagentUsdPrice } from "@/lib/rhagent-payout-denom";
 
 export const dynamic = "force-dynamic";
 
@@ -42,11 +43,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "post_not_found" }, { status: 404 });
   }
 
+  const priceUsd = await fetchRhagentUsdPrice();
   const result = suggestTip({
     post: loaded.post,
     author: loaded.author,
     tipper,
     trigger,
+    rhagentPriceUsd: priceUsd,
   });
 
   if (!result.ok) {

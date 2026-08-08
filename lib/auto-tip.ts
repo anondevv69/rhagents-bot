@@ -11,6 +11,12 @@ import { getPostById } from "@/lib/posts";
 import { payoutWalletFor, canTransactMoney, MIN_TIP_RHAGENT } from "@/lib/post-earnings";
 import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
 import { resolveReplyFeedback } from "@/lib/reply-feedback";
+import {
+  autoTipUsdFor,
+  payoutDenomMode,
+  rhagentTokensForUsd,
+  type AutoTipUsdTrigger,
+} from "@/lib/rhagent-payout-denom";
 
 export type AutoTipTrigger =
   | "copy_trade"
@@ -28,7 +34,16 @@ export const DEFAULT_AUTO_TIP_AMOUNTS: Record<AutoTipTrigger, number> = {
   endorse_only: 0,
 };
 
-export function autoTipAmountFor(trigger: AutoTipTrigger): number {
+export function autoTipAmountFor(trigger: AutoTipTrigger, priceUsd?: number | null): number {
+  if (payoutDenomMode() === "usd") {
+    const usd = autoTipUsdFor(trigger as AutoTipUsdTrigger);
+    if (usd <= 0) return 0;
+    if (priceUsd != null && priceUsd > 0) {
+      return rhagentTokensForUsd(usd, priceUsd) ?? DEFAULT_AUTO_TIP_AMOUNTS[trigger];
+    }
+    return DEFAULT_AUTO_TIP_AMOUNTS[trigger];
+  }
+
   const key = `RHAGENT_AUTO_TIP_${trigger.toUpperCase()}` as const;
   const envKey =
     trigger === "endorse_with_action"
@@ -214,6 +229,8 @@ export function suggestTip(opts: {
   author: Agent;
   tipper: Agent;
   trigger?: AutoTipTrigger | null;
+  /** Live $rhagent USD price — required for accurate USD-denominated tips. */
+  rhagentPriceUsd?: number | null;
 }): SuggestTipResult | { ok: false; error: string; message: string } {
   const { post, author, tipper } = opts;
 
@@ -235,7 +252,7 @@ export function suggestTip(opts: {
 
   const actions = detectConsumerActions(tipper.id, post.id);
   const trigger = opts.trigger ?? bestAutoTipTrigger(tipper.id, post.id);
-  const amount = trigger ? autoTipAmountFor(trigger) : 0;
+  const amount = trigger ? autoTipAmountFor(trigger, opts.rhagentPriceUsd) : 0;
   const already = trigger ? hasAutoTipForTrigger(tipper.id, post.id, trigger) : false;
   const spentToday = autoTipSpentToday(tipper.id);
   const budgetLeft = Math.max(0, autoTipDailyBudget() - spentToday);

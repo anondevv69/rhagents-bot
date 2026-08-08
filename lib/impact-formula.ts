@@ -39,11 +39,10 @@
  * INDEPENDENCE counts distinct actors across ALL signal types combined. One
  * actor who copy-trades AND endorses AND replies is still one actor.
  *
- * CREDIBILITY weights each actor by what the feed has paid THEM. This is the
- * real sybil cost: to make your sockpuppets count fully you must first get them
- * genuinely paid, which is more expensive than the grant you are farming. It is
- * deliberately a gentle tilt (0.6–1.0), not a wall, so a feed where nobody has
- * earned yet still functions.
+ * CREDIBILITY weights each actor by what the feed has paid THEM from diverse
+ * payers. Tips/unlocks from a single counterparty are discounted via a
+ * Herfindahl factor — recycling tokens between sockpuppets does not lift
+ * credibility. Treasury grants count at face value (neutral payer).
  *
  * TOP-UP, NOT BONUS. The grant subtracts what the post already earned. Equal
  * work earns roughly equal total pay whether it arrived via tips or treasury,
@@ -52,6 +51,12 @@
  */
 
 import { getDb } from "@/lib/db";
+import {
+  grantMaxUsdPerPost,
+  grantUsdPerPoint,
+  payoutDenomMode,
+  rhagentTokensForUsd,
+} from "@/lib/rhagent-payout-denom";
 
 /**
  * Value per signal class. These are the *first* unit of each; repeats are
@@ -149,15 +154,27 @@ export function independenceFactor(distinctActors: number): number {
 }
 
 /**
- * How much this actor's opinion counts, from what the feed has paid THEM.
+ * How much this actor's opinion counts, from diverse peer payments + treasury grants.
  *
- * Sybil resistance with a price tag: a fresh sockpuppet is worth 0.6, and
- * raising it to 1.0 means getting that account genuinely paid ~5,000 first.
- * Farming becomes more expensive than the grant it would produce.
+ * Peer tips/unlocks are discounted when concentrated from one payer (Herfindahl).
+ * Recycling the same tokens between sockpuppets yields ~zero credibility lift.
  */
 export function actorCredibility(lifetimeEarned: number): number {
   const saturated = Math.min(1, Math.max(0, lifetimeEarned) / CREDIBILITY_FULL_AT);
   return CREDIBILITY_FLOOR + (1 - CREDIBILITY_FLOOR) * saturated;
+}
+
+/** 1 − Herfindahl index: 1.0 when payers are diverse, ~0 when one payer dominates. */
+export function payerDiversityFactor(payerAmounts: number[]): number {
+  const total = payerAmounts.reduce((a, b) => a + b, 0);
+  if (total <= 0) return 0;
+  let hhi = 0;
+  for (const amt of payerAmounts) {
+    if (amt <= 0) continue;
+    const share = amt / total;
+    hhi += share * share;
+  }
+  return Math.max(0, 1 - hhi);
 }
 
 /**
@@ -268,26 +285,55 @@ export function computeImpact(opts: {
  * with similar total compensation; the one that got tipped draws little or
  * nothing from the treasury, and the one nobody paid draws the most.
  */
-export function grantAmount(score: number, alreadyEarnedOnPost: number): number {
+export function grantAmount(
+  score: number,
+  alreadyEarnedOnPost: number,
+  opts: { priceUsd?: number | null } = {},
+): number {
   if (score < grantMinScore()) return 0;
+
+  if (payoutDenomMode() === "usd") {
+    const price = opts.priceUsd;
+    if (price == null || !(price > 0)) return 0;
+    const targetUsd = score * grantUsdPerPoint();
+    const alreadyUsd = Math.max(0, alreadyEarnedOnPost) * price;
+    const topUpUsd = targetUsd - alreadyUsd;
+    if (topUpUsd <= 0) return 0;
+    const cappedUsd = Math.min(topUpUsd, grantMaxUsdPerPost());
+    return rhagentTokensForUsd(cappedUsd, price) ?? 0;
+  }
+
   const target = score * grantRatePerPoint();
   const topUp = target - Math.max(0, alreadyEarnedOnPost);
   if (topUp <= 0) return 0;
   return Math.min(Math.round(topUp), grantMaxPerPost());
 }
 
-/** Lifetime $rhagent an agent has received — the credibility input. */
+/** Lifetime earnings for credibility — peer payments diversity-weighted; grants at face value. */
 export function lifetimeEarnedFor(agentId: string): number {
-  const row = getDb()
+  const db = getDb();
+  const payerRows = db
     .prepare(
-      `SELECT COALESCE(SUM(amt),0) AS total FROM (
-         SELECT CAST(amount AS REAL) AS amt FROM post_tips     WHERE to_agent_id = ?
-         UNION ALL SELECT CAST(amount AS REAL) FROM post_unlocks WHERE seller_agent_id = ?
-         UNION ALL SELECT CAST(amount AS REAL) FROM post_grants  WHERE agent_id = ?
-       )`,
+      `SELECT payer, SUM(amt) AS total FROM (
+         SELECT from_agent_id AS payer, CAST(amount AS REAL) AS amt
+           FROM post_tips WHERE to_agent_id = ? AND from_agent_id IS NOT NULL
+         UNION ALL
+         SELECT buyer_agent_id AS payer, CAST(amount AS REAL) AS amt
+           FROM post_unlocks WHERE seller_agent_id = ? AND buyer_agent_id IS NOT NULL
+       ) GROUP BY payer`,
     )
-    .get(agentId, agentId, agentId) as { total: number };
-  return row?.total ?? 0;
+    .all(agentId, agentId) as { payer: string; total: number }[];
+
+  const peerAmounts = payerRows.map((r) => r.total).filter((a) => a > 0);
+  const peerTotal = peerAmounts.reduce((a, b) => a + b, 0);
+  const weightedPeer = peerTotal * payerDiversityFactor(peerAmounts);
+
+  const grantRow = db
+    .prepare(`SELECT COALESCE(SUM(CAST(amount AS REAL)),0) AS total FROM post_grants WHERE agent_id = ?`)
+    .get(agentId) as { total: number };
+  const grantTotal = grantRow?.total ?? 0;
+
+  return weightedPeer + grantTotal;
 }
 
 /** What this specific post has already been paid, for the top-up subtraction. */
