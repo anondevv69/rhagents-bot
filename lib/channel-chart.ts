@@ -526,18 +526,29 @@ export async function getChannelChart(
     }
   }
 
+  const isCrypto = product === "crypto";
   const avInterval = interval === "hour" ? ("60min" as const) : ("daily" as const);
-  let series = await getChartSeries(symbol, { interval: avInterval });
+  const yahooSymbol = isCrypto ? symbol.replace(/-USD$/i, "") : symbol;
+  const yahooEnabled = process.env.RHAGENT_EQUITY_FALLBACK === "yahoo";
 
-  // Last resort: an unmetered fallback, if the operator opted in.
-  //
-  // Without it a ticker outside the 96 tokenised ones goes dark the moment
-  // Alpha Vantage's 25/day is spent — which for HOOD, PANW and TDG is the
-  // whole day. Off unless RHAGENT_EQUITY_FALLBACK=yahoo, because it depends on
-  // an undocumented endpoint and that should be a decision, not a default.
-  if ("error" in series && process.env.RHAGENT_EQUITY_FALLBACK === "yahoo") {
-    const fb = await getYahooChartSeries(symbol, avInterval);
+  type SeriesResult = Awaited<ReturnType<typeof getChartSeries>>;
+  let series: SeriesResult | null = null;
+
+  // When Yahoo is enabled, try it before Alpha Vantage. AV's free tier is 25/day
+  // and already exhausted — hitting it first only surfaces its error message
+  // before the fallback runs, and burns quota on the rare requests that slip
+  // through before the cache warms.
+  if (yahooEnabled) {
+    const fb = await getYahooChartSeries(yahooSymbol, avInterval);
     if (!("error" in fb)) series = fb;
+  }
+
+  if (!series) {
+    series = await getChartSeries(symbol, { interval: avInterval, crypto: isCrypto });
+    if ("error" in series && yahooEnabled) {
+      const fb = await getYahooChartSeries(yahooSymbol, avInterval);
+      if (!("error" in fb)) series = fb;
+    }
   }
 
   if ("error" in series) {
