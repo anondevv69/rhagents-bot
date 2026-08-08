@@ -10417,21 +10417,10 @@ a.btn:active,
   .channel-chart-tf:not(.is-active):hover { color: var(--text); }
 }
 
-/* The call list doubles as the entry-line selector once interactive. The active
-   row is the one whose price line is drawn — exactly one at a time. */
-.channel-chart-call-link.is-active {
-  background: var(--input-bg);
-  box-shadow: inset 2px 0 0 var(--accent);
-}
-
-button.channel-chart-call-link {
-  width: 100%;
-  border: none;
-  background: transparent;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
+/* NOTE: the interactive layer no longer renders a call LIST — it uses chips
+   (.channel-chart-chip). The .channel-chart-call-* rules below are still live,
+   but only for the server-rendered SVG, which keeps a written list because that
+   is the layer agents read. Not duplication there — it is the only copy. */
 
 /* ── Ticker channel: chart + trade panel ─────────────────────────────────── */
 
@@ -10538,4 +10527,129 @@ button.channel-chart-call-link {
     animation: none;
     box-shadow: 0 0 0 2px var(--accent);
   }
+}
+
+/* ── Thesis chart — one call, on the price ───────────────────────────────── */
+
+.thesis-chart {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-soft);
+}
+
+.thesis-chart-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-2);
+}
+
+.thesis-chart-said {
+  font-size: var(--text-caption);
+  color: var(--muted);
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1-5);
+}
+.thesis-chart-said strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.thesis-chart-side {
+  text-transform: uppercase;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 1px var(--space-1-5);
+  border-radius: var(--radius-sm);
+}
+.thesis-chart-side.is-buy { color: var(--up); background: color-mix(in srgb, var(--up) 14%, transparent); }
+.thesis-chart-side.is-sell { color: var(--down); background: color-mix(in srgb, var(--down) 14%, transparent); }
+
+.thesis-chart-verdict {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+/* The return is the headline of the whole card — negative tracking because
+   large figures read too loose, tabular so it can't jitter. */
+.thesis-chart-pct {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.thesis-chart.is-up .thesis-chart-pct { color: var(--up); }
+.thesis-chart.is-down .thesis-chart-pct { color: var(--down); }
+.thesis-chart.is-neutral .thesis-chart-pct { color: var(--muted); }
+
+.thesis-chart-now {
+  font-size: var(--text-caption);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.thesis-chart-svg {
+  display: block;
+  width: 100%;
+  height: 200px;
+  overflow: visible;
+}
+
+/* Area shaded by outcome — the verdict lands before any number is read. */
+.thesis-chart-area { opacity: 0.1; }
+.thesis-chart.is-up .thesis-chart-area { fill: var(--up); }
+.thesis-chart.is-down .thesis-chart-area { fill: var(--down); }
+.thesis-chart.is-neutral .thesis-chart-area { fill: var(--muted); }
+
+.thesis-chart-line { stroke-width: 1.5; }
+.thesis-chart.is-up .thesis-chart-line { stroke: var(--up); }
+.thesis-chart.is-down .thesis-chart-line { stroke: var(--down); }
+.thesis-chart.is-neutral .thesis-chart-line { stroke: var(--muted); }
+
+.thesis-chart-entry {
+  stroke: var(--text);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  opacity: 0.5;
+}
+.thesis-chart-entry-label {
+  fill: var(--muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.thesis-chart-when {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+  opacity: 0.35;
+}
+
+.thesis-chart-dot { fill: var(--surface); stroke-width: 2; }
+.thesis-chart.is-up .thesis-chart-dot { stroke: var(--up); }
+.thesis-chart.is-down .thesis-chart-dot { stroke: var(--down); }
+.thesis-chart.is-neutral .thesis-chart-dot { stroke: var(--muted); }
+.thesis-chart.is-up .thesis-chart-dot-core { fill: var(--up); }
+.thesis-chart.is-down .thesis-chart-dot-core { fill: var(--down); }
+.thesis-chart.is-neutral .thesis-chart-dot-core { fill: var(--muted); }
+
+.thesis-chart-foot,
+.thesis-chart-note {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-caption);
+  color: var(--muted);
+  line-height: 1.5;
+}
+.thesis-chart--empty { padding-bottom: var(--space-1); }
+
+.channel-chart-loading {
+  font-size: var(--text-caption);
+  color: var(--muted-faint);
+  align-self: center;
+  margin-left: var(--space-1);
 }
