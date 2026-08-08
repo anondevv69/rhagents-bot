@@ -126,7 +126,29 @@ chain 4663. `/api/research/rwa` mirrors that list with live RHJ prices; Dexscree
 liquidity is checked at payout time (or pass `?with_liquidity=true` on the list).
 Resolution is still by **contract address from RHJ**, never by on-chain symbol search:
 22 distinct ERC-20s call themselves HOOD, but only RHJ-listed addresses are used.
-Operator overrides via `RHAGENT_RWA_TOKENS` still work for edge cases.
+Operator overrides via `RHAGENT_RWA_TOKENS` still work for edge cases. Note HOOD
+is **not** in the RHJ set, so Robinhood's own ticker only settles in itself if an
+operator adds it by hand.
+
+If RHJ is unreachable the registry silently collapses to a one-ticker seed
+(NVDA) for the 5-minute cache window. That fails safe — fewer assets payable,
+never a wrong one — but it means a quiet RHJ outage looks like "almost nothing
+qualifies today" rather than an error. Worth an alert if this goes live.
+
+**Depth is the deepest real-quote pool, not the sum across pools.** Summing was
+free to manipulate and measurably wrong: pairing dust against a worthless token
+made MSFT report **$8,207,786,950** of liquidity on **$0** of 24h volume from a
+single 1-transaction pool, against **$119,458** actually tradeable. Since the
+liquidity floor is the only thing standing between an agent and a payout it
+cannot sell, a number anyone can inflate for free is not a check. Pools where
+the stock token is the *quote* (`AI/NVDA`, `CLIPPY/MSFT`) are also excluded —
+selling into a memecoin is not an exit.
+
+**Listing 96 is not paying 96.** At the $50k default floor, **24 of 96** tickers
+currently clear: NVDA SPCX GME SPY SNDK AAPL MU GOOGL TSLA INTC SLV COST MSFT
+QQQ PLTR USO META COIN MSTR RDDT TSM USAR NFLX AMD. The rest have an official
+RHJ price but no pool worth selling into, and settle in $rhagent. `/api/research/rwa`
+reports `payable: null` unless `?with_liquidity=true`, rather than guessing yes.
 
 **The vault is the real gate.** `setTokenLimits(token, allowed, maxPerPost,
 dailyBudget, walletDaily)` is owner-only, and an asset with no limits set cannot
@@ -151,9 +173,17 @@ Order of operations:
 ```bash
 # 1. See what would route where, without moving anything
 curl -s -H "x-admin-secret: $ADMIN_SECRET" https://rhagent.bot/api/admin/grants | jq '.candidates[].thesis'
-curl -s https://rhagent.bot/api/research/rwa | jq '.tickers'
+curl -s 'https://rhagent.bot/api/research/rwa?with_liquidity=true' \
+  | jq '.tickers[] | select(.payable) | {symbol, liquidity_usd, liquidity_pool}'
 
-# 2. Fund the vault with the asset, then allowlist it with ITS OWN caps
+# 2. Bulk-allowlist every active RHJ token (skips already-allowed):
+#    cd rhagentcontractd && source .env
+#    export OWNER_PRIVATE_KEY="$DEPLOYER_PRIVATE_KEY"
+#    bash rhagents-bot/contracts/script/allowlist-rwa-vault.sh
+#    # Or generate a replayable cast batch without sending:
+#    GENERATE_BATCH=1 bash .../allowlist-rwa-vault.sh
+#
+#    Fund the vault with an asset before paying in it. Per-token caps:
 #    cast send $VAULT "setTokenLimits(address,bool,uint256,uint256,uint256)" \
 #      $NVDA true 1e15 1e16 1e15   # units are the token's own, 18 decimals
 
