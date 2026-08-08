@@ -133,18 +133,23 @@ export function ChannelChart({ data }: { data: ChannelChartData }) {
           );
         })}
 
-        {/* The entry lines — the reason this chart exists.
-            One dotted horizontal per call, at the price it was made. */}
-        {visible.map((m) => (
+        {/* The entry line — the reason this chart exists.
+            ONE line, for the most recent call.
+
+            The first version drew one per call. paste.trade can do that because
+            their card is about a single call; on a channel with twenty theses
+            it turns the chart into ruled notepad paper and destroys the exact
+            signal the line was added to create. The interactive layer lets you
+            switch which call is lined; static, the newest is the useful default. */}
+        {visible.length ? (
           <line
-            key={`e-${m.post_id}`}
             className="channel-chart-entry-line"
             x1={PAD.left}
             x2={W - PAD.right}
-            y1={y(m.entry_price_usd)}
-            y2={y(m.entry_price_usd)}
+            y1={y(visible[0].entry_price_usd)}
+            y2={y(visible[0].entry_price_usd)}
           />
-        ))}
+        ) : null}
 
         {/* Call moment + marker. <title> is the accessible and agent-readable
             tooltip; browsers show it natively on hover with no JS. */}
