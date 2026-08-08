@@ -99,11 +99,21 @@ export async function GET(req: NextRequest) {
     ok: true,
     count: snapshot.length,
     with_liquidity: withLiquidity,
+    // Without ?with_liquidity=true nothing here has had its depth checked, and
+    // depth is what decides a payout: only about a quarter of the listed
+    // tickers clear the default floor. So `payable` is null — unknown — rather
+    // than a guess that would be wrong more often than right.
+    payable_checked: withLiquidity,
+    ...(withLiquidity
+      ? {}
+      : {
+          payable_note:
+            "payable is unknown without a depth check. Add ?with_liquidity=true for the " +
+            "authoritative answer (slower — it quotes every pool).",
+        }),
     tickers: snapshot
       .map((t) => {
         const hasPrice = t.quote.price_usd != null;
-        const liquidEnough =
-          !withLiquidity || (t.quote.liquidity_usd >= rwaMinLiquidityUsd() && hasPrice);
         return {
           symbol: t.symbol,
           contract: t.contract,
@@ -113,14 +123,19 @@ export async function GET(req: NextRequest) {
           price_usd: t.quote.price_usd,
           price_source: t.quote.price_source,
           liquidity_usd: withLiquidity ? t.quote.liquidity_usd : null,
+          liquidity_pool: withLiquidity ? (t.quote.liquidity_pool ?? null) : null,
           volume_24h_usd: t.quote.volume_24h_usd,
-          payable: enabled && hasPrice && liquidEnough,
-          ...(!enabled || (hasPrice && liquidEnough)
-            ? {}
-            : { blocked_by: t.quote.reason ?? "price_unavailable" }),
+          payable: withLiquidity ? enabled && hasPrice && t.quote.tradeable : null,
+          ...(withLiquidity && !(hasPrice && t.quote.tradeable)
+            ? { blocked_by: t.quote.reason ?? "price_unavailable" }
+            : {}),
         };
       })
-      .sort((a, b) => (b.liquidity_usd || 0) - (a.liquidity_usd || 0) || (b.price_usd ?? 0) - (a.price_usd ?? 0)),
+      .sort(
+        (a, b) =>
+          (b.liquidity_usd ?? 0) - (a.liquidity_usd ?? 0) ||
+          (b.volume_24h_usd ?? 0) - (a.volume_24h_usd ?? 0),
+      ),
     settlement,
   });
 }

@@ -38,12 +38,26 @@ export interface RwaQuote {
   symbol: string;
   contract: `0x${string}`;
   price_usd: number | null;
+  /**
+   * Depth of the single deepest pool against a real quote asset — NOT the sum
+   * across pools. See dexLiquidity() for why summing is unsafe.
+   */
   liquidity_usd: number;
   volume_24h_usd: number;
   tradeable: boolean;
   price_source?: "rhj" | "dexscreener";
+  /** What the depth figure came from, so a payout decision is auditable. */
+  liquidity_pool?: { pair: string; txns_24h: number } | null;
   reason?: string;
 }
+
+/**
+ * Quote assets that represent a real exit.
+ *
+ * A pool pairing a stock token against a memecoin is not liquidity you can
+ * leave through — selling into it just swaps one illiquid asset for another.
+ */
+const REAL_QUOTE_ASSETS = new Set(["USDG", "USDC", "USDT", "WETH", "ETH", "DAI"]);
 
 interface RhjAsset {
   id: string;
@@ -209,10 +223,13 @@ export async function getRwaRegistry(): Promise<Record<string, RwaToken>> {
   return { ...rhj, ...operatorTokens() };
 }
 
-/** @deprecated sync stub — use getRwaRegistry() or rwaTokenFor(). */
-export function rwaRegistry(): Record<string, RwaToken> {
-  return registryCache?.map ?? { ...RWA_SEED_TOKENS, ...operatorTokens() };
-}
+/**
+ * A synchronous view of the registry used to exist and has been removed rather
+ * than deprecated. It could only ever return whatever happened to be cached, so
+ * the same call returned 1 ticker or 96 depending on whether something had
+ * warmed the cache first — a footgun on a path that decides payouts. Use
+ * getRwaRegistry() or rwaTokenFor(); both are async because the truth is remote.
+ */
 
 export async function rwaTokenFor(symbolRaw: string | null | undefined): Promise<RwaToken | null> {
   if (!symbolRaw || typeof symbolRaw !== "string") return null;
@@ -222,30 +239,92 @@ export async function rwaTokenFor(symbolRaw: string | null | undefined): Promise
   return reg[symbol] ?? null;
 }
 
+/**
+ * Does a name carry Robinhood's issuer marker?
+ *
+ * Kept as an audit helper, not a gate. When the registry came from a hand-curated
+ * list this was the check that a contract was genuinely issuer-minted; now that
+ * addresses come from Robinhood's own API the provenance is established upstream,
+ * and every one of the 96 satisfies it. Useful for verifying that assumption
+ * still holds — if this ever returns false for an RHJ entry, the API shape or
+ * the naming convention has changed and the registry deserves a second look.
+ */
 export function looksIssuerMinted(onchainName: string | null | undefined): boolean {
   return typeof onchainName === "string" && onchainName.includes(ISSUER_MARKER);
 }
 
-async function dexLiquidity(contract: string): Promise<{ liquidity: number; volume: number; price: number | null }> {
+/**
+ * Real exit depth for a stock token.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Why this does not sum liquidity across pools
+ *
+ * Summing is free to manipulate and was measurably wrong in practice. Live
+ * readings on this chain:
+ *
+ *     MSFT  summed $8,207,786,950   ← one pool "tornadoes/MSFT": $0 volume, 1 txn
+ *           real     $119,458       ← MSFT/USDG, 208 txns
+ *     PLTR  summed $2,635,727,639   ← same pattern, "tornadoes/PLTR"
+ *           real     $112,655
+ *
+ * Anyone can mint a worthless token, pair a dust amount of a stock token
+ * against it, and Dexscreener will extrapolate the pool's notional TVL into the
+ * billions. Since the liquidity floor is the ONLY thing standing between an
+ * agent and a payout it cannot sell, a metric that anyone can inflate for free
+ * is not a safety check — it is a formality.
+ *
+ * So depth is the single deepest pool where this token trades against a real
+ * quote asset, and pools where the stock token is itself the quote (AI/NVDA,
+ * CLIPPY/MSFT) are excluded: selling into a memecoin is not an exit.
+ */
+async function dexLiquidity(contract: string): Promise<{
+  liquidity: number;
+  volume: number;
+  price: number | null;
+  pool: { pair: string; txns_24h: number } | null;
+}> {
+  const empty = { liquidity: 0, volume: 0, price: null, pool: null };
   try {
     const res = await fetch(`https://api.dexscreener.com/token-pairs/v1/robinhood/${contract.toLowerCase()}`, {
       signal: AbortSignal.timeout(8000),
     });
-    if (!res.ok) return { liquidity: 0, volume: 0, price: null };
+    if (!res.ok) return empty;
     const pairs = (await res.json()) as {
       priceUsd?: string;
       liquidity?: { usd?: number };
       volume?: { h24?: number };
+      txns?: { h24?: { buys?: number; sells?: number } };
+      baseToken?: { address?: string; symbol?: string };
+      quoteToken?: { symbol?: string };
     }[];
-    if (!Array.isArray(pairs) || !pairs.length) return { liquidity: 0, volume: 0, price: null };
-    const liquidity = pairs.reduce((s, p) => s + (p.liquidity?.usd ?? 0), 0);
-    const volume = pairs.reduce((s, p) => s + (p.volume?.h24 ?? 0), 0);
-    const deepest = pairs.reduce((a, b) => ((b.liquidity?.usd ?? 0) > (a.liquidity?.usd ?? 0) ? b : a));
+    if (!Array.isArray(pairs) || !pairs.length) return empty;
+
+    const want = contract.toLowerCase();
+    const real = pairs.filter(
+      (p) =>
+        p.baseToken?.address?.toLowerCase() === want &&
+        REAL_QUOTE_ASSETS.has((p.quoteToken?.symbol ?? "").toUpperCase()),
+    );
+    if (!real.length) return empty;
+
+    const deepest = real.reduce((a, b) => ((b.liquidity?.usd ?? 0) > (a.liquidity?.usd ?? 0) ? b : a));
     const px = parseFloat(deepest.priceUsd ?? "");
-    const price = Number.isFinite(px) && px > 0 ? px : null;
-    return { liquidity, volume, price };
+    const txns = (deepest.txns?.h24?.buys ?? 0) + (deepest.txns?.h24?.sells ?? 0);
+
+    return {
+      // Depth of the one pool you would actually exit through.
+      liquidity: deepest.liquidity?.usd ?? 0,
+      // Volume across every real-quote pool — turnover is not manipulable the
+      // way notional TVL is, so it can safely aggregate.
+      volume: real.reduce((s, p) => s + (p.volume?.h24 ?? 0), 0),
+      price: Number.isFinite(px) && px > 0 ? px : null,
+      pool: {
+        pair: `${deepest.baseToken?.symbol ?? "?"}/${deepest.quoteToken?.symbol ?? "?"}`,
+        txns_24h: txns,
+      },
+    };
   } catch {
-    return { liquidity: 0, volume: 0, price: null };
+    return empty;
   }
 }
 
@@ -269,11 +348,13 @@ export async function rwaQuote(
   let liquidity = 0;
   let volume = 0;
   let dexPrice: number | null = null;
+  let pool: { pair: string; txns_24h: number } | null = null;
   if (includeLiquidity) {
     const dex = await dexLiquidity(key);
     liquidity = dex.liquidity;
     volume = dex.volume;
     dexPrice = dex.price;
+    pool = dex.pool;
   }
 
   const price = rhjPx ?? dexPrice;
@@ -300,7 +381,10 @@ export async function rwaQuote(
       volume_24h_usd: volume,
       tradeable: false,
       price_source,
-      reason: `liquidity $${Math.round(liquidity).toLocaleString()} below floor $${floor.toLocaleString()}`,
+      liquidity_pool: pool,
+      reason: pool
+        ? `deepest real-quote pool ${pool.pair} holds $${Math.round(liquidity).toLocaleString()}, below floor $${floor.toLocaleString()}`
+        : `no pool against a real quote asset — floor $${floor.toLocaleString()}`,
     };
   } else {
     q = {
@@ -311,6 +395,7 @@ export async function rwaQuote(
       volume_24h_usd: volume,
       tradeable: true,
       price_source,
+      liquidity_pool: pool,
     };
   }
 
@@ -328,15 +413,21 @@ export async function rwaRegistrySnapshot(opts: { withLiquidity?: boolean } = {}
   const entries = Object.values(tokens).map((t) => {
     const mid = rhjMidPrice(prices[t.symbol]);
     if (!withLiquidity) {
+      // `tradeable` means "confirmed payable". Without a depth check it cannot
+      // be confirmed, so it stays false rather than claiming a payout that the
+      // settlement path would then refuse — only 25 of 96 tickers actually
+      // clear the default floor, so guessing true here would be wrong far more
+      // often than right.
       const quote: RwaQuote = {
         symbol: t.symbol,
         contract: t.contract,
         price_usd: mid,
         liquidity_usd: 0,
         volume_24h_usd: parseFloat(prices[t.symbol]?.dailyTradingVolume ?? "0") || 0,
-        tradeable: mid != null,
+        tradeable: false,
         price_source: mid != null ? "rhj" : undefined,
-        ...(mid == null ? { reason: "price_unavailable" } : {}),
+        liquidity_pool: null,
+        reason: mid == null ? "price_unavailable" : "liquidity_not_checked",
       };
       return { ...t, quote };
     }

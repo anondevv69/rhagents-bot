@@ -7,6 +7,7 @@
 # Optional:
 #   AUTHORIZER_ADDRESS=0xC2D36c74E78a6D8c8Fb5AAD49145547Cb47Fb8Aa  (already on Railway)
 #   SKIP_RWA_ALLOWLIST=1   — skip setTokenLimits for stock tokens (RHAGENT-only)
+#   RWA_ALLOWLIST=rhj|top  — rhj = all active RHJ tokens (default); top = legacy 8 tickers
 #   SKIP_RAILWAY=1         — skip railway variable update
 #   DRY_RUN_GRANTS=1       — curl admin dry-run after cutover (needs ADMIN_SECRET)
 
@@ -17,10 +18,13 @@ addr_eq() {
   python3 -c "import sys; sys.exit(0 if sys.argv[1].lower() == sys.argv[2].lower() else 1)" "$1" "$2"
 }
 
-ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/rwa-allowlist-lib.sh"
 cd "$ROOT/contracts"
 
-RPC="${RPC_URL:-https://rpc.mainnet.chain.robinhood.com}"
+RPC="${RHAGENT_RPC_URL:-${RPC_URL:-https://rpc.mainnet.chain.robinhood.com}}"
 JOURNAL="${JOURNAL_ADDRESS:-0x7bbC170871fd9d8294Fedb78080F9152D4B3fbcd}"
 V1="${V1_VAULT_ADDRESS:-0x957025B7D3357B88748d35eA28e7Fa455933313D}"
 RHAGENT="${RHAGENT_TOKEN:-0x894fAc757250F8E02180E1856957274D84AC4bA3}"
@@ -83,29 +87,18 @@ if ! addr_eq "$REWARD" "$V2"; then
 fi
 
 if [[ "${SKIP_RWA_ALLOWLIST:-}" != "1" ]]; then
-  echo "== 5/6 setTokenLimits for top RWA tickers (vault unfunded in these — allowlist only) =="
-  # Caps in token units (18 decimals). Conservative — vault holds RHAGENT only until separately funded.
-  MAX_POST=1000000000000000      # 0.001 shares
-  DAILY=10000000000000000        # 0.01 shares/day
-  WALLET=1000000000000000        # 0.001 shares/wallet/day
-  while IFS=: read -r sym addr; do
-    sym=$(echo "$sym" | tr -d '[:space:]')
-    addr=$(echo "$addr" | tr -d '[:space:]')
-    [ -z "$sym" ] && continue
-    echo "  allowlist $sym @ $addr"
-    cast send "$V2" "setTokenLimits(address,bool,uint256,uint256,uint256)" \
-      "$addr" true "$MAX_POST" "$DAILY" "$WALLET" \
-      --private-key "$PK" --rpc-url "$RPC"
-  done <<'RWA_EOF'
-NVDA:0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC
-SPY:0x117cc2133c37B721F49dE2A7a74833232B3B4C0C
-AAPL:0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9
-TSLA:0x322F0929c4625eD5bAd873c95208D54E1c003b2d
-QQQ:0xD5f3879160bc7c32ebb4dC785F8a4F505888de68
-META:0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35
-MSTR:0xec262a75e413fAfD0dF80480274532C79D42da09
-COIN:0x6330D8C3178a418788dF01a47479c0ce7CCF450b
-RWA_EOF
+  RWA_MODE="${RWA_ALLOWLIST:-rhj}"
+  echo "== 5/6 setTokenLimits ($RWA_MODE list — allowlist only, vault unfunded in stock tokens) =="
+  LIST_FILE=$(mktemp)
+  trap 'rm -f "$LIST_FILE"' EXIT
+  case "$RWA_MODE" in
+    rhj) rwa_fetch_rhj_list "$SCRIPT_DIR" > "$LIST_FILE" ;;
+    top) rwa_top8_list > "$LIST_FILE" ;;
+    *) echo "ERROR: RWA_ALLOWLIST must be rhj or top"; exit 1 ;;
+  esac
+  rwa_apply_allowlist "$V2" "$PK" "$RPC" 0 < "$LIST_FILE"
+  rm -f "$LIST_FILE"
+  trap - EXIT
 else
   echo "== 5/6 SKIP_RWA_ALLOWLIST=1 — RHAGENT-only on-chain =="
 fi
