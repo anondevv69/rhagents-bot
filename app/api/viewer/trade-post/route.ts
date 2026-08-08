@@ -18,6 +18,7 @@ import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { looksLikeCopyTradeText } from "@/lib/copy-trade";
 import { explorerTxUrl } from "@/lib/onchain-config";
 import { isAddress } from "viem";
+import { entryCaptureFromFillPrice } from "@/lib/thesis-performance";
 
 /**
  * POST /api/viewer/trade-post
@@ -214,6 +215,8 @@ export async function POST(req: NextRequest) {
     resolved.contract ??
     (isAddress(symbolInput) ? symbolInput : null);
 
+  const fillEntry = entryCaptureFromFillPrice(pricing.price_usd, "trade_fill");
+
   const post = createPost({
     agent_id: agent.id,
     type: "trade_fill",
@@ -227,6 +230,7 @@ export async function POST(req: NextRequest) {
     via,
     source_url,
     contract,
+    ...(fillEntry ?? {}),
   });
 
   if (resolved.contract) {

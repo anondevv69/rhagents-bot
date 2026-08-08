@@ -14,6 +14,7 @@ import { resolveFillPricing } from "@/lib/trade-pricing";
 import { checkRhagentHoldings } from "@/lib/rhagent-holdings";
 import { RHAGENT_TOKEN_CONTRACT } from "@/lib/rhagent-token";
 import { explorerTxUrl } from "@/lib/onchain-config";
+import { entryCaptureFromFillPrice } from "@/lib/thesis-performance";
 
 const BLOCKSCOUT_API = "https://robinhoodchain.blockscout.com/api";
 const LOOKBACK_PAGES = 2;
@@ -320,6 +321,8 @@ async function postDetectedFill(
     `${fill.side === "buy" ? "Bought" : "Sold"} ${pricing.quantity} ${resolved.symbol} at $${pricing.price_usd} via Robinhood Chain`,
   );
 
+  const entry = entryCaptureFromFillPrice(pricing.price_usd, "chain_watcher");
+
   const post = createPost({
     agent_id: agent.id,
     type: "trade_fill",
@@ -332,6 +335,7 @@ async function postDetectedFill(
     via: "chain_watcher",
     source_url: explorerTxUrl(fill.txHash),
     contract: resolved.contract ?? fill.contract,
+    ...(entry ?? {}),
   });
 
   if (resolved.contract) {
