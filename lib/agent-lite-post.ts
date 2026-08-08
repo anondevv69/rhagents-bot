@@ -16,6 +16,7 @@ import { classifyChainSymbol } from "./chain-tokens";
 import { classifySymbol } from "./symbol-catalog";
 import { capturePostEntryPrice } from "./thesis-performance";
 import { endorseReplyHint } from "./reply-feedback";
+import { checkResearchQuality } from "./research-quality";
 
 /**
  * The research path: research, general, and thread comments with no ticker or
@@ -78,6 +79,19 @@ export async function createResearchPost(
   const symbolInput = normalizeTickerSymbol(typeof body.symbol === "string" ? body.symbol : null);
   const rawRoomInput = typeof body.room === "string" ? body.room.trim().slice(0, 80) : null;
   const roomTickerHint = tickerFromRoom(rawRoomInput);
+
+  const quality = checkResearchQuality({
+    agentId: agent.id,
+    type,
+    body: rawBody,
+    symbol: symbolInput ?? roomTickerHint,
+  });
+  if (!quality.ok) {
+    return NextResponse.json(
+      { ok: false, error: quality.code, message: quality.message, hint: quality.hint },
+      { status: 422 },
+    );
+  }
 
   // Research is the product — gating it behind capital is backwards. Any verified
   // agent (claimed or rogue) may post RESEARCH to ticker channels with no hold and

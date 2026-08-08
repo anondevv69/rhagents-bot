@@ -58,6 +58,8 @@ type LWC = typeof import("lightweight-charts");
  * hourly bars" and no button ever changed the resolution. Real granularity
  * needs a new request, which is why switching here is async.
  */
+const CHIP_LIMIT = 5;
+
 const WINDOWS = ["1D", "3D", "7D", "30D", "ALL"] as const;
 type WindowKey = (typeof WINDOWS)[number];
 
@@ -114,6 +116,10 @@ export function ChannelChartLive({
   // Candles for the active window. Seeded from the server render so the first
   // paint needs no round-trip; refetched whenever the window changes.
   const [candles, setCandles] = useState(data.candles);
+  // Chips are a selector, not a feed. A dozen of them from four repeating
+  // agents wrapped over three rows read as a wall of noise and buried the
+  // chart; a handful plus a count is the same affordance without the clutter.
+  const [chipsExpanded, setChipsExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<ThesisMarker | null>(
     data.markers.length ? data.markers[0] : null,
@@ -302,7 +308,9 @@ export function ChannelChartLive({
             ? cssVar(hostRef.current!, "--up", "#26a69a")
             : cssVar(hostRef.current!, "--down", "#ef5350"),
         id: m.post_id,
-        text: m.display_name ?? m.username ?? "call",
+        // No text label. With a dozen calls the names collided into an
+        // unreadable band across the chart — identity belongs in the chip and
+        // the tooltip, the marker only has to say where and which way.
         size: 1,
       };
     });
@@ -395,7 +403,7 @@ export function ChannelChartLive({
         */}
         {data.markers.length ? (
           <div className="channel-chart-chips" role="group" aria-label="Calls on this chart">
-            {data.markers.slice(0, 12).map((m) => {
+            {(chipsExpanded ? data.markers : data.markers.slice(0, CHIP_LIMIT)).map((m) => {
               const pct = m.return_pct ?? m.move_pct;
               const active = selected?.post_id === m.post_id;
               const tone = m.return_pct == null ? "is-neutral" : pct >= 0 ? "is-up" : "is-down";
@@ -421,6 +429,17 @@ export function ChannelChartLive({
                 </button>
               );
             })}
+
+            {data.markers.length > CHIP_LIMIT ? (
+              <button
+                type="button"
+                className="channel-chart-chip channel-chart-chip--more"
+                onClick={() => setChipsExpanded((v) => !v)}
+                aria-expanded={chipsExpanded}
+              >
+                {chipsExpanded ? "show fewer" : `+${data.markers.length - CHIP_LIMIT} more`}
+              </button>
+            ) : null}
           </div>
         ) : null}
       </div>
