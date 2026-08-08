@@ -1,3 +1,8 @@
+import {
+  formatPriceUsd as fmtPrice,
+  formatCapUsd as fmtCap,
+  formatPct as fmtPct,
+} from "@/lib/format-price";
 import { getChannelChart, type ThesisMarker } from "@/lib/channel-chart";
 
 /**
@@ -25,61 +30,6 @@ import { getChannelChart, type ThesisMarker } from "@/lib/channel-chart";
 const W = 680;
 const H = 220;
 const PAD = { top: 14, right: 66, bottom: 18, left: 8 };
-
-const SUBSCRIPTS = "₀₁₂₃₄₅₆₇₈₉";
-
-/**
- * Price, readable at any magnitude.
- *
- * Sub-cent tokens were rendering as `8.81e-7`. That is accurate and nobody can
- * compare two of them at a glance. On-chain terminals all use the same
- * convention instead — compress the leading zeros into a subscript count and
- * keep the significant digits: `$0.0₆8813`. Same information, actually
- * legible, and it sorts visually the way a price should.
- */
-function fmtPrice(n: number): string {
-  if (!Number.isFinite(n)) return "—";
-  if (n === 0) return "$0";
-  if (n < 0.001) {
-    // Count the zeros from the decimal expansion rather than via log10 —
-    // floating point puts values like 1e-6 fractionally under their power of
-    // ten, so the log route lands one short on exactly the prices this is for.
-    const m = n.toFixed(20).match(/^0\.(0*)(\d+)/);
-    if (!m) return `$${n.toExponential(2)}`;
-    const zeros = m[1].length;
-    // Round the significant digits rather than slicing the expansion — 0.00099
-    // stringifies as 0.00098999… and slicing showed 9899 for a price of 9900.
-    const sig = String(Math.round(n * Math.pow(10, zeros + 4))).slice(0, 4);
-    const marker = String(zeros)
-      .split("")
-      .map((d) => SUBSCRIPTS[Number(d)])
-      .join("");
-    return `$0.0${marker}${sig}`;
-  }
-  if (n < 1) return `$${n.toPrecision(4)}`;
-  if (n < 1000) return `$${n.toFixed(2)}`;
-  return `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-}
-
-/**
- * Market cap, compact.
- *
- * The headline number for a chain-native token, because a unit price of
- * `$0.0₆8813` tells a reader nothing about whether the thing is early. `$88.0K`
- * answers the question they actually have. Every on-chain terminal leads with
- * this for the same reason.
- */
-function fmtCap(n: number): string {
-  if (!Number.isFinite(n) || n <= 0) return "—";
-  if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
-  if (n >= 1e6) return `$${(n / 1e6).toFixed(2)}M`;
-  if (n >= 1e3) return `$${(n / 1e3).toFixed(1)}K`;
-  return `$${n.toFixed(0)}`;
-}
-
-function fmtPct(n: number): string {
-  return `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
-}
 
 export async function ThesisChart({
   postId,

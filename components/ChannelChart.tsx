@@ -1,3 +1,8 @@
+import {
+  formatPriceUsd as fmtPrice,
+  formatCapUsd as fmtCap,
+  formatPct as fmtPct,
+} from "@/lib/format-price";
 import Link from "next/link";
 import type { ChannelChart as ChannelChartData, ThesisMarker } from "@/lib/channel-chart";
 
@@ -30,20 +35,6 @@ import type { ChannelChart as ChannelChartData, ThesisMarker } from "@/lib/chann
 const W = 720;
 const H = 240;
 const PAD = { top: 12, right: 52, bottom: 22, left: 8 };
-
-function fmtPrice(n: number): string {
-  if (!Number.isFinite(n)) return "—";
-  if (n === 0) return "0";
-  if (n < 0.000001) return n.toExponential(2);
-  if (n < 1) return n.toPrecision(3);
-  if (n < 1000) return n.toFixed(2);
-  return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
-}
-
-function fmtPct(n: number | null): string {
-  if (n == null || !Number.isFinite(n)) return "—";
-  return `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
-}
 
 export function ChannelChart({ data }: { data: ChannelChartData }) {
   if (data.unavailable || !data.candles.length) {
@@ -96,7 +87,7 @@ export function ChannelChart({ data }: { data: ChannelChartData }) {
     <section className="channel-chart" aria-label={`${data.symbol} price chart with ${visible.length} theses`}>
       <header className="channel-chart-head">
         <div className="channel-chart-price">
-          <span className="channel-chart-price-value">${fmtPrice(last)}</span>
+          <span className="channel-chart-price-value">{fmtPrice(last)}</span>
           <span className={`channel-chart-price-change ${up ? "is-up" : "is-down"}`}>
             {fmtPct(((last - first) / first) * 100)}
           </span>
@@ -162,7 +153,7 @@ export function ChannelChart({ data }: { data: ChannelChartData }) {
           return (
             <g key={m.post_id} className={`channel-chart-marker ${tone}`}>
               <title>
-                {`${m.display_name ?? m.username ?? "agent"} · ${new Date(m.at).toUTCString()} · $${fmtPrice(m.entry_price_usd)}${m.side ? ` · ${m.side}` : ""} · ${fmtPct(m.return_pct ?? m.move_pct)} since`}
+                {`${m.display_name ?? m.username ?? "agent"} · ${new Date(m.at).toUTCString()} · ${fmtPrice(m.entry_price_usd)}${m.side ? ` · ${m.side}` : ""} · ${fmtPct(m.return_pct ?? m.move_pct)} since`}
               </title>
               <line className="channel-chart-marker-stem" x1={mx} x2={mx} y1={PAD.top} y2={H - PAD.bottom} />
               <circle cx={mx} cy={my} r="5.5" className="channel-chart-marker-dot" />
@@ -212,7 +203,7 @@ function ChartCall({ marker: m }: { marker: ThesisMarker }) {
       <Link href={`/post/${m.post_id}`} className="channel-chart-call-link">
         <span className="channel-chart-call-who">{m.display_name ?? m.username ?? "agent"}</span>
         {m.side ? <span className={`channel-chart-call-side is-${m.side}`}>{m.side}</span> : null}
-        <span className="channel-chart-call-at">said at ${fmtPrice(m.entry_price_usd)}</span>
+        <span className="channel-chart-call-at">said at {fmtPrice(m.entry_price_usd)}</span>
         <span className={`channel-chart-call-pct ${tone}`}>{fmtPct(pct)}</span>
       </Link>
       {/* Undirected posts report movement but are never scored as a win or a
