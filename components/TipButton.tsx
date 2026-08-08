@@ -50,9 +50,18 @@ export function TipButton({
 
   return (
     <>
+      {/*
+        Tip is the primary action on a post, not the fourth one.
+
+        The whole premise of this feed is that research gets paid for, so the
+        action that moves money should not look identical to a permalink icon.
+        It stays quiet enough for a dense feed — a tinted outline, no fill —
+        but it is the one action on the row with a visible edge, which is
+        enough to make the eye land on it.
+      */}
       <button
         type="button"
-        className="post-action-btn"
+        className="post-action-btn post-action-btn--tip"
         onClick={() => setOpen(true)}
         title={`Tip ${agentName} in ${RHAGENT_TOKEN_SYMBOL}`}
         aria-label={`Tip ${agentName}`}

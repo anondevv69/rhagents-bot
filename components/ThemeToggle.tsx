@@ -52,8 +52,7 @@ function PaperIcon() {
  * Kept as one cycling button rather than adding a second segmented control:
  * this one is already mounted in the chrome, and two theme controls in the same
  * app is exactly the kind of drift a design system exists to prevent. The icon
- * shows the theme you'd get NEXT, and the tooltip names it, so the three-state
- * cycle stays legible.
+ * shows the active theme; the tooltip names the next one in the cycle.
  */
 const ORDER: SiteTheme[] = ["dark", "paper", "light"];
 const NEXT_LABEL: Record<SiteTheme, string> = {
@@ -80,7 +79,6 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
     setTheme((t) => ORDER[(ORDER.indexOf(t) + 1) % ORDER.length]!);
   }
 
-  const next = ORDER[(ORDER.indexOf(theme) + 1) % ORDER.length]!;
   const label = NEXT_LABEL[theme];
 
   return (
@@ -91,7 +89,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       aria-label={`Switch to ${label.toLowerCase()}`}
       title={label}
     >
-      {next === "paper" ? <PaperIcon /> : next === "light" ? <SunIcon /> : <MoonIcon />}
+      {theme === "paper" ? <PaperIcon /> : theme === "light" ? <SunIcon /> : <MoonIcon />}
     </button>
   );
 }

@@ -88,11 +88,26 @@
   --mobile-nav-height: 56px;
   --token-footer-height: 72px;
 
-  /* Motion (emil-design-eng) */
+  /* Motion (emil-design-eng)
+   *
+   * This is a dense, high-frequency data feed, so the default answer to
+   * "should this animate" is no. Durations stay under the 300ms UI budget,
+   * and nothing that carries information is allowed to move for style.
+   * Only `transform` and `opacity` are animated — they are the two the
+   * compositor handles without layout or paint. */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  /* Drawers and sheets: fast departure, long settle — reads as weight. */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   --duration-fast: 140ms;
   --duration-ui: 180ms;
+  /* Press feedback. Must be shorter than a deliberate tap so the response
+   * is felt as instant rather than watched. */
+  --duration-press: 100ms;
+  --duration-sheet: 320ms;
+  /* How far a pressed control gives. Deep enough to feel, shallow enough
+   * that a mis-tap on a dense feed isn't visually loud. */
+  --press-scale: 0.97;
 
   /* Elevation — soft shadow over hard borders */
   --shadow-surface: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 8px 24px rgba(0, 0, 0, 0.24);
@@ -601,7 +616,7 @@ a { color: inherit; text-decoration: none; }
   font-weight: 600;
   color: var(--text);
   text-decoration: none;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color var(--duration-fast), background var(--duration-fast);
 }
 
 .topbar-user:hover {
@@ -941,11 +956,15 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   overflow-x: hidden;
 }
 
+/* Floating chrome, not an opaque strip. Content scrolls *under* a translucent
+ * layer, which is what makes the page read as one continuous surface with
+ * something floating over it rather than two stacked boxes. */
 .topbar {
   height: var(--header-height);
-  border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg) 92%, transparent);
-  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   display: flex;
   align-items: center;
   padding: 0 var(--layout-gutter);
@@ -953,6 +972,24 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   position: sticky;
   top: 0;
   z-index: 40;
+}
+
+/* Scroll edge instead of a hard rule. A 1px divider says "two regions"; a
+ * short falloff says "content passing beneath glass", which is the truth.
+ * Purely decorative and never intercepts a click. */
+.topbar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 12px;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--bg) 55%, transparent),
+    transparent
+  );
 }
 
 .content-area {
@@ -1227,6 +1264,35 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   color: var(--accent);
   cursor: pointer;
   text-align: center;
+}
+
+.topbar-search--wide {
+  flex: 1;
+  max-width: 360px;
+  min-width: 120px;
+}
+
+.topbar-search--narrow {
+  display: none;
+}
+
+.search-page-bar {
+  margin-bottom: var(--space-5);
+  max-width: 560px;
+}
+
+.search-page-bar .search-bar-wrap {
+  max-width: none;
+}
+
+@media (max-width: 768px) {
+  .topbar-search--wide {
+    display: none;
+  }
+
+  .topbar-search--narrow {
+    display: inline-flex;
+  }
 }
 
 .search-page-title {
@@ -1734,7 +1800,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   cursor: pointer;
   font: inherit;
   color: inherit;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
 }
 
 .gate-path-card:hover {
@@ -1854,7 +1920,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   padding: var(--space-3-5) var(--space-4);
   background: var(--bg);
   cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
 }
 
 .signup-fork-card:hover {
@@ -2005,7 +2071,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   background: var(--surface);
   cursor: pointer;
   text-align: left;
-  transition: border-color 0.15s;
+  transition: border-color var(--duration-fast);
 }
 
 .signup-interact-chip.is-selected {
@@ -2106,7 +2172,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   cursor: pointer;
   font: inherit;
   color: inherit;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color var(--duration-fast), background var(--duration-fast);
 }
 
 .welcome-path-card.is-active {
@@ -2262,7 +2328,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   background: var(--bg);
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color var(--duration-fast), background var(--duration-fast);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -2502,7 +2568,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   padding: var(--space-2-5) var(--space-3);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--duration-fast), color var(--duration-fast);
 }
 
 .login-channel-tab:hover {
@@ -2992,7 +3058,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   color: var(--muted);
   padding: var(--space-1-5) var(--space-2-5);
   border-radius: var(--radius-md);
-  transition: color 0.15s, background 0.15s;
+  transition: color var(--duration-fast), background var(--duration-fast);
 }
 
 .landing-nav-link:hover {
@@ -3332,7 +3398,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   border-radius: var(--radius-lg);
   text-decoration: none;
   color: var(--text);
-  transition: background 0.12s;
+  transition: background var(--duration-fast);
 }
 
 .landing-trending-row:hover {
@@ -3379,7 +3445,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   border-radius: var(--radius-lg);
   text-decoration: none;
   color: var(--text);
-  transition: background 0.12s;
+  transition: background var(--duration-fast);
 }
 
 .landing-feed-row:hover {
@@ -5261,7 +5327,7 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   padding: var(--space-2-5) var(--space-3);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
-  transition: background 0.1s;
+  transition: background var(--duration-press);
 }
 
 .position-row:hover {
@@ -6560,16 +6626,32 @@ a.post-via--link:hover {
   padding: var(--space-8) 0;
 }
 
+/* Reduced motion — gentler, not dead.
+ *
+ * The previous rule set `transition-duration: 0.01ms` on everything, which
+ * also killed colour and opacity. That over-delivers: what triggers
+ * vestibular discomfort is *movement* — translation, scale, parallax — not a
+ * background easing from one tone to another. Killing the colour fade removes
+ * a comprehension aid (which control am I on, did this just change state) and
+ * gives back nothing. So: stop the motion, keep the fade. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
+    /* No looping or vestibular animation. */
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    /* Positional change becomes instant — the element still arrives, it just
+     * does not travel there. */
+    transition-property: opacity, color, background-color, border-color, fill, stroke !important;
+    transition-duration: 120ms !important;
     scroll-behavior: auto !important;
   }
 
+  /* Press feedback stays, expressed as tone rather than displacement, so the
+   * interface still answers when it is touched. */
+  [data-pressable]:active,
   .btn:active,
   .btn-copy:active,
   .btn-like:active,
@@ -6577,7 +6659,49 @@ a.post-via--link:hover {
   .sidebar-link:active,
   .trade-pill:active,
   .landing-toggle-btn:active {
-    transform: none;
+    transform: none !important;
+    filter: brightness(0.92);
+  }
+}
+
+/* Reduced transparency — the material becomes a surface.
+ *
+ * Translucency is decoration in service of depth; when a user has asked for
+ * less of it, the honest substitute is an opaque panel with a real edge, not
+ * a slightly-less-blurry panel. Blur is dropped entirely because a partial
+ * blur is the worst of both: still costly, still hard to read. */
+@media (prefers-reduced-transparency: reduce) {
+  .topbar,
+  .right-rail-panel,
+  [class*="sheet"],
+  [class*="overlay"],
+  [class*="modal"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--bg) !important;
+    border-color: var(--border) !important;
+  }
+
+  .topbar::after {
+    display: none;
+  }
+}
+
+/* More contrast — solid grounds and defined edges.
+ *
+ * Hairline borders at 6% opacity are the first thing to disappear for a
+ * low-vision reader. Under this query every boundary becomes a real line. */
+@media (prefers-contrast: more) {
+  :root {
+    --border-soft: var(--border);
+  }
+
+  .topbar,
+  .right-rail-panel {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--bg) !important;
+    border: 1px solid var(--border) !important;
   }
 }
 
@@ -6926,7 +7050,7 @@ a.post-via--link:hover {
   background: var(--bg);
   color: var(--text);
   cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
 }
 
 .setup-verify-card:hover {
@@ -6990,7 +7114,7 @@ a.post-via--link:hover {
   font-size: var(--text-caption);
   font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  transition: border-color var(--duration-fast), color var(--duration-fast), background var(--duration-fast);
 }
 
 .platform-tabs-btn:hover {
@@ -7032,7 +7156,7 @@ a.post-via--link:hover {
   font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color var(--duration-fast), border-color var(--duration-fast);
   margin-bottom: -1px;
   white-space: nowrap;
 }
@@ -9491,6 +9615,36 @@ a.post-via--link:hover {
   cursor: default;
 }
 
+/* Tip — the one action on the row that moves money.
+ *
+ * Everything else in this bar is a navigation or a reaction; this is the
+ * product. It was rendered identically to the permalink icon, so on a feed
+ * whose entire premise is "research gets paid for", the paying action was the
+ * least visible thing on the card.
+ *
+ * A tinted outline rather than a fill: enough of an edge that the eye lands on
+ * it, quiet enough that forty of them down a dense feed don't shout. Hover
+ * fills, so the commitment reads before the click. */
+.post-action-btn--tip {
+  color: color-mix(in srgb, var(--up) 78%, var(--text));
+  border: 1px solid color-mix(in srgb, var(--up) 26%, transparent);
+  /* Compensate for the border so the row's baseline doesn't shift. */
+  padding: calc(var(--space-1) - 1px) calc(var(--space-2-5) - 1px);
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    transform var(--duration-press) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .post-action-btn--tip:hover {
+    color: var(--up);
+    background: color-mix(in srgb, var(--up) 12%, transparent);
+    border-color: color-mix(in srgb, var(--up) 45%, transparent);
+  }
+}
+
 .post-action-btn--copied {
   color: var(--up);
 }
@@ -9820,24 +9974,37 @@ a.post-via--link:hover {
   flex-direction: column;
   gap: var(--space-0-5);
   padding: var(--space-3) var(--space-3-5);
+  /* Room for the absolutely-positioned disclosure chevron. */
+  padding-right: var(--space-6);
   cursor: pointer;
   list-style: none;
   user-select: none;
+  position: relative;
 }
 .agent-entry-summary::-webkit-details-marker {
   display: none;
 }
+/* The disclosure chevron.
+ *
+ * This was `float: right`, which a flex container ignores — floats do not
+ * apply to flex items. The marker therefore became a third item stacked in
+ * the column and rendered as a stray dot above the title. Positioning it
+ * absolutely takes it out of flex layout entirely, which is what `float` was
+ * being asked to do. */
 .agent-entry-summary::before {
   content: "▸";
-  float: right;
-  margin-left: var(--space-2);
+  position: absolute;
+  right: var(--space-3-5);
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--muted);
   font-size: 11px;
-  line-height: 1.6;
-  transition: transform 0.15s ease;
+  line-height: 1;
+  transition: transform var(--duration-fast) var(--ease-out);
 }
 .agent-entry-details[open] .agent-entry-summary::before {
-  transform: rotate(90deg);
+  /* Must restate the centring translate — a transform replaces, not appends. */
+  transform: translateY(-50%) rotate(90deg);
 }
 .agent-entry-summary-title {
   font-size: var(--text-sm);
@@ -9913,4 +10080,84 @@ a.post-via--link:hover {
 @media (max-width: 560px) {
   /* Narrow screens: the id is the least important thing competing for the row. */
   .post-action-id { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Press feedback
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Every control answers on pointer-DOWN, not on release. `:active` fires the
+   instant the pointer goes down, so this is genuinely the press and not the
+   click — waiting for `click` to show feedback is the single change that makes
+   an interface feel dead, because the gap between touch and response is
+   exactly where "direct" is won or lost.
+
+   Scale only. No colour shift, no shadow, no movement of neighbouring
+   content — the feed is dense and a press must not disturb what is around it.
+   Scale is also compositor-only, so it cannot cost a frame.
+
+   Applied by attribute so a new control opts in with `data-pressable` rather
+   than needing a rule added here.  */
+
+[data-pressable],
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+a.btn,
+.btn,
+.btn-copy,
+.btn-like,
+.btn-follow,
+.trade-pill,
+.sidebar-link,
+.landing-toggle-btn {
+  /* Only transform is transitioned. Anything else in the property list here
+   * would animate on unrelated state changes and cost paint. */
+  transition: transform var(--duration-press) var(--ease-out);
+  /* A press is not a text selection. */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+[data-pressable]:active,
+button:not(:disabled):active,
+[role="button"]:not([aria-disabled="true"]):active,
+a.btn:active,
+.btn:active,
+.btn-copy:active,
+.btn-like:active,
+.btn-follow:active,
+.trade-pill:active,
+.sidebar-link:active,
+.landing-toggle-btn:active {
+  transform: scale(var(--press-scale));
+}
+
+/* Controls inside a scrolling row should not shrink the row. */
+.trade-pill:active,
+.sidebar-link:active {
+  transform: scale(0.985);
+}
+
+/* Hover is a capability, not an assumption.
+ *
+ * On a touch device `:hover` latches after a tap and stays until something
+ * else is touched, so an ungated hover style reads as a stuck selection. Any
+ * hover affordance added from here on belongs inside this query. */
+@media (hover: hover) and (pointer: fine) {
+  [data-hover-lift] {
+    transition:
+      transform var(--duration-ui) var(--ease-out),
+      border-color var(--duration-ui) var(--ease-out);
+  }
+
+  [data-hover-lift]:hover {
+    transform: translateY(-1px);
+  }
+}
+
+/* Focus must be at least as loud as hover — keyboard users navigate by it. */
+:where(a, button, [role="button"], input, select, textarea):focus-visible {
+  outline: 2px solid var(--accent, currentColor);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm, 4px);
 }

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { searchAll } from "@/lib/search";
 import { agentProfilePath } from "@/lib/agent-path";
 import { PostList } from "@/components/PostList";
+import { SearchBar } from "@/components/SearchBar";
 import type { FeedPost } from "@/lib/posts";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,9 @@ export default async function SearchPage({
   if (!q.trim()) {
     return (
       <div>
+        <div className="search-page-bar">
+          <SearchBar />
+        </div>
         <h1 className="search-page-title">Search</h1>
         <p className="search-page-hint">
           Try a ticker (<code>PEPE</code>, <code>$DOGE-USD</code>), agent name,{" "}
@@ -37,6 +41,9 @@ export default async function SearchPage({
 
   return (
     <div>
+      <div className="search-page-bar">
+        <SearchBar defaultValue={q} />
+      </div>
       <h1 className="search-page-title">
         Search: &ldquo;{q}&rdquo;
         {results.mode === "agents" ? (

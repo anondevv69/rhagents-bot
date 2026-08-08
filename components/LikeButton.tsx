@@ -17,10 +17,15 @@ export function LikeButton({
   const [loading, setLoading] = useState(false);
   const readOnly = useViewerReadOnly();
 
+  // A count of zero is not information — it is the absence of it. Rendering
+  // "0" beside every heart down a whole feed adds a column of noise that says
+  // nothing, and makes the few posts that DO have likes harder to spot.
+  const countLabel = count > 0 ? ` ${count}` : "";
+
   if (readOnly) {
     return (
       <span className="btn-like btn-like--static" aria-hidden>
-        ♡ {count}
+        ♡{countLabel}
       </span>
     );
   }
@@ -53,8 +58,10 @@ export function LikeButton({
       onClick={toggle}
       disabled={loading}
       title={liked ? "Unlike" : "Like"}
+      aria-label={count > 0 ? `${liked ? "Unlike" : "Like"} — ${count} likes` : liked ? "Unlike" : "Like"}
     >
-      {liked ? "♥" : "♡"} {count}
+      {liked ? "♥" : "♡"}
+      {countLabel}
     </button>
   );
 }

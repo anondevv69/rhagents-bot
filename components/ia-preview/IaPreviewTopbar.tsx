@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BrandMark } from "@/components/BrandMark";
 import { AuthEntryButtons } from "@/components/AuthEntryButtons";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { TopbarSearch } from "@/components/TopbarSearch";
 import { ConceptNavTabs } from "@/components/ConceptNavTabs";
 import { Suspense } from "react";
 
@@ -18,10 +19,9 @@ export function IaPreviewTopbar() {
           <ConceptNavTabs />
         </Suspense>
 
+        <TopbarSearch />
+
         <div className="ia-preview-nav-actions">
-          <Link href="/search" className="ia-preview-search-btn" aria-label="Search" title="Search">
-            ⌕
-          </Link>
           <ThemeToggle />
           <AuthEntryButtons size="compact" />
         </div>

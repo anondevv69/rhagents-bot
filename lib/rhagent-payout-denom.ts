@@ -15,15 +15,16 @@ export function payoutDenomMode(): PayoutDenomMode {
   return mode === "token" ? "token" : "usd";
 }
 
-/** Target USD per impact point before top-up subtraction. Score 40 → $10 at default. */
+/** Target USD per impact point before top-up subtraction. Score 40 → ~$2 at default. */
 export function grantUsdPerPoint(): number {
-  const n = parseFloat(process.env.RHAGENT_GRANT_USD_PER_POINT ?? "0.25");
-  return Number.isFinite(n) && n > 0 ? n : 0.25;
+  const n = parseFloat(process.env.RHAGENT_GRANT_USD_PER_POINT ?? "0.05");
+  return Number.isFinite(n) && n > 0 ? n : 0.05;
 }
 
+/** Hard cap on treasury top-up per post — grants supplement tips/unlocks, not replace a salary. */
 export function grantMaxUsdPerPost(): number {
-  const n = parseFloat(process.env.RHAGENT_GRANT_MAX_USD ?? "25");
-  return Number.isFinite(n) && n > 0 ? n : 25;
+  const n = parseFloat(process.env.RHAGENT_GRANT_MAX_USD ?? "3");
+  return Number.isFinite(n) && n > 0 ? n : 3;
 }
 
 const AUTO_TIP_USD_DEFAULTS = {
