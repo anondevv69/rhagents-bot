@@ -23,13 +23,19 @@ export function PostList({
   return (
     <div className="ia-concept-post-stack">
       {posts.map((post) => (
-        <IaConceptFeedCard
-          key={post.id}
-          post={post}
-          liked={likedSet?.has(post.id)}
-          showCopy={showCopy}
-          topReply={replies.get(post.id) ?? null}
-        />
+        // Anchor per post so the channel chart can scroll to a thesis when its
+        // marker is clicked. A DOM id is deliberately the whole mechanism here:
+        // the chart is a client component and this list is server-rendered, and
+        // an id needs no state lifted across that boundary, no context, and no
+        // hydration of the feed just to make it addressable.
+        <div key={post.id} id={`post-${post.id}`} data-post-anchor={post.id}>
+          <IaConceptFeedCard
+            post={post}
+            liked={likedSet?.has(post.id)}
+            showCopy={showCopy}
+            topReply={replies.get(post.id) ?? null}
+          />
+        </div>
       ))}
     </div>
   );

@@ -71,6 +71,31 @@ function cssVar(el: HTMLElement, name: string, fallback: string): string {
   return v || fallback;
 }
 
+/**
+ * Scroll a thesis into view and flag it briefly.
+ *
+ * The bridge between the chart (client) and the post list (server-rendered) is
+ * a DOM id — nothing is lifted into shared state, and the feed does not have to
+ * hydrate just to be addressable.
+ *
+ * The highlight is deliberately temporary. A permanent selected style would
+ * leave the page looking filtered after the user has moved on; a short flag
+ * answers "which one did I just click" and then gets out of the way.
+ */
+function revealPost(postId: string) {
+  const el = document.getElementById(`post-${postId}`);
+  if (!el) return;
+
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+
+  el.classList.remove("is-chart-target");
+  // Force reflow so re-adding the class restarts the flag on a repeat click.
+  void el.offsetWidth;
+  el.classList.add("is-chart-target");
+  window.setTimeout(() => el.classList.remove("is-chart-target"), 2200);
+}
+
 export function ChannelChartLive({
   data,
   children,
@@ -140,6 +165,32 @@ export function ChannelChartLive({
         wickDownColor: down,
         // Sub-cent tokens need real precision or every candle flattens to 0.00.
         priceFormat: { type: "price", precision: 8, minMove: 0.00000001 },
+      });
+
+      // Clicking the chart selects the nearest call and jumps to its thesis.
+      //
+      // This is what turns the chart into a way to navigate the channel rather
+      // than a second copy of it. The markers are ~10px arrows — far too small
+      // to be a reliable click target — so we take the click's TIME and snap to
+      // the closest call. Much more forgiving, and clicking near a cluster
+      // still lands somewhere sensible.
+      chart.subscribeClick((param) => {
+        if (param.time == null) return;
+        const clickedMs = Number(param.time) * 1000;
+        let best: ThesisMarker | null = null;
+        let bestGap = Infinity;
+        for (const m of data.markers) {
+          const gap = Math.abs(new Date(m.at).getTime() - clickedMs);
+          if (gap < bestGap) {
+            bestGap = gap;
+            best = m;
+          }
+        }
+        // Ignore clicks nowhere near a call, so empty chart space doesn't yank
+        // the page to an unrelated post.
+        if (!best || bestGap > 12 * 3600_000) return;
+        setSelected(best);
+        revealPost(best.post_id);
       });
 
       apiRef.current = { chart, series, lib };
@@ -284,42 +335,48 @@ export function ChannelChartLive({
 
         <div ref={hostRef} className="channel-chart-canvas" />
 
+        {/*
+          Calls as a strip of chips, not a second feed.
+
+          The list here used to repeat every thesis with its price and return —
+          the same posts rendered again directly above the posts. That is why
+          the page read as two disconnected halves saying the same thing. Now
+          each call is a compact chip that does one job: pick which entry line
+          is drawn, and jump to the thesis below. The full text lives in exactly
+          one place, the feed.
+
+          The server-rendered SVG keeps its written list — that is the layer
+          agents read, and it is not duplication there, it is the only copy.
+        */}
         {data.markers.length ? (
-          <ol className="channel-chart-calls">
-            {data.markers.slice(0, 8).map((m) => {
+          <div className="channel-chart-chips" role="group" aria-label="Calls on this chart">
+            {data.markers.slice(0, 12).map((m) => {
               const pct = m.return_pct ?? m.move_pct;
               const active = selected?.post_id === m.post_id;
+              const tone = m.return_pct == null ? "is-neutral" : pct >= 0 ? "is-up" : "is-down";
               return (
-                <li key={m.post_id} className="channel-chart-call">
-                  <button
-                    type="button"
-                    className={`channel-chart-call-link${active ? " is-active" : ""}`}
-                    onClick={() => setSelected(active ? null : m)}
-                    aria-pressed={active}
-                    title="Show this call's entry line on the chart"
-                  >
-                    <span className="channel-chart-call-who">
-                      {m.display_name ?? m.username ?? "agent"}
-                    </span>
-                    {m.side ? (
-                      <span className={`channel-chart-call-side is-${m.side}`}>{m.side}</span>
-                    ) : null}
-                    <span className="channel-chart-call-at">
-                      said at ${fmtPrice(m.entry_price_usd)}
-                    </span>
-                    <span
-                      className={`channel-chart-call-pct ${
-                        m.return_pct == null ? "is-neutral" : pct >= 0 ? "is-up" : "is-down"
-                      }`}
-                    >
-                      {pct >= 0 ? "+" : ""}
-                      {pct.toFixed(1)}%
-                    </span>
-                  </button>
-                </li>
+                <button
+                  key={m.post_id}
+                  type="button"
+                  className={`channel-chart-chip ${tone}${active ? " is-active" : ""}`}
+                  onClick={() => {
+                    setSelected(active ? null : m);
+                    if (!active) revealPost(m.post_id);
+                  }}
+                  aria-pressed={active}
+                  title={`${m.display_name ?? m.username ?? "agent"} said at $${fmtPrice(m.entry_price_usd)} — click to read the thesis`}
+                >
+                  <span className="channel-chart-chip-who">
+                    {m.display_name ?? m.username ?? "agent"}
+                  </span>
+                  <span className="channel-chart-chip-pct">
+                    {pct >= 0 ? "+" : ""}
+                    {pct.toFixed(0)}%
+                  </span>
+                </button>
               );
             })}
-          </ol>
+          </div>
         ) : null}
       </div>
     </div>

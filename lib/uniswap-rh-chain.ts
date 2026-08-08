@@ -93,15 +93,47 @@ type OoSwapResponse = {
   message?: string;
 };
 
+/**
+ * Call OpenOcean, and never let a transport failure surface as a parse error.
+ *
+ * This used to do `await res.json()` BEFORE checking `res.ok`. When something
+ * upstream returns a non-JSON error body — production currently gets a bare
+ * `Forbidden;`, which is a proxy/WAF response and not OpenOcean's own format,
+ * since theirs is always JSON — `json()` throws `Unexpected token 'F'`, the
+ * exception escapes, and the user is shown a JavaScript parse error where a
+ * reason should be. The failure was real, but the message described our parser
+ * instead of their block.
+ *
+ * So: read the body as text once, decide based on status and shape, and always
+ * return something a person can act on.
+ */
 async function openOceanSwap(params: URLSearchParams): Promise<OoSwapResponse> {
   const res = await fetch(`${OO_BASE}/swap?${params}`, {
     headers: { Accept: "application/json" },
     signal: AbortSignal.timeout(20_000),
   });
-  const data = (await res.json()) as OoSwapResponse;
-  if (!res.ok) {
-    return { code: res.status, message: data.message || `OpenOcean HTTP ${res.status}` };
+
+  const raw = await res.text();
+  let data: OoSwapResponse | null = null;
+  try {
+    data = JSON.parse(raw) as OoSwapResponse;
+  } catch {
+    /* not JSON — handled below */
   }
+
+  if (!res.ok || !data) {
+    // A 403 with a non-JSON body is almost always an egress block rather than
+    // anything wrong with the swap, so say that rather than blaming the token.
+    const blocked = res.status === 403 || /forbidden/i.test(raw);
+    return {
+      code: res.status || 502,
+      message: blocked
+        ? "Swap quotes are blocked from this server right now (upstream returned 403). " +
+          "This is a connectivity problem, not a problem with the token."
+        : data?.message || `Quote service returned HTTP ${res.status}.`,
+    };
+  }
+
   return data;
 }
 

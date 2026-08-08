@@ -187,6 +187,27 @@ async function chainCandles(contract: string, interval: ChartInterval, limit: nu
 /* ── markers ─────────────────────────────────────────────────────────────── */
 
 /**
+ * Force a timestamp to explicit UTC.
+ *
+ * This fixes a real misplacement bug. `entry_price_at` is written with
+ * `toISOString()` and carries a `Z`, but a marker falls back to `created_at`
+ * when no price was captured, and SQLite writes that as `2026-08-08 04:56:29` —
+ * UTC in fact, but with nothing in the string that says so.
+ *
+ * `new Date("2026-08-08T04:56:29")` is parsed as LOCAL time by every JS engine,
+ * per the spec: date-time forms without an offset are local, date-only forms
+ * are UTC. So on the server (UTC) the marker was right and in a browser it slid
+ * by the viewer's offset — four hours in New York, nine in Tokyo — putting
+ * calls on the wrong candle and silently dropping any that fell outside the
+ * window. Charts were subtly wrong per-reader, which is the worst kind of wrong.
+ */
+function asUtcIso(raw: string): string {
+  const s = raw.trim().replace(" ", "T");
+  // Already carries a zone (Z, +01:00, -0500) — leave it alone.
+  return /(?:Z|[+-]\d{2}:?\d{2})$/.test(s) ? s : `${s}Z`;
+}
+
+/**
  * Priced calls and executed trades on this channel.
  *
  * Research posts store `entry_price_usd` at compose time. Trade fills store
@@ -244,7 +265,7 @@ export function thesisMarkers(symbol: string, latestPrice: number | null, limit 
       agent_id: r.agent_id,
       username: r.username,
       display_name: r.display_name,
-      at: (r.entry_price_at ?? r.created_at).replace(" ", "T"),
+      at: asUtcIso(r.entry_price_at ?? r.created_at),
       entry_price_usd: entry,
       side,
       excerpt: r.body.split("\n")[0].slice(0, 140),
