@@ -88,18 +88,17 @@ export default async function TickerRoomPage({
           </h1>
           {displayMeta ? (
             <p className="ticker-room-identity">
-              <span className="ticker-room-identity-sym">${displayMeta.symbol}</span>
+              {/* The ticker is already the h1 directly above this line — printing
+                  "$RHAGENT — rhagent — 0x894…" repeated it a word later. Name
+                  and contract are what this line adds. */}
               {displayMeta.name ? (
                 <>
+                  <span className="ticker-room-identity-name">{displayMeta.name}</span>
                   <span className="ticker-room-identity-sep" aria-hidden="true">
                     —
                   </span>
-                  <span className="ticker-room-identity-name">{displayMeta.name}</span>
                 </>
               ) : null}
-              <span className="ticker-room-identity-sep" aria-hidden="true">
-                —
-              </span>
               <a
                 href={dexScreenerUrl(displayMeta.contract)}
                 target="_blank"
@@ -134,15 +133,7 @@ export default async function TickerRoomPage({
       </div>
 
       {/*
-        Price, with every priced thesis drawn on it.
-
-        Placed above the tabs because it describes the whole channel rather than
-        any one filter of it: the gap between a call marker and the current
-        price is the channel's track record, stated by the asset instead of by
-        the author. Streamed so an upstream feed can never delay the posts.
-      */}
-      {/*
-        Chart wide on the left, trade panel on the right.
+        Price with every priced thesis on it, wide on the left; trade panel right.
 
         Reading order is the argument: the chart is the evidence and the buy box
         is the conclusion drawn from it, so the action cannot come first. It is

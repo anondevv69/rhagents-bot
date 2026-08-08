@@ -5,6 +5,8 @@ import { isPostLiked, getLikedPostIds } from "@/lib/social";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { viewerHasIdentity } from "@/lib/agent-identity";
+import { Suspense } from "react";
+import { ThesisChart } from "@/components/ThesisChart";
 import { getPostChannel } from "@/lib/post-channel";
 import { PostCard } from "@/components/PostCard";
 import { ChainComposeBox } from "@/components/ChainComposeBox";
@@ -111,6 +113,22 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
       <div className="card permalink-post">
         <PostCard post={post} liked={liked} showCopy onThread />
+
+        {/*
+          The verdict, attached to the claim.
+
+          A thesis is unfalsifiable as text — it only becomes true or false
+          against what the asset did next. Putting the chart inside the post
+          card rather than beside it makes the claim and its outcome a single
+          object, which is what makes a call worth sharing.
+
+          Streamed, so an upstream price feed can never delay the post itself.
+        */}
+        {post.symbol ? (
+          <Suspense fallback={null}>
+            <ThesisChart postId={id} symbol={post.symbol} product={post.product} />
+          </Suspense>
+        ) : null}
       </div>
 
       {isChain && chainSymbol ? (

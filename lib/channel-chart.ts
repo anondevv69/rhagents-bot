@@ -52,7 +52,35 @@ import { rwaTokenFor } from "@/lib/rwa-tokens";
 
 export type { Candle };
 
-export type ChartInterval = "hour" | "day";
+export type ChartInterval = "minute" | "hour" | "day";
+
+/**
+ * Windows, each with the candle granularity that suits it.
+ *
+ * Granularity is derived from the window rather than offered as a free choice,
+ * and that is a data constraint, not a simplification. GeckoTerminal only
+ * returns buckets that actually traded, so on a thin token — $rhagent turns
+ * over a few hundred dollars a day — a 5-minute view is mostly empty and reads
+ * as a broken chart rather than a detailed one. Pairing each window with a
+ * granularity that produces roughly 100–300 populated candles keeps every view
+ * legible on both a busy token and a quiet one.
+ *
+ * gmgn and pump.fun do the same thing; their timeframe buttons change the
+ * bucket size, they are not filters over one fixed series.
+ */
+export const CHART_WINDOWS = {
+  "1D": { interval: "minute" as ChartInterval, aggregate: 5, hours: 24, limit: 288 },
+  "3D": { interval: "minute" as ChartInterval, aggregate: 15, hours: 72, limit: 288 },
+  "7D": { interval: "hour" as ChartInterval, aggregate: 1, hours: 24 * 7, limit: 168 },
+  "30D": { interval: "hour" as ChartInterval, aggregate: 4, hours: 24 * 30, limit: 180 },
+  ALL: { interval: "day" as ChartInterval, aggregate: 1, hours: Infinity, limit: 365 },
+} as const;
+
+export type ChartWindow = keyof typeof CHART_WINDOWS;
+
+export function isChartWindow(v: string | null | undefined): v is ChartWindow {
+  return !!v && Object.prototype.hasOwnProperty.call(CHART_WINDOWS, v);
+}
 
 export interface ThesisMarker {
   post_id: string;
@@ -145,17 +173,39 @@ async function deepestPool(contract: string): Promise<string | null> {
   return pool;
 }
 
-async function chainCandles(contract: string, interval: ChartInterval, limit: number): Promise<Candle[]> {
+/**
+ * Candles for a contract, cached.
+ *
+ * Exported so the entry-price backfill can reuse the same fetch path and the
+ * same cache. A second implementation would mean a second rate-limit budget
+ * against GeckoTerminal's ~30 req/min, and two places for the bucket semantics
+ * to drift apart.
+ */
+export async function candlesForContract(
+  contract: string,
+  interval: ChartInterval,
+  limit: number,
+  aggregate = 1,
+): Promise<Candle[]> {
+  return chainCandles(contract, interval, limit, aggregate);
+}
+
+async function chainCandles(
+  contract: string,
+  interval: ChartInterval,
+  limit: number,
+  aggregate = 1,
+): Promise<Candle[]> {
   const pool = await deepestPool(contract);
   if (!pool) return [];
 
-  const key = `${pool}:${interval}:${limit}`;
+  const key = `${pool}:${interval}:${aggregate}:${limit}`;
   const hit = candleCache.get(key);
   if (hit && Date.now() - hit.at < CANDLE_TTL_MS) return hit.candles;
 
   let candles: Candle[] = [];
   try {
-    const res = await fetch(`${GT}/pools/${pool}/ohlcv/${interval}?limit=${limit}`, {
+    const res = await fetch(`${GT}/pools/${pool}/ohlcv/${interval}?aggregate=${aggregate}&limit=${limit}`, {
       headers: { accept: "application/json" },
       signal: AbortSignal.timeout(7_000),
     });
@@ -282,11 +332,25 @@ export function thesisMarkers(symbol: string, latestPrice: number | null, limit 
 
 export async function getChannelChart(
   symbolRaw: string,
-  opts: { product?: string | null; interval?: ChartInterval; limit?: number } = {},
+  opts: {
+    product?: string | null;
+    interval?: ChartInterval;
+    limit?: number;
+    /**
+     * Preferred: pass a window ("1D", "7D", "ALL") and let the granularity be
+     * chosen for it. `interval`/`limit` remain for callers that need to pin an
+     * exact series, such as the entry-price backfill.
+     */
+    window?: ChartWindow;
+  } = {},
 ): Promise<ChannelChart> {
   const symbol = symbolRaw.trim().replace(/^\$/, "").toUpperCase();
-  const interval = opts.interval ?? "hour";
-  const limit = Math.min(Math.max(opts.limit ?? 168, 24), 500);
+  const win = opts.window ? CHART_WINDOWS[opts.window] : null;
+  const interval = win?.interval ?? opts.interval ?? "hour";
+  const aggregate = win?.aggregate ?? 1;
+  const limit = win
+    ? win.limit
+    : Math.min(Math.max(opts.limit ?? 168, 24), 1000);
 
   const base = (extra: Partial<ChannelChart>): ChannelChart => ({
     symbol,
@@ -318,7 +382,7 @@ export async function getChannelChart(
         unavailable: `No on-chain contract known for ${symbol}, so there is no pool to chart.`,
       });
     }
-    const candles = await chainCandles(contract, interval, limit);
+    const candles = await chainCandles(contract, interval, limit, aggregate);
     if (!candles.length) {
       return base({
         product: "chain",

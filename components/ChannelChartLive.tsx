@@ -50,12 +50,16 @@ type LWC = typeof import("lightweight-charts");
  * renders four — technically valid, visually useless. Every option here has to
  * span enough buckets to show a shape, which starts at a day.
  */
-const TIMEFRAMES = [
-  { key: "1D", hours: 24 },
-  { key: "3D", hours: 24 * 3 },
-  { key: "7D", hours: 24 * 7 },
-  { key: "ALL", hours: Infinity },
-] as const;
+/**
+ * Windows. Each one refetches at its own candle granularity — 1D is 5-minute
+ * buckets, ALL is daily — rather than filtering a single fixed series.
+ *
+ * The previous version sliced one hourly series, so "1D" meant "the last 24
+ * hourly bars" and no button ever changed the resolution. Real granularity
+ * needs a new request, which is why switching here is async.
+ */
+const WINDOWS = ["1D", "3D", "7D", "30D", "ALL"] as const;
+type WindowKey = (typeof WINDOWS)[number];
 
 function fmtPrice(n: number): string {
   if (!Number.isFinite(n)) return "—";
@@ -106,7 +110,11 @@ export function ChannelChartLive({
 }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [ready, setReady] = useState(false);
-  const [tf, setTf] = useState<string>("ALL");
+  const [tf, setTf] = useState<WindowKey>("7D");
+  // Candles for the active window. Seeded from the server render so the first
+  // paint needs no round-trip; refetched whenever the window changes.
+  const [candles, setCandles] = useState(data.candles);
+  const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<ThesisMarker | null>(
     data.markers.length ? data.markers[0] : null,
   );
@@ -216,6 +224,41 @@ export function ChannelChartLive({
     };
   }, [data.candles.length]);
 
+  // Refetch when the window changes.
+  //
+  // Skipped for the initial window because the server already rendered that
+  // series — re-requesting it on mount would waste a call against
+  // GeckoTerminal's ~30/min budget and flash the chart for no reason.
+  const initialWindow = useRef(tf);
+  useEffect(() => {
+    if (tf === initialWindow.current) return;
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      try {
+        const q = new URLSearchParams({ window: tf });
+        if (data.product === "chain") q.set("product", "chain");
+        const res = await fetch(
+          `/api/tickers/${encodeURIComponent(data.symbol)}/chart?${q}`,
+        );
+        const body = await res.json();
+        if (cancelled) return;
+        // Keep the existing series on a bad response rather than blanking the
+        // chart — a failed refetch should never destroy what is on screen.
+        if (Array.isArray(body?.candles) && body.candles.length) {
+          setCandles(body.candles);
+        }
+      } catch {
+        /* keep what we have */
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tf, data.symbol, data.product]);
+
   // Data, timeframe, and markers. Separate from creation so switching a
   // timeframe updates the series instead of rebuilding the chart.
   useEffect(() => {
@@ -223,11 +266,7 @@ export function ChannelChartLive({
     if (!api || !ready) return;
     const { series, chart, lib } = api;
 
-    const hours = TIMEFRAMES.find((t) => t.key === tf)?.hours ?? Infinity;
-    const cutoff = hours === Infinity ? 0 : Date.now() - hours * 3600_000;
-
-    const rows = data.candles
-      .filter((c) => new Date(c.t).getTime() >= cutoff)
+    const rows = candles
       .map((c) => ({
         time: Math.floor(new Date(c.t).getTime() / 1000) as import("lightweight-charts").UTCTimestamp,
         open: c.o,
@@ -277,7 +316,7 @@ export function ChannelChartLive({
     }
 
     chart.timeScale().fitContent();
-  }, [tf, ready, data.candles, data.markers]);
+  }, [ready, candles, data.markers]);
 
   // Exactly one entry line, for the selected call.
   useEffect(() => {
@@ -320,17 +359,23 @@ export function ChannelChartLive({
 
       <div hidden={!ready}>
         <div className="channel-chart-tfs" role="group" aria-label="Timeframe">
-          {TIMEFRAMES.map((t) => (
+          {WINDOWS.map((key) => (
             <button
-              key={t.key}
+              key={key}
               type="button"
-              className={`channel-chart-tf${tf === t.key ? " is-active" : ""}`}
-              onClick={() => setTf(t.key)}
-              aria-pressed={tf === t.key}
+              className={`channel-chart-tf${tf === key ? " is-active" : ""}`}
+              onClick={() => setTf(key)}
+              aria-pressed={tf === key}
+              disabled={loading && tf !== key}
             >
-              {t.key}
+              {key}
             </button>
           ))}
+          {loading ? (
+            <span className="channel-chart-loading" role="status">
+              loading…
+            </span>
+          ) : null}
         </div>
 
         <div ref={hostRef} className="channel-chart-canvas" />

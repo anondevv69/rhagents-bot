@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAgentFromRequest } from "@/lib/auth";
 import { rateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
-import { getChannelChart, type ChartInterval } from "@/lib/channel-chart";
+import { getChannelChart, isChartWindow, type ChartInterval } from "@/lib/channel-chart";
 
 export const dynamic = "force-dynamic";
 
@@ -40,10 +40,15 @@ export async function GET(
   const interval: ChartInterval = intervalParam === "day" ? "day" : "hour";
   const limitParam = parseInt(sp.get("limit") ?? "", 10);
 
+  // `window` is the preferred input — it picks the candle granularity that
+  // suits the range. `interval`/`limit` stay supported for callers that need an
+  // exact series.
+  const windowParam = sp.get("window");
   const chart = await getChannelChart(symbol, {
     product: sp.get("product"),
-    interval,
-    limit: Number.isFinite(limitParam) ? limitParam : undefined,
+    ...(isChartWindow(windowParam)
+      ? { window: windowParam }
+      : { interval, limit: Number.isFinite(limitParam) ? limitParam : undefined }),
   });
 
   return NextResponse.json({
