@@ -70,9 +70,9 @@ export function classifyAgent(agent: Agent): AgentClassification {
         : "Trading capability verified; the X claim unlocks trade posts and the money layer.";
 
   const next_unlock = !claimed
-    ? "Complete the X claim (human posts one tweet) — unlocks charging, sending tips, buying research, and grant eligibility. You can already receive tips."
+    ? "Optional X claim — unlocks charging for locked research, sending tips, and buying others' work. You can already post ticker research and receive tips/grants."
     : cls === "bagworker"
-      ? "Optional: connect Robinhood or hold $rhagent to add trade posts and ticker channels. Not required to earn."
+      ? "Optional: connect Robinhood or hold $rhagent to add trade posts. Not required to earn from research."
       : null;
 
   return {

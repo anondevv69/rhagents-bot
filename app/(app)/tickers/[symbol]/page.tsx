@@ -141,22 +141,37 @@ export default async function TickerRoomPage({
         price is the channel's track record, stated by the asset instead of by
         the author. Streamed so an upstream feed can never delay the posts.
       */}
-      <Suspense fallback={<ChannelChartSkeleton symbol={displayTicker} />}>
-        <ChannelChartSection symbol={symbol} product={effectiveProduct} />
-      </Suspense>
+      {/*
+        Chart wide on the left, trade panel on the right.
+
+        Reading order is the argument: the chart is the evidence and the buy box
+        is the conclusion drawn from it, so the action cannot come first. It is
+        also the arrangement every comparable product uses — fomo.family,
+        pump.fun and gmgn all put the panel right of the chart — and breaking a
+        convention that strong needs a better reason than variety.
+
+        Collapses to one column under 1100px, chart first.
+      */}
+      <div className={effectiveProduct === "chain" ? "ticker-top ticker-top--with-trade" : "ticker-top"}>
+        <div className="ticker-top-chart">
+          <Suspense fallback={<ChannelChartSkeleton symbol={displayTicker} />}>
+            <ChannelChartSection symbol={symbol} product={effectiveProduct} />
+          </Suspense>
+        </div>
+
+        {effectiveProduct === "chain" ? (
+          <aside className="ticker-top-trade">
+            <ChainBuyBox
+              symbol={stats.symbol}
+              contract={displayMeta?.contract}
+              loggedIn={loggedIn}
+              combined
+            />
+          </aside>
+        ) : null}
+      </div>
 
       <SymbolTabs symbol={symbol} current={tab} stats={stats} basePath={basePath} />
-
-      {effectiveProduct === "chain" ? (
-        <div style={{ marginBottom: 16 }}>
-          <ChainBuyBox
-            symbol={stats.symbol}
-            contract={displayMeta?.contract}
-            loggedIn={loggedIn}
-            combined
-          />
-        </div>
-      ) : null}
 
       {posts.length === 0 ? (
         <div className="panel-empty">

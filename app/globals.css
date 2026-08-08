@@ -10432,3 +10432,110 @@ button.channel-chart-call-link {
   text-align: left;
   cursor: pointer;
 }
+
+/* ── Ticker channel: chart + trade panel ─────────────────────────────────── */
+
+.ticker-top {
+  margin-bottom: var(--space-4);
+  min-width: 0;
+}
+
+/* Chart takes the room; the trade panel is a fixed-width companion. `minmax(0,
+   1fr)` rather than `1fr` — a bare 1fr uses min-content as its floor, and a
+   canvas inside will refuse to shrink and blow the grid out horizontally. */
+@media (min-width: 1100px) {
+  .ticker-top--with-trade {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: var(--space-4);
+    align-items: start;
+  }
+
+  .ticker-top-trade {
+    position: sticky;
+    top: calc(var(--header-height) + var(--space-4));
+  }
+}
+
+.ticker-top-chart { min-width: 0; }
+
+/* Below 1100px the two stack, chart first — the evidence still precedes the
+   action, which is the whole reason for the side-by-side in the first place. */
+.ticker-top-trade { min-width: 0; margin-top: var(--space-4); }
+@media (min-width: 1100px) { .ticker-top-trade { margin-top: 0; } }
+
+/* ── Call chips ──────────────────────────────────────────────────────────── */
+
+.channel-chart-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1-5);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-soft);
+}
+
+.channel-chart-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-1-5);
+  font-size: var(--text-caption);
+  font-weight: 500;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-full, 999px);
+  padding: var(--space-1) var(--space-2-5);
+  cursor: pointer;
+  max-width: 100%;
+}
+
+.channel-chart-chip-who {
+  color: var(--text);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 12ch;
+}
+
+.channel-chart-chip-pct {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+.channel-chart-chip.is-up .channel-chart-chip-pct { color: var(--up); }
+.channel-chart-chip.is-down .channel-chart-chip-pct { color: var(--down); }
+/* Unscored calls stay grey — an undirected post has no right or wrong. */
+.channel-chart-chip.is-neutral .channel-chart-chip-pct { color: var(--muted); }
+
+.channel-chart-chip.is-active {
+  border-color: var(--accent);
+  background: var(--input-bg);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .channel-chart-chip:not(.is-active):hover { border-color: var(--border); }
+}
+
+/* ── The thesis a chart click just jumped to ─────────────────────────────── */
+
+/* A brief flag, not a persistent selection: it answers "which one did I just
+   click" and then leaves, so the page never looks stuck in a filtered state. */
+[data-post-anchor] { scroll-margin-top: calc(var(--header-height) + var(--space-4)); }
+
+[data-post-anchor].is-chart-target {
+  animation: chart-target-flag 2.2s var(--ease-out);
+  border-radius: var(--radius-xl);
+}
+
+@keyframes chart-target-flag {
+  0%, 55% { box-shadow: 0 0 0 2px var(--accent); }
+  100% { box-shadow: 0 0 0 2px transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-post-anchor].is-chart-target {
+    animation: none;
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+}
