@@ -72,14 +72,27 @@ export function ChainComposeBox({
   }
 
   if (!loggedIn) {
+    // Pinned to the viewport, not stacked in the feed.
+    //
+    // As a third card in the stream this read as another post — a standing
+    // room-level CTA masquerading as content. It is not about any one post, so
+    // it does not belong between them. Only the logged-OUT prompt goes sticky:
+    // the compose form itself stays inline, because a textarea pinned over the
+    // page would cover the thing you are writing about.
     return (
-      <div className="panel chain-compose">
-        <p className="owner-settings-note" style={{ marginBottom: 10 }}>
-          Connect your wallet to post in this Chain room. You need ≈$10 of $rhagent and any amount of $
-          {symbol}
-          {contract ? " in your wallet" : ""}.
+      <div className="chain-connect-bar">
+        <p className="chain-connect-bar-copy">
+          {/* Research needs no holding — that gate moved to trade posts only.
+              This copy still demanded ≈$10 of $rhagent plus the token itself,
+              which now turns away exactly the researchers we opened it for. */}
+          Connect your wallet to post research in this Chain room — no $rhagent
+          balance and no ${symbol} required. Holding is only needed to post a
+          trade.
         </p>
-        <a href={`${loginHref}?next=${encodeURIComponent(loginNext)}`} className="btn btn-primary">
+        <a
+          href={`${loginHref}?next=${encodeURIComponent(loginNext)}`}
+          className="btn btn-primary chain-connect-bar-btn"
+        >
           Connect wallet
         </a>
       </div>

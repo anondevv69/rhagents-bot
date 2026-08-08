@@ -10728,3 +10728,196 @@ a.btn:active,
   align-items: center;
   gap: var(--space-1);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Card redesign v2 — fewer nested rectangles
+   ═══════════════════════════════════════════════════════════════════════════
+
+   The permalink had three levels of frame: the page card, the post card inside
+   it, and a fully-bordered trade box inside that. Three concentric rectangles
+   to show one call. Everything below removes a level of nesting without
+   removing information. */
+
+/* 1. One card, not two.
+      PostCard brings its own border and surface, so nesting it inside
+      .card.permalink-post drew a box inside a box. The outer card keeps the
+      frame; the inner one becomes plain content. */
+.permalink-post > .ia-concept-card {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  margin-bottom: 0;
+}
+
+/* The chart is the same unit as the post above it — a call and its outcome —
+   so a hairline is the right separator, not a second card edge. */
+.permalink-post .thesis-chart {
+  border-top: 1px solid var(--border-soft);
+}
+
+/* 2. Trade strip: accent bar instead of a full border.
+      A left rule groups just as well as four sides and stops the card reading
+      as a frame within a frame. */
+.ia-trade-strip {
+  border: none !important;
+  border-left: 3px solid transparent !important;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  padding: var(--space-2-5) var(--space-3);
+}
+.ia-trade-strip--buy { border-left-color: var(--up) !important; }
+.ia-trade-strip--sell { border-left-color: var(--down) !important; }
+
+/* 3. Number hierarchy: the dollar size leads.
+      "2,269,438.78 @ $0.0000008813" put the least legible number first. Nobody
+      parses a raw token count at a glance; they read the size and the price. */
+.ia-trade-strip-right {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+.ia-trade-strip-size {
+  font-size: var(--text-base, 15px);
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.ia-trade-strip-fill {
+  font-size: var(--text-caption);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 4. One shape language for status chips.
+      ON-CHAIN was a pill and BUY was a rounded rectangle — same green family,
+      same job, two shapes. Both are pills now. */
+.ia-trade-strip-action,
+.badge,
+.channel-chart-call-side,
+.thesis-chart-side {
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* 5. Disclaimer: accent bar, not a box. */
+.thesis-chart-foot {
+  border-left: 3px solid var(--border-soft);
+  background: var(--input-bg);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  padding: var(--space-2) var(--space-3);
+  margin-top: var(--space-3);
+}
+
+/* 6. Post id belongs with the timestamp, not in the action row.
+      It is bot-facing metadata and was sitting at the same visual weight as
+      the engagement controls. It stays in the text layer for agents. */
+.post-action-id {
+  font-size: 10px;
+  opacity: 0.4;
+}
+@media (hover: hover) and (pointer: fine) {
+  .ia-concept-card:hover .post-action-id { opacity: 0.75; }
+}
+
+/* Room-level connect prompt, pinned rather than stacked.
+   It is not about any single post, so placing it between posts made it read as
+   one. Only the logged-out prompt is sticky — the compose form stays inline,
+   since a pinned textarea would cover the post you are replying to. */
+.chain-connect-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding: var(--space-3) var(--space-4);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border-soft);
+  /* Clear of the home indicator on iOS. */
+  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+}
+
+.chain-connect-bar-copy {
+  margin: 0;
+  font-size: var(--text-caption);
+  color: var(--muted);
+  max-width: 46ch;
+  line-height: 1.45;
+}
+
+.chain-connect-bar-btn { flex-shrink: 0; }
+
+/* A fixed bar covers the end of the page, so give the stream somewhere to end. */
+.room-page,
+.permalink-page { padding-bottom: 88px; }
+
+@media (max-width: 560px) {
+  .chain-connect-bar {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--space-2-5);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .chain-connect-bar {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--surface);
+  }
+}
+
+/* Market-cap anchors on the thesis chart.
+   Cap is the primary read; price-per-token stays available underneath for
+   anyone doing exact maths, dim enough not to compete. */
+.thesis-chart-said {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1-5);
+}
+
+.thesis-chart-said-label {
+  font-size: var(--text-caption);
+  color: var(--muted);
+}
+
+.thesis-chart-anchor {
+  font-size: var(--text-base, 15px);
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.thesis-chart-anchor-sub {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Full-width so it drops to its own line under the cap rather than trailing it. */
+.thesis-chart-anchor-alt {
+  display: block;
+  flex-basis: 100%;
+  font-size: 11px;
+  color: var(--muted-faint);
+  font-variant-numeric: tabular-nums;
+  margin-top: 1px;
+}
+
+.thesis-chart-now { text-align: right; }
