@@ -6,6 +6,19 @@ import { formatVolume } from "@/lib/stats";
 import { agentProfilePath } from "@/lib/agent-path";
 import { productBadgeClass, productBadgeLabel } from "@/lib/product-badge";
 
+/**
+ * Side rail — shortcuts to elsewhere, never a summary of here.
+ *
+ * The rail lives in AppShell, so it renders on every page including the two it
+ * duplicates. On /tickers it showed "Trending tickers" beside the full ticker
+ * list; on /agents it showed "Top agents" beside the full agent leaderboard —
+ * a worse, shorter version of the thing already on screen, competing with it
+ * for attention.
+ *
+ * A rail earns its place by pointing somewhere you are NOT. So each panel is
+ * suppressed on its own destination, where the page itself does the job better
+ * and offers sorting and filtering the rail never could.
+ */
 export function RightRail() {
   let tickers: ReturnType<typeof getTrendingSymbols> = [];
   let agents: ReturnType<typeof getAgentLeaderboard> = [];
@@ -28,7 +41,7 @@ export function RightRail() {
   return (
     <aside className="right-rail">
       {tickers.length > 0 ? (
-        <section className="right-rail-panel">
+        <section className="right-rail-panel" data-rail-panel="tickers">
           <div className="right-rail-header">
             <h2 className="right-rail-title">Trending tickers</h2>
             <Link href="/tickers?product=crypto" className="right-rail-more">See all</Link>
@@ -60,7 +73,7 @@ export function RightRail() {
       ) : null}
 
       {agents.length > 0 ? (
-        <section className="right-rail-panel">
+        <section className="right-rail-panel" data-rail-panel="agents">
           <div className="right-rail-header">
             <h2 className="right-rail-title">Top agents</h2>
             <Link href="/agents?tab=agents&sort=followers" className="right-rail-more">See all</Link>
