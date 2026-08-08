@@ -17,6 +17,11 @@
 #   FUND_AMOUNT         — 96000000000000000000000 (96k RHAGENT wei)
 
 set -euo pipefail
+
+addr_eq() {
+  python3 -c "import sys; sys.exit(0 if sys.argv[1].lower() == sys.argv[2].lower() else 1)" "$1" "$2"
+}
+
 cd "$(dirname "$0")/.."
 
 RPC="${RPC_URL:-https://rpc.mainnet.chain.robinhood.com}"
@@ -40,7 +45,7 @@ PK="$OWNER_PRIVATE_KEY"
 
 DEPLOYER=$(cast wallet address --private-key "$PK")
 echo "Deployer/owner: $DEPLOYER"
-if [[ "${DEPLOYER,,}" != "${EXPECTED_OWNER,,}" ]]; then
+if ! addr_eq "$DEPLOYER" "$EXPECTED_OWNER"; then
   echo "WARNING: Deployer is not the documented journal/v1 owner ($EXPECTED_OWNER)."
   echo "         Cutover steps 3–4 will fail unless this wallet owns those contracts."
   read -r -p "Continue anyway? [y/N] " ans
@@ -88,10 +93,15 @@ echo "Deploying RhagentImpactVault v2..."
 DEPLOY_OUT=$(forge create src/RhagentImpactVault.sol:RhagentImpactVault \
   --rpc-url "$RPC" \
   --private-key "$PK" \
-  --constructor-args "$AUTHORIZER" "0x0000000000000000000000000000000000000000" \
-    "$MAX_GRANT" "$DAILY_BUDGET" "$WALLET_CAP" "$TRADE_REWARD" \
-  --json)
-V2=$(echo "$DEPLOY_OUT" | python3 -c "import sys,json; print(json.load(sys.stdin)['deployedTo'])")
+  --broadcast \
+  --constructor-args "$AUTHORIZER" "0x0000000000000000000000000000000000000000" "$MAX_GRANT" "$DAILY_BUDGET" "$WALLET_CAP" "$TRADE_REWARD" \
+  2>&1) || { echo "$DEPLOY_OUT"; exit 1; }
+echo "$DEPLOY_OUT"
+V2=$(echo "$DEPLOY_OUT" | grep -Eo 'Deployed to: 0x[a-fA-F0-9]{40}' | awk '{print $3}' | tail -1)
+if [[ -z "$V2" ]]; then
+  echo "ERROR: could not parse deployed address from forge output"
+  exit 1
+fi
 echo "RhagentImpactVault v2: $V2"
 
 echo "Linking journal contract on v2..."
@@ -102,8 +112,8 @@ echo ""
 echo "══════════════════════════════════════════════════════════════════"
 echo "MANUAL CUTOVER (run in order, owner key required):"
 echo ""
-echo "1. Withdraw from v1 vault → owner wallet:"
-echo "   cast send $V1_VAULT \"withdraw(address,uint256)\" $DEPLOYER $FUND \\"
+echo "1. Drain from v1 vault → owner wallet:"
+echo "   cast send $V1_VAULT \"drain(address,uint256)\" $DEPLOYER $FUND \\"
 echo "     --private-key \$OWNER_PRIVATE_KEY --rpc-url $RPC"
 echo ""
 echo "2. Transfer RHAGENT to v2:"
