@@ -1,5 +1,6 @@
 import { getChannelChart } from "@/lib/channel-chart";
 import { ChannelChart } from "@/components/ChannelChart";
+import { ChannelChartLive } from "@/components/ChannelChartLive";
 
 /**
  * Async boundary for the channel chart.
@@ -18,7 +19,16 @@ export async function ChannelChartSection({
   product?: string | null;
 }) {
   const data = await getChannelChart(symbol, { product, interval: "hour" });
-  return <ChannelChart data={data} />;
+
+  // The SVG is passed as children rather than replaced. It renders on the
+  // server — so agents, crawlers and no-JS readers get the full price history
+  // and every call as text — and the interactive layer takes over on top of the
+  // same object once the bundle arrives. One data pipeline, two views.
+  return (
+    <ChannelChartLive data={data}>
+      <ChannelChart data={data} />
+    </ChannelChartLive>
+  );
 }
 
 /** Shown while the upstream feed responds. Same box, so nothing shifts. */
