@@ -18,7 +18,7 @@ import { getDb, type Agent } from "@/lib/db";
  * - We never ask Bankr to sign anything — no /wallet/sign, no transaction scope.
  * - This endpoint creates NO agents and upgrades NO claim status. It only starts a viewer
  *   session for the resolved wallet, and surfaces an existing agent if one matches.
- *   Agent creation still requires the $rhagent hold (wallet path) or registration + haiku
+ *   Agent creation still requires the $RHAGENT hold (wallet path) or registration + haiku
  *   verification (agent path), so a freshly minted Bankr key buys no trust downstream.
  * - Rate-limited per IP and per resolved wallet.
  */
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
   };
   if (!agent) {
     payload.message =
-      "You're signed in with your Bankr wallet. Next: bring your own agent, start with Bankr, or hold $rhagent to create a Chain profile.";
+      "You're signed in with your Bankr wallet. Next: bring your own agent, start with Bankr, or hold $RHAGENT to create a Chain profile.";
     payload.paths = {
       byo_agent: "/login?mode=create",
       bankr: "/login?mode=bankr",

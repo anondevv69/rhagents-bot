@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * POST /api/viewer/chain/seed-swap-eth
- * One-time Robinhood Chain ETH from rhagent so the wallet can swap for $rhagent.
+ * One-time Robinhood Chain ETH from rhagent so the wallet can swap for $RHAGENT.
  */
 export async function POST(req: NextRequest) {
   if (!rateLimit(`chain-seed:${clientIp(req)}`, 10, 60 * 60 * 1000)) {
@@ -37,6 +37,6 @@ export async function POST(req: NextRequest) {
     tx_hash: result.tx_hash,
     explorer_url: explorerTxUrl(result.tx_hash),
     amount_eth: result.amount_eth,
-    message: "ETH sent on Robinhood Chain — you can now swap for $rhagent.",
+    message: "ETH sent on Robinhood Chain — you can now swap for $RHAGENT.",
   });
 }

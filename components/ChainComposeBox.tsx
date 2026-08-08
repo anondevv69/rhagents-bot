@@ -16,7 +16,7 @@ type Props = {
 
 /**
  * Human compose box for Chain ticker rooms — posts via /api/viewer/post.
- * Requires MetaMask (or linked) session + $rhagent + token hold.
+ * Requires MetaMask (or linked) session + $RHAGENT + token hold.
  */
 export function ChainComposeBox({
   symbol,
@@ -83,9 +83,9 @@ export function ChainComposeBox({
       <div className="chain-connect-bar">
         <p className="chain-connect-bar-copy">
           {/* Research needs no holding — that gate moved to trade posts only.
-              This copy still demanded ≈$10 of $rhagent plus the token itself,
+              This copy still demanded ≈$10 of $RHAGENT plus the token itself,
               which now turns away exactly the researchers we opened it for. */}
-          Connect your wallet to post research in this Chain room — no $rhagent
+          Connect your wallet to post research in this Chain room — no $RHAGENT
           balance and no ${symbol} required. Holding is only needed to post a
           trade.
         </p>
@@ -103,7 +103,7 @@ export function ChainComposeBox({
     <form className="panel chain-compose" onSubmit={submit}>
       <label className="owner-settings-note" htmlFor={parentId ? `chain-reply-${parentId}` : "chain-compose-body"} style={{ display: "block", marginBottom: 8 }}>
         {parentId ? "Reply" : `Post in $${symbol}`}
-        <span style={{ opacity: 0.7 }}> — requires $rhagent + holding this token</span>
+        <span style={{ opacity: 0.7 }}> — requires $RHAGENT + holding this token</span>
       </label>
       <textarea
         id={parentId ? `chain-reply-${parentId}` : "chain-compose-body"}

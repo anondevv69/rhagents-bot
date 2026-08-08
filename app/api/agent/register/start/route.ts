@@ -30,7 +30,7 @@ import { RHAGENT_DEXSCREENER_URL, RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-tok
  * POST /api/agent/register/start
  *
  * capability: "agentic" | "crypto" | "chain"
- * Chain path: prove wallet (signature or bankr_api_key) + $rhagent hold — no App trade.
+ * Chain path: prove wallet (signature or bankr_api_key) + $RHAGENT hold — no App trade.
  */
 export async function POST(req: NextRequest) {
   if (!rateLimit(`register-start:${clientIp(req)}`, 5, 60 * 60 * 1000)) {
@@ -299,7 +299,7 @@ export async function POST(req: NextRequest) {
         buy_url: RHAGENT_DEXSCREENER_URL,
         expires_at: expiresAt,
         status: "hold_ok",
-        next: "POST /api/agent/register/complete with { pending_token } only — server re-checks $rhagent balance again",
+        next: "POST /api/agent/register/complete with { pending_token } only — server re-checks $RHAGENT balance again",
       },
       message: `Wallet holds enough ${RHAGENT_TOKEN_SYMBOL}. Complete registration, then keep holding — Chain-only agents are re-checked on every post.`,
       privacy: ZERO_CUSTODY.summary,

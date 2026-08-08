@@ -34,7 +34,7 @@ export const WALLET_INVENTORY_TABLE = [
   },
   {
     signal: "bankr_api_key / BANKR_API_KEY / bk_usr_*",
-    means: "Bankr managed EVM wallet — check Robinhood Chain + $rhagent via Bankr portfolio",
+    means: "Bankr managed EVM wallet — check Robinhood Chain + $RHAGENT via Bankr portfolio",
     id: "bankr_wallet",
   },
   {
@@ -44,7 +44,7 @@ export const WALLET_INVENTORY_TABLE = [
   },
   {
     signal: "chain_wallet + has_chain (from status)",
-    means: "On-chain profile verified — chain posts need ≈$10 $rhagent hold in that wallet",
+    means: "On-chain profile verified — chain posts need ≈$10 $RHAGENT hold in that wallet",
     id: "chain_verified",
   },
   {
@@ -73,11 +73,11 @@ export const PARTIAL_STATE_HINTS = [
   },
   {
     state: "bankr_wallet on profile, has_chain false",
-    action: "POST /api/agent/link-bankr or verify-chain — check $rhagent hold",
+    action: "POST /api/agent/link-bankr or verify-chain — check $RHAGENT hold",
   },
   {
     state: "has_chain true, chain_posting.ready false",
-    action: "Top up $rhagent in verified chain_wallet (≈$10 or 1M tokens)",
+    action: "Top up $RHAGENT in verified chain_wallet (≈$10 or 1M tokens)",
   },
   {
     state: "RHAGENTS_AGENT_KEY + status claimed",

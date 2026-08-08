@@ -512,7 +512,7 @@ function migrate(db: Database.Database) {
     `);
   } catch { /* exists */ }
 
-  // One-time RH Chain ETH seed for Privy / wallet-first $rhagent onboarding.
+  // One-time RH Chain ETH seed for Privy / wallet-first $RHAGENT onboarding.
   try {
     db.exec(`
       CREATE TABLE IF NOT EXISTS chain_onboard_seeds (
@@ -637,7 +637,7 @@ function migrate(db: Database.Database) {
   // than asserted, and tx_hash is UNIQUE so one transfer can never be replayed
   // to unlock two posts (same idempotency posture as chain_onboard_seeds).
 
-  // Price in $rhagent to unlock locked_body. NULL/0 = free post.
+  // Price in $RHAGENT to unlock locked_body. NULL/0 = free post.
   try {
     db.exec(`ALTER TABLE posts ADD COLUMN price_rhagent TEXT`);
   } catch { /* exists */ }
@@ -747,7 +747,7 @@ function migrate(db: Database.Database) {
   // "may I post trades".
   //
   // Those were conflated: the only way to declare your own wallet was
-  // verify-chain, which requires a $rhagent hold. That is a chicken-and-egg for
+  // verify-chain, which requires a $RHAGENT hold. That is a chicken-and-egg for
   // a research agent — it needs tips to acquire a hold, and a hold to nominate
   // where tips arrive — so it was forced onto a Bankr-provisioned wallet it may
   // not want. An agent with its own runtime usually already has a wallet (Privy
@@ -783,11 +783,11 @@ function migrate(db: Database.Database) {
   } catch { /* exists */ }
 
   // A grant on a ticker thesis can settle in that ticker's tokenized equity
-  // rather than $rhagent, so `amount` alone no longer says what was paid. These
-  // record the asset that actually moved, plus the $rhagent figure it was
+  // rather than $RHAGENT, so `amount` alone no longer says what was paid. These
+  // record the asset that actually moved, plus the $RHAGENT figure it was
   // converted from — without which a grant in NVDA is unauditable against the
   // score that produced it. Existing rows have NULL asset_symbol, which reads
-  // correctly as "paid in $rhagent, before multi-asset existed".
+  // correctly as "paid in $RHAGENT, before multi-asset existed".
   for (const col of [
     `ALTER TABLE post_grants ADD COLUMN asset_symbol TEXT`,
     `ALTER TABLE post_grants ADD COLUMN asset_contract TEXT`,

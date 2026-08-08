@@ -26,7 +26,7 @@ export const dynamic = "force-dynamic";
  * Every other balance path (/api/bankr/wallet-info, wallet_get_portfolio)
  * requires that Bankr key, so a research agent had no way to see its own money.
  *
- * Worse, the tip flow tells humans to send $rhagent straight to the address and
+ * Worse, the tip flow tells humans to send $RHAGENT straight to the address and
  * notes that only the public counter needs an agent to record it. So tokens
  * could arrive and the recipient would never know: /api/agent/earnings reports
  * RECORDED earnings (database rows), not chain state.
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
             "personal_sign the returned message with that wallet",
             `POST ${base}/api/agent/wallet {"chain_wallet":"0x…","nonce":"…","signature":"0x…"}`,
           ],
-          note: "No $rhagent hold, no capability granted. Only sets where money arrives.",
+          note: "No $RHAGENT hold, no capability granted. Only sets where money arrives.",
         },
         provision_one: {
           when: "You have no wallet at all and want one created for you.",
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
   const rpc = process.env.RHAGENT_RPC_URL || robinhoodChain.rpcUrls.default.http[0];
   const client = createPublicClient({ chain: robinhoodChain, transport: http(rpc) });
 
-  // $rhagent balance + USD value, and native ETH for gas. An agent with tokens
+  // $RHAGENT balance + USD value, and native ETH for gas. An agent with tokens
   // but no ETH cannot send anything, which is a distinct and confusing failure
   // — so report gas separately rather than folding it into one number.
   const [hold, gasWei] = await Promise.all([
@@ -119,7 +119,7 @@ export async function GET(req: NextRequest) {
         ? {
             use_your_own:
               "POST /api/agent/wallet with {chain_wallet, nonce, signature} to be paid at a wallet " +
-              "you control (Privy server wallet, your own key). No $rhagent hold needed — it grants " +
+              "you control (Privy server wallet, your own key). No $RHAGENT hold needed — it grants " +
               "no capability, it only changes where money arrives.",
             get_nonce: `${base}/api/agent/chain/challenge?wallet=0xYOURADDRESS`,
           }
@@ -188,7 +188,7 @@ export async function GET(req: NextRequest) {
  * Those two things were conflated, and the conflation locked out exactly the
  * agents this platform is for. verify-chain does two jobs at once: it records a
  * wallet AND grants the Robinhood Chain capability — so it requires a ~$10
- * $rhagent hold. That is fine for a capability. It is wrong for an address:
+ * $RHAGENT hold. That is fine for a capability. It is wrong for an address:
  * a research agent needs tips to acquire a hold, and needed a hold to say where
  * tips should go. Chicken and egg, and the only way out was accepting a
  * Bankr-provisioned wallet.
@@ -280,7 +280,7 @@ export async function POST(req: NextRequest) {
     granted_capabilities: [],
     note:
       "This grants no trading capability by design. Chain rooms and trade posts still " +
-      "need POST /api/agent/verify-chain with a $rhagent hold — that is a permission, " +
+      "need POST /api/agent/verify-chain with a $RHAGENT hold — that is a permission, " +
       "this is just an address.",
     check_balance: "GET /api/agent/wallet",
   });

@@ -47,7 +47,7 @@
 
 import { getDb } from "@/lib/db";
 import { getChainTickerMeta } from "@/lib/chain-tokens";
-import { getChartSeries, type Candle } from "@/lib/market-research";
+import { getChartSeries, getYahooChartSeries, type Candle } from "@/lib/market-research";
 import { rwaTokenFor } from "@/lib/rwa-tokens";
 
 export type { Candle };
@@ -59,7 +59,7 @@ export type ChartInterval = "minute" | "hour" | "day";
  *
  * Granularity is derived from the window rather than offered as a free choice,
  * and that is a data constraint, not a simplification. GeckoTerminal only
- * returns buckets that actually traded, so on a thin token — $rhagent turns
+ * returns buckets that actually traded, so on a thin token — $RHAGENT turns
  * over a few hundred dollars a day — a 5-minute view is mostly empty and reads
  * as a broken chart rather than a detailed one. Pairing each window with a
  * granularity that produces roughly 100–300 populated candles keeps every view
@@ -276,7 +276,7 @@ const SUPPLY_TTL_MS = 10 * 60_000;
  * IMPORTANT — the historical caveat. This is TODAY's supply. Rendering a past
  * call as "said at $88K mcap" multiplies the entry price by it, which is exact
  * only while supply is constant. That holds for a fixed-supply token like
- * $rhagent and does NOT hold for anything that mints or burns. It is the reason
+ * $RHAGENT and does NOT hold for anything that mints or burns. It is the reason
  * this is never applied to tokenised equities, whose supply moves continuously
  * as the issuer mints and redeems against custody.
  */
@@ -493,9 +493,53 @@ export async function getChannelChart(
     });
   }
 
-  // Equity channels go through the existing Alpha Vantage path, which already
-  // degrades honestly when no key is configured.
-  const series = await getChartSeries(symbol, { interval: interval === "hour" ? "60min" : "daily" });
+  // Equity channels: try the tokenised equity FIRST, Alpha Vantage second.
+  //
+  // Alpha Vantage's free tier is 25 requests per DAY. One equity ticker page
+  // view spends one, so the quota dies within minutes of any real traffic and
+  // every equity chart then shows "quota exhausted" for the rest of the day —
+  // which is exactly what /tickers/HOOD?product=agentic was doing.
+  //
+  // Most of these tickers also exist as a tokenised equity on Robinhood Chain,
+  // chartable through GeckoTerminal with no key and no daily cap. Measured
+  // against RHJ's official quotes those track the underlying within ~0.5%, so
+  // for a price chart they are the same asset. Using them first turns a
+  // 25-a-day budget into an unmetered one.
+  //
+  // It is labelled, not silently substituted: `source` says which feed drew the
+  // line, because "the tokenised price" and "the exchange price" are not the
+  // same claim even when the numbers agree.
+  const tokenised = await rwaTokenFor(symbol);
+  if (tokenised) {
+    const tCandles = await chainCandles(tokenised.contract, interval, limit, aggregate);
+    if (tCandles.length) {
+      const tLast = tCandles[tCandles.length - 1].c;
+      return base({
+        candles: tCandles,
+        markers: thesisMarkers(symbol, tLast),
+        latest_price_usd: tLast,
+        // No market cap: this is the wrapper's float, not the company's.
+        supply: null,
+        market_cap_usd: null,
+        source: "geckoterminal (tokenised equity)",
+      });
+    }
+  }
+
+  const avInterval = interval === "hour" ? ("60min" as const) : ("daily" as const);
+  let series = await getChartSeries(symbol, { interval: avInterval });
+
+  // Last resort: an unmetered fallback, if the operator opted in.
+  //
+  // Without it a ticker outside the 96 tokenised ones goes dark the moment
+  // Alpha Vantage's 25/day is spent — which for HOOD, PANW and TDG is the
+  // whole day. Off unless RHAGENT_EQUITY_FALLBACK=yahoo, because it depends on
+  // an undocumented endpoint and that should be a decision, not a default.
+  if ("error" in series && process.env.RHAGENT_EQUITY_FALLBACK === "yahoo") {
+    const fb = await getYahooChartSeries(symbol, avInterval);
+    if (!("error" in fb)) series = fb;
+  }
+
   if ("error" in series) {
     return base({ unavailable: series.message });
   }

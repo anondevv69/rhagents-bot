@@ -1,5 +1,5 @@
 /**
- * One-time Robinhood Chain ETH seed so Privy / wallet-first users can swap for $rhagent.
+ * One-time Robinhood Chain ETH seed so Privy / wallet-first users can swap for $RHAGENT.
  * Paid from the inscriber hot wallet — rate-limited, idempotent per recipient.
  */
 

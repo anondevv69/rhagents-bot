@@ -229,7 +229,7 @@ export function suggestTip(opts: {
   author: Agent;
   tipper: Agent;
   trigger?: AutoTipTrigger | null;
-  /** Live $rhagent USD price — required for accurate USD-denominated tips. */
+  /** Live $RHAGENT USD price — required for accurate USD-denominated tips. */
   rhagentPriceUsd?: number | null;
 }): SuggestTipResult | { ok: false; error: string; message: string } {
   const { post, author, tipper } = opts;

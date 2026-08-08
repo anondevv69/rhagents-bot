@@ -280,6 +280,38 @@ function buildSeries(symbol: string, interval: string, candles: Candle[], source
  * series so an agent can reason without reimplementing the arithmetic — and so
  * two agents citing "the 50-day" mean the same thing.
  */
+
+/* ── response cache ──────────────────────────────────────────────────────── */
+
+/**
+ * Alpha Vantage's free tier is 25 requests per DAY, and until now nothing here
+ * was cached — every page view and every agent call spent one. The quota died
+ * within minutes of traffic and every equity chart showed "quota exhausted"
+ * for the rest of the day.
+ *
+ * Worse, the success message already told agents "Cached up to 1h for
+ * daily/weekly, 5m intraday". That was a claim about behaviour that did not
+ * exist. This makes it true.
+ *
+ * TTLs follow how fast the underlying actually moves: a daily candle changes
+ * once a day, so caching it for an hour costs nothing in accuracy and turns
+ * 25 requests/day into 25 distinct symbol-intervals per hour.
+ */
+const avCache = new Map<string, { at: number; value: unknown }>();
+
+function avCacheGet<T>(key: string, ttlMs: number): T | null {
+  const hit = avCache.get(key);
+  if (!hit || Date.now() - hit.at > ttlMs) return null;
+  return hit.value as T;
+}
+
+function avCacheSet(key: string, value: unknown): void {
+  // Never cache an error. A rate-limit response cached for an hour would keep
+  // the outage alive long after the quota reset.
+  if (value && typeof value === "object" && "error" in (value as Record<string, unknown>)) return;
+  avCache.set(key, { at: Date.now(), value });
+}
+
 export async function getChartSeries(
   symbolRaw: string,
   opts: { interval?: "daily" | "weekly" | "60min" | "15min" | "5min"; crypto?: boolean } = {},
@@ -288,6 +320,12 @@ export async function getChartSeries(
   const interval = opts.interval ?? "daily";
   const provider = process.env.EQUITY_DATA_PROVIDER?.trim();
   const apiKey = process.env.EQUITY_DATA_API_KEY?.trim();
+
+  // Intraday moves within the hour; a daily candle does not.
+  const ttlMs = interval === "daily" || interval === "weekly" ? 60 * 60_000 : 5 * 60_000;
+  const cacheKey = `chart:${symbol}:${interval}`;
+  const cached = avCacheGet<ChartSeries>(cacheKey, ttlMs);
+  if (cached) return cached;
 
   if (!apiKey || !(provider === "alphavantage" || provider === "alpha_vantage")) {
     return {
@@ -362,15 +400,92 @@ export async function getChartSeries(
 
     if (candles.length === 0) return { error: "no_candles", message: "Provider returned an empty series." };
 
-    return buildSeries(
+    const built = buildSeries(
       symbol,
       interval,
       candles,
       "alphavantage",
       `${candles.length} candles. Cached up to 1h for daily/weekly, 5m intraday — cite the last candle date, not "now".`,
     );
+    avCacheSet(cacheKey, built);
+    return built;
   } catch {
     return { error: "provider_error", message: "Alpha Vantage did not respond in time." };
+  }
+}
+
+/**
+ * Fallback series for tickers with no tokenised equity.
+ *
+ * Yahoo's chart endpoint needs no key and has no daily cap, which is the only
+ * reason it is here — it covers HOOD, PANW, TDG and everything else outside the
+ * 96 RHJ tokens, all of which are otherwise dark once Alpha Vantage's 25/day is
+ * spent.
+ *
+ * It is OFF by default and gated behind its own env var, because it is an
+ * undocumented endpoint: no published terms for programmatic use, and it can
+ * rate-limit or change shape without notice. That is a deliberate operator
+ * choice rather than a default dependency, and the source is labelled so nobody
+ * mistakes it for a contracted feed.
+ */
+export async function getYahooChartSeries(
+  symbolRaw: string,
+  interval: "daily" | "60min",
+): Promise<ChartSeries | { error: string; message: string }> {
+  const symbol = symbolRaw.trim().toUpperCase().replace(/^\$/, "");
+  const ttlMs = interval === "daily" ? 60 * 60_000 : 5 * 60_000;
+  const cacheKey = `yahoo:${symbol}:${interval}`;
+  const cached = avCacheGet<ChartSeries>(cacheKey, ttlMs);
+  if (cached) return cached;
+
+  const range = interval === "daily" ? "6mo" : "1mo";
+  const gran = interval === "daily" ? "1d" : "1h";
+
+  try {
+    const res = await fetch(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${gran}`,
+      { headers: { "user-agent": "Mozilla/5.0" }, signal: AbortSignal.timeout(8000) },
+    );
+    if (!res.ok) return { error: "provider_error", message: `Fallback provider returned ${res.status}.` };
+
+    const body = (await res.json()) as {
+      chart?: {
+        result?: {
+          timestamp?: number[];
+          indicators?: { quote?: { open?: (number | null)[]; high?: (number | null)[]; low?: (number | null)[]; close?: (number | null)[]; volume?: (number | null)[] }[] };
+        }[];
+      };
+    };
+    const r = body.chart?.result?.[0];
+    const ts = r?.timestamp ?? [];
+    const q = r?.indicators?.quote?.[0];
+    if (!ts.length || !q) return { error: "no_candles", message: `No series returned for ${symbol}.` };
+
+    const candles: Candle[] = ts
+      .map((t, i) => ({
+        t: new Date(t * 1000).toISOString(),
+        o: q.open?.[i] ?? NaN,
+        h: q.high?.[i] ?? NaN,
+        l: q.low?.[i] ?? NaN,
+        c: q.close?.[i] ?? NaN,
+        v: q.volume?.[i] ?? null,
+      }))
+      // Yahoo emits nulls for gaps and halts; a null close would break the scale.
+      .filter((c) => Number.isFinite(c.o) && Number.isFinite(c.c));
+
+    if (!candles.length) return { error: "no_candles", message: `No usable candles for ${symbol}.` };
+
+    const built = buildSeries(
+      symbol,
+      interval,
+      candles,
+      "yahoo (unofficial)",
+      `${candles.length} candles from an undocumented endpoint — usable, but not a contracted feed.`,
+    );
+    avCacheSet(cacheKey, built);
+    return built;
+  } catch {
+    return { error: "provider_error", message: "Fallback provider did not respond in time." };
   }
 }
 

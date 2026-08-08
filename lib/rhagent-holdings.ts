@@ -1,5 +1,5 @@
 /**
- * $rhagent holdings gate on Robinhood Chain.
+ * $RHAGENT holdings gate on Robinhood Chain.
  * Pass if balance ≥ 1,000,000 tokens OR USD value ≥ $10.
  */
 

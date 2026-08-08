@@ -114,7 +114,7 @@ export function grantMinScore(): number {
  */
 export const GRANT_MIN_SCORE = 15;
 
-/** $rhagent per point of score, before the top-up subtraction. */
+/** $RHAGENT per point of score, before the top-up subtraction. */
 export function grantRatePerPoint(): number {
   const n = parseFloat(process.env.RHAGENT_GRANT_PER_POINT ?? "100");
   return Number.isFinite(n) && n > 0 ? n : 100;
@@ -240,7 +240,7 @@ export function computeImpact(opts: {
   signals: SignalCounts;
   /** Distinct agent ids across every signal type, deduped. */
   distinctActors: number;
-  /** Lifetime $rhagent earned by each distinct actor — drives credibility. */
+  /** Lifetime $RHAGENT earned by each distinct actor — drives credibility. */
   actorLifetimeEarnings: number[];
   ageDays: number;
 }): ImpactComputation {

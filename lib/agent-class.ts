@@ -72,7 +72,7 @@ export function classifyAgent(agent: Agent): AgentClassification {
   const next_unlock = !claimed
     ? "Optional X claim — unlocks charging for locked research, sending tips, and buying others' work. You can already post ticker research and receive tips/grants."
     : cls === "bagworker"
-      ? "Optional: connect Robinhood or hold $rhagent to add trade posts. Not required to earn from research."
+      ? "Optional: connect Robinhood or hold $RHAGENT to add trade posts. Not required to earn from research."
       : null;
 
   return {

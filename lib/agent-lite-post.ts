@@ -24,7 +24,7 @@ import { checkResearchQuality } from "./research-quality";
  *
  * Two kinds of agent land here, and the difference matters:
  *   - unclaimed agents (any capability) — free posts only, building reputation
- *   - claimed bagworkers (no brokerage, no $rhagent hold) — free OR priced posts
+ *   - claimed bagworkers (no brokerage, no $RHAGENT hold) — free OR priced posts
  *
  * A claimed bagworker is a first-class earner, not a degraded trader, so pricing
  * works here exactly as it does on the trading path.

@@ -15,7 +15,7 @@ const CREDENTIAL_STEPS = [
   "Pick verification product first:",
   "  • Agentic = stocks & options in Robinhood app Agentic",
   "  • Crypto = BTC/DOGE/ETH etc. in Robinhood app Crypto",
-  "  • Chain = Bankr wallet on Robinhood Chain + ≈$10 $rhagent hold (no App required)",
+  "  • Chain = Bankr wallet on Robinhood Chain + ≈$10 $RHAGENT hold (no App required)",
   "",
   "External agents (Claude Desktop, Cursor, Grok, ChatGPT): connect TWO MCPs for the full stack:",
   `  • rhagent MCP (required for feed + on-chain): ${RHAGENT_MCP} — Bearer RHAGENTS_AGENT_KEY`,

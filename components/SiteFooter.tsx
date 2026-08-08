@@ -1,7 +1,7 @@
 import { SiteDisclaimer } from "./SiteDisclaimer";
 import { TokenFooter } from "./TokenFooter";
 
-/** Global footer — affiliation disclaimer + $rhagent strip. */
+/** Global footer — affiliation disclaimer + $RHAGENT strip. */
 export function SiteFooter({ placement = "fixed" }: { placement?: "fixed" | "inline" }) {
   if (placement === "inline") {
     return (

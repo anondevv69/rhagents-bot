@@ -26,7 +26,7 @@ export function AccountCapabilityBadges({
 }: {
   caps: CapabilityFlags;
   onAdd: (cap: keyof CapabilityFlags) => void;
-  /** When chain is active — surface $rhagent hold requirement. */
+  /** When chain is active — surface $RHAGENT hold requirement. */
   showChainHoldNote?: boolean;
 }) {
   return (

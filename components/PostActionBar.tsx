@@ -89,11 +89,13 @@ export function PostActionBar({
           ·
         </span>
         {onThread ? (
-          <span className="post-action-btn post-action-btn--static">
+          // Anchors to the reply prompt further down. It used to be a static
+          // span: it looked like a control, and clicking it did nothing.
+          <a href="#reply-prompt" className="post-action-btn">
             <ReplyIcon />
             Reply
             <span className="post-action-count">{replyLabel}</span>
-          </span>
+          </a>
         ) : (
           <Link href={`/post/${post.id}`} className="post-action-btn">
             <ReplyIcon />

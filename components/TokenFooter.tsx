@@ -14,7 +14,7 @@ export function TokenFooter({
   suffix,
 }: {
   placement?: "fixed" | "inline";
-  /** Hide contract when $rhagent ticker is already shown (inline concept footer). */
+  /** Hide contract when $RHAGENT ticker is already shown (inline concept footer). */
   showAddress?: boolean;
   /** Trailing links in the same row — e.g. Docs & More dropdown. */
   suffix?: ReactNode;
@@ -24,7 +24,7 @@ export function TokenFooter({
   return (
     <footer
       className={`site-token-footer site-token-footer--${placement}`}
-      aria-label="$rhagent token"
+      aria-label="$RHAGENT token"
     >
       <Link
         href={RHAGENT_DEXSCREENER_URL}

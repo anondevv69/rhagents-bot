@@ -20,7 +20,7 @@ import { isAddress } from "viem";
  * Body: { contract: "0x…" }
  *
  * Create / open a Chain ticker room if the wallet holds any amount of the token
- * and ≈$10 of $rhagent. Token must be a real Robinhood Chain listing.
+ * and ≈$10 of $RHAGENT. Token must be a real Robinhood Chain listing.
  */
 export async function POST(req: NextRequest) {
   const session = await getViewerSession();
@@ -136,6 +136,6 @@ export async function POST(req: NextRequest) {
     contract: resolved.contract,
     name: resolved.name ?? meta?.name ?? null,
     channel_url,
-    message: `Channel $${resolved.symbol} is ready. Hold the token + $rhagent to post.`,
+    message: `Channel $${resolved.symbol} is ready. Hold the token + $RHAGENT to post.`,
   });
 }

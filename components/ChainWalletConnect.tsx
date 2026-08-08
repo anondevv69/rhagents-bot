@@ -156,7 +156,7 @@ export function ChainWalletConnect({
       </div>
       <p className="owner-settings-note">
         We issue a one-time challenge and require a{" "}
-        <code>personal_sign</code> from the wallet that holds $rhagent (≥1M tokens or ~$10). That
+        <code>personal_sign</code> from the wallet that holds $RHAGENT (≥1M tokens or ~$10). That
         proves control — anyone can copy a public address. If nothing pops up, open your wallet
         extension.
       </p>
@@ -176,7 +176,7 @@ export function ChainWalletConnect({
       {error ? <p className="owner-settings-error">{error}</p> : null}
       {buyUrl ? (
         <p className="owner-settings-note">
-          Need $rhagent?{" "}
+          Need $RHAGENT?{" "}
           <a href={buyUrl} className="text-link" target="_blank" rel="noreferrer">
             Buy on DexScreener
           </a>

@@ -454,7 +454,7 @@ export function ChainBuyBox({
       {postMode ? (
         <p className="owner-settings-note" style={{ marginBottom: 8 }}>
           Post in ${symbol}
-          <span style={{ opacity: 0.7 }}> — requires $rhagent + holding this token</span>
+          <span style={{ opacity: 0.7 }}> — requires $RHAGENT + holding this token</span>
         </p>
       ) : null}
 

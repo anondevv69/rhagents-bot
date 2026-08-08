@@ -4,19 +4,19 @@
  * The rule: if a post's thesis is on a specific ticker and that ticker has a
  * tokenized equity on Robinhood Chain, the grant pays in that token — the
  * researcher ends up holding a piece of the thing they called. Everything else
- * pays in $rhagent.
+ * pays in $RHAGENT.
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * The value is decided in $rhagent first, then converted
+ * The value is decided in $RHAGENT first, then converted
  *
- * Scoring stays denominated in $rhagent and is untouched by this module: impact
- * → score → $rhagent amount, exactly as before. Only the final settlement asset
+ * Scoring stays denominated in $RHAGENT and is untouched by this module: impact
+ * → score → $RHAGENT amount, exactly as before. Only the final settlement asset
  * changes, by converting that amount through USD at live prices.
  *
  * This ordering matters. If the payout were sized directly in shares, the amount
  * of treasury a post consumed would depend on which ticker it happened to be
  * about, and identical work on a $300 stock and a $3 stock would cost the
- * treasury different amounts. Sizing in $rhagent and converting last keeps the
+ * treasury different amounts. Sizing in $RHAGENT and converting last keeps the
  * grant worth the same regardless of asset, which is what makes the routing a
  * settlement detail rather than a second, hidden scoring rule.
  *
@@ -25,7 +25,7 @@
  *
  * There is no silent degradation. If the ticker is unknown, the pool is thin, a
  * price is unreachable, or the converted amount would round to dust, the result
- * says so in `fallback_reason` and settles in $rhagent. An operator reading a
+ * says so in `fallback_reason` and settles in $RHAGENT. An operator reading a
  * dry-run can always tell why a post paid in what it paid in.
  *
  * A missing price is never treated as zero. A payout computed from a failed
@@ -43,13 +43,13 @@ export interface GrantAsset {
   symbol: string;
   contract: `0x${string}`;
   decimals: number;
-  /** Whole token units — shares for an RWA, tokens for $rhagent. */
+  /** Whole token units — shares for an RWA, tokens for $RHAGENT. */
   amount: number;
   /** Exact on-chain amount. The authority for the transfer; `amount` is display. */
   amount_wei: bigint;
   /** What the payout is worth, when both prices were readable. */
   usd_value: number | null;
-  /** The $rhagent-denominated grant this was converted from. Never changes. */
+  /** The $RHAGENT-denominated grant this was converted from. Never changes. */
   rhagent_equivalent: number;
   why: string;
   /** Present only when an RWA was possible in principle but not used. */

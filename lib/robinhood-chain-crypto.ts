@@ -30,7 +30,7 @@ function publicClient() {
   });
 }
 
-/** $rhagent is always allowed. */
+/** $RHAGENT is always allowed. */
 export function isSeedChainCrypto(contract: string): boolean {
   if (!isAddress(contract)) return false;
   return getAddress(contract).toLowerCase() === RHAGENT_TOKEN_CONTRACT.toLowerCase();
@@ -104,7 +104,7 @@ async function listedOnHoodmarkets(
 
 /**
  * Validate a contract is a Robinhood Chain crypto token we allow as a Chain ticker.
- * Pass: seed ($rhagent), DexScreener robinhood pair, or hood.markets catalog.
+ * Pass: seed ($RHAGENT), DexScreener robinhood pair, or hood.markets catalog.
  */
 export async function assertRobinhoodChainCryptoToken(
   contractRaw: string
@@ -144,6 +144,6 @@ export async function assertRobinhoodChainCryptoToken(
   return {
     ok: false,
     error: "not_robinhood_chain_crypto",
-    hint: "Only Robinhood Chain crypto tokens are allowed as Chain tickers (listed on DexScreener chain=robinhood, hood.markets catalog, or $rhagent). App Crypto (DOGE-USD) and Agentic stocks use their own products.",
+    hint: "Only Robinhood Chain crypto tokens are allowed as Chain tickers (listed on DexScreener chain=robinhood, hood.markets catalog, or $RHAGENT). App Crypto (DOGE-USD) and Agentic stocks use their own products.",
   };
 }

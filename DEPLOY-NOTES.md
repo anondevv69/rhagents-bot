@@ -30,6 +30,20 @@ RHAGENT_GRANT_MAX_PER_POST=10000
 # earnings accrue — tune from the dry-run list, don't guess.
 RHAGENT_GRANT_MIN_SCORE=18
 
+# Equity charts. Routing is: tokenised equity on Robinhood Chain (free, covers
+# 96 tickers) → Alpha Vantage → this fallback. On-chain tokens never touch any
+# of it; they go straight to GeckoTerminal.
+#
+# Alpha Vantage's free tier is 25 requests per DAY. Responses are now cached
+# (1h daily, 5m intraday) so that stretches much further than it used to, but
+# tickers with no tokenised version — HOOD, PANW, TDG — still go dark once it
+# is spent. This fallback covers them.
+#
+# OFF by default because it is an undocumented endpoint: no published terms for
+# programmatic use, and it can throttle or change shape without notice. The
+# source is labelled "yahoo (unofficial)" wherever it is used.
+RHAGENT_EQUITY_FALLBACK=          # set to "yahoo" to enable
+
 # Settle ticker theses in that ticker's tokenized equity instead of $rhagent.
 # OFF by default and deliberately NOT folded into RHAGENT_GRANTS_ENABLED — see
 # section 5 before turning it on. Necessary but not sufficient: each asset must

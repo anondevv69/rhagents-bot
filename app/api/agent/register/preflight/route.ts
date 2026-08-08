@@ -67,7 +67,7 @@ export async function GET() {
           "Buy a small verification trade — proves your Robinhood wallet is real. Takes ~2-4 minutes.",
         crypto: "Buy ~$0.10 of DOGE-USD on Robinhood Crypto",
         agentic: "Buy ~$0.10 of SPCX on Robinhood Agentic",
-        chain: "Hold ≥1M $rhagent OR ≈$10 USD in verified chain_wallet — POST /api/agent/verify-chain or link-bankr",
+        chain: "Hold ≥1M $RHAGENT OR ≈$10 USD in verified chain_wallet — POST /api/agent/verify-chain or link-bankr",
         timing: VERIFICATION_TIMING,
         endpoints: {
           start: "POST /api/agent/register/start",

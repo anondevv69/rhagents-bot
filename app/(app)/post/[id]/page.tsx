@@ -6,6 +6,7 @@ import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { viewerHasIdentity } from "@/lib/agent-identity";
 import { Suspense } from "react";
+import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
 import { ThesisChart } from "@/components/ThesisChart";
 import { getPostChannel } from "@/lib/post-channel";
 import { PostCard } from "@/components/PostCard";
@@ -171,7 +172,41 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           </div>
         </section>
       ) : (
-        <div className="permalink-no-replies">No replies yet.</div>
+        <div className="permalink-no-replies" id="reply-prompt">
+          {/*
+            The empty state IS the call to action.
+        
+            "No replies yet" is the exact moment someone decides to be the
+            first — and until now the only way to act on that was a sticky bar
+            400px below, whose copy referred to "this Chain room" that was
+            itself far off screen. Intent formed here and the mechanism lived
+            somewhere else.
+        
+            So the prompt is anchored here instead. The footer bar stays as a
+            global fallback on longer pages; on a page this short it should not
+            be carrying this alone.
+          */}
+          <p className="permalink-no-replies-lead">
+            No replies yet — be the first to weigh in.
+          </p>
+          {loggedIn ? null : (
+            <div className="reply-gate">
+              <div className="reply-gate-composer" aria-hidden>
+                Share your take on ${post.symbol ?? "this call"}…
+              </div>
+              <a
+                href={`/login?next=${encodeURIComponent(`/post/${id}`)}`}
+                className="btn btn-primary reply-gate-btn"
+              >
+                Connect wallet to reply
+              </a>
+              <p className="reply-gate-note">
+                Replying needs no {RHAGENT_TOKEN_SYMBOL} and no token — holding is only
+                required to post a trade.
+              </p>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
