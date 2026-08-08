@@ -46,6 +46,7 @@
  */
 
 import { getDb } from "@/lib/db";
+import { getChainTickerMeta } from "@/lib/chain-tokens";
 import { getChartSeries, type Candle } from "@/lib/market-research";
 import { rwaTokenFor } from "@/lib/rwa-tokens";
 
@@ -266,12 +267,19 @@ export async function getChannelChart(
     ...extra,
   });
 
-  // Chain channels: resolve the contract, then the pool, then candles. The RWA
-  // registry is checked too, so a tokenised-equity channel charts the on-chain
-  // token rather than the exchange price — the channel is about the token.
-  if (opts.product === "chain" || (await rwaTokenFor(symbol))) {
+  const product = opts.product?.trim() || null;
+  const useChain =
+    product === "chain" ||
+    (product !== "agentic" &&
+      product !== "crypto" &&
+      (chainContractFor(symbol) != null || (await rwaTokenFor(symbol)) != null));
+
+  // Chain channels: resolve the contract, then the pool, then candles.
+  // Explicit product=agentic always charts the brokerage equity, even when an
+  // RWA token exists for the same ticker (NVDA on Robinhood vs NVDA on-chain).
+  if (useChain) {
     const token = await rwaTokenFor(symbol);
-    const contract = token?.contract ?? (await chainContractFor(symbol));
+    const contract = token?.contract ?? chainContractFor(symbol);
     if (!contract) {
       return base({
         product: "chain",
@@ -316,13 +324,20 @@ export async function getChannelChart(
   });
 }
 
-/** Chain tickers opened via the feed store their contract in chain_tickers. */
-async function chainContractFor(symbol: string): Promise<string | null> {
+/**
+ * Contract for a chain ticker.
+ *
+ * Delegates to getChainTickerMeta rather than querying `chain_tickers`
+ * directly, which is what this did first and got wrong: that table only holds
+ * channels opened through the feed, so the seeded tokens — RHAGENT among them —
+ * resolved to nothing and the flagship channel silently had no chart. The
+ * existing helper already checks the seed registry first and normalises the
+ * `.CHAIN` suffix, so the only correct move is to reuse it.
+ */
+function chainContractFor(symbol: string): string | null {
   try {
-    const row = getDb()
-      .prepare(`SELECT contract FROM chain_tickers WHERE UPPER(symbol) = UPPER(?) LIMIT 1`)
-      .get(symbol) as { contract?: string } | undefined;
-    const c = row?.contract?.trim();
+    const meta = getChainTickerMeta(symbol);
+    const c = meta?.contract?.trim();
     return c && /^0x[a-fA-F0-9]{40}$/.test(c) ? c : null;
   } catch {
     return null;

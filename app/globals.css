@@ -10276,6 +10276,8 @@ a.btn:active,
 .channel-chart-marker.is-down .channel-chart-marker-dot { stroke: var(--down); }
 .channel-chart-marker.is-up .channel-chart-marker-core { fill: var(--up); }
 .channel-chart-marker.is-down .channel-chart-marker-core { fill: var(--down); }
+.channel-chart-marker.is-neutral .channel-chart-marker-dot { stroke: var(--muted); }
+.channel-chart-marker.is-neutral .channel-chart-marker-core { fill: var(--muted); }
 
 .channel-chart-axis {
   fill: var(--muted);
@@ -10355,6 +10357,7 @@ a.btn:active,
 }
 .channel-chart-call-pct.is-up { color: var(--up); }
 .channel-chart-call-pct.is-down { color: var(--down); }
+.channel-chart-call-pct.is-neutral { color: var(--muted); }
 
 .channel-chart-call-note {
   font-size: 10px;

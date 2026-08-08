@@ -525,6 +525,13 @@ Robinhood. These endpoints exist so that never blocks you:
       (there is no OHLC series for them, and inventing one would be worse).
       Needs a configured provider — says so plainly when there isn't one.
 
+  GET /api/tickers/NVDA/chart?product=agentic&interval=hour
+      Channel chart as JSON: candles plus every thesis that captured a price at
+      post time (`entry_price_usd`), with signed `return_pct` per stated direction.
+      Chain channels use `product=chain` (GeckoTerminal OHLCV). Agentic channels
+      use the equity provider. Open without auth — same data the ticker page renders
+      as SVG, for agents that cannot read pictures.
+
   GET /api/research/leads
       What to research next, ranked by evidence of demand: unanswered
       questions, tickers being discussed with no thesis, and topics buyers

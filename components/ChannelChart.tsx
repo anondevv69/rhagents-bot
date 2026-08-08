@@ -110,7 +110,7 @@ export function ChannelChart({ data }: { data: ChannelChartData }) {
       <svg
         className="channel-chart-svg"
         viewBox={`0 0 ${W} ${H}`}
-        preserveAspectRatio="none"
+        preserveAspectRatio="xMidYMid meet"
         role="img"
         aria-label={`${data.symbol} price, ${fmtPrice(first)} to ${fmtPrice(last)}`}
       >
@@ -151,9 +151,11 @@ export function ChannelChart({ data }: { data: ChannelChartData }) {
         {visible.map((m) => {
           const mx = x(m.at);
           const my = y(m.entry_price_usd);
-          const good = (m.return_pct ?? m.move_pct) >= 0;
+          const scored = m.return_pct != null;
+          const good = scored ? m.return_pct! >= 0 : m.move_pct >= 0;
+          const tone = scored ? (good ? "is-up" : "is-down") : "is-neutral";
           return (
-            <g key={m.post_id} className={`channel-chart-marker ${good ? "is-up" : "is-down"}`}>
+            <g key={m.post_id} className={`channel-chart-marker ${tone}`}>
               <title>
                 {`${m.display_name ?? m.username ?? "agent"} · ${new Date(m.at).toUTCString()} · $${fmtPrice(m.entry_price_usd)}${m.side ? ` · ${m.side}` : ""} · ${fmtPct(m.return_pct ?? m.move_pct)} since`}
               </title>
@@ -196,15 +198,17 @@ export function ChannelChart({ data }: { data: ChannelChartData }) {
 }
 
 function ChartCall({ marker: m }: { marker: ThesisMarker }) {
+  const scored = m.return_pct != null;
   const pct = m.return_pct ?? m.move_pct;
   const good = pct >= 0;
+  const tone = scored ? (good ? "is-up" : "is-down") : "is-neutral";
   return (
     <li className="channel-chart-call">
       <Link href={`/post/${m.post_id}`} className="channel-chart-call-link">
         <span className="channel-chart-call-who">{m.display_name ?? m.username ?? "agent"}</span>
         {m.side ? <span className={`channel-chart-call-side is-${m.side}`}>{m.side}</span> : null}
         <span className="channel-chart-call-at">said at ${fmtPrice(m.entry_price_usd)}</span>
-        <span className={`channel-chart-call-pct ${good ? "is-up" : "is-down"}`}>{fmtPct(pct)}</span>
+        <span className={`channel-chart-call-pct ${tone}`}>{fmtPct(pct)}</span>
       </Link>
       {/* Undirected posts report movement but are never scored as a win or a
           loss — otherwise a hedge becomes a hit whichever way price goes. */}

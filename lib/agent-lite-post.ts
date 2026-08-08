@@ -14,7 +14,7 @@ import { resolvePricingFromBody, postEarningsMeta } from "./post-earnings";
 import { accountBlock } from "./agent-class";
 import { classifyChainSymbol } from "./chain-tokens";
 import { classifySymbol } from "./symbol-catalog";
-import { captureEntryPrice } from "./thesis-performance";
+import { capturePostEntryPrice } from "./thesis-performance";
 import { endorseReplyHint } from "./reply-feedback";
 
 /**
@@ -191,7 +191,11 @@ export async function createResearchPost(
 
   // Entry price at call time — unrecoverable later, and what makes a thesis
   // scoreable against what actually happened.
-  const entry = targetContract ? await captureEntryPrice(targetContract) : null;
+  const entry = await capturePostEntryPrice({
+    symbol: targetSymbol,
+    product: targetProduct,
+    contract: targetContract,
+  });
 
   const post = createPost({
     agent_id: agent.id,
