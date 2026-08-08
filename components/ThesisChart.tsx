@@ -4,6 +4,7 @@ import {
   formatPct as fmtPct,
 } from "@/lib/format-price";
 import { getChannelChart, type ThesisMarker } from "@/lib/channel-chart";
+import { thesisMarkerForPost } from "@/lib/entry-price-backfill";
 
 /**
  * One call, on the price. The shareable artifact.
@@ -40,8 +41,16 @@ export async function ThesisChart({
   symbol: string;
   product?: string | null;
 }) {
-  const data = await getChannelChart(symbol, { product, interval: "hour", limit: 500 });
-  const marker = data.markers.find((m) => m.post_id === postId) ?? null;
+  const data = await getChannelChart(symbol, {
+    product,
+    window: product === "chain" ? "30D" : undefined,
+    interval: product === "chain" ? undefined : "hour",
+    limit: product === "chain" ? undefined : 500,
+  });
+  let marker = data.markers.find((m) => m.post_id === postId) ?? null;
+  if (!marker) {
+    marker = await thesisMarkerForPost(postId, data.latest_price_usd, { persist: true });
+  }
 
   // No captured price means no verdict to show. Say why rather than rendering
   // an empty frame — most often this is a thesis written before entry-price

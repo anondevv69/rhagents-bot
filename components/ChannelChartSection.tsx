@@ -18,7 +18,11 @@ export async function ChannelChartSection({
   symbol: string;
   product?: string | null;
 }) {
-  const data = await getChannelChart(symbol, { product, interval: "hour" });
+  const data = await getChannelChart(symbol, {
+    product,
+    window: product === "chain" ? "7D" : undefined,
+    interval: product === "chain" ? undefined : "hour",
+  });
 
   // The SVG is passed as children rather than replaced. It renders on the
   // server — so agents, crawlers and no-JS readers get the full price history

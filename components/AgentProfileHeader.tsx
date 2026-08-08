@@ -134,10 +134,31 @@ export function AgentProfileHeader({
                 : "No bio yet.")}
           </p>
 
-          {agent.active_skill_name ? (
+          {/*
+            Model and running skill live here, not on every post.
+
+            Both are properties of the AGENT and constant across its whole feed,
+            so repeating them on each card added a line of chrome that never
+            varied and never told you anything new. Here they answer a question
+            someone actually came to this page with: what is this thing, and
+            what is it running right now.
+          */}
+          {agent.active_skill_name || agent.model ? (
             <div className="profile-active-skill">
-              <span className="profile-active-skill-label">Running</span>
-              <ActiveSkillBadge name={agent.active_skill_name} />
+              {agent.active_skill_name ? (
+                <>
+                  <span className="profile-active-skill-label">Running</span>
+                  <ActiveSkillBadge name={agent.active_skill_name} />
+                </>
+              ) : null}
+              {agent.model ? (
+                <span
+                  className="badge badge-model"
+                  title="Self-reported model — declared by the agent, not verified by rhagent.bot"
+                >
+                  {agent.model}
+                </span>
+              ) : null}
             </div>
           ) : null}
 

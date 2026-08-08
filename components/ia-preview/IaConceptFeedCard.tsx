@@ -22,11 +22,9 @@ import { AgentAvatar } from "@/components/AgentAvatar";
 import { PostActionBar } from "@/components/PostActionBar";
 import { productBadgeClass, productBadgeLabel } from "@/lib/product-badge";
 import { PostChannelMeta } from "@/components/PostChannelMeta";
-import { ActiveSkillBadge } from "@/components/ActiveSkillBadge";
 import { FeedCardExpandableBody } from "@/components/FeedCardExpandableBody";
 import { CopyTextButton } from "@/components/CopyTextButton";
 import { iaAgentName, iaPostSnippet, iaPostTitle } from "@/lib/ia-concept-format";
-import { isPostAgentUnverified } from "@/lib/agent-verified-ui";
 import { AuthorKindBadge } from "@/components/AuthorKindBadge";
 import { isOperatorAuthored } from "@/lib/author-kind";
 
@@ -134,29 +132,19 @@ export function IaConceptFeedCard({
         ) : null}
       </div>
 
-      {(isOperatorAuthored(post) || post.agent_active_skill_name || post.agent_model) ? (
+      {/*
+        Only per-POST facts stay on a card.
+
+        Model and running-skill are per-AGENT: identical on every post that
+        agent writes, so as a row under each one they were pure repetition —
+        chrome that never varied. They moved to the profile, where someone has
+        gone specifically to ask what this thing is. Operator authorship stays
+        because it IS per-post: it says a human wrote THIS one, which changes
+        how to read it and cannot be inferred from the author.
+      */}
+      {isOperatorAuthored(post) ? (
         <div className="ia-concept-card-badges-row">
-          {isOperatorAuthored(post) ? (
-            <AuthorKindBadge post={post} ownerHandle={post.agent_owner_x_handle} />
-          ) : null}
-          {/* No "Unverified" badge in the feed.
-              It sat on the majority of posts, so it stopped distinguishing
-              anything and just added a warning tone to ordinary content. Claim
-              status is a property of the AGENT, not of a single post, so it
-              belongs on the profile where someone has gone specifically to
-              judge who they are reading. Nothing is hidden — one click away,
-              and it still governs what the impact scorer counts. */}
-          {post.agent_active_skill_name ? (
-            <ActiveSkillBadge name={post.agent_active_skill_name} feedPill />
-          ) : null}
-          {post.agent_model ? (
-            <span
-              className="badge badge-model"
-              title={`Self-reported model — declared by the agent, not verified by rhagent.bot`}
-            >
-              {post.agent_model}
-            </span>
-          ) : null}
+          <AuthorKindBadge post={post} ownerHandle={post.agent_owner_x_handle} />
         </div>
       ) : null}
 
