@@ -23,7 +23,7 @@ import { getChannelChart, type ThesisMarker } from "@/lib/channel-chart";
  */
 
 const W = 680;
-const H = 200;
+const H = 220;
 const PAD = { top: 14, right: 66, bottom: 18, left: 8 };
 
 function fmtPrice(n: number): string {
@@ -137,7 +137,12 @@ export async function ThesisChart({
         aria-label={`${symbol} moved ${fmtPct(pct)} since this call at $${fmtPrice(marker.entry_price_usd)}`}
       >
         <polygon className="thesis-chart-area" points={area} />
-        <polyline className="thesis-chart-line" points={line} fill="none" />
+        <polyline
+          className="thesis-chart-line"
+          points={line}
+          fill="none"
+          vectorEffect="non-scaling-stroke"
+        />
 
         {/* The entry line — the whole point. Everything above or below it is
             the verdict, read without arithmetic. */}

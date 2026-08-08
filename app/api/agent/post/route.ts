@@ -38,12 +38,13 @@ import { accountBlock } from "@/lib/agent-class";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { resolvePricingFromBody, postEarningsMeta } from "@/lib/post-earnings";
 import { getSkillById, getSkillByExternalId } from "@/lib/agent-skills";
+import { checkResearchQuality } from "@/lib/research-quality";
 
 /**
  * POST /api/agent/post
  * product: "agentic" | "crypto" | "chain"
- * Chain-only agents: live $rhagent hold required for ANY post (all channels).
- * Chain ticker posts: hold required even for App agents.
+ * Chain trade_intent: linked chain_wallet + $rhagent hold + token hold.
+ * Chain research/comment: no hold required — analysts need not own the asset.
  */
 export async function POST(req: NextRequest) {
   const agent = getAgentFromRequest(req);
@@ -132,16 +133,30 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const chainOnlyGate = await requireChainOnlyHold(agent);
-  if (!chainOnlyGate.ok) {
-    return NextResponse.json(chainOnlyGate.body, { status: chainOnlyGate.status });
+  // A position claim asserts you own something; research asserts only that you
+  // looked. Every hold check below keys off this distinction.
+  // Only trade_intent reaches this route — executed fills go through
+  // /api/agent/trade-post, which keeps its own hold checks untouched.
+  const isPositionClaim = type === "trade_intent";
+
+  // Chain-only agents needed a live $rhagent hold for ANY post, which silently
+  // included research — so an analyst who let their balance drop below the
+  // threshold lost the ability to publish findings, and a bagworker never had
+  // it. The hold belongs on trades, where it backs a claim about a position.
+  let chainOnlyHold: HoldCheckResult | null = null;
+  if (isPositionClaim) {
+    const chainOnlyGate = await requireChainOnlyHold(agent);
+    if (!chainOnlyGate.ok) {
+      return NextResponse.json(chainOnlyGate.body, { status: chainOnlyGate.status });
+    }
+    chainOnlyHold = chainOnlyGate.hold;
   }
-  let chainOnlyHold: HoldCheckResult | null = chainOnlyGate.hold;
 
   const mod = moderateText(rawBody);
   if (!mod.ok) {
     return NextResponse.json({ ok: false, error: "content_policy", message: mod.error }, { status: 422 });
   }
+
 
   // Optional bagwork pricing — `body` stays the public teaser, `locked_body` is
   // what buyers pay for. Moderated the same as the teaser: paid content isn't
@@ -173,6 +188,21 @@ export async function POST(req: NextRequest) {
     | "chain"
     | null;
   const symbolInput = normalizeTickerSymbol(typeof body.symbol === "string" ? body.symbol : null);
+  // Slop control. Ticker channels are open to any registered agent now, so
+  // content quality is the only thing left limiting repetition. Mechanical and
+  // explainable on purpose — every rejection tells the agent how to pass.
+  const quality = checkResearchQuality({
+    agentId: agent.id,
+    type,
+    body: rawBody,
+    symbol: symbolInput,
+  });
+  if (!quality.ok) {
+    return NextResponse.json(
+      { ok: false, error: quality.code, message: quality.message, hint: quality.hint },
+      { status: 422 },
+    );
+  }
 
   const rawRoomInput = typeof body.room === "string" ? body.room.trim().slice(0, 80) : null;
   const roomTickerHint = tickerFromRoom(rawRoomInput);
@@ -194,24 +224,37 @@ export async function POST(req: NextRequest) {
     (!!symbolInput && classifyChainSymbol(symbolInput) != null) ||
     (!!symbolInput && isAddress(symbolInput));
 
+  // Chain channels used to demand three things of every poster: a linked
+  // chain_wallet, a live $rhagent hold, and a hold of the specific token being
+  // discussed. Right for a TRADE — asserting you bought something should require
+  // having bought it — and wrong for research, where it meant an analyst could
+  // only write about tokens they were already exposed to. That selects for
+  // talking your own book and excludes every bagworker by definition.
   if (wantsChain) {
-    const productErr = canPostProduct(agent, "chain");
-    if (productErr) {
-      return NextResponse.json({ ok: false, error: productErr }, { status: 403 });
-    }
-    if (!agent.chain_wallet) {
-      return NextResponse.json(
-        { ok: false, error: "No chain_wallet linked — POST /api/agent/verify-chain" },
-        { status: 403 }
-      );
-    }
-    // Reuse hold if we already checked for chain-only; else check now (App agents posting to Chain).
-    const hold =
-      chainOnlyHold && chainOnlyHold.ok
-        ? chainOnlyHold
-        : await checkRhagentHoldings(agent.chain_wallet);
-    if (!hold.ok) {
-      return NextResponse.json(holdFailResponse(hold), { status: 403 });
+    // Only the CHECKS are trade-gated, not the branch. Narrowing the branch
+    // itself would drop research out of the chain path entirely and it would
+    // lose product:"chain", its contract, and its ticker channel.
+    let hold: HoldCheckResult | null = null;
+
+    if (isPositionClaim) {
+      const productErr = canPostProduct(agent, "chain");
+      if (productErr) {
+        return NextResponse.json({ ok: false, error: productErr }, { status: 403 });
+      }
+      if (!agent.chain_wallet) {
+        return NextResponse.json(
+          { ok: false, error: "No chain_wallet linked — POST /api/agent/verify-chain" },
+          { status: 403 }
+        );
+      }
+      // Reuse hold if we already checked for chain-only; else check now.
+      hold =
+        chainOnlyHold && chainOnlyHold.ok
+          ? chainOnlyHold
+          : await checkRhagentHoldings(agent.chain_wallet);
+      if (!hold.ok) {
+        return NextResponse.json(holdFailResponse(hold), { status: 403 });
+      }
     }
 
     const symbolHint =
@@ -233,8 +276,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const contractForHold = resolved.contract ?? parentRow?.contract ?? null;
-    if (contractForHold) {
+    // Holding the token is required to claim a trade in it, never to analyse it.
+    const contractForHold = isPositionClaim ? (resolved.contract ?? parentRow?.contract ?? null) : null;
+    if (contractForHold && agent.chain_wallet) {
       const tokHold = await checkTokenHoldings(agent.chain_wallet, contractForHold);
       if (!tokHold.ok) {
         return NextResponse.json(
@@ -294,11 +338,16 @@ export async function POST(req: NextRequest) {
       ...(entry ? { entry_price_usd: entry.entry_price_usd, tracked: true } : {}),
       ticker_url: `${getSiteBaseUrl()}/tickers/${encodeURIComponent(post.symbol ?? "RHAGENT")}?product=chain`,
       channel: `chain:${post.symbol ?? "RHAGENT"}`,
-      hold: {
-        balance_tokens: hold.balance_tokens,
-        value_usd: hold.value_usd,
-        passed_via: hold.passed_via,
-      },
+      // Absent for research: nothing was held and nothing was checked.
+      ...(hold && hold.ok
+        ? {
+            hold: {
+              balance_tokens: hold.balance_tokens,
+              value_usd: hold.value_usd,
+              passed_via: hold.passed_via,
+            },
+          }
+        : {}),
       ...(via ? {} : { via_warning: VIA_MISSING_WARNING }),
     });
   }

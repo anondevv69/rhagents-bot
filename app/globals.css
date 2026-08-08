@@ -10531,9 +10531,13 @@ a.btn:active,
 
 /* ── Thesis chart — one call, on the price ───────────────────────────────── */
 
+/* Sits INSIDE the post card, which supplies no padding of its own — .card is
+   only surface, border and radius, and PostCard brings its own inset. Without
+   matching that inset here the chart ran edge to edge and clipped its own
+   "said at $…" label against the card boundary. */
 .thesis-chart {
   margin-top: var(--space-3);
-  padding-top: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-1);
   border-top: 1px solid var(--border-soft);
 }
 
@@ -10596,17 +10600,17 @@ a.btn:active,
 .thesis-chart-svg {
   display: block;
   width: 100%;
-  height: 200px;
+  height: 168px;
   overflow: visible;
 }
 
 /* Area shaded by outcome — the verdict lands before any number is read. */
-.thesis-chart-area { opacity: 0.1; }
+.thesis-chart-area { opacity: 0.14; }
 .thesis-chart.is-up .thesis-chart-area { fill: var(--up); }
 .thesis-chart.is-down .thesis-chart-area { fill: var(--down); }
 .thesis-chart.is-neutral .thesis-chart-area { fill: var(--muted); }
 
-.thesis-chart-line { stroke-width: 1.5; }
+.thesis-chart-line { stroke-width: 1.75; }
 .thesis-chart.is-up .thesis-chart-line { stroke: var(--up); }
 .thesis-chart.is-down .thesis-chart-line { stroke: var(--down); }
 .thesis-chart.is-neutral .thesis-chart-line { stroke: var(--muted); }
@@ -10652,4 +10656,75 @@ a.btn:active,
   color: var(--muted-faint);
   align-self: center;
   margin-left: var(--space-1);
+}
+
+/* The "+N more" chip is a control over the list, not a call in it — so it
+   carries no return figure and stays visually quieter than its siblings. */
+.channel-chart-chip--more {
+  color: var(--muted);
+  font-weight: 500;
+  border-style: dashed;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Touch targets — 44px hit area without 44px of visual weight
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Audit finding (ui-ux-pro-max priority 2, CRITICAL): every small control I
+   added computes to roughly 23px tall — 4px of padding plus a ~15px line box —
+   against the 44×44 minimum. On a phone those are genuinely hard to hit.
+
+   The naive fix is `min-height: 44px`, but this is a deliberately dense feed
+   and forty 44px-tall chips would wreck it. So the hit area is extended with a
+   centred pseudo-element instead: the control looks identical, the touchable
+   region is 44px, and nothing reflows.
+
+   Gated to coarse pointers. A mouse is precise enough at 23px, and applying
+   this everywhere would create invisible overlapping targets on desktop. */
+
+@media (pointer: coarse) {
+  .channel-chart-chip,
+  .channel-chart-tf,
+  .post-action-btn,
+  .btn-like,
+  .btn-sm {
+    position: relative;
+  }
+
+  .channel-chart-chip::after,
+  .channel-chart-tf::after,
+  .post-action-btn::after,
+  .btn-like::after,
+  .btn-sm::after {
+    content: "";
+    position: absolute;
+    /* Centre a 44px-tall band on the control, whatever its rendered height. */
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 44px;
+    transform: translateY(-50%);
+    /* Minimum comfortable width too, for the narrow icon-only ones. */
+    min-width: 44px;
+  }
+
+  /* Row gaps must exceed 8px or the expanded areas collide and a tap lands on
+     the wrong control — worse than a small target, because it is wrong rather
+     than merely fiddly. */
+  .channel-chart-chips { gap: var(--space-2-5); }
+  .post-action-bar-left { gap: var(--space-1); }
+}
+
+/* Inline SVG icons in text-flow controls. Without this they sit on the
+   baseline and push the line box down by a few pixels, which is what makes a
+   swapped-in icon look misaligned next to its count. */
+.btn-like svg,
+.agent-top-post-likes svg {
+  vertical-align: -0.125em;
+  flex-shrink: 0;
+}
+.btn-like {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
 }

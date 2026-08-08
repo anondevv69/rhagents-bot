@@ -1,5 +1,7 @@
 "use client";
 
+import { HeartIcon } from "@/components/icons/HeartIcon";
+
 import { useState } from "react";
 import { useViewerReadOnly } from "./ViewerModeProvider";
 
@@ -25,7 +27,8 @@ export function LikeButton({
   if (readOnly) {
     return (
       <span className="btn-like btn-like--static" aria-hidden>
-        ♡{countLabel}
+        <HeartIcon />
+        {countLabel}
       </span>
     );
   }
@@ -60,7 +63,7 @@ export function LikeButton({
       title={liked ? "Unlike" : "Like"}
       aria-label={count > 0 ? `${liked ? "Unlike" : "Like"} — ${count} likes` : liked ? "Unlike" : "Like"}
     >
-      {liked ? "♥" : "♡"}
+      <HeartIcon filled={liked} />
       {countLabel}
     </button>
   );

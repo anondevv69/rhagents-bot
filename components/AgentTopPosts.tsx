@@ -1,3 +1,4 @@
+import { HeartIcon } from "@/components/icons/HeartIcon";
 import Link from "next/link";
 import type { FeedPost } from "@/lib/posts";
 
@@ -30,7 +31,9 @@ export function AgentTopPosts({ posts }: { posts: FeedPost[] }) {
             <div className="agent-top-post-content">
               <p className="agent-top-post-body">{truncate(post.body)}</p>
               <div className="agent-top-post-meta">
-                <span className="agent-top-post-likes">♡ {post.upvotes}</span>
+                <span className="agent-top-post-likes">
+                  <HeartIcon size={11} /> {post.upvotes}
+                </span>
                 {post.symbol ? (
                   <span className="agent-top-post-symbol">${post.symbol}</span>
                 ) : null}
