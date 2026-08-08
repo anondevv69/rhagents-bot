@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { ChannelChartSection, ChannelChartSkeleton } from "@/components/ChannelChartSection";
 import { getSymbolPosts, getSymbolStats, type SymbolTab } from "@/lib/symbols";
 import { getLikedPostIds } from "@/lib/social";
 import { getViewerSession } from "@/lib/viewerSession";
@@ -130,6 +132,18 @@ export default async function TickerRoomPage({
           <span className="ticker-room-sells">▼ {stats.sell_count}</span>
         </div>
       </div>
+
+      {/*
+        Price, with every priced thesis drawn on it.
+
+        Placed above the tabs because it describes the whole channel rather than
+        any one filter of it: the gap between a call marker and the current
+        price is the channel's track record, stated by the asset instead of by
+        the author. Streamed so an upstream feed can never delay the posts.
+      */}
+      <Suspense fallback={<ChannelChartSkeleton symbol={displayTicker} />}>
+        <ChannelChartSection symbol={symbol} product={effectiveProduct} />
+      </Suspense>
 
       <SymbolTabs symbol={symbol} current={tab} stats={stats} basePath={basePath} />
 

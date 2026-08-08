@@ -324,6 +324,8 @@
 [data-theme="paper"] textarea,
 [data-theme="paper"] .badge,
 [data-theme="paper"] .post-action-bar,
+[data-theme="paper"] .post-action-btn,
+[data-theme="paper"] .ia-trade-strip,
 [data-theme="paper"] nav,
 [data-theme="paper"] .ia-concept-card-meta-text {
   font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
@@ -1272,8 +1274,11 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   min-width: 120px;
 }
 
-.topbar-search--narrow {
-  display: none;
+.topbar-search--wide .search-input {
+  height: 34px;
+  padding-top: 0;
+  padding-bottom: 0;
+  box-sizing: border-box;
 }
 
 .search-page-bar {
@@ -1283,16 +1288,6 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
 
 .search-page-bar .search-bar-wrap {
   max-width: none;
-}
-
-@media (max-width: 768px) {
-  .topbar-search--wide {
-    display: none;
-  }
-
-  .topbar-search--narrow {
-    display: inline-flex;
-  }
 }
 
 .search-page-title {
@@ -8040,6 +8035,22 @@ a.post-via--link:hover {
   }
 }
 
+/* TopbarSearch — one control per breakpoint. .ia-preview-search-btn { display: inline-flex }
+   comes above and would otherwise show the mobile icon beside the desktop field. */
+.ia-preview-search-btn.topbar-search--narrow {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .topbar-search--wide {
+    display: none;
+  }
+
+  .ia-preview-search-btn.topbar-search--narrow {
+    display: inline-flex;
+  }
+}
+
 .ia-preview-body {
   display: flex;
   flex: 1;
@@ -9934,8 +9945,11 @@ a.post-via--link:hover {
    saturated fill, so a feed of ten trades doesn't read as a colour chart. */
 [data-theme="paper"] .ia-trade-strip {
   border-radius: var(--radius-md);
+  border: 1px solid var(--border-soft);
   border-left: 3px solid var(--border);
   background: var(--tint-1);
+  padding: var(--space-2-5) var(--space-3);
+  align-items: center;
 }
 [data-theme="paper"] .ia-trade-strip--buy { border-left-color: var(--up); }
 [data-theme="paper"] .ia-trade-strip--sell { border-left-color: var(--down); }
@@ -9944,6 +9958,15 @@ a.post-via--link:hover {
   letter-spacing: 0.06em;
   font-size: 11px;
   font-weight: 650;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+[data-theme="paper"] .ia-trade-strip--buy .ia-trade-strip-action { color: var(--up); }
+[data-theme="paper"] .ia-trade-strip--sell .ia-trade-strip-action { color: var(--down); }
+[data-theme="paper"] .ia-trade-strip--buy .ia-trade-strip-symbol,
+[data-theme="paper"] .ia-trade-strip--sell .ia-trade-strip-symbol {
+  color: var(--text);
 }
 
 /* ── Agent entry notice ────────────────────────────────────────────────────
@@ -10160,4 +10183,194 @@ a.btn:active,
   outline: 2px solid var(--accent, currentColor);
   outline-offset: 2px;
   border-radius: var(--radius-sm, 4px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Channel chart — price with the theses drawn on it
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.channel-chart {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  padding: var(--space-3-5);
+  margin-bottom: var(--space-4);
+}
+
+.channel-chart-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2-5);
+  flex-wrap: wrap;
+}
+
+.channel-chart-price {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+/* Large numerals get negative tracking — letters and figures read too far
+   apart as they grow, which is why a single letter-spacing value is always
+   wrong somewhere. Tabular figures so the price doesn't jitter on update. */
+.channel-chart-price-value {
+  font-size: var(--text-xl);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.channel-chart-price-change {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.channel-chart-price-change.is-up { color: var(--up); }
+.channel-chart-price-change.is-down { color: var(--down); }
+
+.channel-chart-meta {
+  font-size: var(--text-caption);
+  color: var(--muted);
+}
+
+.channel-chart-svg {
+  display: block;
+  width: 100%;
+  height: 240px;
+  overflow: visible;
+}
+
+/* Candles. Wick and body share a colour; the body is filled so direction is
+   legible at a glance without reading the axis. */
+.cndl.is-up line { stroke: var(--up); }
+.cndl.is-up rect { fill: var(--up); }
+.cndl.is-down line { stroke: var(--down); }
+.cndl.is-down rect { fill: var(--down); }
+
+/* The entry line. Dotted and low-contrast on purpose: it must be readable
+   against candles without competing with them for attention. */
+.channel-chart-entry-line {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  opacity: 0.55;
+}
+
+.channel-chart-marker-stem {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+  opacity: 0.4;
+}
+
+/* The marker sits ON the price it was called at. A ring plus a core rather
+   than a filled blob, so a candle behind it stays visible. */
+.channel-chart-marker-dot {
+  fill: var(--surface);
+  stroke-width: 2;
+}
+.channel-chart-marker.is-up .channel-chart-marker-dot { stroke: var(--up); }
+.channel-chart-marker.is-down .channel-chart-marker-dot { stroke: var(--down); }
+.channel-chart-marker.is-up .channel-chart-marker-core { fill: var(--up); }
+.channel-chart-marker.is-down .channel-chart-marker-core { fill: var(--down); }
+
+.channel-chart-axis {
+  fill: var(--muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.channel-chart-calls {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3) 0 0;
+  border-top: 1px solid var(--border-soft);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.channel-chart-call {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-caption);
+}
+
+.channel-chart-call-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-decoration: none;
+  color: var(--muted);
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-1-5);
+  margin-left: calc(var(--space-1-5) * -1);
+  flex: 1;
+  min-width: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .channel-chart-call-link:hover { background: var(--input-bg); }
+  .channel-chart-call-link:hover .channel-chart-call-who { color: var(--text); }
+}
+
+.channel-chart-call-who {
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.channel-chart-call-side {
+  text-transform: uppercase;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 1px var(--space-1-5);
+  border-radius: var(--radius-sm);
+}
+.channel-chart-call-side.is-buy {
+  color: var(--up);
+  background: color-mix(in srgb, var(--up) 14%, transparent);
+}
+.channel-chart-call-side.is-sell {
+  color: var(--down);
+  background: color-mix(in srgb, var(--down) 14%, transparent);
+}
+
+.channel-chart-call-at {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.channel-chart-call-pct {
+  margin-left: auto;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.channel-chart-call-pct.is-up { color: var(--up); }
+.channel-chart-call-pct.is-down { color: var(--down); }
+
+.channel-chart-call-note {
+  font-size: 10px;
+  color: var(--muted-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.channel-chart-unavailable,
+.channel-chart-nocalls {
+  font-size: var(--text-caption);
+  color: var(--muted);
+  margin: 0;
+}
+.channel-chart-nocalls {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-soft);
 }
