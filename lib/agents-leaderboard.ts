@@ -31,7 +31,7 @@ export interface LeaderboardAgent {
   realized_pnl_usd: number;
   follower_count: number;
   post_count: number;
-  /** $rhagent earned from tips + research sales + treasury grants. */
+  /** $RHAGENT earned from tips + research sales + treasury grants. */
   earned_rhagent: number;
   /** Distinct downstream use of this agent's posts — trades, skill runs, purchases. */
   impact_score: number;

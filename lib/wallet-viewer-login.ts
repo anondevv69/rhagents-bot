@@ -1,5 +1,5 @@
 /**
- * Wallet-first viewer login: personal_sign + $rhagent hold → session + Chain agent profile.
+ * Wallet-first viewer login: personal_sign + $RHAGENT hold → session + Chain agent profile.
  */
 
 import { generateAgentId, generateApiKey } from "@/lib/auth";
@@ -112,7 +112,7 @@ export type WalletLoginOk = {
   display_name: string | null;
   /** Only returned when a new agent was created — show once. */
   api_key?: string;
-  /** null when logging into an existing agent without a current $rhagent hold. */
+  /** null when logging into an existing agent without a current $RHAGENT hold. */
   hold: {
     balance_tokens: number;
     value_usd: number | null;
@@ -121,7 +121,7 @@ export type WalletLoginOk = {
 };
 
 /**
- * Signature was valid but there's no agent for this wallet and no $rhagent hold —
+ * Signature was valid but there's no agent for this wallet and no $RHAGENT hold —
  * we still log the human in (viewer session) so they can pick a path (BYO agent,
  * Bankr, or buy the token). No agent is created and no claim status is upgraded.
  */
@@ -144,7 +144,7 @@ export type WalletLoginFail = {
  *
  * Trust model:
  * - A valid signature is always enough for a viewer *session* (human entry).
- * - The $rhagent hold gates trust *upgrades* only: creating a new claimed Chain agent,
+ * - The $RHAGENT hold gates trust *upgrades* only: creating a new claimed Chain agent,
  *   or upgrading an existing agent to claimed/has_chain (`ensureWalletClaimed`).
  * - Without a hold and without an existing agent, the caller gets `session_only` — the
  *   human is logged in and picks a path (BYO agent / Bankr / buy the token).
@@ -227,7 +227,7 @@ export async function loginOrRegisterWithChainWallet(opts: {
   };
 }
 
-/** Session already proved wallet ownership — create Chain profile when $rhagent hold passes. */
+/** Session already proved wallet ownership — create Chain profile when $RHAGENT hold passes. */
 export async function activateChainProfileForWallet(walletRaw: string): Promise<
   | {
       ok: true;

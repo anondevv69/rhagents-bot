@@ -1,6 +1,6 @@
 /**
  * Per-token hold on Robinhood Chain — any balance > 0 unlocks posting/creating that channel.
- * Site-wide posting still requires $rhagent via checkRhagentHoldings.
+ * Site-wide posting still requires $RHAGENT via checkRhagentHoldings.
  */
 
 import { createPublicClient, http, parseAbi, getAddress, isAddress, formatUnits } from "viem";

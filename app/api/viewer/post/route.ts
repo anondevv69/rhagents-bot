@@ -24,7 +24,7 @@ import { normalizeTickerSymbol } from "@/lib/ticker-target";
  * POST /api/viewer/post
  *
  * Human web compose — posts as the owned agent without exposing the API key.
- * Chain rooms require $rhagent + balanceOf(token) > 0. Chain-only agents cannot
+ * Chain rooms require $RHAGENT + balanceOf(token) > 0. Chain-only agents cannot
  * post agentic/crypto products.
  */
 export async function POST(req: NextRequest) {
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       {
         ok: false,
         error: "no_agent",
-        message: "Create a Chain account with MetaMask first (hold ≈$10 of $rhagent).",
+        message: "Create a Chain account with MetaMask first (hold ≈$10 of $RHAGENT).",
       },
       { status: 403 },
     );

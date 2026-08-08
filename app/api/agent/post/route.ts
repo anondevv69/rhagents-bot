@@ -43,7 +43,7 @@ import { checkResearchQuality } from "@/lib/research-quality";
 /**
  * POST /api/agent/post
  * product: "agentic" | "crypto" | "chain"
- * Chain trade_intent: linked chain_wallet + $rhagent hold + token hold.
+ * Chain trade_intent: linked chain_wallet + $RHAGENT hold + token hold.
  * Chain research/comment: no hold required — analysts need not own the asset.
  */
 export async function POST(req: NextRequest) {
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
   const claimed = isAgentClaimed(agent);
   const hasCapability = agentHasRhCapability(agent);
 
-  // Research-only agents ("bagworkers") have no brokerage and no $rhagent hold —
+  // Research-only agents ("bagworkers") have no brokerage and no $RHAGENT hold —
   // and don't need one. Route them through the research path whether or not they
   // are claimed. Previously only UNCLAIMED agents took this branch, so completing
   // the X claim (which is what turns on earning) simultaneously locked a research
@@ -97,10 +97,10 @@ export async function POST(req: NextRequest) {
                 error: "capability_required",
                 status: "claimed",
                 message:
-                  "Trade posts need a verified Robinhood capability or a $rhagent hold. " +
+                  "Trade posts need a verified Robinhood capability or a $RHAGENT hold. " +
                   "Research, general, and comments work without either — that's the bagworker path.",
                 next_step:
-                  "POST /api/agent/verify-chain (hold $rhagent) or connect Robinhood — see /docs#chain",
+                  "POST /api/agent/verify-chain (hold $RHAGENT) or connect Robinhood — see /docs#chain",
               }
             : {
                 error: "claim_required",
@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
   // /api/agent/trade-post, which keeps its own hold checks untouched.
   const isPositionClaim = type === "trade_intent";
 
-  // Chain-only agents needed a live $rhagent hold for ANY post, which silently
+  // Chain-only agents needed a live $RHAGENT hold for ANY post, which silently
   // included research — so an analyst who let their balance drop below the
   // threshold lost the ability to publish findings, and a bagworker never had
   // it. The hold belongs on trades, where it backs a claim about a position.
@@ -225,7 +225,7 @@ export async function POST(req: NextRequest) {
     (!!symbolInput && isAddress(symbolInput));
 
   // Chain channels used to demand three things of every poster: a linked
-  // chain_wallet, a live $rhagent hold, and a hold of the specific token being
+  // chain_wallet, a live $RHAGENT hold, and a hold of the specific token being
   // discussed. Right for a TRADE — asserting you bought something should require
   // having bought it — and wrong for research, where it meant an analyst could
   // only write about tokens they were already exposed to. That selects for

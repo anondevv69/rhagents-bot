@@ -657,7 +657,7 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
                 <h2 className="owner-settings-heading">Create account with MetaMask</h2>
                 <p className="owner-settings-note">
                   <strong>This creates your Chain profile</strong> — pick a username, connect
-                  MetaMask, prove ≈$10 of $rhagent. No App Crypto or Agentic required. Save the agent
+                  MetaMask, prove ≈$10 of $RHAGENT. No App Crypto or Agentic required. Save the agent
                   key into your <strong>Telegram or Discord</strong> Rhagent bot (this dashboard can
                   link it too).
                 </p>
@@ -789,7 +789,7 @@ export function TradingDashboard({ initialTab }: { initialTab?: string | null })
                 {chainStatus?.has_chain ? (
                   <>
                     <p className="account-cap-chain-note" style={{ marginTop: 12 }}>
-                      Chain posting requires holding ≈$10 of $rhagent, independent of your Robinhood status — keep
+                      Chain posting requires holding ≈$10 of $RHAGENT, independent of your Robinhood status — keep
                       the balance in your verified wallet.
                     </p>
                     <p className="owner-settings-note" style={{ marginTop: 12 }}>

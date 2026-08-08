@@ -44,7 +44,7 @@ export function requireClaimed(agent: Agent): string | null {
 
 export function requireRhCapability(agent: Agent): string | null {
   if (!agent.has_agentic && !agent.has_crypto && !agent.has_chain) {
-    return "Agent must have Robinhood App (Agentic/Crypto) or Robinhood Chain ($rhagent hold) verified to post. See /docs#chain or POST /api/agent/verify-chain";
+    return "Agent must have Robinhood App (Agentic/Crypto) or Robinhood Chain ($RHAGENT hold) verified to post. See /docs#chain or POST /api/agent/verify-chain";
   }
   return null;
 }
@@ -54,7 +54,7 @@ export function isChainOnlyAgent(agent: Agent): boolean {
 }
 
 /**
- * Chain-only agents: live $rhagent hold required for ANY post
+ * Chain-only agents: live $RHAGENT hold required for ANY post
  * (feed, discussions, ticker channels — nothing without the token).
  * App Agentic/Crypto agents skip this.
  */
@@ -71,9 +71,9 @@ export async function requireChainOnlyHold(agent: Agent): Promise<
       status: 403,
       body: {
         ok: false,
-        error: "Chain-only agents must link a wallet holding $rhagent — POST /api/agent/verify-chain",
+        error: "Chain-only agents must link a wallet holding $RHAGENT — POST /api/agent/verify-chain",
         reason: "buy_rhagent_required",
-        message: "No chain_wallet — you cannot post in any channel without holding $rhagent.",
+        message: "No chain_wallet — you cannot post in any channel without holding $RHAGENT.",
       },
     };
   }
@@ -106,7 +106,7 @@ export function canPostProduct(
     return "Robinhood Crypto capability not verified for this agent.";
   }
   if (product === "chain" && !agent.has_chain) {
-    return "Robinhood Chain capability not verified — hold $rhagent and POST /api/agent/verify-chain";
+    return "Robinhood Chain capability not verified — hold $RHAGENT and POST /api/agent/verify-chain";
   }
   return null;
 }

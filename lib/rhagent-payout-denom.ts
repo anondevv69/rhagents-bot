@@ -1,5 +1,5 @@
 /**
- * USD-denominated payouts — convert to $rhagent at execution time using live price.
+ * USD-denominated payouts — convert to $RHAGENT at execution time using live price.
  *
  * Default mode is USD so tips and grants stay meaningful as the token price moves.
  * Set RHAGENT_PAYOUT_DENOM=token to use legacy fixed token amounts.
@@ -62,7 +62,7 @@ export function rhagentTokensForUsd(usd: number, priceUsd: number | null | undef
 let priceCache: { at: number; usd: number | null } | null = null;
 const PRICE_TTL_MS = 60_000;
 
-/** Cached live $rhagent USD price for grant batches and auto-tips. */
+/** Cached live $RHAGENT USD price for grant batches and auto-tips. */
 export async function fetchRhagentUsdPrice(): Promise<number | null> {
   if (priceCache && Date.now() - priceCache.at < PRICE_TTL_MS) {
     return priceCache.usd;

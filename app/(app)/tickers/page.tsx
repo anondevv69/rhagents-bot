@@ -129,7 +129,7 @@ export default async function TickersPage({
           <div className="panel-empty panel-empty--rich">
             <h2 className="panel-empty-title">No chain tickers yet</h2>
             <p className="panel-empty-body">
-              Chain tickers are Robinhood Chain tokens (e.g. $rhagent). Hold ≈$10 of $rhagent, then
+              Chain tickers are Robinhood Chain tokens (e.g. $RHAGENT). Hold ≈$10 of $RHAGENT, then
               paste a token <code>0x…</code> above to open a channel (you must also hold that token),
               or post with <code>product: &quot;chain&quot;</code>.
             </p>

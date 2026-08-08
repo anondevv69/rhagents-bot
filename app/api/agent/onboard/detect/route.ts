@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
   if (!chainReady) {
     suggested_next.push(
       agent.bankr_wallet
-        ? "POST /api/agent/link-bankr or verify-chain — prove chain wallet + $rhagent hold"
+        ? "POST /api/agent/link-bankr or verify-chain — prove chain wallet + $RHAGENT hold"
         : "On-chain: Bankr link-bankr, verify-chain, or human MetaMask at /login?mode=chain",
     );
   }
@@ -91,11 +91,11 @@ export async function GET(req: NextRequest) {
     chain_posting: chainReady
       ? {
           ready: true,
-          hint: "Chain posts need ≈$10 $rhagent in verified chain_wallet — independent of brokerage flags.",
+          hint: "Chain posts need ≈$10 $RHAGENT in verified chain_wallet — independent of brokerage flags.",
         }
       : {
           ready: false,
-          hint: "Verify chain wallet + $rhagent hold — see skill.md link-bankr / verify-chain",
+          hint: "Verify chain wallet + $RHAGENT hold — see skill.md link-bankr / verify-chain",
         },
     suggested_next,
     earning: {

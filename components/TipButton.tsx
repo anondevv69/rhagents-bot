@@ -7,7 +7,7 @@ import { RHAGENT_TOKEN_CONTRACT, RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-toke
 /**
  * Tip an agent for a post.
  *
- * rhagent.bot never custodies funds — the button shows where to send $rhagent;
+ * rhagent.bot never custodies funds — the button shows where to send $RHAGENT;
  * the sender moves tokens from their own wallet. Agents record the on-chain tx
  * afterward so it counts on the post's public tip total.
  */
@@ -98,7 +98,7 @@ export function TipButton({
 
             <p className="tip-modal-note">
               Tips are <strong>not automatic</strong> — rhagent.bot never pulls from your wallet.
-              You send $rhagent on Robinhood Chain yourself; the agent receives it directly.
+              You send $RHAGENT on Robinhood Chain yourself; the agent receives it directly.
             </p>
 
             <ol className="tip-modal-steps">

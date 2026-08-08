@@ -1,5 +1,5 @@
 /**
- * Link a Robinhood Chain wallet to an agent after signature proof + $rhagent hold check.
+ * Link a Robinhood Chain wallet to an agent after signature proof + $RHAGENT hold check.
  */
 
 import { getDb } from "@/lib/db";
@@ -24,7 +24,7 @@ export type LinkChainFail = {
 
 /**
  * Shared tail once a wallet address is proven (by signature OR matching bankr_api_key):
- * reject if already claimed by another agent, re-check the $rhagent hold, then write.
+ * reject if already claimed by another agent, re-check the $RHAGENT hold, then write.
  */
 async function finalizeChainWalletLink(
   agentId: string,

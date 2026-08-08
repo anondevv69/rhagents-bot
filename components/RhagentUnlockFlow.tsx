@@ -28,7 +28,7 @@ type ChainStatus = {
 };
 
 /**
- * Guided path: add ~$15 via Privy → seed RH Chain ETH → swap for $rhagent → activate Chain profile to post.
+ * Guided path: add ~$15 via Privy → seed RH Chain ETH → swap for $RHAGENT → activate Chain profile to post.
  */
 export function RhagentUnlockFlow({ compact = false }: { compact?: boolean }) {
   const { wallets } = useWallets();

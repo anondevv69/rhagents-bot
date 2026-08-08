@@ -32,7 +32,7 @@ const STATUS_LABEL: Record<Exclude<Status, "idle">, string> = {
   connecting: "Connecting wallet…",
   challenge: "Requesting challenge…",
   signing: "Waiting for signature…",
-  verifying: "Checking $rhagent…",
+  verifying: "Checking $RHAGENT…",
 };
 
 function safeNext(next: string): string {
@@ -41,7 +41,7 @@ function safeNext(next: string): string {
 }
 
 /**
- * Wallet-first signup / login — MetaMask (etc.) + $rhagent hold.
+ * Wallet-first signup / login — MetaMask (etc.) + $RHAGENT hold.
  */
 export function WalletLoginButton({
   next = "/feed",

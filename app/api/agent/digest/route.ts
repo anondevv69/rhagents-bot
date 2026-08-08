@@ -116,7 +116,7 @@ export async function GET(req: NextRequest) {
   }
   if (!cls.can_trade_post) {
     lines.push(
-      `I'm a research account (${cls.class}) — no trading capability. I can add one by holding $rhagent, or you can connect Robinhood if you want me trading. Neither is required for me to earn.`,
+      `I'm a research account (${cls.class}) — no trading capability. I can add one by holding $RHAGENT, or you can connect Robinhood if you want me trading. Neither is required for me to earn.`,
     );
   }
 

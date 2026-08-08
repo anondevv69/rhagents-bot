@@ -45,7 +45,7 @@ function robinhoodOnlyFromBankr(summary: BankrPortfolioSummary | null): BankrPor
   };
 }
 
-/** On-chain ETH + $rhagent for a Robinhood Chain wallet (no Bankr key needed). */
+/** On-chain ETH + $RHAGENT for a Robinhood Chain wallet (no Bankr key needed). */
 export async function readRobinhoodChainOnchain(
   walletRaw: string,
 ): Promise<Pick<RobinhoodChainWalletView, "eth_balance" | "rhagent_tokens" | "rhagent_value_usd">> {
@@ -78,7 +78,7 @@ export async function readRobinhoodChainOnchain(
 
 /**
  * Robinhood Chain view for a Bankr-linked EVM wallet — Bankr portfolio (robinhood chain only)
- * plus on-chain ETH / $rhagent fallback.
+ * plus on-chain ETH / $RHAGENT fallback.
  */
 export async function buildRobinhoodChainWalletView(
   walletRaw: string,

@@ -68,7 +68,7 @@ export interface PayoutResult {
   post_id: string;
   agent_id: string;
   username: string | null;
-  /** The $rhagent-denominated grant. Stays comparable across assets. */
+  /** The $RHAGENT-denominated grant. Stays comparable across assets. */
   amount: number;
   score: number;
   status: "paid" | "skipped" | "failed";
@@ -234,7 +234,7 @@ export async function runGrantPayouts(opts: {
         ...base,
         reason:
           priceUsd == null || priceUsd <= 0
-            ? "could not price $rhagent for USD-denominated grant"
+            ? "could not price $RHAGENT for USD-denominated grant"
             : "grant top-up is zero (already earned or below threshold)",
       });
       skipped++;
@@ -246,7 +246,7 @@ export async function runGrantPayouts(opts: {
     }
 
     // Which asset settles this grant. A thesis on a ticker with a tokenized
-    // equity pays in that equity; everything else falls back to $rhagent, and
+    // equity pays in that equity; everything else falls back to $RHAGENT, and
     // the reason for the fallback travels with the result.
     const asset = await resolveGrantAsset(cand.thesis, cand.suggested_grant);
     base.asset = assetSummary(asset);
@@ -254,7 +254,7 @@ export async function runGrantPayouts(opts: {
     // Ask the vault first — it is the authority on the token allowlist, caps,
     // budget and duplicates, and a failed precheck here is a skip rather than a
     // burnt transaction. Note this checks the RESOLVED asset and its own caps,
-    // not $rhagent's: one cap cannot bound both a sub-cent token and a $220 share.
+    // not $RHAGENT's: one cap cannot bound both a sub-cent token and a $220 share.
     try {
       const [ok, reason] = (await c.publicClient.readContract({
         address: vault,
@@ -378,7 +378,7 @@ export function grantPayoutStatus() {
       enabled: rwa,
       note: rwa
         ? "A thesis on a ticker with a tokenized equity on Robinhood Chain settles in that equity."
-        : "Off — every grant settles in $rhagent. Set RHAGENT_RWA_PAYOUTS_ENABLED=true to route ticker theses into their own asset.",
+        : "Off — every grant settles in $RHAGENT. Set RHAGENT_RWA_PAYOUTS_ENABLED=true to route ticker theses into their own asset.",
       // The vault is the real gate: an asset with no owner-set limits cannot be
       // paid regardless of this flag, so enabling it is necessary and not sufficient.
       also_required:

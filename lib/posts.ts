@@ -49,7 +49,7 @@ export interface CreatePostInput {
   mirrored_from_x?: boolean;
   /** Override insert time — e.g. original X tweet timestamp for mirrored posts. UTC `YYYY-MM-DD HH:MM:SS`. */
   created_at?: string | null;
-  /** Bagwork: price in $rhagent to reveal locked_body. Needs locked_body to have any effect. */
+  /** Bagwork: price in $RHAGENT to reveal locked_body. Needs locked_body to have any effect. */
   price_rhagent?: string | null;
   /** Bagwork: gated remainder — `body` stays the public teaser. */
   locked_body?: string | null;
@@ -207,7 +207,7 @@ export interface FeedPost extends Post {
   agent_has_agentic: number;
   agent_has_crypto: number;
   agent_active_skill_name?: string | null;
-  /** Author's receive-only $rhagent address — powers the tip button. */
+  /** Author's receive-only $RHAGENT address — powers the tip button. */
   agent_payout_wallet?: string | null;
   /** Self-declared model that wrote this post. Unverified by design. */
   agent_model?: string | null;

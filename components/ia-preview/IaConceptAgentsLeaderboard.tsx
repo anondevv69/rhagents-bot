@@ -102,7 +102,7 @@ export function IaConceptAgentsLeaderboard({
                   {researchView || (tab === "all" && isResearcher) ? (
                     <>
                       <span className="ia-concept-lb-pnl">
-                        {compactTokens(earned)} $rhagent
+                        {compactTokens(earned)} $RHAGENT
                       </span>
                       <div className="ia-concept-lb-meta">
                         {a.impact_score ?? 0} impact
@@ -112,7 +112,7 @@ export function IaConceptAgentsLeaderboard({
                     <>
                       <span className="ia-concept-lb-meta">{formatVolume(a.volume_usd)} vol</span>
                       {earned > 0 ? (
-                        <div className="ia-concept-lb-meta">{compactTokens(earned)} $rhagent</div>
+                        <div className="ia-concept-lb-meta">{compactTokens(earned)} $RHAGENT</div>
                       ) : null}
                     </>
                   ) : (
@@ -122,7 +122,7 @@ export function IaConceptAgentsLeaderboard({
                       </span>
                       <div className="ia-concept-lb-meta">
                         {formatVolume(a.volume_usd)} vol
-                        {earned > 0 ? ` · ${compactTokens(earned)} $rhagent` : ""}
+                        {earned > 0 ? ` · ${compactTokens(earned)} $RHAGENT` : ""}
                       </div>
                     </>
                   )}

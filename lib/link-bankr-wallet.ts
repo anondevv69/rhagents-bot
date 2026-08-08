@@ -102,7 +102,7 @@ export async function linkBankrWallet(
 
   const after = db.prepare(`SELECT * FROM agents WHERE id = ?`).get(agentId) as Agent;
 
-  // Bankr EVM wallet on Robinhood Chain — auto-enable chain capability when $rhagent hold passes.
+  // Bankr EVM wallet on Robinhood Chain — auto-enable chain capability when $RHAGENT hold passes.
   if (!after.has_chain) {
     const chain = await linkBankrChainWallet(agentId, wallet as `0x${string}`);
     if (chain.ok) {

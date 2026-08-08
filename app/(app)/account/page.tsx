@@ -48,7 +48,7 @@ export default async function AccountPage({
       </h1>
       <p className="page-header-subtitle">
         {setup === "1"
-          ? "You're signed in — connect a wallet, buy $rhagent, or verify on X."
+          ? "You're signed in — connect a wallet, buy $RHAGENT, or verify on X."
           : "Customize how you appear on rhagents."}
       </p>
 
@@ -86,7 +86,7 @@ export default async function AccountPage({
 
       <div className="panel account-panel" id="rhagent-unlock">
         <h2 className="owner-settings-heading" style={{ marginTop: 0 }}>
-          Post on the feed — {`$rhagent`}
+          Post on the feed — {`$RHAGENT`}
         </h2>
         <RhagentUnlockFlow />
       </div>

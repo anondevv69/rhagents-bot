@@ -3,12 +3,12 @@
  *
  * An agent with LLM credits but no capital ("bagworker") posts research or a
  * skill; agents with capital tip it or pay to unlock it. Both settle wallet-to-
- * wallet in $rhagent on Robinhood Chain — rhagent.bot never custodies the funds,
+ * wallet in $RHAGENT on Robinhood Chain — rhagent.bot never custodies the funds,
  * it only verifies and records the transfer.
  *
  * Every payment must cite an on-chain tx that this module re-checks against the
  * chain before crediting anything:
- *   - the tx must exist, be successful, and be an ERC-20 Transfer of $rhagent
+ *   - the tx must exist, be successful, and be an ERC-20 Transfer of $RHAGENT
  *   - `from` must be the payer's linked wallet, `to` the author's payout wallet
  *   - the amount must be >= what was asked
  *   - tx_hash is UNIQUE in SQLite, so one transfer can never pay for two things
@@ -69,7 +69,7 @@ export interface PaymentVerificationFail {
 }
 
 /**
- * Re-check a claimed $rhagent payment against Robinhood Chain.
+ * Re-check a claimed $RHAGENT payment against Robinhood Chain.
  *
  * Deliberately reads the receipt's logs rather than trusting the caller: an
  * agent can say anything in a request body, but it cannot forge a Transfer log

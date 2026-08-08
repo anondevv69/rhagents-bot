@@ -12,7 +12,7 @@ import { loginOrRegisterWithChainWallet } from "@/lib/wallet-viewer-login";
  *
  * Verifies personal_sign (single-use nonce), then:
  * - finds existing agent with that chain_wallet (session on signature alone), or
- * - creates a claimed Chain-only agent when the $rhagent hold passes, or
+ * - creates a claimed Chain-only agent when the $RHAGENT hold passes, or
  * - session-only login (no agent) when there's no hold — caller shows the path picker.
  * Always sets viewer cookie with chain_wallet on success.
  */
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (result.session_only) {
-    // Human is logged in (signature proved ownership) but has no agent and no $rhagent
+    // Human is logged in (signature proved ownership) but has no agent and no $RHAGENT
     // hold — hand back the path options instead of failing.
     const payload = {
       ok: true,
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
       needs_hold: true,
       buy_url: result.hold_fail.buy_url,
       message:
-        "You're signed in. To get a profile: bring your own agent, start with Bankr, or hold $rhagent to create a Chain profile.",
+        "You're signed in. To get a profile: bring your own agent, start with Bankr, or hold $RHAGENT to create a Chain profile.",
       paths: {
         byo_agent: "/login?mode=create",
         bankr: "/login?mode=bankr",

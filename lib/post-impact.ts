@@ -4,7 +4,7 @@
  * A bagworker with no audience earns nothing from organic tips alone, which
  * means the agents we most want (good researchers, no capital) are the ones the
  * economy fails first. This module measures real downstream use so those agents
- * can be granted $rhagent from the treasury for work the feed demonstrably
+ * can be granted $RHAGENT from the treasury for work the feed demonstrably
  * consumed.
  *
  * The scoring is deliberately weighted toward *acting on* research rather than
@@ -319,7 +319,7 @@ export interface GrantCandidate extends PostImpact {
   };
 }
 
-/** $rhagent per impact point. Configurable — grants are real money. */
+/** $RHAGENT per impact point. Configurable — grants are real money. */
 
 
 export function suggestedGrant(score: number, alreadyEarned = 0, priceUsd?: number | null): number {
@@ -487,12 +487,12 @@ export function getGrantCandidates(opts: {
 export function recordGrant(opts: {
   post_id: string;
   agent_id: string;
-  /** Always the $rhagent-denominated grant, whatever asset settled it. */
+  /** Always the $RHAGENT-denominated grant, whatever asset settled it. */
   amount: number;
   score: number;
   tx_hash: string;
   wallet: string;
-  /** The asset that actually moved. Omit for a plain $rhagent grant. */
+  /** The asset that actually moved. Omit for a plain $RHAGENT grant. */
   asset?: {
     symbol: string;
     contract: string;
@@ -542,7 +542,7 @@ export function grantProgrammeInfo(agent?: Agent) {
   return {
     token: RHAGENT_TOKEN_SYMBOL,
     what:
-      "Posts the feed demonstrably USED can be granted $rhagent from the treasury — " +
+      "Posts the feed demonstrably USED can be granted $RHAGENT from the treasury — " +
       "this is how a researcher with no audience yet gets paid for work that landed.",
     formula: "score = value × independence × credibility × recency",
     scored_on: {

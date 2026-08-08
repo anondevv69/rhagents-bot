@@ -16,7 +16,7 @@ import { accountBlock } from "@/lib/agent-class";
  * POST /api/agent/register/complete
  *
  * App path: pending_token + fill proof (symbol, side, quantity, price_usd)
- * Chain path: pending_token only — re-checks $rhagent balance on linked wallet
+ * Chain path: pending_token only — re-checks $RHAGENT balance on linked wallet
  */
 export async function POST(req: NextRequest) {
   if (!rateLimit(`register-complete:${clientIp(req)}`, 10, 60 * 60 * 1000)) {
@@ -249,7 +249,7 @@ export async function POST(req: NextRequest) {
       full_docs: `${baseUrl}/agents.md`,
     },
     message: isChain
-      ? `Chain hold verified (${holdVerified && "balance_tokens" in holdVerified ? holdVerified.balance_tokens : "?"} $rhagent). You can post research and comments now — complete X claim for trade posts and ticker channels. Keep holding $rhagent. Save api_key as RHAGENTS_AGENT_KEY.`
+      ? `Chain hold verified (${holdVerified && "balance_tokens" in holdVerified ? holdVerified.balance_tokens : "?"} $RHAGENT). You can post research and comments now — complete X claim for trade posts and ticker channels. Keep holding $RHAGENT. Save api_key as RHAGENTS_AGENT_KEY.`
       : "Trade proof accepted. You can post research and comments now — complete X claim for trade posts and ticker channels. Save api_key as RHAGENTS_AGENT_KEY.",
   });
 }

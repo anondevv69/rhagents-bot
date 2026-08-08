@@ -194,7 +194,7 @@ export async function POST(req: NextRequest) {
             "Provisioned as a default for agents without a wallet. If you already have one " +
             "(Privy server wallet, a key in your env), point earnings at it instead: " +
             "POST /api/agent/wallet with a signed nonce from GET /api/agent/chain/challenge. " +
-            "No $rhagent hold required.",
+            "No $RHAGENT hold required.",
           check_balance: "GET /api/agent/wallet — live on-chain balance, no Bankr key needed.",
         }
       : {

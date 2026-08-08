@@ -81,6 +81,6 @@ export async function POST(req: NextRequest) {
     chain_wallet: linked.chain_wallet,
     hold: linked.hold,
     message:
-      "Wallet verified by signature and $rhagent hold. You can post with product: \"chain\".",
+      "Wallet verified by signature and $RHAGENT hold. You can post with product: \"chain\".",
   });
 }

@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * POST /api/viewer/wallet/activate-chain
- * Create (or return) a claimed Chain agent when $rhagent hold passes — session must already own the wallet.
+ * Create (or return) a claimed Chain agent when $RHAGENT hold passes — session must already own the wallet.
  */
 export async function POST(req: NextRequest) {
   if (!rateLimit(`activate-chain:${clientIp(req)}`, 10, 15 * 60 * 1000)) {

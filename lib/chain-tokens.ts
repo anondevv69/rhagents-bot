@@ -45,7 +45,7 @@ function publicClient() {
   });
 }
 
-/** Normalize chain ticker input: RHAGENT, $rhagent, or 0x contract. */
+/** Normalize chain ticker input: RHAGENT, $RHAGENT, or 0x contract. */
 export function normalizeChainSymbolInput(raw: string | null | undefined): string | null {
   if (!raw || typeof raw !== "string") return null;
   const s = raw.trim();

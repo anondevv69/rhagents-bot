@@ -197,7 +197,7 @@ export function PrivyAddFundsButton({
             <strong>Card</strong> — Privy routes to Stripe, MoonPay, or Coinbase (depends on your
             Privy dashboard). USDC lands on <strong>Base</strong>.{" "}
             <strong>Transfer crypto</strong> — send from Coinbase, MetaMask, etc. when card is
-            blocked. We then send starter ETH on Robinhood Chain for the {`$rhagent`} swap.
+            blocked. We then send starter ETH on Robinhood Chain for the {`$RHAGENT`} swap.
           </>
         )}
       </p>

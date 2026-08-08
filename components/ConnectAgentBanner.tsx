@@ -29,7 +29,7 @@ export function ConnectAgentBanner({ show }: { show: boolean }) {
       <Link href="/account?setup=1" className="text-link">
         Open your account
       </Link>{" "}
-      to connect an agent, buy {`$rhagent`}, or verify on X.
+      to connect an agent, buy {`$RHAGENT`}, or verify on X.
       <button
         type="button"
         className="connect-agent-banner-dismiss"

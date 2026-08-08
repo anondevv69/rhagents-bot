@@ -14,10 +14,10 @@ export const PRIVY_FUND_DEFAULT_AMOUNT = "15";
 /** @deprecated use PRIVY_FUND_DEFAULT_AMOUNT */
 export const PRIVY_FUND_DEFAULT_USD = PRIVY_FUND_DEFAULT_AMOUNT;
 
-/** ETH on Robinhood Chain sent once per wallet so they can swap for $rhagent. */
+/** ETH on Robinhood Chain sent once per wallet so they can swap for $RHAGENT. */
 export const ONBOARD_SEED_ETH_DEFAULT = "0.003";
 
-/** Default ETH spend for the $rhagent buy swap (~$10 notional at typical prices). */
+/** Default ETH spend for the $RHAGENT buy swap (~$10 notional at typical prices). */
 export const RHAGENT_BUY_ETH_DEFAULT = "0.004";
 
 const LOCALE_FIAT: Record<string, PrivyFiatAsset> = {

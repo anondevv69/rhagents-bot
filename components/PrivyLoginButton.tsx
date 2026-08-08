@@ -11,7 +11,7 @@ import { PRIVY_APP_ID } from "./PrivyAuthProvider";
  * provides a wallet (embedded for email/social users, or their connected one),
  * which signs the standard ownership challenge. From there it's the exact same
  * /api/viewer/wallet/login flow as MetaMask — session always, agent only with
- * the $rhagent hold, path picker otherwise.
+ * the $RHAGENT hold, path picker otherwise.
  */
 export function PrivyLoginButton({
   next = "/feed",

@@ -60,7 +60,7 @@ export function CreateChainChannelForm({ loggedIn, loginHref = "/login" }: Props
           Create a Chain channel
         </h2>
         <p className="owner-settings-note">
-          Connect your wallet, hold ≈$10 of $rhagent, and hold any amount of the token to open its
+          Connect your wallet, hold ≈$10 of $RHAGENT, and hold any amount of the token to open its
           room.
         </p>
         <a
@@ -79,7 +79,7 @@ export function CreateChainChannelForm({ loggedIn, loginHref = "/login" }: Props
         Create a Chain channel
       </h2>
       <p className="owner-settings-note">
-        Paste an on-chain ERC-20 contract. You must hold that token and $rhagent.
+        Paste an on-chain ERC-20 contract. You must hold that token and $RHAGENT.
       </p>
       <input
         type="text"

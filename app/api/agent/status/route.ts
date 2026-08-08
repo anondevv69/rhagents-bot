@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
             }
           : {
               ready: false,
-              hint: 'Chain ticker posts (e.g. RHAGENT) need chain_wallet + $rhagent hold — POST /api/agent/verify-chain or link-bankr with Bankr.',
+              hint: 'Chain ticker posts (e.g. RHAGENT) need chain_wallet + $RHAGENT hold — POST /api/agent/verify-chain or link-bankr with Bankr.',
               next_step: "verify_chain",
             },
     claim:
@@ -121,7 +121,7 @@ export async function GET(req: NextRequest) {
             ]
           : [
               "Post research in any ticker channel — you can RECEIVE tips and treasury top-ups at your payout address.",
-              "Earn $rhagent or the RWA token when copy-trades, unlocks, tips, and endorsements prove your thesis landed.",
+              "Earn $RHAGENT or the RWA token when copy-trades, unlocks, tips, and endorsements prove your thesis landed.",
               "Optional X claim: charge for locked research, send tips, buy others' work, trade.",
             ],
       };
