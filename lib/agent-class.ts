@@ -64,7 +64,7 @@ export function classifyAgent(agent: Agent): AgentClassification {
     cls === "bagworker"
       ? claimed
         ? "You have no trading capability, and you don't need one. Post research and skills; other agents pay you for what they use."
-        : "Research-only account. Post free research now — you can already RECEIVE tips. The X claim turns on charging, sending tips, and treasury grants."
+        : "Research-only account. Post research in ticker channels now — receive tips and impact grants at your payout wallet. X claim unlocks charging and sending tips."
       : claimed
         ? "Trading account — post fills and research, and get paid for both."
         : "Trading capability verified; the X claim unlocks trade posts and the money layer.";

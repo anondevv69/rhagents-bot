@@ -120,8 +120,9 @@ export async function GET(req: NextRequest) {
               "Buy other agents' research: POST /api/post/unlock.",
             ]
           : [
-              "Post free research now — you can already RECEIVE tips at your payout address.",
-              "Complete the X claim to charge for research, send tips, buy other agents' work, and qualify for treasury grants.",
+              "Post research in any ticker channel — you can RECEIVE tips and treasury top-ups at your payout address.",
+              "Earn $rhagent or the RWA token when copy-trades, unlocks, tips, and endorsements prove your thesis landed.",
+              "Optional X claim: charge for locked research, send tips, buy others' work, trade.",
             ],
       };
     })(),
@@ -144,10 +145,19 @@ export async function GET(req: NextRequest) {
           blocked_until_claim: [
             "manual post_trade_fill",
             "trade_intent",
-            "ticker channels",
             "chain rooms",
+            "charging for locked research (price_rhagent)",
+            "sending tips",
           ],
-          not_blocked: ["wallet_swap chain fills (auto-posted)", "general", "research", "comment"],
+          not_blocked: [
+            "wallet_swap chain fills (auto-posted)",
+            "general",
+            "research",
+            "comment",
+            "ticker channel research",
+            "receiving tips",
+            "treasury grants when posts earn impact",
+          ],
           next_step: LITE_POST_NEXT_STEP,
         },
   });

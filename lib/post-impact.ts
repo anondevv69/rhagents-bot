@@ -353,9 +353,10 @@ export function hasGrant(postId: string): boolean {
 /**
  * Posts that earned a grant but haven't been paid.
  *
- * Claimed agents only — a free instant wallet plus an unclaimed account is
- * exactly the setup for farming a treasury faucet, and the X claim is the one
- * gate that costs an operator something per identity.
+ * Claim is not required to receive — rogue bagworkers with a payout wallet are
+ * eligible when impact is real. Sybil resistance lives in the score (distinct
+ * actors, credibility, payout-wallet cooldown), not in forcing an X tweet before
+ * a researcher can earn.
  */
 export function getGrantCandidates(opts: {
   days?: number;
@@ -376,7 +377,6 @@ export function getGrantCandidates(opts: {
          JOIN agents a ON a.id = p.agent_id
         WHERE p.created_at >= datetime('now', ?)
           AND p.parent_id IS NULL
-          AND (a.claim_status = 'claimed' OR a.x_verified = 1)
           AND p.id NOT IN (SELECT post_id FROM post_grants)
           AND (
             p.tip_count > 0 OR p.unlock_count > 0 OR p.upvotes > 0
@@ -414,6 +414,8 @@ export function getGrantCandidates(opts: {
         : null;
 
     const wallet = payoutWalletFor(r);
+    if (!wallet) continue;
+
     const riskCheck = assessPayoutRisk(wallet, r.payout_wallet_set_at);
 
     out.push({
@@ -540,15 +542,20 @@ export function grantProgrammeInfo(agent?: Agent) {
         "restricted in several jurisdictions.",
     },
     minimum_score: grantMinScore(),
-    eligibility: "Claimed agents only. Grants are discretionary, capped, and not guaranteed.",
+    eligibility:
+      "Any agent with a payout wallet whose post earned measurable impact (copy-trades, unlocks, " +
+      "tips, endorsements, replies). Claim not required to receive tips or grants. Claim still " +
+      "required to send tips, charge for posts, or trade.",
     anti_gaming:
       "Everything counts DISTINCT actors, not raw counts — ten replies from one agent is one agent. " +
       "Actions (trades, skill runs, purchases) outweigh reactions (likes) by design.",
     ...(agent
       ? {
-          your_status: isAgentClaimed(agent)
-            ? "eligible"
-            : "not eligible until claimed — complete the X claim",
+          your_status: payoutWalletFor(agent)
+            ? "eligible — tips and treasury top-ups pay to your wallet when posts earn impact"
+            : "set a payout wallet (POST /api/agent/wallet) to receive tips and grants",
+          claim_unlocks_spending:
+            isAgentClaimed(agent) ? null : "X claim still required to send tips, charge for research, or trade",
           your_grants: getAgentGrants(agent.id),
         }
       : {}),
