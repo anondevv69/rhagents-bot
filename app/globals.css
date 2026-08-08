@@ -10418,7 +10418,7 @@ a.btn:active,
 }
 
 /* NOTE: the interactive layer no longer renders a call LIST — it uses chips
-   (.channel-chart-chip). The .channel-chart-call-* rules below are still live,
+   (.chart-group). The .channel-chart-call-* rules below are still live,
    but only for the server-rendered SVG, which keeps a written list because that
    is the layer agents read. Not duplication there — it is the only copy. */
 
@@ -10453,58 +10453,9 @@ a.btn:active,
 .ticker-top-trade { min-width: 0; margin-top: var(--space-4); }
 @media (min-width: 1100px) { .ticker-top-trade { margin-top: 0; } }
 
-/* ── Call chips ──────────────────────────────────────────────────────────── */
-
-.channel-chart-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1-5);
-  margin-top: var(--space-3);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--border-soft);
-}
-
-.channel-chart-chip {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--space-1-5);
-  font-size: var(--text-caption);
-  font-weight: 500;
-  color: var(--muted);
-  background: transparent;
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-full, 999px);
-  padding: var(--space-1) var(--space-2-5);
-  cursor: pointer;
-  max-width: 100%;
-}
-
-.channel-chart-chip-who {
-  color: var(--text);
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 12ch;
-}
-
-.channel-chart-chip-pct {
-  font-variant-numeric: tabular-nums;
-  font-weight: 650;
-}
-.channel-chart-chip.is-up .channel-chart-chip-pct { color: var(--up); }
-.channel-chart-chip.is-down .channel-chart-chip-pct { color: var(--down); }
-/* Unscored calls stay grey — an undirected post has no right or wrong. */
-.channel-chart-chip.is-neutral .channel-chart-chip-pct { color: var(--muted); }
-
-.channel-chart-chip.is-active {
-  border-color: var(--accent);
-  background: var(--input-bg);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .channel-chart-chip:not(.is-active):hover { border-color: var(--border); }
-}
+/* The chip strip was replaced by per-agent groups (.chart-group). Twelve flat
+   chips from four repeating names grew with call count while adding almost no
+   information; grouping caps the top level at the number of distinct agents. */
 
 /* ── The thesis a chart click just jumped to ─────────────────────────────── */
 
@@ -10658,13 +10609,6 @@ a.btn:active,
   margin-left: var(--space-1);
 }
 
-/* The "+N more" chip is a control over the list, not a call in it — so it
-   carries no return figure and stays visually quieter than its siblings. */
-.channel-chart-chip--more {
-  color: var(--muted);
-  font-weight: 500;
-  border-style: dashed;
-}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Touch targets — 44px hit area without 44px of visual weight
@@ -10683,7 +10627,7 @@ a.btn:active,
    this everywhere would create invisible overlapping targets on desktop. */
 
 @media (pointer: coarse) {
-  .channel-chart-chip,
+  .chart-entry-post,
   .channel-chart-tf,
   .post-action-btn,
   .btn-like,
@@ -10691,7 +10635,7 @@ a.btn:active,
     position: relative;
   }
 
-  .channel-chart-chip::after,
+  .chart-entry-post::after,
   .channel-chart-tf::after,
   .post-action-btn::after,
   .btn-like::after,
@@ -10711,7 +10655,9 @@ a.btn:active,
   /* Row gaps must exceed 8px or the expanded areas collide and a tap lands on
      the wrong control — worse than a small target, because it is wrong rather
      than merely fiddly. */
-  .channel-chart-chips { gap: var(--space-2-5); }
+  /* Group rows are already tall enough to hit; only the inline "View post"
+     control needs the expanded band. */
+  .chart-entry { gap: var(--space-3); }
   .post-action-bar-left { gap: var(--space-1); }
 }
 
@@ -10921,3 +10867,157 @@ a.btn:active,
 }
 
 .thesis-chart-now { text-align: right; }
+
+/* ── Calls, grouped by agent ─────────────────────────────────────────────── */
+
+.channel-chart-groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-soft);
+}
+
+.chart-group {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.chart-group-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2-5) var(--space-3);
+  background: transparent;
+  border: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .chart-group-row:hover { background: var(--input-bg); }
+}
+
+/* Ring, not a fill — an unclaimed agent is a caveat, not an error. */
+.chart-group-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1.5px solid var(--muted-faint);
+  flex-shrink: 0;
+}
+
+.chart-group-name {
+  font-weight: 600;
+  font-size: var(--text-caption);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chart-group.is-unverified .chart-group-name { color: var(--muted); }
+
+.chart-group-count {
+  font-size: 11px;
+  color: var(--muted-faint);
+  white-space: nowrap;
+}
+
+.chart-group-summary {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1-5);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.chart-group-summary .lbl { color: var(--muted-faint); }
+.chart-group-summary .is-up { color: var(--up); font-weight: 650; }
+.chart-group-summary .is-down { color: var(--down); font-weight: 650; }
+/* Unscored agents keep grey figures — no direction means no verdict. */
+.chart-group.is-unverified .chart-group-summary span { color: var(--muted-faint) !important; }
+
+.chart-group-chevron {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  color: var(--muted-faint);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+.chart-group.is-open .chart-group-chevron { transform: rotate(180deg); }
+
+/* Conditionally rendered rather than max-height animated: a max-height cap
+   silently clips an agent with many calls, and guessing the cap is the bug. */
+.chart-group-entries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.chart-entry {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border-top: 1px solid var(--border-soft);
+  padding-right: var(--space-3);
+}
+
+.chart-entry-select {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2-5);
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-6);
+  background: transparent;
+  border: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.chart-entry.is-active {
+  background: var(--input-bg);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.chart-entry-pct {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 4.5ch;
+}
+.chart-entry-pct.is-up { color: var(--up); }
+.chart-entry-pct.is-down { color: var(--down); }
+.chart-entry-pct.is-neutral { color: var(--muted); }
+
+.chart-entry-price {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-entry-time {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--muted-faint);
+}
+
+.chart-entry-post {
+  background: transparent;
+  border: none;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  white-space: nowrap;
+  padding: var(--space-1);
+}
+@media (hover: hover) and (pointer: fine) {
+  .chart-entry-post:hover { text-decoration: underline; }
+}

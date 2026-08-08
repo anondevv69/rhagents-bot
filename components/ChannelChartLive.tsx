@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChannelChart as ChannelChartData, ThesisMarker } from "@/lib/channel-chart";
 
 /**
@@ -58,8 +58,6 @@ type LWC = typeof import("lightweight-charts");
  * hourly bars" and no button ever changed the resolution. Real granularity
  * needs a new request, which is why switching here is async.
  */
-const CHIP_LIMIT = 5;
-
 const WINDOWS = ["1D", "3D", "7D", "30D", "ALL"] as const;
 type WindowKey = (typeof WINDOWS)[number];
 
@@ -102,6 +100,68 @@ function revealPost(postId: string) {
   window.setTimeout(() => el.classList.remove("is-chart-target"), 2200);
 }
 
+
+function fmtPctShort(n: number): string {
+  return `${n >= 0 ? "+" : ""}${n.toFixed(0)}%`;
+}
+
+/** Compact relative time — "3h", "2d". Absolute dates add nothing at a glance. */
+function fmtWhen(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (!Number.isFinite(ms)) return "";
+  const h = ms / 3600_000;
+  if (h < 1) return `${Math.max(1, Math.round(ms / 60_000))}m`;
+  if (h < 48) return `${Math.round(h)}h`;
+  return `${Math.round(h / 24)}d`;
+}
+
+interface AgentGroup {
+  key: string;
+  name: string;
+  unverified: boolean;
+  calls: ThesisMarker[];
+  best: number;
+  worst: number;
+}
+
+/**
+ * Calls, grouped by who made them.
+ *
+ * Twelve flat chips from four repeating names was the actual problem — the list
+ * grew with call count while carrying almost no new information, because the
+ * same handful of agents wrote all of them. Grouping caps the top level at the
+ * number of distinct agents and turns the repetition into something useful: a
+ * per-agent record on this ticker.
+ *
+ * Best and worst are shown on the collapsed row so the overall read needs no
+ * expansion at all.
+ */
+function groupByAgent(markers: ThesisMarker[]): AgentGroup[] {
+  const byAgent = new Map<string, ThesisMarker[]>();
+  for (const m of markers) {
+    const key = m.agent_id || m.username || "unknown";
+    const list = byAgent.get(key);
+    if (list) list.push(m);
+    else byAgent.set(key, [m]);
+  }
+
+  return [...byAgent.entries()]
+    .map(([key, calls]) => {
+      const pcts = calls.map((c) => c.return_pct ?? c.move_pct);
+      return {
+        key,
+        name: calls[0].display_name ?? calls[0].username ?? "agent",
+        // An agent with no scored call anywhere is treated as unverified for
+        // display — same muting the chart markers already use.
+        unverified: calls.every((c) => c.return_pct == null),
+        calls,
+        best: Math.max(...pcts),
+        worst: Math.min(...pcts),
+      };
+    })
+    .sort((a, b) => b.calls.length - a.calls.length);
+}
+
 export function ChannelChartLive({
   data,
   children,
@@ -119,7 +179,22 @@ export function ChannelChartLive({
   // Chips are a selector, not a feed. A dozen of them from four repeating
   // agents wrapped over three rows read as a wall of noise and buried the
   // chart; a handful plus a count is the same affordance without the clutter.
-  const [chipsExpanded, setChipsExpanded] = useState(false);
+  const groups = useMemo(() => groupByAgent(data.markers), [data.markers]);
+
+  // Only the group holding the selected call is open initially. Opening all of
+  // them would reproduce the flat list this replaced.
+  const [openAgents, setOpenAgents] = useState<Set<string>>(() => {
+    const first = data.markers.length ? data.markers[0] : null;
+    return new Set(first ? [first.agent_id || first.username || "unknown"] : []);
+  });
+
+  const toggleAgent = (key: string) =>
+    setOpenAgents((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<ThesisMarker | null>(
     data.markers.length ? data.markers[0] : null,
@@ -402,44 +477,79 @@ export function ChannelChartLive({
           agents read, and it is not duplication there, it is the only copy.
         */}
         {data.markers.length ? (
-          <div className="channel-chart-chips" role="group" aria-label="Calls on this chart">
-            {(chipsExpanded ? data.markers : data.markers.slice(0, CHIP_LIMIT)).map((m) => {
-              const pct = m.return_pct ?? m.move_pct;
-              const active = selected?.post_id === m.post_id;
-              const tone = m.return_pct == null ? "is-neutral" : pct >= 0 ? "is-up" : "is-down";
+          <div className="channel-chart-groups">
+            {groups.map((g) => {
+              const open = openAgents.has(g.key);
               return (
-                <button
-                  key={m.post_id}
-                  type="button"
-                  className={`channel-chart-chip ${tone}${active ? " is-active" : ""}`}
-                  onClick={() => {
-                    setSelected(active ? null : m);
-                    if (!active) revealPost(m.post_id);
-                  }}
-                  aria-pressed={active}
-                  title={`${m.display_name ?? m.username ?? "agent"} said at $${fmtPrice(m.entry_price_usd)} — click to read the thesis`}
+                <div
+                  key={g.key}
+                  className={`chart-group${open ? " is-open" : ""}${g.unverified ? " is-unverified" : ""}`}
                 >
-                  <span className="channel-chart-chip-who">
-                    {m.display_name ?? m.username ?? "agent"}
-                  </span>
-                  <span className="channel-chart-chip-pct">
-                    {pct >= 0 ? "+" : ""}
-                    {pct.toFixed(0)}%
-                  </span>
-                </button>
+                  <button
+                    type="button"
+                    className="chart-group-row"
+                    onClick={() => toggleAgent(g.key)}
+                    aria-expanded={open}
+                  >
+                    {g.unverified ? (
+                      <span className="chart-group-dot" title="Unclaimed agent" aria-hidden />
+                    ) : null}
+                    <span className="chart-group-name">{g.name}</span>
+                    <span className="chart-group-count">
+                      {g.calls.length} call{g.calls.length === 1 ? "" : "s"}
+                    </span>
+                    {/* Best and worst give the "how did they do overall" read
+                        without anyone having to expand the group. */}
+                    <span className="chart-group-summary">
+                      <span className="lbl">best</span>
+                      <span className={g.best >= 0 ? "is-up" : "is-down"}>{fmtPctShort(g.best)}</span>
+                      <span className="lbl">worst</span>
+                      <span className={g.worst >= 0 ? "is-up" : "is-down"}>{fmtPctShort(g.worst)}</span>
+                    </span>
+                    <svg className="chart-group-chevron" viewBox="0 0 16 16" aria-hidden>
+                      <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="2"
+                        strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+
+                  {open ? (
+                    <ul className="chart-group-entries">
+                      {g.calls.map((m) => {
+                        const pct = m.return_pct ?? m.move_pct;
+                        const active = selected?.post_id === m.post_id;
+                        const tone = m.return_pct == null ? "is-neutral" : pct >= 0 ? "is-up" : "is-down";
+                        return (
+                          <li key={m.post_id} className={`chart-entry${active ? " is-active" : ""}`}>
+                            {/* Selecting draws this call's entry line. Deliberately
+                                does NOT navigate — the point is to flip between
+                                calls and compare entries without losing the chart. */}
+                            <button
+                              type="button"
+                              className="chart-entry-select"
+                              onClick={() => setSelected(active ? null : m)}
+                              aria-pressed={active}
+                            >
+                              <span className={`chart-entry-pct ${tone}`}>{fmtPctShort(pct)}</span>
+                              <span className="chart-entry-price">{fmtPrice(m.entry_price_usd)}</span>
+                              <span className="chart-entry-time">{fmtWhen(m.at)}</span>
+                            </button>
+                            {/* Reading the thesis is a separate, heavier action —
+                                it moves the page, so it gets its own control. */}
+                            <button
+                              type="button"
+                              className="chart-entry-post"
+                              onClick={() => revealPost(m.post_id)}
+                            >
+                              View post ↗
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : null}
+                </div>
               );
             })}
-
-            {data.markers.length > CHIP_LIMIT ? (
-              <button
-                type="button"
-                className="channel-chart-chip channel-chart-chip--more"
-                onClick={() => setChipsExpanded((v) => !v)}
-                aria-expanded={chipsExpanded}
-              >
-                {chipsExpanded ? "show fewer" : `+${data.markers.length - CHIP_LIMIT} more`}
-              </button>
-            ) : null}
           </div>
         ) : null}
       </div>
