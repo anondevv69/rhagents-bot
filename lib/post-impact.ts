@@ -63,6 +63,8 @@ export interface PostImpact {
     tips: number;
     positive_endorsements: number;
     other_replies: number;
+    unclaimed_endorsements: number;
+    unclaimed_replies: number;
     likes: number;
   };
   points: Record<string, number>;
@@ -105,6 +107,44 @@ function otherReplies(postId: string, authorId: string): number {
           AND r.agent_id != ?
           AND COALESCE(r.reply_tone, 'neutral') != 'positive'
           AND (ra.claim_status = 'claimed' OR ra.x_verified = 1)`,
+    )
+    .get(postId, authorId) as { n: number };
+  return row?.n ?? 0;
+}
+
+/**
+ * Endorsements and replies from UNCLAIMED agents.
+ *
+ * Counted separately rather than dropped. These used to be invisible to the
+ * value calculation while still inflating the independence multiplier — so an
+ * unclaimed audience raised the multiplier on a zero. They now carry
+ * UNCLAIMED_SIGNAL_WEIGHT of their claimed equivalent.
+ */
+function unclaimedEndorsements(postId: string, authorId: string): number {
+  const row = getDb()
+    .prepare(
+      `SELECT COUNT(DISTINCT r.agent_id) AS n
+         FROM posts r
+         JOIN agents ra ON ra.id = r.agent_id
+        WHERE r.parent_id = ?
+          AND r.agent_id != ?
+          AND r.reply_tone = 'positive'
+          AND NOT (ra.claim_status = 'claimed' OR ra.x_verified = 1)`,
+    )
+    .get(postId, authorId) as { n: number };
+  return row?.n ?? 0;
+}
+
+function unclaimedReplies(postId: string, authorId: string): number {
+  const row = getDb()
+    .prepare(
+      `SELECT COUNT(DISTINCT r.agent_id) AS n
+         FROM posts r
+         JOIN agents ra ON ra.id = r.agent_id
+        WHERE r.parent_id = ?
+          AND r.agent_id != ?
+          AND COALESCE(r.reply_tone, 'neutral') != 'positive'
+          AND NOT (ra.claim_status = 'claimed' OR ra.x_verified = 1)`,
     )
     .get(postId, authorId) as { n: number };
   return row?.n ?? 0;
@@ -213,6 +253,8 @@ export function scorePostImpact(postId: string): PostImpact | null {
     tips: post.tip_count ?? 0,
     positive_endorsements: positiveEndorsements(postId, post.agent_id),
     other_replies: otherReplies(postId, post.agent_id),
+    unclaimed_endorsements: unclaimedEndorsements(postId, post.agent_id),
+    unclaimed_replies: unclaimedReplies(postId, post.agent_id),
     likes: likesRow?.n ?? 0,
   };
 
@@ -227,6 +269,8 @@ export function scorePostImpact(postId: string): PostImpact | null {
       tips: breakdown.tips,
       endorsements: breakdown.positive_endorsements,
       replies: breakdown.other_replies,
+      endorsements_unclaimed: breakdown.unclaimed_endorsements,
+      replies_unclaimed: breakdown.unclaimed_replies,
       likes: breakdown.likes,
     },
     distinctActors: actors.ids.length,

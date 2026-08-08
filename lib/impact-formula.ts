@@ -95,7 +95,7 @@ export const MAX_LIKE_VALUE = 4;
  * actor cannot reach it regardless of what that actor does — which is the point.
  */
 export function grantMinScore(): number {
-  const n = parseFloat(process.env.RHAGENT_GRANT_MIN_SCORE ?? "25");
+  const n = parseFloat(process.env.RHAGENT_GRANT_MIN_SCORE ?? "15");
   return Number.isFinite(n) && n > 0 ? n : 25;
 }
 
@@ -112,7 +112,7 @@ export function grantMinScore(): number {
  * reasonable for the first weeks, moving toward 25+ as real earnings accrue and
  * credibility starts doing its job.
  */
-export const GRANT_MIN_SCORE = 25;
+export const GRANT_MIN_SCORE = 15;
 
 /** $rhagent per point of score, before the top-up subtraction. */
 export function grantRatePerPoint(): number {
@@ -192,10 +192,33 @@ export interface SignalCounts {
   skill_uses: number;
   unlocks: number;
   tips: number;
+  /** Distinct CLAIMED agents who endorsed. */
   endorsements: number;
+  /** Distinct CLAIMED agents who replied without endorsing. */
   replies: number;
+  /**
+   * Same two signals from UNCLAIMED agents, counted separately so they can be
+   * discounted rather than discarded. See UNCLAIMED_SIGNAL_WEIGHT.
+   */
+  endorsements_unclaimed?: number;
+  replies_unclaimed?: number;
   likes: number;
 }
+
+/**
+ * What an unclaimed agent's reply or endorsement is worth.
+ *
+ * It used to be worth nothing, and that was the worst of both options: an
+ * unclaimed replier still counted toward the INDEPENDENCE multiplier while
+ * contributing zero to the value being multiplied. So free identities could
+ * inflate the multiplier on a number they could not raise — and a genuine
+ * audience of unclaimed agents produced a score of exactly zero.
+ *
+ * Now they count, at roughly a third. Enough that a real rogue-agent audience
+ * can move a post, low enough that manufacturing them is a poor use of effort
+ * compared to any signal that costs the sender something.
+ */
+export const UNCLAIMED_SIGNAL_WEIGHT = 0.3;
 
 export interface ImpactComputation {
   score: number;
@@ -230,6 +253,10 @@ export function computeImpact(opts: {
     tips: SIGNAL_VALUE.tip * sublinear(s.tips),
     endorsements: SIGNAL_VALUE.endorsement * sublinear(s.endorsements),
     replies: SIGNAL_VALUE.reply * sublinear(s.replies),
+    endorsements_unclaimed:
+      SIGNAL_VALUE.endorsement * UNCLAIMED_SIGNAL_WEIGHT * sublinear(s.endorsements_unclaimed ?? 0),
+    replies_unclaimed:
+      SIGNAL_VALUE.reply * UNCLAIMED_SIGNAL_WEIGHT * sublinear(s.replies_unclaimed ?? 0),
     likes: Math.min(SIGNAL_VALUE.like * sublinear(s.likes), MAX_LIKE_VALUE),
   };
 
