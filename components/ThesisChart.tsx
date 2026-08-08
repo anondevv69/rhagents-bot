@@ -26,13 +26,55 @@ const W = 680;
 const H = 220;
 const PAD = { top: 14, right: 66, bottom: 18, left: 8 };
 
+const SUBSCRIPTS = "₀₁₂₃₄₅₆₇₈₉";
+
+/**
+ * Price, readable at any magnitude.
+ *
+ * Sub-cent tokens were rendering as `8.81e-7`. That is accurate and nobody can
+ * compare two of them at a glance. On-chain terminals all use the same
+ * convention instead — compress the leading zeros into a subscript count and
+ * keep the significant digits: `$0.0₆8813`. Same information, actually
+ * legible, and it sorts visually the way a price should.
+ */
 function fmtPrice(n: number): string {
   if (!Number.isFinite(n)) return "—";
-  if (n === 0) return "0";
-  if (n < 0.000001) return n.toExponential(2);
-  if (n < 1) return n.toPrecision(4);
-  if (n < 1000) return n.toFixed(2);
-  return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  if (n === 0) return "$0";
+  if (n < 0.001) {
+    // Count the zeros from the decimal expansion rather than via log10 —
+    // floating point puts values like 1e-6 fractionally under their power of
+    // ten, so the log route lands one short on exactly the prices this is for.
+    const m = n.toFixed(20).match(/^0\.(0*)(\d+)/);
+    if (!m) return `$${n.toExponential(2)}`;
+    const zeros = m[1].length;
+    // Round the significant digits rather than slicing the expansion — 0.00099
+    // stringifies as 0.00098999… and slicing showed 9899 for a price of 9900.
+    const sig = String(Math.round(n * Math.pow(10, zeros + 4))).slice(0, 4);
+    const marker = String(zeros)
+      .split("")
+      .map((d) => SUBSCRIPTS[Number(d)])
+      .join("");
+    return `$0.0${marker}${sig}`;
+  }
+  if (n < 1) return `$${n.toPrecision(4)}`;
+  if (n < 1000) return `$${n.toFixed(2)}`;
+  return `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+}
+
+/**
+ * Market cap, compact.
+ *
+ * The headline number for a chain-native token, because a unit price of
+ * `$0.0₆8813` tells a reader nothing about whether the thing is early. `$88.0K`
+ * answers the question they actually have. Every on-chain terminal leads with
+ * this for the same reason.
+ */
+function fmtCap(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return "—";
+  if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
+  if (n >= 1e6) return `$${(n / 1e6).toFixed(2)}M`;
+  if (n >= 1e3) return `$${(n / 1e3).toFixed(1)}K`;
+  return `$${n.toFixed(0)}`;
 }
 
 function fmtPct(n: number): string {
@@ -116,16 +158,53 @@ export async function ThesisChart({
   const my = y(marker.entry_price_usd);
   const tone = !scored ? "is-neutral" : good ? "is-up" : "is-down";
 
+  // Both anchors use one supply figure, so the cap pair moves by exactly the
+  // percentage shown. Deriving them independently would let rounding drift make
+  // the headline disagree with the two numbers under it.
+  const showCap = data.supply != null && data.supply > 0;
+  const entryCap = showCap ? data.supply! * marker.entry_price_usd : null;
+  const nowCap = showCap ? data.supply! * last : null;
+
   return (
     <section className={`thesis-chart ${tone}`} aria-label={`${symbol} since this call`}>
       <header className="thesis-chart-head">
+        {/*
+          Market cap leads where it means something.
+
+          Supply is only present for chain-native tokens (see channel-chart.ts),
+          so this automatically falls back to price for equities and tokenised
+          equities — where the share price already is the intuitive number and
+          the on-chain cap would describe the wrapper, not the company.
+
+          Percentage change is identical either way: cap = price × supply, and
+          the supply term cancels. The verdict is untouched by this switch.
+
+          No side chip — the trade strip above already carries it.
+        */}
         <div className="thesis-chart-said">
-          said at <strong>${fmtPrice(marker.entry_price_usd)}</strong>
-          {marker.side ? <span className={`thesis-chart-side is-${marker.side}`}>{marker.side}</span> : null}
+          <span className="thesis-chart-said-label">said at</span>
+          {showCap ? (
+            <>
+              <strong className="thesis-chart-anchor">{fmtCap(entryCap!)}</strong>
+              <span className="thesis-chart-anchor-sub">mcap</span>
+              <span className="thesis-chart-anchor-alt">
+                {fmtPrice(marker.entry_price_usd)} / token
+              </span>
+            </>
+          ) : (
+            <strong className="thesis-chart-anchor">{fmtPrice(marker.entry_price_usd)}</strong>
+          )}
         </div>
         <div className="thesis-chart-verdict">
           <span className="thesis-chart-pct">{fmtPct(pct)}</span>
-          <span className="thesis-chart-now">now ${fmtPrice(last)}</span>
+          {showCap ? (
+            <span className="thesis-chart-now">
+              now {fmtCap(nowCap!)} mcap
+              <span className="thesis-chart-anchor-alt">{fmtPrice(last)} / token</span>
+            </span>
+          ) : (
+            <span className="thesis-chart-now">now {fmtPrice(last)}</span>
+          )}
         </div>
       </header>
 
@@ -134,7 +213,7 @@ export async function ThesisChart({
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
         role="img"
-        aria-label={`${symbol} moved ${fmtPct(pct)} since this call at $${fmtPrice(marker.entry_price_usd)}`}
+        aria-label={`${symbol} moved ${fmtPct(pct)} since this call at ${fmtPrice(marker.entry_price_usd)}`}
       >
         <polygon className="thesis-chart-area" points={area} />
         <polyline
@@ -154,7 +233,7 @@ export async function ThesisChart({
           y2={my}
         />
         <text className="thesis-chart-entry-label" x={W - PAD.right + 6} y={my + 3}>
-          ${fmtPrice(marker.entry_price_usd)}
+          {fmtPrice(marker.entry_price_usd)}
         </text>
 
         {/* The moment of the call. */}

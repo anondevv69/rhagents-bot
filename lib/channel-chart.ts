@@ -107,6 +107,18 @@ export interface ThesisMarker {
 export interface ChannelChart {
   symbol: string;
   product: "chain" | "equity";
+  /**
+   * Circulating supply, when the token has a meaningful one.
+   *
+   * Present ONLY for chain-native tokens. Deliberately null for tokenised
+   * equities: NVDA's on-chain FDV is about $3.9M — the wrapper's float, not
+   * NVIDIA's ~$4T — so surfacing it as "market cap" would tell a reader a
+   * mega-cap is a micro-cap. For a stock the share price already is the
+   * intuitive number; for a memecoin it is not.
+   */
+  supply: number | null;
+  /** Current market cap in USD. Same restriction as `supply`. */
+  market_cap_usd: number | null;
   interval: ChartInterval;
   candles: Candle[];
   markers: ThesisMarker[];
@@ -149,9 +161,23 @@ async function deepestPool(contract: string): Promise<string | null> {
     });
     if (res.ok) {
       const body = (await res.json()) as {
-        data?: { attributes?: { address?: string; reserve_in_usd?: string } }[];
+        data?: {
+          attributes?: { address?: string; reserve_in_usd?: string; name?: string };
+          relationships?: { base_token?: { data?: { id?: string } } };
+        }[];
       };
-      const pools = body.data ?? [];
+
+      // Our token must be the pool's BASE, or the OHLCV series describes the
+      // other side of the pair.
+      //
+      // This was a live bug: NVDA's deepest pool is "USDG / NVDA", where NVDA is
+      // the QUOTE — so the chart plotted USDG at $0.9995 and labelled it NVDA,
+      // a $224 asset shown at a dollar. Picking purely by depth finds whichever
+      // pool is biggest, not whichever one is about our token.
+      const pools = (body.data ?? []).filter((p) =>
+        (p.relationships?.base_token?.data?.id ?? "").toLowerCase().endsWith(key),
+      );
+
       if (pools.length) {
         const best = pools.reduce((a, b) =>
           parseFloat(b.attributes?.reserve_in_usd ?? "0") >
@@ -232,6 +258,62 @@ async function chainCandles(
 
   if (candles.length) candleCache.set(key, { candles, at: Date.now() });
   return candles;
+}
+
+
+/* ── supply / market cap ─────────────────────────────────────────────────── */
+
+const supplyCache = new Map<string, { supply: number | null; at: number }>();
+const SUPPLY_TTL_MS = 10 * 60_000;
+
+/**
+ * Circulating supply, derived from Dexscreener's FDV and price.
+ *
+ * Supply is what turns a price into a market cap, and market cap is the number
+ * a reader can actually reason about: `$0.0₆8813` says nothing about whether a
+ * token is early, `$88K mcap` says everything.
+ *
+ * IMPORTANT — the historical caveat. This is TODAY's supply. Rendering a past
+ * call as "said at $88K mcap" multiplies the entry price by it, which is exact
+ * only while supply is constant. That holds for a fixed-supply token like
+ * $rhagent and does NOT hold for anything that mints or burns. It is the reason
+ * this is never applied to tokenised equities, whose supply moves continuously
+ * as the issuer mints and redeems against custody.
+ */
+async function tokenSupply(contract: string): Promise<number | null> {
+  const key = contract.toLowerCase();
+  const hit = supplyCache.get(key);
+  if (hit && Date.now() - hit.at < SUPPLY_TTL_MS) return hit.supply;
+
+  let supply: number | null = null;
+  try {
+    const res = await fetch(`https://api.dexscreener.com/token-pairs/v1/robinhood/${key}`, {
+      signal: AbortSignal.timeout(7_000),
+    });
+    if (res.ok) {
+      const pairs = (await res.json()) as {
+        priceUsd?: string;
+        fdv?: number;
+        marketCap?: number;
+        liquidity?: { usd?: number };
+      }[];
+      if (Array.isArray(pairs) && pairs.length) {
+        const deepest = pairs.reduce((a, b) =>
+          (b.liquidity?.usd ?? 0) > (a.liquidity?.usd ?? 0) ? b : a,
+        );
+        const px = parseFloat(deepest.priceUsd ?? "");
+        const cap = deepest.marketCap ?? deepest.fdv;
+        if (Number.isFinite(px) && px > 0 && Number.isFinite(cap) && (cap as number) > 0) {
+          supply = (cap as number) / px;
+        }
+      }
+    }
+  } catch {
+    /* leave null — the UI falls back to price-only, never a guessed cap */
+  }
+
+  supplyCache.set(key, { supply, at: Date.now() });
+  return supply;
 }
 
 /* ── markers ─────────────────────────────────────────────────────────────── */
@@ -359,6 +441,8 @@ export async function getChannelChart(
     candles: [],
     markers: [],
     latest_price_usd: null,
+    supply: null,
+    market_cap_usd: null,
     source: "none",
     ...extra,
   });
@@ -392,11 +476,19 @@ export async function getChannelChart(
       });
     }
     const latest = candles[candles.length - 1].c;
+
+    // Market cap only for chain-native tokens. A tokenised equity's on-chain
+    // cap is the wrapper's float, not the company's, and presenting it as
+    // "market cap" would be actively misleading.
+    const supply = token ? null : await tokenSupply(contract);
+
     return base({
       product: "chain",
       candles,
       markers: thesisMarkers(symbol, latest),
       latest_price_usd: latest,
+      supply,
+      market_cap_usd: supply != null ? supply * latest : null,
       source: "geckoterminal",
     });
   }

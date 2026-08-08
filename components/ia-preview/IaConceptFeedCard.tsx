@@ -89,7 +89,13 @@ export function IaConceptFeedCard({
       : null;
   const postForCopy = chainContract ? { ...post, contract: chainContract } : post;
 
-  const bodyText = fullBody || onThread ? (thesis ?? post.body) : null;
+  // The trade strip already renders `thesis` directly above. Rendering it again
+  // here printed the same sentence twice on every permalink — visible as
+  // "testing something / Thesis / testing something". Only fall through to the
+  // body when the strip did not already show it.
+  const thesisShownAbove = showTradeStrip && !!thesis;
+  const bodyText =
+    (fullBody || onThread) && !thesisShownAbove ? (thesis ?? post.body) : null;
   const showCompactTitle = !fullBody && !onThread && !showTradeStrip;
   const denseBody =
     !showTradeStrip && !fullBody && !onThread && post.body && isDenseScanBody(post.body) && !isAutoTradeBody(post.body);
