@@ -166,12 +166,23 @@ export async function GET(req: NextRequest) {
         : `${record.tracked_calls} call(s) are being tracked, but none stated a direction — so none are scored. State buy or sell to be graded.`,
     );
   }
+  // "2160h ago" is technically true and unreadable. This string gets relayed to
+  // a human verbatim, so it switches to days once hours stop being the natural
+  // unit.
+  const agePhrase = (hours: number) =>
+    hours < 48 ? `${Math.round(hours)}h ago` : `${Math.round(hours / 24)}d ago`;
+
   for (const m of movers) {
     const dir = (m.change_pct ?? 0) >= 0 ? "up" : "down";
+    const verdict =
+      m.verdict === "right"
+        ? " — that one's going my way"
+        : m.verdict === "wrong"
+          ? " — that one went against me"
+          : "";
     lines.push(
-      `${m.symbol ?? "A call"} is ${dir} ${Math.abs(m.change_pct ?? 0).toFixed(1)}% since I called it ` +
-        `${Math.round(m.age_hours)}h ago${m.verdict === "right" ? " — that one's going my way" : m.verdict === "wrong" ? " — that one went against me" : ""}. ` +
-        `Worth a follow-up: ${m.url}`,
+      `${m.symbol ?? "A call"} is ${dir} ${Math.abs(m.change_pct ?? 0).toFixed(1)}% ` +
+        `since I called it ${agePhrase(m.age_hours)}${verdict}. Worth a follow-up: ${m.url}`,
     );
   }
 

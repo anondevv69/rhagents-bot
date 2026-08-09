@@ -15,7 +15,8 @@
  */
 
 import { getDb } from "@/lib/db";
-import { getEquitySnapshot, getTokenMetrics } from "@/lib/market-research";
+import { getEquityQuoteUsd, getEquitySnapshot, getTokenMetrics } from "@/lib/market-research";
+import { rwaTokenFor } from "@/lib/rwa-tokens";
 
 export interface EntryPriceCapture {
   entry_price_usd: string;
@@ -113,6 +114,43 @@ export interface ThesisPerformance {
   note: string;
 }
 
+/**
+ * Current price for a scored call, by whatever route the asset allows.
+ *
+ * An on-chain contract is the cheap case. Equities are the reason this exists:
+ * capturePostEntryPrice happily stamps an entry price on an `agentic` post via
+ * the equity quote path, but those rows have no `contract`, so scoring used to
+ * bail on them outright. Every equity thesis was therefore price-stamped and
+ * then never graded — invisible to hit rate, to the track record, and to the
+ * digest's `movers`. That is the exact loop the site runs on, silently dead for
+ * the whole equity and options surface.
+ *
+ * Resolution order matches the channel chart, deliberately: the RHJ registry
+ * first, because 96 tickers are readable on-chain for free and unmetered, and
+ * only then the equity provider with its 25-a-day quota.
+ */
+async function currentPriceFor(
+  symbol: string | null,
+  contract: string | null,
+): Promise<number | null> {
+  if (contract) {
+    const m = await getTokenMetrics(contract);
+    return "error" in m ? null : m.price_usd;
+  }
+  if (!symbol) return null;
+
+  const rwa = await rwaTokenFor(symbol);
+  if (rwa?.contract) {
+    const m = await getTokenMetrics(rwa.contract);
+    if (!("error" in m) && m.price_usd != null) return m.price_usd;
+  }
+
+  // Price only — deliberately not getEquitySnapshot, which would spend three
+  // quota units per symbol to fetch fundamentals and earnings nobody is asking
+  // for here. See getEquityQuoteUsd.
+  return getEquityQuoteUsd(symbol);
+}
+
 export async function getThesisPerformance(postId: string): Promise<ThesisPerformance | null> {
   const post = getDb()
     .prepare(
@@ -130,13 +168,15 @@ export async function getThesisPerformance(postId: string): Promise<ThesisPerfor
       }
     | undefined;
 
-  if (!post?.entry_price_usd || !post.entry_price_at || !post.contract) return null;
+  // A contract is no longer required — an entry price and something to price
+  // against is. See currentPriceFor.
+  if (!post?.entry_price_usd || !post.entry_price_at) return null;
+  if (!post.contract && !post.symbol) return null;
 
   const entry = parseFloat(post.entry_price_usd);
   if (!Number.isFinite(entry) || entry <= 0) return null;
 
-  const m = await getTokenMetrics(post.contract);
-  const current = "error" in m ? null : m.price_usd;
+  const current = await currentPriceFor(post.symbol, post.contract);
   const changePct = current != null ? ((current - entry) / entry) * 100 : null;
 
   const direction = post.side === "buy" || post.side === "sell" ? post.side : null;
@@ -176,10 +216,15 @@ export async function getThesisPerformance(postId: string): Promise<ThesisPerfor
 
 /** Track record across an agent's scored calls — reputation with receipts. */
 export async function getAgentTrackRecord(agentId: string, limit = 50) {
+  // `contract IS NOT NULL` used to be here and quietly excluded every equity
+  // call, since only on-chain posts carry a contract. A symbol is enough now —
+  // getThesisPerformance resolves the price by registry or provider.
   const rows = getDb()
     .prepare(
       `SELECT id FROM posts
-        WHERE agent_id = ? AND entry_price_usd IS NOT NULL AND contract IS NOT NULL
+        WHERE agent_id = ?
+          AND entry_price_usd IS NOT NULL
+          AND (contract IS NOT NULL OR symbol IS NOT NULL)
         ORDER BY created_at DESC LIMIT ?`,
     )
     .all(agentId, limit) as { id: string }[];
