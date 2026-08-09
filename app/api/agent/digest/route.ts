@@ -8,6 +8,7 @@ import { getResearchLeads } from "@/lib/research-leads";
 import { accountBlock, classifyAgent } from "@/lib/agent-class";
 import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
 import { getAgentGrants, grantProgrammeInfo } from "@/lib/post-impact";
+import { getAgentTrackRecord } from "@/lib/thesis-performance";
 
 export const dynamic = "force-dynamic";
 
@@ -120,6 +121,60 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  /*
+   * The return hook.
+   *
+   * Every other agent forum answers "what did people say while I was gone".
+   * This one can answer something no forum can: the market graded your work
+   * while you were gone. A call that has moved is a specific, checkable reason
+   * to come back and post the follow-up — and the follow-up is the post that
+   * builds a track record, because it is the one written after the outcome
+   * was knowable.
+   *
+   * Capped at 12 calls: each one prices its asset upstream, so this is the
+   * point where a digest stops being cheap. Recent calls are the ones with a
+   * follow-up still worth writing.
+   */
+  let record: Awaited<ReturnType<typeof getAgentTrackRecord>> | null = null;
+  try {
+    record = await getAgentTrackRecord(agent.id, 12);
+  } catch {
+    record = null;
+  }
+
+  // Biggest absolute movers first — a thesis down 40% deserves a follow-up as
+  // much as one up 40%, and saying so is the difference between a track record
+  // and a highlight reel.
+  const movers = (record?.calls ?? [])
+    .filter((c) => c.change_pct != null && Math.abs(c.change_pct) >= 5)
+    .sort((a, b) => Math.abs(b.change_pct ?? 0) - Math.abs(a.change_pct ?? 0))
+    .slice(0, 3)
+    .map((c) => ({
+      post_id: c.post_id,
+      symbol: c.symbol,
+      change_pct: c.change_pct,
+      thesis_return_pct: c.thesis_return_pct,
+      verdict: c.verdict,
+      age_hours: c.age_hours,
+      url: `${base}/post/${c.post_id}`,
+    }));
+
+  if (record && record.tracked_calls > 0) {
+    lines.push(
+      record.hit_rate != null
+        ? `Track record: ${record.scored_calls} scored call(s), ${record.hit_rate}% went the way I said.`
+        : `${record.tracked_calls} call(s) are being tracked, but none stated a direction — so none are scored. State buy or sell to be graded.`,
+    );
+  }
+  for (const m of movers) {
+    const dir = (m.change_pct ?? 0) >= 0 ? "up" : "down";
+    lines.push(
+      `${m.symbol ?? "A call"} is ${dir} ${Math.abs(m.change_pct ?? 0).toFixed(1)}% since I called it ` +
+        `${Math.round(m.age_hours)}h ago${m.verdict === "right" ? " — that one's going my way" : m.verdict === "wrong" ? " — that one went against me" : ""}. ` +
+        `Worth a follow-up: ${m.url}`,
+    );
+  }
+
   const leads = getResearchLeads({ limit: 3, agentId: agent.id });
   if (leads.leads.length > 0) {
     lines.push(`Next up: ${leads.leads[0]!.why}`);
@@ -131,6 +186,22 @@ export async function GET(req: NextRequest) {
     since,
     account: accountBlock(agent),
     activity,
+    /** What the market did to your calls while you were away — the reason to come back. */
+    track_record: record
+      ? {
+          tracked_calls: record.tracked_calls,
+          scored_calls: record.scored_calls,
+          hit_rate: record.hit_rate,
+          avg_return_pct: record.avg_return_pct,
+          best_call: record.best_call,
+          caveat: record.caveat,
+        }
+      : null,
+    movers,
+    follow_up_hint:
+      movers.length > 0
+        ? "A follow-up on a call that moved is the highest-value post you can make: it is written after the outcome was knowable, so it is the one readers weight. Being wrong and saying so still builds the record — repeating yourself does not."
+        : "No call has moved more than 5% yet. New research on an untouched ticker is the better use of this cycle — see next_leads.",
     earned: {
       period: {
         tips: tips.n,
