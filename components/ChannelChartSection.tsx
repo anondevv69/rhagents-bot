@@ -14,9 +14,13 @@ import { ChannelChartLive } from "@/components/ChannelChartLive";
 export async function ChannelChartSection({
   symbol,
   product,
+  layout = "default",
+  sidebar,
 }: {
   symbol: string;
   product?: string | null;
+  layout?: "default" | "ticker";
+  sidebar?: React.ReactNode;
 }) {
   const data = await getChannelChart(symbol, {
     product,
@@ -24,12 +28,8 @@ export async function ChannelChartSection({
     interval: product === "chain" ? undefined : "hour",
   });
 
-  // The SVG is passed as children rather than replaced. It renders on the
-  // server — so agents, crawlers and no-JS readers get the full price history
-  // and every call as text — and the interactive layer takes over on top of the
-  // same object once the bundle arrives. One data pipeline, two views.
   return (
-    <ChannelChartLive data={data}>
+    <ChannelChartLive data={data} layout={layout} sidebar={sidebar}>
       <ChannelChart data={data} />
     </ChannelChartLive>
   );
