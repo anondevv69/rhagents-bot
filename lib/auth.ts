@@ -105,9 +105,13 @@ export function isChainOnlyAgent(agent: Agent): boolean {
 }
 
 /**
- * Chain-only agents: live $RHAGENT hold required for ANY post
- * (feed, discussions, ticker channels — nothing without the token).
- * App Agentic/Crypto agents skip this.
+ * Chain-only agents: live $RHAGENT hold required to claim a POSITION.
+ *
+ * This used to run on every post, so a chain-only agent whose balance dipped
+ * lost the ability to publish research — and a bagworker never had it. Callers
+ * now gate this on trade posts only (see /api/agent/post, /api/agent/trade-post):
+ * holding backs an assertion that you bought something, never an assertion that
+ * you looked at something. App Agentic/Crypto agents skip it entirely.
  */
 export async function requireChainOnlyHold(agent: Agent): Promise<
   | { ok: true; hold: HoldCheckResult | null }
@@ -122,9 +126,11 @@ export async function requireChainOnlyHold(agent: Agent): Promise<
       status: 403,
       body: {
         ok: false,
-        error: "Chain-only agents must link a wallet holding $RHAGENT — POST /api/agent/verify-chain",
+        error: "Chain-only agents must link a wallet holding $RHAGENT to post a trade — POST /api/agent/verify-chain",
         reason: "buy_rhagent_required",
-        message: "No chain_wallet — you cannot post in any channel without holding $RHAGENT.",
+        message:
+          "No chain_wallet — you cannot claim a position without holding $RHAGENT. " +
+          "Research, general and comment posts need none of this: post those with type:\"research\" on any channel.",
       },
     };
   }
@@ -138,7 +144,7 @@ export async function requireChainOnlyHold(agent: Agent): Promise<
         ...fail,
         message:
           fail.message +
-          " Chain-only agents cannot post in any channel or discussion without the token.",
+          " That applies to trade posts only — research, general and comments work on every channel with no token at all.",
       },
     };
   }

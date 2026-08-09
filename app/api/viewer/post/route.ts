@@ -2,12 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerHasIdentity } from "@/lib/agent-identity";
 import { agentViaForViewer, resolveOwnedAgentForViewer } from "@/lib/viewer-agent";
-import { canPostProduct, isChainOnlyAgent, requireClaimed } from "@/lib/auth";
+import { isChainOnlyAgent, requireClaimed } from "@/lib/auth";
 import { createPost, stripSensitive } from "@/lib/posts";
 import { getDb } from "@/lib/db";
 import { moderateText } from "@/lib/content-moderation";
-import { checkRhagentHoldings, holdFailResponse } from "@/lib/rhagent-holdings";
-import { checkTokenHoldings } from "@/lib/token-holdings";
+import { checkResearchQuality } from "@/lib/research-quality";
 import {
   classifyChainSymbol,
   resolveChainTicker,
@@ -91,6 +90,23 @@ export async function POST(req: NextRequest) {
   const symbolInput = normalizeTickerSymbol(typeof body.symbol === "string" ? body.symbol : null);
   const parent_id = typeof body.parent_id === "string" ? body.parent_id.trim() : null;
 
+  // Same slop gate the agent API applies. Now that the hold checks are gone,
+  // content quality is the only thing limiting repetition on this path too —
+  // and a human composing in the browser should get the same rules, and the
+  // same explanations, as an agent posting over HTTP.
+  const quality = checkResearchQuality({
+    agentId: agent.id,
+    type,
+    body: rawBody,
+    symbol: symbolInput,
+  });
+  if (!quality.ok) {
+    return NextResponse.json(
+      { ok: false, error: quality.code, message: quality.message, hint: quality.hint },
+      { status: 422 },
+    );
+  }
+
   let parentRow: { symbol: string | null; product: string | null; contract: string | null } | null =
     null;
   if (parent_id) {
@@ -145,10 +161,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const productErr = canPostProduct(agent, "chain");
-  if (productErr) {
-    return NextResponse.json({ ok: false, error: productErr }, { status: 403 });
-  }
+  // A wallet still identifies the author — that part is identity, not payment.
   if (!agent.chain_wallet) {
     return NextResponse.json(
       { ok: false, error: "No chain_wallet linked on this agent." },
@@ -156,10 +169,19 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const hold = await checkRhagentHoldings(agent.chain_wallet);
-  if (!hold.ok) {
-    return NextResponse.json(holdFailResponse(hold), { status: 403 });
-  }
+  // No live $RHAGENT hold check here, deliberately.
+  //
+  // This route accepts research, comment and general only (see `type` above) —
+  // it cannot post a trade at all. So the hold had no position to back: it was
+  // charging rent on having an opinion. It also contradicted the compose box,
+  // which tells the author in plain text that no $RHAGENT and no token are
+  // required to post research, and then the API returned 403.
+  //
+  // The account itself is still gated: wallet login established this agent.
+  // What is gone is the RE-check at post time, which only ever caught the
+  // author whose balance dropped after they joined — punishing exactly the
+  // researcher with no capital this site is supposed to be for. Same rule the
+  // agent API now applies: holding backs a trade, never a thesis.
 
   const symbolHint =
     symbolInput ||
@@ -191,18 +213,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const tokHold = await checkTokenHoldings(agent.chain_wallet, contract);
-  if (!tokHold.ok) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: tokHold.error,
-        message: tokHold.message,
-        buy_hint: `Hold any amount of ${resolved.symbol} (${contract}) in your Chain wallet.`,
-      },
-      { status: 403 },
-    );
-  }
+  // No token-specific hold either. Requiring the author to own the token they
+  // are writing about selects for talking your own book: the only people
+  // allowed to publish on an asset were the ones already exposed to it, and a
+  // bearish thesis was structurally impossible to post. Research on a token
+  // requires reading it, not holding it.
 
   const via = agentViaForViewer(session!, agent);
   const post = createPost({

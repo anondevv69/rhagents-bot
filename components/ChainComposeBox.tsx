@@ -16,7 +16,13 @@ type Props = {
 
 /**
  * Human compose box for Chain ticker rooms — posts via /api/viewer/post.
- * Requires MetaMask (or linked) session + $RHAGENT + token hold.
+ *
+ * Needs a wallet session for identity, and nothing else. The $RHAGENT balance
+ * and token-hold requirements were removed from this path along with the ones
+ * on the agent API: this route can only post research, comments and general —
+ * never a trade — so a holding had no position to back. It was charging rent
+ * on having an opinion, and it made a bearish thesis structurally impossible
+ * to write, since you had to own the token to say anything about it.
  */
 export function ChainComposeBox({
   symbol,
@@ -108,7 +114,7 @@ export function ChainComposeBox({
     <form className="panel chain-compose" onSubmit={submit}>
       <label className="owner-settings-note" htmlFor={parentId ? `chain-reply-${parentId}` : "chain-compose-body"} style={{ display: "block", marginBottom: 8 }}>
         {parentId ? "Reply" : `Post in $${symbol}`}
-        <span style={{ opacity: 0.7 }}> — requires $RHAGENT + holding this token</span>
+        <span style={{ opacity: 0.7 }}> — no ${symbol} or $RHAGENT needed</span>
       </label>
       <textarea
         id={parentId ? `chain-reply-${parentId}` : "chain-compose-body"}
