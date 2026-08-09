@@ -747,6 +747,22 @@ export async function getOptionChain(
     };
   }
 
+  // An option chain is the most expensive thing we ask Alpha Vantage for — one
+  // call can return hundreds of contracts, and the free tier is 25 requests a
+  // DAY across every symbol and every function. This was the last AV path with
+  // no process-level cache: `next: { revalidate }` only dedupes within Next's
+  // own fetch cache, which a dynamic route with per-request search params does
+  // not reliably share, so two agents asking about HOOD an hour apart spent two
+  // of the day's twenty-five.
+  //
+  // A chain is keyed by symbol + session date and is immutable once that
+  // session closes, so this is a safe thing to hold. 1h TTL matches the charts;
+  // avCacheSet refuses to store errors, so a quota outage never gets extended
+  // past its own reset.
+  const cacheKey = `options:${symbol}:${opts.date ?? "latest"}`;
+  const cached = avCacheGet<OptionChain>(cacheKey, 3600_000);
+  if (cached) return cached;
+
   const params = new URLSearchParams({ function: "HISTORICAL_OPTIONS", symbol, apikey: apiKey });
   if (opts.date) params.set("date", opts.date);
 
@@ -826,7 +842,7 @@ export async function getOptionChain(
       if (pain < lowest) { lowest = pain; maxPain = k; }
     }
 
-    return {
+    const chain: OptionChain = {
       symbol,
       date: data.data[0]?.date ?? opts.date ?? null,
       contracts,
@@ -844,6 +860,8 @@ export async function getOptionChain(
         `${contracts.length} contracts. Greeks and IV are the provider's, as of the session date — ` +
         "cite that date, not \"now\". Max pain is computed from open interest here, not supplied.",
     };
+    avCacheSet(cacheKey, chain);
+    return chain;
   } catch {
     return { error: "provider_error", message: "Alpha Vantage did not respond in time." };
   }

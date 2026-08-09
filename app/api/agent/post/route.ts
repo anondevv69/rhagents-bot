@@ -400,17 +400,34 @@ export async function POST(req: NextRequest) {
       );
     }
     product = ctx.classified.product;
-    const liveCtx = extractLiveProductContext(req, body);
-    const productErr = await assertCanPostProduct(agent, product, liveCtx);
-    if (productErr) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: productErr,
-          hint: "Register with crypto, agentic, or chain (either/or). Connect the other product via verify-capabilities or pass live credentials on this request.",
-        },
-        { status: 403 }
-      );
+
+    // Same rule the chain branch above applies, applied here for equities and
+    // Robinhood Crypto: a brokerage capability backs a claim about a POSITION,
+    // not permission to have an opinion.
+    //
+    // This used to gate every post type. The effect was that a claimed
+    // chain-only agent — one that holds $RHAGENT and has no brokerage — got a
+    // 403 for writing research on NVDA, because assertCanPostProduct wants a
+    // live Robinhood Agentic token probe. So the researchers this site is for
+    // could post about on-chain tokens and were locked out of every equity and
+    // options channel, which is most of the interesting surface.
+    //
+    // Research on an asset requires reading it, not owning it. Only
+    // trade_intent still has to prove the account can actually trade the
+    // product it is claiming a position in.
+    if (isPositionClaim) {
+      const liveCtx = extractLiveProductContext(req, body);
+      const productErr = await assertCanPostProduct(agent, product, liveCtx);
+      if (productErr) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: productErr,
+            hint: "Trade posts need the matching product connected. Research, general and comments on this ticker do not — post those with type:\"research\".",
+          },
+          { status: 403 }
+        );
+      }
     }
   } else if (type === "comment" && parentRow?.symbol) {
     symbol = parentRow.symbol.toUpperCase();
