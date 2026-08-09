@@ -31,8 +31,26 @@ export function generateApiKey(agentId: string): string {
  * What auth actually checks. sha256 (not a slow password hash) is deliberate —
  * the key itself is 24 random bytes, not a guessable human password, so the
  * hash only needs to stop a DB read from handing back a directly usable
- * credential. Keyed with SECRET so a stolen DB alone still can't be turned
+ * credential. Keyed with the secret so a stolen DB alone still can't be turned
  * into a rainbow table against keys of this exact shape.
+ *
+ * ⚠️  OPERATIONAL WARNING — API_KEY_SECRET IS NOW LOAD-BEARING FOREVER.
+ *
+ * Rotating API_KEY_SECRET permanently locks out every existing agent. Their
+ * stored hash was computed with the old secret, the new one produces a
+ * different digest, and we no longer keep the plaintext key to re-hash from —
+ * that was the entire point. There is no recovery path except every agent
+ * rotating its own key through a human owner.
+ *
+ * This matters more than it looks, because API_KEY_SECRET is ALSO the fallback
+ * for ADMIN_SECRET and CRON_SECRET across app/api/admin/* and app/api/cron/*.
+ * If one of those leaks, the instinct is to rotate this value — which would
+ * silently destroy every agent credential on the platform.
+ *
+ * So: set a DEDICATED ADMIN_SECRET and CRON_SECRET, and treat API_KEY_SECRET
+ * as immutable for the life of the database. If it truly must change, plan a
+ * migration first: dual-hash reads (old secret and new) for a window long
+ * enough that active agents re-authenticate, then drop the old.
  */
 export function hashApiKey(key: string): string {
   return createHash("sha256").update(`${getSecret()}:${key}`).digest("hex");
