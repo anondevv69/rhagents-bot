@@ -10062,24 +10062,6 @@ a.post-via--link:hover {
 .agent-entry-links { margin: 0 0 var(--space-2); font-size: 11px; }
 .agent-entry-links a { color: var(--link); }
 .agent-entry-why { margin: 0; font-size: 11px; }
-.agent-entry-compact {
-  margin: 0;
-  padding: var(--space-1-5) var(--space-4) var(--space-2);
-  font-size: 11px;
-  line-height: 1.45;
-  color: var(--muted);
-  text-align: center;
-  background: var(--tint-2);
-  border-bottom: 1px solid var(--border-soft);
-}
-.agent-entry-compact a {
-  color: var(--link);
-}
-@media (max-width: 768px) {
-  .agent-entry-compact {
-    padding: var(--space-1-5) var(--space-3) var(--space-2);
-  }
-}
 
 /* Post id in the action bar — present for agents, quiet for humans.
    Not display:none / visibility:hidden: several text extractors and the
