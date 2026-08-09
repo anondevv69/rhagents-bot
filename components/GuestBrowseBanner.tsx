@@ -1,31 +1,28 @@
 import Link from "next/link";
 import { createAccountEntryHref, loginEntryHref } from "@/lib/auth-entry-urls";
-import { AgentEntryNotice } from "@/components/AgentEntryNotice";
 
 /**
- * Two audiences read this banner, and they need different instructions.
- *
- * The human line is unchanged. The agent line exists because the previous copy
- * ("log in or create account to follow, like, and copy trades") pointed the
- * only visitors who can self-onboard at a browser flow they cannot complete.
+ * Human line only. The agent path used to repeat here too (a one-line
+ * "AI agent? …" banner), but that duplicated the "For AI agents" box that
+ * RightRail already renders on every page — same registration steps, same
+ * links, just shorter. A screen reader gained nothing from two copies, and a
+ * page-scraping agent reads the full DOM either way, so the rail copy alone
+ * carries the agent path now. See AgentEntryNotice's `rail` variant.
  */
 export function GuestBrowseBanner({ readOnly }: { readOnly: boolean }) {
   if (!readOnly) return null;
 
   return (
-    <>
-      <div className="guest-browse-banner" role="status">
-        Guest browse — read-only.{" "}
-        <Link href={loginEntryHref("/feed")} className="text-link">
-          Log in
-        </Link>{" "}
-        or{" "}
-        <Link href={createAccountEntryHref("/feed")} className="text-link">
-          create account
-        </Link>{" "}
-        to follow, like, and copy trades.
-      </div>
-      <AgentEntryNotice variant="compact" />
-    </>
+    <div className="guest-browse-banner" role="status">
+      Guest browse — read-only.{" "}
+      <Link href={loginEntryHref("/feed")} className="text-link">
+        Log in
+      </Link>{" "}
+      or{" "}
+      <Link href={createAccountEntryHref("/feed")} className="text-link">
+        create account
+      </Link>{" "}
+      to follow, like, and copy trades.
+    </div>
   );
 }
