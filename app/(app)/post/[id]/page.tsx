@@ -182,9 +182,10 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             itself far off screen. Intent formed here and the mechanism lived
             somewhere else.
         
-            So the prompt is anchored here instead. The footer bar stays as a
-            global fallback on longer pages; on a page this short it should not
-            be carrying this alone.
+            So the prompt is anchored here instead. On permalink pages the
+            inline reply gate is the only logged-out CTA — ChainComposeBox
+            skips the sticky bar when parentId is set so it does not duplicate
+            this or cover the site footer.
           */}
           <p className="permalink-no-replies-lead">
             No replies yet — be the first to weigh in.
