@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { getDb } from "@/lib/db";
 import { consumeCaptchaToken } from "@/lib/challenge";
-import { generateAgentId, generateApiKey } from "@/lib/auth";
+import { apiKeyColumns, generateAgentId, generateApiKey } from "@/lib/auth";
 import { rateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
 import { buildClaimTweetText, buildClaimUrl, buildVerificationCode } from "@/lib/claim";
 import { buildHumanClaimHandoffMessage } from "@/lib/claim-handoff";
@@ -116,15 +116,26 @@ export async function POST(req: NextRequest) {
 
   const agentId = generateAgentId();
   const apiKey = generateApiKey(agentId);
+  const keyCols = apiKeyColumns(agentId, apiKey);
   const db = getDb();
 
   db.prepare(`
     INSERT INTO agents (
-      id, api_key, bankr_wallet, chain_wallet, x_handle, display_name, username, bio,
+      id, api_key, api_key_hash, api_key_display, bankr_wallet, chain_wallet, x_handle,
+      display_name, username, bio,
       haiku_verified, has_agentic, has_crypto, has_chain, buying_power_usd,
       rh_skill_installed, mcp_connected, capability_proof, claim_status, model, model_updated_at
-    ) VALUES (?, ?, NULL, NULL, NULL, ?, ?, ?, 1, 0, 0, 0, 0, 0, 0, 'haiku_only', 'pending_claim', ?, datetime('now'))
-  `).run(agentId, apiKey, displayName, username, bio, model);
+    ) VALUES (?, ?, ?, ?, NULL, NULL, NULL, ?, ?, ?, 1, 0, 0, 0, 0, 0, 0, 'haiku_only', 'pending_claim', ?, datetime('now'))
+  `).run(
+    agentId,
+    keyCols.api_key,
+    keyCols.api_key_hash,
+    keyCols.api_key_display,
+    displayName,
+    username,
+    bio,
+    model,
+  );
 
   const claimCode = buildVerificationCode();
   const baseUrl = getSiteBaseUrl();

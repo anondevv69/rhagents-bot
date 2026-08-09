@@ -1,15 +1,15 @@
 import type { WalletSnapshot } from "@/lib/wallet-snapshot";
 import { parseStoredWalletSnapshot } from "@/lib/wallet-snapshot";
 
-import { generateApiKey } from "./auth";
+import { apiKeyColumns, generateApiKey, maskApiKey } from "./auth";
 import { getDb, type Agent } from "./db";
 import { viewerOwnsAgent } from "./agent-identity";
 import type { ViewerSession } from "./viewer";
 
-export function maskApiKey(apiKey: string): string {
-  if (apiKey.length < 20) return "rhagents_••••••••";
-  return `${apiKey.slice(0, 16)}…${apiKey.slice(-4)}`;
-}
+// Re-exported so existing imports of maskApiKey from this module keep working —
+// the implementation now lives in auth.ts, next to hashApiKey, since key
+// generation and key masking need to happen together at every write site.
+export { maskApiKey };
 
 export interface OwnerConnections {
   claim_status: string;
@@ -126,7 +126,10 @@ export function listAgentsOwnedBySession(session: ViewerSession | null): Agent[]
 export function rotateAgentApiKey(agentId: string): string {
   const db = getDb();
   const newKey = generateApiKey(agentId);
-  const result = db.prepare(`UPDATE agents SET api_key = ? WHERE id = ?`).run(newKey, agentId);
+  const cols = apiKeyColumns(agentId, newKey);
+  const result = db
+    .prepare(`UPDATE agents SET api_key = ?, api_key_hash = ?, api_key_display = ? WHERE id = ?`)
+    .run(cols.api_key, cols.api_key_hash, cols.api_key_display, agentId);
   if (result.changes !== 1) {
     throw new Error("rotate_failed");
   }

@@ -25,14 +25,65 @@ export function generateApiKey(agentId: string): string {
   return `rhagents_${agentId}_${raw}_${sig}`;
 }
 
+/**
+ * What auth actually checks. sha256 (not a slow password hash) is deliberate —
+ * the key itself is 24 random bytes, not a guessable human password, so the
+ * hash only needs to stop a DB read from handing back a directly usable
+ * credential. Keyed with SECRET so a stolen DB alone still can't be turned
+ * into a rainbow table against keys of this exact shape.
+ */
+export function hashApiKey(key: string): string {
+  return createHash("sha256").update(`${SECRET}:${key}`).digest("hex");
+}
+
+/**
+ * A fragment safe to keep in plaintext forever, for "your key ends in …" UI.
+ * Reveals only the non-secret `rhagents_{agent_id}` prefix and the last 4 of
+ * the checksum suffix — never touches the 24 random bytes that make the key
+ * work, so storing this permanently costs nothing a DB leak could exploit.
+ */
+export function maskApiKey(key: string): string {
+  if (key.length < 20) return "rhagents_••••••••";
+  return `${key.slice(0, 16)}…${key.slice(-4)}`;
+}
+
+/** Row shape written for a freshly generated or rotated key — never the raw secret. */
+export function apiKeyColumns(agentId: string, rawKey: string) {
+  return {
+    api_key: `hashed:${agentId}`,
+    api_key_hash: hashApiKey(rawKey),
+    api_key_display: maskApiKey(rawKey),
+  };
+}
+
 export function getAgentFromRequest(req: Request): Agent | null {
   const auth = req.headers.get("Authorization") ?? "";
   const key = auth.startsWith("Bearer ") ? auth.slice(7).trim() : auth.trim();
   if (!key) return null;
   const db = getDb();
-  return (
-    (db.prepare("SELECT * FROM agents WHERE api_key = ?").get(key) as Agent | undefined) ?? null
-  );
+
+  const hash = hashApiKey(key);
+  const byHash = db.prepare("SELECT * FROM agents WHERE api_key_hash = ?").get(hash) as
+    | Agent
+    | undefined;
+  if (byHash) return byHash;
+
+  // Legacy fallback: this row hasn't been seen since hashing shipped, so
+  // api_key still holds the real secret. A match here is also the last time
+  // it ever will — hash it, blank it, done. Self-healing on next use, no bulk
+  // migration script, no downtime.
+  const byPlain = db.prepare("SELECT * FROM agents WHERE api_key = ?").get(key) as
+    | Agent
+    | undefined;
+  if (byPlain) {
+    const cols = apiKeyColumns(byPlain.id, key);
+    db.prepare(
+      `UPDATE agents SET api_key = ?, api_key_hash = ?, api_key_display = ? WHERE id = ?`,
+    ).run(cols.api_key, cols.api_key_hash, cols.api_key_display, byPlain.id);
+    return { ...byPlain, ...cols };
+  }
+
+  return null;
 }
 
 export function requireClaimed(agent: Agent): string | null {
