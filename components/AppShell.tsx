@@ -1,9 +1,8 @@
 import { Suspense } from "react";
-import { GuestBrowseBanner } from "./GuestBrowseBanner";
+import { TopSiteBanners } from "./TopSiteBanners";
 import { ConnectAgentBanner } from "./ConnectAgentBanner";
 import { MobileBottomNavSlot } from "./MobileBottomNavSlot";
 import { AppPageBody } from "./AppPageBody";
-import { RightRail } from "./RightRail";
 import { ViewerModeProvider } from "./ViewerModeProvider";
 import { ConceptTopbar } from "./ConceptTopbar";
 import { ConceptSiteFooter } from "./ConceptSiteFooter";
@@ -24,9 +23,9 @@ export function AppShell({
       <ViewerModeProvider readOnly={readOnly}>
         <div className={`concept-app-shell${readOnly ? " concept-app-shell--read-only" : ""}`}>
           <ConceptTopbar />
-          <GuestBrowseBanner readOnly={readOnly} />
+          <TopSiteBanners readOnly={readOnly} />
           <ConnectAgentBanner show={needsAgent} />
-          <AppPageBody rail={<RightRail />}>{children}</AppPageBody>
+          <AppPageBody>{children}</AppPageBody>
           <ConceptSiteFooter />
           <Suspense fallback={null}>
             <MobileBottomNavSlot />

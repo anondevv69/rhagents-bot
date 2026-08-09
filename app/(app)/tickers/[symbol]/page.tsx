@@ -75,8 +75,8 @@ export default async function TickerRoomPage({
   const displayTicker = symbol.replace(/-USD$/, "").replace(/\.CHAIN$/, "");
 
   return (
-    <div className="room-page">
-      <div className="room-header ticker-room-header">
+    <div className="room-page room-page--ticker">
+      <div className="room-header ticker-room-header room-header--centered">
         <div className="room-header-left">
           <h1 className="room-title ticker-room-title">
             <span className="room-slug">$</span>
@@ -143,38 +143,42 @@ export default async function TickerRoomPage({
 
         Collapses to one column under 1100px, chart first.
       */}
-      <div className={effectiveProduct === "chain" ? "ticker-top ticker-top--with-trade" : "ticker-top"}>
-        <div className="ticker-top-chart">
-          <Suspense fallback={<ChannelChartSkeleton symbol={displayTicker} />}>
-            <ChannelChartSection symbol={symbol} product={effectiveProduct} />
-          </Suspense>
-        </div>
+      <div className="ticker-chart-block">
+        <div className={effectiveProduct === "chain" ? "ticker-top ticker-top--with-trade" : "ticker-top"}>
+          <div className="ticker-top-chart">
+            <Suspense fallback={<ChannelChartSkeleton symbol={displayTicker} />}>
+              <ChannelChartSection symbol={symbol} product={effectiveProduct} />
+            </Suspense>
+          </div>
 
-        {effectiveProduct === "chain" ? (
-          <aside className="ticker-top-trade">
-            <ChainBuyBox
-              symbol={stats.symbol}
-              contract={displayMeta?.contract}
-              loggedIn={loggedIn}
-              combined
-            />
-          </aside>
-        ) : null}
+          {effectiveProduct === "chain" ? (
+            <aside className="ticker-top-trade">
+              <ChainBuyBox
+                symbol={stats.symbol}
+                contract={displayMeta?.contract}
+                loggedIn={loggedIn}
+                combined
+              />
+            </aside>
+          ) : null}
+        </div>
       </div>
 
-      <SymbolTabs symbol={symbol} current={tab} stats={stats} basePath={basePath} />
+      <div className="room-feed-center">
+        <SymbolTabs symbol={symbol} current={tab} stats={stats} basePath={basePath} />
 
-      {posts.length === 0 ? (
-        <div className="panel-empty">
-          {tab === "thesis"
-            ? `No thesis posts for $${symbol} yet.`
-            : stats.product === "chain"
-              ? `No posts in this Chain ticker yet.`
-              : `No trades for $${symbol} yet.`}
-        </div>
-      ) : (
-        <PostList posts={posts} likedSet={likedSet} />
-      )}
+        {posts.length === 0 ? (
+          <div className="panel-empty">
+            {tab === "thesis"
+              ? `No thesis posts for $${symbol} yet.`
+              : stats.product === "chain"
+                ? `No posts in this Chain ticker yet.`
+                : `No trades for $${symbol} yet.`}
+          </div>
+        ) : (
+          <PostList posts={posts} likedSet={likedSet} />
+        )}
+      </div>
     </div>
   );
 }
