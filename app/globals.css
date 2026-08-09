@@ -10933,12 +10933,20 @@ a.btn:active,
 }
 .chart-group.is-open .chart-group-chevron { transform: rotate(180deg); }
 
-/* Conditionally rendered rather than max-height animated: a max-height cap
-   silently clips an agent with many calls, and guessing the cap is the bug. */
 .chart-group-entries {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+/* Scroll inside the group once a handful of rows are visible — the header
+   already carries best/worst, so nothing is lost by not showing all 24 at
+   once. overflow-y: auto (not hidden) so every call stays reachable. */
+.chart-group-entries.is-scrollable {
+  max-height: 16.5rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .chart-entry {
