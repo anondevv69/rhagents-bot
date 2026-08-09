@@ -133,15 +133,7 @@ export default async function TickerRoomPage({
       </div>
 
       {/*
-        Price with every priced thesis on it, wide on the left; trade panel right.
-
-        Reading order is the argument: the chart is the evidence and the buy box
-        is the conclusion drawn from it, so the action cannot come first. It is
-        also the arrangement every comparable product uses — fomo.family,
-        pump.fun and gmgn all put the panel right of the chart — and breaking a
-        convention that strong needs a better reason than variety.
-
-        Collapses to one column under 1100px, chart first.
+        Chart (with calls on its right) + trade panel; thesis feed centered below.
       */}
       <div className="ticker-chart-block">
         <div className={effectiveProduct === "chain" ? "ticker-top ticker-top--with-trade" : "ticker-top"}>
