@@ -72,7 +72,12 @@ export function ChainComposeBox({
   }
 
   if (!loggedIn) {
-    // Pinned to the viewport, not stacked in the feed.
+    // On a permalink reply, the empty-state reply gate already carries this
+    // CTA inline — a second fixed bar at the viewport bottom duplicates it and
+    // covers the normal site footer.
+    if (parentId) return null;
+
+    // Pinned to the viewport on ticker rooms — not stacked in the feed.
     //
     // As a third card in the stream this read as another post — a standing
     // room-level CTA masquerading as content. It is not about any one post, so

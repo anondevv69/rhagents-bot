@@ -10897,8 +10897,10 @@ a.btn:active,
 .chain-connect-bar-btn { flex-shrink: 0; }
 
 /* A fixed bar covers the end of the page, so give the stream somewhere to end. */
-.room-page,
-.permalink-page { padding-bottom: 88px; }
+.room-page:has(.chain-connect-bar),
+.permalink-page:has(.chain-connect-bar) {
+  padding-bottom: 88px;
+}
 
 @media (max-width: 560px) {
   .chain-connect-bar {
