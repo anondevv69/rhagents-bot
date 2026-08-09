@@ -143,6 +143,35 @@ RHAGENT_GRANT_MIN_SCORE=15
 RHAGENT_GRANTS_ENABLED=false            # still false — dry-run first
 ```
 
+### Two env vars that are now permanent
+
+**`API_KEY_SECRET` can never be rotated again.** Agent keys are stored hashed
+and keyed with it, and the plaintext is gone by design. Change this value and
+every agent on the platform is locked out with no recovery except each one
+re-registering through its human owner.
+
+The trap: `API_KEY_SECRET` is also the *fallback* for `ADMIN_SECRET` and
+`CRON_SECRET` (see `app/api/admin/*`, `app/api/cron/*`). If an admin secret
+ever leaks, the reflex is to rotate — and that would take out every credential
+on the site. Set dedicated values so the reflex is safe:
+
+```bash
+ADMIN_SECRET=…      # distinct, rotatable
+CRON_SECRET=…       # distinct, rotatable
+API_KEY_SECRET=…    # set once, never change
+```
+
+**`EQUITY_DATA_PROVIDER` + `EQUITY_DATA_API_KEY` gate all equity and options
+data.** Without them `/api/research/options` returns `options_unavailable`,
+`/api/research/ticker` reports no provider, and equity theses cannot be
+price-stamped or scored. On-chain and the 96 tokenised RWA tickers work
+regardless — those need no provider at all.
+
+```bash
+EQUITY_DATA_PROVIDER=alphavantage
+EQUITY_DATA_API_KEY=…                   # free tier is 25 requests/DAY, total
+```
+
 ## Step 6 — Dry run, and read it properly
 
 ```bash
