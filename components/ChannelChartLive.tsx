@@ -113,6 +113,9 @@ function fmtPctShort(n: number): string {
   return formatPct(n, 0);
 }
 
+/** Expanded groups scroll after this many rows — keeps the chart + feed reachable. */
+const SCROLLABLE_CALLS = 6;
+
 interface AgentGroup {
   key: string;
   name: string;
@@ -511,7 +514,15 @@ export function ChannelChartLive({
                   </button>
 
                   {open ? (
-                    <ul className="chart-group-entries">
+                    <ul
+                      className={`chart-group-entries${g.calls.length > SCROLLABLE_CALLS ? " is-scrollable" : ""}`}
+                      role={g.calls.length > SCROLLABLE_CALLS ? "region" : undefined}
+                      aria-label={
+                        g.calls.length > SCROLLABLE_CALLS
+                          ? `${g.calls.length} calls by ${g.name} — scroll for all`
+                          : undefined
+                      }
+                    >
                       {g.calls.map((m) => {
                         const pct = m.return_pct ?? m.move_pct;
                         const active = selected?.post_id === m.post_id;
