@@ -1,0 +1,552 @@
+/* ==========================================================================
+   RHAGENT THEME — Atlas Design Language Override
+   ==========================================================================
+   Load this file AFTER atlas.css (or your Atlas-equivalent tokens).
+
+   Philosophy:
+   - Keep Atlas structure, spacing, and component vocabulary intact.
+   - Override only: colors, semantic tokens, and add trading-specific modifiers.
+   - Never break Atlas's 4px grid, radii (3/4/6/9999), or 13px base type.
+   ========================================================================== */
+
+
+/* --------------------------------------------------------------------------
+   SECTION 1: Core Token Overrides (Dark Theme)
+   -------------------------------------------------------------------------- */
+
+[data-theme="dark"],
+:root[data-theme="dark"] {
+
+  /* ---- Backgrounds ------------------------------------------------------ */
+  --bg-base:              #050505;        /* Near-black, slightly warmer than #000 */
+  --bg-raised:            #0a0a0f;        /* Subtle blue undertone for finance */
+  --bg-sunken:            #030305;        /* Deeper for inset panels, code blocks */
+  --bg-overlay:           rgba(5, 5, 5, 0.92); /* Modal/dialog backdrop */
+
+  /* ---- Text ------------------------------------------------------------- */
+  --text-primary:         #f0f0f5;        /* Slightly cool white */
+  --text-secondary:       #8a8a9a;        /* Muted, readable gray */
+  --text-tertiary:        #5a5a6a;        /* Timestamps, metadata */
+  --text-inverse:         #000000;        /* For buttons on light accents */
+
+  /* ---- Accents ---------------------------------------------------------- */
+  --accent-primary:         #00d084;        /* RHAGENT brand green — CTAs only */
+  --accent-primary-hover:   #00e090;
+  --accent-primary-muted:   rgba(0, 208, 132, 0.12);
+
+  --accent-highlight:       #3b82f6;        /* Links, focus rings, active tabs */
+  --accent-highlight-hover: #2563eb;
+  --accent-highlight-muted: rgba(59, 130, 246, 0.12);
+
+  /* ---- Trading Semantics (CRITICAL: never grayscale for PnL) ----------- */
+  --status-success:         #22c55e;        /* Real green for profits, up, buy */
+  --status-success-muted:   rgba(34, 197, 94, 0.12);
+  --status-success-hover:   #16a34a;
+
+  --status-error:           #ef4444;        /* Real red for losses, down, sell */
+  --status-error-muted:     rgba(239, 68, 68, 0.12);
+  --status-error-hover:     #dc2626;
+
+  --status-warning:         #f59e0b;        /* Amber for alerts, margin calls */
+  --status-warning-muted:   rgba(245, 158, 11, 0.12);
+  --status-warning-hover:   #d97706;
+
+  /* ---- RHAGENT-Specific Tokens ------------------------------------------ */
+  --agent-live:             #10b981;        /* Pulsing dot for active agents */
+  --agent-live-pulse:       rgba(16, 185, 129, 0.35);
+
+  --token-gated:            #f59e0b;        /* Hold-requirement accent */
+  --token-gated-bg:         rgba(245, 158, 11, 0.08);
+
+  --liquidity-blue:         #0ea5e9;        /* Pool/liquidity contexts */
+  --liquidity-blue-muted:   rgba(14, 165, 233, 0.12);
+
+  /* ---- Borders & Dividers ----------------------------------------------- */
+  --border-subtle:          rgba(255, 255, 255, 0.06);
+  --border-default:         rgba(255, 255, 255, 0.10);
+  --border-strong:          rgba(255, 255, 255, 0.16);
+  --border-accent:          rgba(0, 208, 132, 0.35);  /* For trade cards */
+
+  /* ---- Shadows (overlays ONLY — never cards) --------------------------- */
+  --shadow-overlay:         0 24px 48px rgba(0, 0, 0, 0.60);
+  --shadow-popover:         0 12px 24px rgba(0, 0, 0, 0.40);
+  --shadow-toast:           0 4px 16px rgba(0, 0, 0, 0.50);
+
+  /* ---- Chart / Dataviz -------------------------------------------------- */
+  --chart-grid:             rgba(255, 255, 255, 0.04);
+  --chart-line-up:          #22c55e;
+  --chart-line-down:        #ef4444;
+  --chart-volume:           rgba(59, 130, 246, 0.25);
+}
+
+
+/* --------------------------------------------------------------------------
+   SECTION 2: Light Theme (Real remap, not an afterthought)
+   -------------------------------------------------------------------------- */
+
+[data-theme="light"],
+:root[data-theme="light"] {
+
+  /* ---- Backgrounds ------------------------------------------------------ */
+  --bg-base:              #fafafa;
+  --bg-raised:            #ffffff;
+  --bg-sunken:            #f3f3f5;
+  --bg-overlay:           rgba(250, 250, 250, 0.92);
+
+  /* ---- Text ------------------------------------------------------------- */
+  --text-primary:         #0a0a0f;
+  --text-secondary:       #52525b;
+  --text-tertiary:        #a1a1aa;
+  --text-inverse:         #ffffff;
+
+  /* ---- Accents ---------------------------------------------------------- */
+  --accent-primary:         #059669;        /* Darker green for light bg */
+  --accent-primary-hover:   #047857;
+  --accent-primary-muted:   rgba(5, 150, 105, 0.10);
+
+  --accent-highlight:       #2563eb;
+  --accent-highlight-hover: #1d4ed8;
+  --accent-highlight-muted: rgba(37, 99, 235, 0.10);
+
+  /* ---- Trading Semantics ------------------------------------------------ */
+  --status-success:         #16a34a;
+  --status-success-muted:   rgba(22, 163, 74, 0.10);
+  --status-success-hover:   #15803d;
+
+  --status-error:           #dc2626;
+  --status-error-muted:     rgba(220, 38, 38, 0.10);
+  --status-error-hover:     #b91c1c;
+
+  --status-warning:         #d97706;
+  --status-warning-muted:   rgba(217, 119, 6, 0.10);
+  --status-warning-hover:   #b45309;
+
+  /* ---- RHAGENT-Specific ------------------------------------------------- */
+  --agent-live:             #059669;
+  --agent-live-pulse:       rgba(5, 150, 105, 0.30);
+
+  --token-gated:            #d97706;
+  --token-gated-bg:         rgba(217, 119, 6, 0.06);
+
+  --liquidity-blue:         #0284c7;
+  --liquidity-blue-muted:   rgba(2, 132, 199, 0.10);
+
+  /* ---- Borders & Dividers ----------------------------------------------- */
+  --border-subtle:          rgba(0, 0, 0, 0.06);
+  --border-default:         rgba(0, 0, 0, 0.10);
+  --border-strong:          rgba(0, 0, 0, 0.16);
+  --border-accent:          rgba(5, 150, 105, 0.30);
+
+  /* ---- Shadows ---------------------------------------------------------- */
+  --shadow-overlay:         0 24px 48px rgba(0, 0, 0, 0.15);
+  --shadow-popover:         0 12px 24px rgba(0, 0, 0, 0.10);
+  --shadow-toast:           0 4px 16px rgba(0, 0, 0, 0.12);
+
+  /* ---- Chart / Dataviz -------------------------------------------------- */
+  --chart-grid:             rgba(0, 0, 0, 0.06);
+  --chart-line-up:          #16a34a;
+  --chart-line-down:        #dc2626;
+  --chart-volume:           rgba(37, 99, 235, 0.20);
+}
+
+
+/* --------------------------------------------------------------------------
+   SECTION 3: Atlas Component Extensions — Trading-Specific Modifiers
+   --------------------------------------------------------------------------
+   These extend Atlas's .atlas-* vocabulary without replacing it.
+   Use them as modifiers: .atlas-card.atlas-card-trade
+   -------------------------------------------------------------------------- */
+
+/* ---- Card Modifiers ----------------------------------------------------- */
+
+.atlas-card-trade {
+  border-left: 2px solid var(--status-success);
+}
+
+.atlas-card-trade.is-sell {
+  border-left-color: var(--status-error);
+}
+
+.atlas-card-research {
+  border-left: 2px solid var(--accent-highlight);
+}
+
+.atlas-card-discussion {
+  border-left: 2px solid var(--border-strong);
+}
+
+.atlas-card-agent-profile {
+  background: linear-gradient(180deg, var(--bg-raised) 0%, var(--bg-base) 100%);
+}
+
+/* ---- Badge Modifiers (Sentiment & Trading) ----------------------------- */
+
+.atlas-badge-bullish {
+  background: var(--status-success-muted);
+  color: var(--status-success);
+  border: 1px solid rgba(34, 197, 94, 0.20);
+}
+
+.atlas-badge-bearish {
+  background: var(--status-error-muted);
+  color: var(--status-error);
+  border: 1px solid rgba(239, 68, 68, 0.20);
+}
+
+.atlas-badge-neutral {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+}
+
+[data-theme="light"] .atlas-badge-neutral {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.atlas-badge-token-gated {
+  background: var(--token-gated-bg);
+  color: var(--token-gated);
+  border: 1px dashed rgba(245, 158, 11, 0.30);
+}
+
+.atlas-badge-verified {
+  background: var(--accent-primary-muted);
+  color: var(--accent-primary);
+}
+
+/* ---- Dot Modifiers (Agent Status) -------------------------------------- */
+
+.atlas-dot-live {
+  background: var(--agent-live);
+  box-shadow: 0 0 0 0 var(--agent-live-pulse);
+  animation: atlas-pulse-live 2s infinite;
+}
+
+@keyframes atlas-pulse-live {
+  0%   { box-shadow: 0 0 0 0 var(--agent-live-pulse); }
+  70%  { box-shadow: 0 0 0 6px rgba(0, 0, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
+}
+
+/* ---- Stat Modifiers (PnL) ---------------------------------------------- */
+
+.atlas-stat-pnl-positive {
+  color: var(--status-success);
+}
+
+.atlas-stat-pnl-negative {
+  color: var(--status-error);
+}
+
+.atlas-stat-label-ticker {
+  font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+}
+
+/* ---- Button Modifiers (Trading Actions) -------------------------------- */
+
+.atlas-btn-copy-trade {
+  background: var(--accent-primary);
+  color: var(--text-inverse);
+}
+
+.atlas-btn-copy-trade:hover {
+  background: var(--accent-primary-hover);
+}
+
+.atlas-btn-sell {
+  background: var(--status-error);
+  color: #ffffff;
+}
+
+.atlas-btn-sell:hover {
+  background: var(--status-error-hover);
+}
+
+.atlas-btn-buy {
+  background: var(--status-success);
+  color: #ffffff;
+}
+
+.atlas-btn-buy:hover {
+  background: var(--status-success-hover);
+}
+
+/* Ghost variants for subtle trading actions */
+.atlas-btn-ghost-buy {
+  color: var(--status-success);
+  border-color: rgba(34, 197, 94, 0.25);
+}
+
+.atlas-btn-ghost-buy:hover {
+  background: var(--status-success-muted);
+}
+
+.atlas-btn-ghost-sell {
+  color: var(--status-error);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.atlas-btn-ghost-sell:hover {
+  background: var(--status-error-muted);
+}
+
+/* ---- Table Modifiers (Trade History) ----------------------------------- */
+
+.atlas-table-trades th {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+.atlas-table-trades td {
+  font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
+  font-size: 12px;
+}
+
+.atlas-table-trades .col-pnl-positive {
+  color: var(--status-success);
+}
+
+.atlas-table-trades .col-pnl-negative {
+  color: var(--status-error);
+}
+
+.atlas-table-trades .col-side-buy {
+  color: var(--status-success);
+}
+
+.atlas-table-trades .col-side-sell {
+  color: var(--status-error);
+}
+
+/* ---- List Modifiers (Discussion Threads) ------------------------------- */
+
+.atlas-list-thread {
+  border-left: 2px solid var(--border-subtle);
+  padding-left: 12px;
+  margin-left: 4px;
+}
+
+.atlas-list-thread:hover {
+  border-left-color: var(--border-default);
+}
+
+.atlas-list-thread.is-solved {
+  border-left-color: var(--accent-primary);
+}
+
+/* ---- Panel / Surface Modifiers ----------------------------------------- */
+
+.atlas-panel-ticker {
+  background: var(--bg-sunken);
+  border: 1px solid var(--border-subtle);
+}
+
+.atlas-panel-sentiment {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-default);
+}
+
+.atlas-sentiment-bar {
+  display: flex;
+  height: 4px;
+  width: 100%;
+  border-radius: 2px;
+  overflow: hidden;
+  gap: 2px;
+}
+
+.atlas-sentiment-bar-bullish {
+  background: var(--status-success);
+}
+
+.atlas-sentiment-bar-bearish {
+  background: var(--status-error);
+}
+
+.atlas-sentiment-bar-neutral {
+  background: var(--border-strong);
+}
+
+/* ---- Chart Container --------------------------------------------------- */
+
+.atlas-chart-container {
+  background: var(--bg-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 16px;
+}
+
+.atlas-chart-grid-line {
+  stroke: var(--chart-grid);
+}
+
+/* ---- Skeleton / Loading States (Trading Context) ------------------------ */
+
+.atlas-skeleton-ticker {
+  background: linear-gradient(
+    90deg,
+    var(--bg-raised) 25%,
+    var(--bg-sunken) 50%,
+    var(--bg-raised) 75%
+  );
+  background-size: 200% 100%;
+  animation: atlas-sweep 1.5s infinite;
+  border-radius: 3px;
+}
+
+/* ---- Toast / Alert Modifiers (Trading Alerts) --------------------------- */
+
+.atlas-toast-trade-fill {
+  border-left: 3px solid var(--status-success);
+}
+
+.atlas-toast-trade-fill.is-sell {
+  border-left-color: var(--status-error);
+}
+
+.atlas-toast-alert-margin {
+  border-left: 3px solid var(--status-warning);
+}
+
+/* ---- Avatar Modifiers (Agent Identity) --------------------------------- */
+
+.atlas-avatar-agent {
+  border: 2px solid var(--border-default);
+  transition: border-color 120ms ease;
+}
+
+.atlas-avatar-agent.is-verified {
+  border-color: var(--accent-primary);
+}
+
+.atlas-avatar-agent.is-live {
+  border-color: var(--agent-live);
+  box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--agent-live-pulse);
+}
+
+/* ---- Progress / Slider (Token Gating) ---------------------------------- */
+
+.atlas-progress-token {
+  background: var(--bg-sunken);
+  height: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.atlas-progress-token > * {
+  background: var(--accent-primary);
+  border-radius: 2px;
+}
+
+.atlas-progress-token.is-locked > * {
+  background: var(--token-gated);
+}
+
+/* ---- KBD / Shortcuts --------------------------------------------------- */
+
+.atlas-kbd-cmd {
+  background: var(--bg-sunken);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+/* ---- Marquee / Ticker Tape (Price Strip) ------------------------------ */
+
+.atlas-marquee-ticker {
+  background: var(--bg-raised);
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 6px 0;
+  font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
+  font-size: 12px;
+}
+
+.atlas-marquee-ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  white-space: nowrap;
+}
+
+.atlas-marquee-ticker-item .change-up {
+  color: var(--status-success);
+}
+
+.atlas-marquee-ticker-item .change-down {
+  color: var(--status-error);
+}
+
+
+/* --------------------------------------------------------------------------
+   SECTION 4: Utility Classes (Atomic helpers, Atlas-style)
+   -------------------------------------------------------------------------- */
+
+.rhagent-mono        { font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace); }
+.rhagent-tabular     { font-variant-numeric: tabular-nums; }
+.rhagent-nowrap      { white-space: nowrap; }
+.rhagent-truncate    { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.rhagent-border-subtle   { border: 1px solid var(--border-subtle); }
+.rhagent-border-default  { border: 1px solid var(--border-default); }
+.rhagent-border-strong   { border: 1px solid var(--border-strong); }
+
+.rhagent-glow-green    { box-shadow: 0 0 12px rgba(0, 208, 132, 0.15); }
+.rhagent-glow-red      { box-shadow: 0 0 12px rgba(239, 68, 68, 0.15); }
+.rhagent-glow-blue     { box-shadow: 0 0 12px rgba(59, 130, 246, 0.15); }
+
+
+/* --------------------------------------------------------------------------
+   SECTION 5: Responsive Helpers
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+  .atlas-card-trade,
+  .atlas-card-research,
+  .atlas-card-discussion {
+    border-left-width: 3px;  /* Slightly thicker for touch */
+  }
+
+  .atlas-table-trades td {
+    font-size: 13px;  /* Slightly larger for mobile readability */
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+   SECTION 6: Accessibility
+   -------------------------------------------------------------------------- */
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .atlas-dot-live {
+    animation: none;
+    box-shadow: none;
+  }
+
+  .atlas-skeleton-ticker {
+    animation: none;
+    background: var(--bg-sunken);
+  }
+}
+
+/* Focus rings using Atlas highlight */
+.atlas-btn:focus-visible,
+.atlas-input:focus-visible,
+.atlas-tab:focus-visible {
+  outline: 2px solid var(--accent-highlight);
+  outline-offset: 2px;
+}

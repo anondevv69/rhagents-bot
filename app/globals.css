@@ -1,3 +1,5 @@
+@import './rhagent-theme.css';
+
 /* ── Robinhood-inspired brand palette (--rh-*) ── */
 :root {
   --rh-canvas: #110E08;
@@ -143,43 +145,44 @@
 :root,
 [data-theme="dark"] {
   color-scheme: dark;
-  --bg: #111111;
-  --surface: #1E1E1E;
-  --surface-2: #2A2A2A;
-  --border: #2E2E2E;
-  --border-light: #3A3A3A;
-  --input-border: #2E2E2E;
-  --text: #FFFFFF;
-  --muted: #B3B3B3;
-  --muted-faint: #6E6E6E;
+
+  /* Atlas bridge — existing component tokens now backed by rhagent-theme.css values */
+  --bg: var(--bg-base);
+  --surface: var(--bg-raised);
+  --surface-2: #1a1a22;
+  --border: var(--border-default);
+  --border-light: var(--border-strong);
+  --input-border: var(--border-default);
+  --text: var(--text-primary);
+  --muted: var(--text-secondary);
+  --muted-faint: var(--text-tertiary);
   --accent: var(--rh-neon);
   --accent-fg: #111111;
   --accent-hover: var(--rh-neon-hover);
-  --danger: #FF6B5B;
-  --down: #FF6B5B;
-  --up: #3DDC7A;
-  /* Referenced by status callouts; previously undefined so every use silently
-     fell back to a hardcoded hex that never changed with the theme. */
-  --success: #3DDC7A;
-  --sidebar-bg: #161616;
-  --ticker-bg: #111111;
-  --input-bg: #1E1E1E;
+  --danger: var(--status-error);
+  --down: var(--status-error);
+  --up: var(--status-success);
+  --success: var(--status-success);
+  --sidebar-bg: var(--bg-raised);
+  --ticker-bg: var(--bg-base);
+  --input-bg: var(--bg-raised);
   --link: var(--rh-neon);
   --link-hover: var(--rh-neon-hover);
-  --border-soft: rgba(255, 255, 255, 0.06);
+  --border-soft: var(--border-subtle);
   --hover-fill: rgba(255, 255, 255, 0.05);
   --hover-fill-strong: rgba(255, 255, 255, 0.08);
-  --shadow-surface: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 8px 24px rgba(0, 0, 0, 0.24);
-  --shadow-elevated: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 16px 40px rgba(0, 0, 0, 0.32);
+  --shadow-surface: var(--shadow-popover);
+  --shadow-elevated: var(--shadow-overlay);
 
   /* Legacy aliases used in components */
-  --accent-green: var(--up);
+  --accent-green: var(--status-success);
   --accent-blue: var(--rh-link-blue);
-  --accent-red: var(--down);
-  --accent-orange: var(--rh-warning);
+  --accent-red: var(--status-error);
+  --accent-orange: var(--status-warning);
   --badge-agentic: #60a5fa;
   --badge-crypto: #2dd4bf;
   --badge-chain: #34d399;
+  --fg: var(--text-primary);
 }
 
 [data-theme="light"] {
@@ -195,39 +198,42 @@
   --tint-3: rgba(17, 17, 17, 0.07);
   --tint-4: rgba(17, 17, 17, 0.10);
   --tint-5: rgba(17, 17, 17, 0.14);
-  --bg: #F5F5F5;
-  --surface: #FFFFFF;
-  --surface-2: #EBEBEB;
-  --border: #D9D9D9;
-  --border-light: #CFCFCF;
-  --input-border: #D9D9D9;
-  --text: #111111;
-  --muted: #5F5F5F;
-  --muted-faint: #8A8A8A;
+
+  /* Atlas bridge — light theme component tokens */
+  --bg: var(--bg-base);
+  --surface: var(--bg-raised);
+  --surface-2: #ebebed;
+  --border: var(--border-default);
+  --border-light: var(--border-strong);
+  --input-border: var(--border-default);
+  --text: var(--text-primary);
+  --muted: var(--text-secondary);
+  --muted-faint: var(--text-tertiary);
   --accent: var(--rh-neon);
   --accent-fg: #111111;
   --accent-hover: var(--rh-neon-hover);
-  --danger: #D93B2B;
-  --down: #D93B2B;
-  --up: #0F8A3C;
-  --success: #0F8A3C;
-  --sidebar-bg: #FFFFFF;
-  --ticker-bg: #F5F5F5;
-  --input-bg: #FFFFFF;
+  --danger: var(--status-error);
+  --down: var(--status-error);
+  --up: var(--status-success);
+  --success: var(--status-success);
+  --sidebar-bg: var(--bg-raised);
+  --ticker-bg: var(--bg-base);
+  --input-bg: var(--bg-raised);
   --link: #2563EB;
   --link-hover: #000000;
-  --accent-green: var(--up);
+  --accent-green: var(--status-success);
   --accent-blue: #2563EB;
-  --accent-red: var(--down);
-  --accent-orange: var(--rh-warning);
+  --accent-red: var(--status-error);
+  --accent-orange: var(--status-warning);
   --badge-agentic: #2563EB;
   --badge-crypto: #0d9488;
   --badge-chain: #059669;
-  --border-soft: rgba(0, 0, 0, 0.06);
+  --border-soft: var(--border-subtle);
   --hover-fill: rgba(0, 0, 0, 0.04);
   --hover-fill-strong: rgba(0, 0, 0, 0.07);
-  --shadow-surface: 0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px var(--border-soft);
-  --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--border-soft);
+  --shadow-surface: var(--shadow-popover);
+  --shadow-elevated: var(--shadow-overlay);
+  --fg: var(--text-primary);
 }
 
 

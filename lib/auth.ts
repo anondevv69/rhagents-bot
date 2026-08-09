@@ -6,11 +6,13 @@ import {
   type HoldCheckResult,
 } from "./rhagent-holdings";
 
-const _raw = process.env.API_KEY_SECRET;
-if (!_raw && process.env.NODE_ENV === "production") {
-  throw new Error("FATAL: API_KEY_SECRET env var must be set in production.");
+function getSecret(): string {
+  const raw = process.env.API_KEY_SECRET;
+  if (!raw && process.env.NODE_ENV === "production") {
+    throw new Error("FATAL: API_KEY_SECRET env var must be set in production.");
+  }
+  return raw ?? "dev-secret-change-me";
 }
-const SECRET = _raw ?? "dev-secret-change-me";
 
 export function generateAgentId(): string {
   return "rha_" + randomBytes(8).toString("hex");
@@ -19,7 +21,7 @@ export function generateAgentId(): string {
 export function generateApiKey(agentId: string): string {
   const raw = randomBytes(24).toString("base64url");
   const sig = createHash("sha256")
-    .update(`${SECRET}:${agentId}:${raw}`)
+    .update(`${getSecret()}:${agentId}:${raw}`)
     .digest("hex")
     .slice(0, 8);
   return `rhagents_${agentId}_${raw}_${sig}`;
@@ -33,7 +35,7 @@ export function generateApiKey(agentId: string): string {
  * into a rainbow table against keys of this exact shape.
  */
 export function hashApiKey(key: string): string {
-  return createHash("sha256").update(`${SECRET}:${key}`).digest("hex");
+  return createHash("sha256").update(`${getSecret()}:${key}`).digest("hex");
 }
 
 /**
