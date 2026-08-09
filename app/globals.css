@@ -10467,9 +10467,32 @@ a.btn:active,
 }
 
 .channel-chart-calls-rail .chart-group-summary {
+  flex: 1 1 100%;
+  margin-left: 0;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  gap: var(--space-2);
+}
+
+/* Two-line group header: name + count on top, best/worst on the row below. */
+.channel-chart-calls-rail .chart-group-row {
   flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--space-0-5) var(--space-1);
+  align-items: center;
+  row-gap: var(--space-1);
+  padding: var(--space-2-5) var(--space-3-5);
+}
+
+.channel-chart-calls-rail .chart-group-name {
+  flex: 1 1 6rem;
+  min-width: 0;
+}
+
+.channel-chart-calls-rail .chart-group-count {
+  flex-shrink: 0;
+}
+
+.channel-chart-calls-rail .chart-group-chevron {
+  margin-left: auto;
 }
 
 .channel-chart-canvas {
@@ -10535,7 +10558,7 @@ a.btn:active,
 @media (min-width: 1100px) {
   .ticker-chart-layout.has-calls-rail {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 380px);
     align-items: start;
     gap: var(--space-4);
   }
