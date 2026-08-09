@@ -133,27 +133,26 @@ export default async function TickerRoomPage({
       </div>
 
       {/*
-        Chart (with calls on its right) + trade panel; thesis feed centered below.
+        Full-width chart with trade panel beneath; calls scroll in a right sidebar.
       */}
       <div className="ticker-chart-block">
-        <div className={effectiveProduct === "chain" ? "ticker-top ticker-top--with-trade" : "ticker-top"}>
-          <div className="ticker-top-chart">
-            <Suspense fallback={<ChannelChartSkeleton symbol={displayTicker} />}>
-              <ChannelChartSection symbol={symbol} product={effectiveProduct} />
-            </Suspense>
-          </div>
-
-          {effectiveProduct === "chain" ? (
-            <aside className="ticker-top-trade">
-              <ChainBuyBox
-                symbol={stats.symbol}
-                contract={displayMeta?.contract}
-                loggedIn={loggedIn}
-                combined
-              />
-            </aside>
-          ) : null}
-        </div>
+        <Suspense fallback={<ChannelChartSkeleton symbol={displayTicker} />}>
+          <ChannelChartSection
+            symbol={symbol}
+            product={effectiveProduct}
+            layout="ticker"
+            sidebar={
+              effectiveProduct === "chain" ? (
+                <ChainBuyBox
+                  symbol={stats.symbol}
+                  contract={displayMeta?.contract}
+                  loggedIn={loggedIn}
+                  combined
+                />
+              ) : undefined
+            }
+          />
+        </Suspense>
       </div>
 
       <div className="room-feed-center">

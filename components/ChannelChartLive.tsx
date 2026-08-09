@@ -166,10 +166,16 @@ function groupByAgent(markers: ThesisMarker[]): AgentGroup[] {
 export function ChannelChartLive({
   data,
   children,
+  layout = "default",
+  sidebar,
 }: {
   data: ChannelChartData;
   /** The server-rendered SVG. Shown until — and unless — this mounts. */
   children: React.ReactNode;
+  /** `ticker` = full-width chart, trade panel below, calls in a page sidebar. */
+  layout?: "default" | "ticker";
+  /** Chain buy/post panel — rendered below the chart when layout is `ticker`. */
+  sidebar?: React.ReactNode;
 }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [ready, setReady] = useState(false);
@@ -435,132 +441,135 @@ export function ChannelChartLive({
 
   if (!data.candles.length) return <>{children}</>;
 
+  const chartMain = (
+    <div className="channel-chart-main">
+      <div className="channel-chart-tfs" role="group" aria-label="Timeframe">
+        {WINDOWS.map((key) => (
+          <button
+            key={key}
+            type="button"
+            className={`channel-chart-tf${tf === key ? " is-active" : ""}`}
+            onClick={() => setTf(key)}
+            aria-pressed={tf === key}
+            disabled={loading && tf !== key}
+          >
+            {key}
+          </button>
+        ))}
+        {loading ? (
+          <span className="channel-chart-loading" role="status">
+            loading…
+          </span>
+        ) : null}
+      </div>
+
+      <div ref={hostRef} className="channel-chart-canvas" />
+    </div>
+  );
+
+  const callsRail =
+    data.markers.length > 0 ? (
+      <aside className="channel-chart-calls-rail" aria-label="Calls on this chart">
+        <div className="channel-chart-groups">
+          {groups.map((g) => {
+            const open = openAgents.has(g.key);
+            return (
+              <div
+                key={g.key}
+                className={`chart-group${open ? " is-open" : ""}${g.unverified ? " is-unverified" : ""}`}
+              >
+                <button
+                  type="button"
+                  className="chart-group-row"
+                  onClick={() => toggleAgent(g.key)}
+                  aria-expanded={open}
+                >
+                  {g.unverified ? (
+                    <span className="chart-group-dot" title="Unclaimed agent" aria-hidden />
+                  ) : null}
+                  <span className="chart-group-name">{g.name}</span>
+                  <span className="chart-group-count">
+                    {g.calls.length} call{g.calls.length === 1 ? "" : "s"}
+                  </span>
+                  <span className="chart-group-summary">
+                    <span className="lbl">best</span>
+                    <span className={g.best >= 0 ? "is-up" : "is-down"}>{fmtPctShort(g.best)}</span>
+                    <span className="lbl">worst</span>
+                    <span className={g.worst >= 0 ? "is-up" : "is-down"}>{fmtPctShort(g.worst)}</span>
+                  </span>
+                  <svg className="chart-group-chevron" viewBox="0 0 16 16" aria-hidden>
+                    <path
+                      d="M4 6l4 4 4-4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+
+                {open ? (
+                  <ul
+                    className={`chart-group-entries${g.calls.length > SCROLLABLE_CALLS ? " is-scrollable" : ""}`}
+                    role={g.calls.length > SCROLLABLE_CALLS ? "region" : undefined}
+                    aria-label={
+                      g.calls.length > SCROLLABLE_CALLS
+                        ? `${g.calls.length} calls by ${g.name} — scroll for all`
+                        : undefined
+                    }
+                  >
+                    {g.calls.map((m) => {
+                      const pct = m.return_pct ?? m.move_pct;
+                      const active = selected?.post_id === m.post_id;
+                      const tone =
+                        m.return_pct == null ? "is-neutral" : pct >= 0 ? "is-up" : "is-down";
+                      return (
+                        <li key={m.post_id} className={`chart-entry${active ? " is-active" : ""}`}>
+                          <button
+                            type="button"
+                            className="chart-entry-select"
+                            onClick={() => setSelected(active ? null : m)}
+                            aria-pressed={active}
+                          >
+                            <span className={`chart-entry-pct ${tone}`}>{fmtPctShort(pct)}</span>
+                            <span className="chart-entry-price">{fmtPrice(m.entry_price_usd)}</span>
+                            <span className="chart-entry-time">{fmtWhen(m.at)}</span>
+                          </button>
+                          <Link href={`/post/${m.post_id}`} className="chart-entry-post">
+                            View post ↗
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      </aside>
+    ) : null;
+
   return (
-    <div className="channel-chart-live">
-      {/* The SSR SVG stays mounted until the library is ready, so there is no
-          blank frame and no layout shift on hydration. */}
+    <div className={`channel-chart-live${layout === "ticker" ? " channel-chart-live--ticker" : ""}`}>
       <div hidden={ready}>{children}</div>
 
       <div hidden={!ready}>
-        <div
-          className={`channel-chart-live-body${data.markers.length ? " has-calls-rail" : ""}`}
-        >
-          <div className="channel-chart-main">
-            <div className="channel-chart-tfs" role="group" aria-label="Timeframe">
-              {WINDOWS.map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  className={`channel-chart-tf${tf === key ? " is-active" : ""}`}
-                  onClick={() => setTf(key)}
-                  aria-pressed={tf === key}
-                  disabled={loading && tf !== key}
-                >
-                  {key}
-                </button>
-              ))}
-              {loading ? (
-                <span className="channel-chart-loading" role="status">
-                  loading…
-                </span>
-              ) : null}
+        {layout === "ticker" ? (
+          <div className={`ticker-chart-layout${callsRail ? " has-calls-rail" : ""}`}>
+            <div className="ticker-chart-primary">
+              {chartMain}
+              {sidebar ? <div className="ticker-chart-trade-below">{sidebar}</div> : null}
             </div>
-
-            <div ref={hostRef} className="channel-chart-canvas" />
+            {callsRail}
           </div>
-
-          {/*
-            Calls on the right — a selector for the chart, not a second feed.
-            The thesis text lives once, in the centered feed below.
-          */}
-          {data.markers.length ? (
-            <aside className="channel-chart-calls-rail" aria-label="Calls on this chart">
-              <div className="channel-chart-groups">
-            {groups.map((g) => {
-              const open = openAgents.has(g.key);
-              return (
-                <div
-                  key={g.key}
-                  className={`chart-group${open ? " is-open" : ""}${g.unverified ? " is-unverified" : ""}`}
-                >
-                  <button
-                    type="button"
-                    className="chart-group-row"
-                    onClick={() => toggleAgent(g.key)}
-                    aria-expanded={open}
-                  >
-                    {g.unverified ? (
-                      <span className="chart-group-dot" title="Unclaimed agent" aria-hidden />
-                    ) : null}
-                    <span className="chart-group-name">{g.name}</span>
-                    <span className="chart-group-count">
-                      {g.calls.length} call{g.calls.length === 1 ? "" : "s"}
-                    </span>
-                    {/* Best and worst give the "how did they do overall" read
-                        without anyone having to expand the group. */}
-                    <span className="chart-group-summary">
-                      <span className="lbl">best</span>
-                      <span className={g.best >= 0 ? "is-up" : "is-down"}>{fmtPctShort(g.best)}</span>
-                      <span className="lbl">worst</span>
-                      <span className={g.worst >= 0 ? "is-up" : "is-down"}>{fmtPctShort(g.worst)}</span>
-                    </span>
-                    <svg className="chart-group-chevron" viewBox="0 0 16 16" aria-hidden>
-                      <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="2"
-                        strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-
-                  {open ? (
-                    <ul
-                      className={`chart-group-entries${g.calls.length > SCROLLABLE_CALLS ? " is-scrollable" : ""}`}
-                      role={g.calls.length > SCROLLABLE_CALLS ? "region" : undefined}
-                      aria-label={
-                        g.calls.length > SCROLLABLE_CALLS
-                          ? `${g.calls.length} calls by ${g.name} — scroll for all`
-                          : undefined
-                      }
-                    >
-                      {g.calls.map((m) => {
-                        const pct = m.return_pct ?? m.move_pct;
-                        const active = selected?.post_id === m.post_id;
-                        const tone = m.return_pct == null ? "is-neutral" : pct >= 0 ? "is-up" : "is-down";
-                        return (
-                          <li key={m.post_id} className={`chart-entry${active ? " is-active" : ""}`}>
-                            {/* Selecting draws this call's entry line. Deliberately
-                                does NOT navigate — the point is to flip between
-                                calls and compare entries without losing the chart. */}
-                            <button
-                              type="button"
-                              className="chart-entry-select"
-                              onClick={() => setSelected(active ? null : m)}
-                              aria-pressed={active}
-                            >
-                              <span className={`chart-entry-pct ${tone}`}>{fmtPctShort(pct)}</span>
-                              <span className="chart-entry-price">{fmtPrice(m.entry_price_usd)}</span>
-                              <span className="chart-entry-time">{fmtWhen(m.at)}</span>
-                            </button>
-                            {/* Real navigation, not a scroll.
-                                The ↗ promises a destination, and it should keep
-                                that promise: going to /post/{id} means browser
-                                back returns you to this ticker, which is the
-                                behaviour someone expects after following a link.
-                                Scrolling looked like navigation and left back
-                                pointing at wherever you came from before. */}
-                            <Link href={`/post/${m.post_id}`} className="chart-entry-post">
-                              View post ↗
-                            </Link>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : null}
-                </div>
-              );
-            })}
-              </div>
-            </aside>
-          ) : null}
-        </div>
+        ) : (
+          <div className={`channel-chart-live-body${callsRail ? " has-calls-rail" : ""}`}>
+            {chartMain}
+            {callsRail}
+          </div>
+        )}
       </div>
     </div>
   );

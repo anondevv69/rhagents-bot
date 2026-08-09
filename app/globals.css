@@ -10512,36 +10512,40 @@ a.btn:active,
    but only for the server-rendered SVG, which keeps a written list because that
    is the layer agents read. Not duplication there — it is the only copy. */
 
-/* ── Ticker channel: chart + trade panel ─────────────────────────────────── */
+/* ── Ticker channel: chart + sidebar ─────────────────────────────────────── */
 
-.ticker-top {
-  margin-bottom: var(--space-4);
+/* Chart full width on the left; connect + calls stacked in a fixed sidebar. */
+.ticker-chart-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.ticker-chart-primary {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.ticker-chart-trade-below {
   min-width: 0;
 }
 
-/* Chart takes the room; the trade panel is a fixed-width companion. `minmax(0,
-   1fr)` rather than `1fr` — a bare 1fr uses min-content as its floor, and a
-   canvas inside will refuse to shrink and blow the grid out horizontally. */
 @media (min-width: 1100px) {
-  .ticker-top--with-trade {
+  .ticker-chart-layout.has-calls-rail {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
-    gap: var(--space-4);
+    grid-template-columns: minmax(0, 1fr) 300px;
     align-items: start;
+    gap: var(--space-4);
   }
 
-  .ticker-top-trade {
+  .ticker-chart-layout .channel-chart-calls-rail {
+    max-height: min(70vh, 560px);
     position: sticky;
     top: calc(var(--header-height) + var(--space-4));
   }
 }
-
-.ticker-top-chart { min-width: 0; }
-
-/* Below 1100px the two stack, chart first — the evidence still precedes the
-   action, which is the whole reason for the side-by-side in the first place. */
-.ticker-top-trade { min-width: 0; margin-top: var(--space-4); }
-@media (min-width: 1100px) { .ticker-top-trade { margin-top: 0; } }
 
 /* The chip strip was replaced by per-agent groups (.chart-group). Twelve flat
    chips from four repeating names grew with call count while adding almost no
