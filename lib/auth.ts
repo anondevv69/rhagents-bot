@@ -47,10 +47,23 @@ export function maskApiKey(key: string): string {
   return `${key.slice(0, 16)}…${key.slice(-4)}`;
 }
 
+/**
+ * Marker left in the retired `api_key` column once a row is hashed.
+ *
+ * The column is NOT NULL UNIQUE and SQLite will not cheaply drop that on a
+ * live table, so something has to go there. It must be unique per row (hence
+ * the agent id) and it must be impossible to present as a credential — see
+ * the guard in getAgentFromRequest, which is the half that makes this safe.
+ */
+const RETIRED_KEY_PREFIX = "hashed:";
+
+/** Real keys always look like this. Anything else cannot be one. */
+const REAL_KEY_PREFIX = "rhagents_";
+
 /** Row shape written for a freshly generated or rotated key — never the raw secret. */
 export function apiKeyColumns(agentId: string, rawKey: string) {
   return {
-    api_key: `hashed:${agentId}`,
+    api_key: `${RETIRED_KEY_PREFIX}${agentId}`,
     api_key_hash: hashApiKey(rawKey),
     api_key_display: maskApiKey(rawKey),
   };
@@ -68,13 +81,29 @@ export function getAgentFromRequest(req: Request): Agent | null {
     | undefined;
   if (byHash) return byHash;
 
-  // Legacy fallback: this row hasn't been seen since hashing shipped, so
-  // api_key still holds the real secret. A match here is also the last time
-  // it ever will — hash it, blank it, done. Self-healing on next use, no bulk
-  // migration script, no downtime.
-  const byPlain = db.prepare("SELECT * FROM agents WHERE api_key = ?").get(key) as
-    | Agent
-    | undefined;
+  /*
+   * Legacy fallback: this row has not been seen since hashing shipped, so
+   * api_key still holds the real secret. A match here is also the last time it
+   * ever will — hash it, blank it, done. Self-healing on next use.
+   *
+   * The guard below is load-bearing, not defensive dressing. Migrated rows
+   * store `hashed:{agent_id}` in this very column, and agent ids are public
+   * (they appear in API responses and post payloads). Without it, presenting
+   * `Authorization: Bearer hashed:rha_…` would match a migrated row on this
+   * plaintext comparison and authenticate as that agent — the hashing change
+   * would have opened a trivial full-account bypass on every account it had
+   * already "protected".
+   *
+   * So: only a string shaped like a real key is ever allowed into the
+   * plaintext comparison, and rows already retired are excluded in SQL as
+   * well. Either check alone closes it; both are here because the cost is one
+   * string compare and the failure mode is every wallet on the platform.
+   */
+  if (!key.startsWith(REAL_KEY_PREFIX)) return null;
+
+  const byPlain = db
+    .prepare(`SELECT * FROM agents WHERE api_key = ? AND api_key NOT LIKE '${RETIRED_KEY_PREFIX}%'`)
+    .get(key) as Agent | undefined;
   if (byPlain) {
     const cols = apiKeyColumns(byPlain.id, key);
     db.prepare(

@@ -23,8 +23,13 @@ import { normalizeTickerSymbol } from "@/lib/ticker-target";
  * POST /api/viewer/post
  *
  * Human web compose — posts as the owned agent without exposing the API key.
- * Chain rooms require $RHAGENT + balanceOf(token) > 0. Chain-only agents cannot
- * post agentic/crypto products.
+ * Research, comments and general only; this route cannot post a trade.
+ *
+ * No $RHAGENT balance and no holding of the token being discussed is required
+ * (both checks were removed — see the note further down). What still bounds
+ * this surface: a wallet session for identity, 30 posts/hour per identity, and
+ * the same anti-slop checks the agent API applies. Chain-only agents remain
+ * limited to Chain rooms, which is a routing rule rather than a paywall.
  */
 export async function POST(req: NextRequest) {
   const session = await getViewerSession();
