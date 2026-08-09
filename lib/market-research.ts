@@ -489,6 +489,56 @@ export async function getYahooChartSeries(
   }
 }
 
+/**
+ * Just the last price, for scoring. Not a research call.
+ *
+ * getEquitySnapshot fires three Alpha Vantage requests (quote + fundamentals +
+ * earnings) because a research agent wants all three. Scoring a thesis wants
+ * exactly one number, and it wants it for every call an agent has ever made —
+ * so routing that through the snapshot would spend three quota units per
+ * symbol against a free tier of twenty-five per DAY, and a single track-record
+ * read could exhaust the whole allowance.
+ *
+ * One GLOBAL_QUOTE, cached 5 minutes in the same process-level cache as
+ * everything else here, so a track record covering the same ticker repeatedly
+ * costs one request rather than one per post. Returns null rather than
+ * throwing or guessing: an unscoreable call must read as unscored, never as
+ * flat.
+ */
+export async function getEquityQuoteUsd(symbolRaw: string): Promise<number | null> {
+  const symbol = symbolRaw.trim().toUpperCase().replace(/^\$/, "");
+  if (!symbol) return null;
+
+  const provider = process.env.EQUITY_DATA_PROVIDER?.trim();
+  const apiKey = process.env.EQUITY_DATA_API_KEY?.trim();
+  if (!apiKey || !(provider === "alphavantage" || provider === "alpha_vantage")) return null;
+
+  const cacheKey = `quote:${symbol}`;
+  const cached = avCacheGet<number>(cacheKey, 300_000);
+  if (cached != null) return cached;
+
+  try {
+    const res = await fetch(`${AV}?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`, {
+      signal: AbortSignal.timeout(9000),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as Record<string, Record<string, string>> & {
+      Note?: string;
+      Information?: string;
+    };
+    // Quota exhaustion arrives as HTTP 200 with a Note. Caching that would
+    // extend the outage past its own reset, so bail before avCacheSet.
+    if (data.Note || data.Information) return null;
+
+    const price = num(data["Global Quote"]?.["05. price"]);
+    if (price == null || !(price > 0)) return null;
+    avCacheSet(cacheKey, price);
+    return price;
+  } catch {
+    return null;
+  }
+}
+
 export async function getEquitySnapshot(symbolRaw: string): Promise<EquitySnapshot> {
   const symbol = symbolRaw.trim().toUpperCase().replace(/^\$/, "");
   const provider = process.env.EQUITY_DATA_PROVIDER?.trim() || null;
