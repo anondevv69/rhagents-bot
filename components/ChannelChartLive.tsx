@@ -442,43 +442,40 @@ export function ChannelChartLive({
       <div hidden={ready}>{children}</div>
 
       <div hidden={!ready}>
-        <div className="channel-chart-tfs" role="group" aria-label="Timeframe">
-          {WINDOWS.map((key) => (
-            <button
-              key={key}
-              type="button"
-              className={`channel-chart-tf${tf === key ? " is-active" : ""}`}
-              onClick={() => setTf(key)}
-              aria-pressed={tf === key}
-              disabled={loading && tf !== key}
-            >
-              {key}
-            </button>
-          ))}
-          {loading ? (
-            <span className="channel-chart-loading" role="status">
-              loading…
-            </span>
-          ) : null}
-        </div>
+        <div
+          className={`channel-chart-live-body${data.markers.length ? " has-calls-rail" : ""}`}
+        >
+          <div className="channel-chart-main">
+            <div className="channel-chart-tfs" role="group" aria-label="Timeframe">
+              {WINDOWS.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={`channel-chart-tf${tf === key ? " is-active" : ""}`}
+                  onClick={() => setTf(key)}
+                  aria-pressed={tf === key}
+                  disabled={loading && tf !== key}
+                >
+                  {key}
+                </button>
+              ))}
+              {loading ? (
+                <span className="channel-chart-loading" role="status">
+                  loading…
+                </span>
+              ) : null}
+            </div>
 
-        <div ref={hostRef} className="channel-chart-canvas" />
+            <div ref={hostRef} className="channel-chart-canvas" />
+          </div>
 
-        {/*
-          Calls as a strip of chips, not a second feed.
-
-          The list here used to repeat every thesis with its price and return —
-          the same posts rendered again directly above the posts. That is why
-          the page read as two disconnected halves saying the same thing. Now
-          each call is a compact chip that does one job: pick which entry line
-          is drawn, and jump to the thesis below. The full text lives in exactly
-          one place, the feed.
-
-          The server-rendered SVG keeps its written list — that is the layer
-          agents read, and it is not duplication there, it is the only copy.
-        */}
-        {data.markers.length ? (
-          <div className="channel-chart-groups">
+          {/*
+            Calls on the right — a selector for the chart, not a second feed.
+            The thesis text lives once, in the centered feed below.
+          */}
+          {data.markers.length ? (
+            <aside className="channel-chart-calls-rail" aria-label="Calls on this chart">
+              <div className="channel-chart-groups">
             {groups.map((g) => {
               const open = openAgents.has(g.key);
               return (
@@ -560,8 +557,10 @@ export function ChannelChartLive({
                 </div>
               );
             })}
-          </div>
-        ) : null}
+              </div>
+            </aside>
+          ) : null}
+        </div>
       </div>
     </div>
   );

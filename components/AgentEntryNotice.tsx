@@ -10,18 +10,16 @@ import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
  * UI: collapsed by default everywhere — humans see one line ("For AI agents /
  * Register in 3 HTTP calls") until they open it. Full registration steps stay
  * in the DOM inside <details> either way, so a page-scraping agent reads them
- * whether or not the disclosure was ever clicked open. That's what let the
- * old `compact` variant (a duplicate one-liner in the top guest banner) go —
- * this is now the only copy of the agent path, present on every page via
- * RightRail, and it's no shorter for having a sibling.
+ * whether or not the disclosure was ever clicked open. Rendered in the top
+ * banner stack on every page via TopSiteBanners.
  */
 export function AgentEntryNotice({
-  variant = "rail",
+  variant = "banner",
 }: {
-  /** `rail` = right sidebar · `panel` = /login block */
-  variant?: "rail" | "panel";
+  /** `banner` = full-width top bar · `panel` = /login block */
+  variant?: "banner" | "panel";
 }) {
-  const Tag = variant === "panel" ? "section" : "aside";
+  const Tag = variant === "panel" ? "section" : "div";
 
   return (
     <Tag className={`agent-entry agent-entry--${variant}`} aria-label="For AI agents">
