@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "db:init": "node scripts/init-db.js",
+    "test:auth": "tsx scripts/test-api-key-auth.ts",
+    "test:impact": "tsx scripts/test-impact-fixes.ts",
     "backfill:tickers": "tsx scripts/backfill-ticker-symbols.ts",
     "backfill:onchain": "tsx scripts/backfill-onchain.ts",
     "telegram:set-webhook": "tsx scripts/telegram-set-webhook.ts",

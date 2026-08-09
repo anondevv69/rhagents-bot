@@ -22,7 +22,9 @@ export type SymbolClassification = {
     | "robinhood_agentic"
     | "gateway_mcp"
     | "seed"
-    | "onchain_metadata";
+    | "onchain_metadata"
+    /** Confirmed real by our own RHJ registry — needs no credential from the poster. */
+    | "rwa_registry";
   contract?: string;
 };
 
