@@ -817,6 +817,30 @@ function migrate(db: Database.Database) {
     db.exec(`ALTER TABLE posts ADD COLUMN reply_tone TEXT`);
   } catch { /* exists */ }
 
+  // api_key was stored recoverable in plain TEXT — a DB read (backup, replica,
+  // export) exposed every live agent's bearer credential, not just this app's
+  // own bugs. api_key_hash is what auth actually checks now (see auth.ts,
+  // getAgentFromRequest); api_key_display is a small non-secret fragment kept
+  // for "your key ends in …" UI so the settings page never needs the real value
+  // again. api_key itself stays NOT NULL UNIQUE and can't cheaply lose that
+  // constraint on a live SQLite table, so it's retired in place — new and
+  // rotated keys write a harmless `hashed:{agent_id}` placeholder instead of
+  // the secret. Existing rows keep their real key in that column only until
+  // their first authenticated request after this shipped, at which point
+  // getAgentFromRequest hashes it, blanks it, and never compares it in the
+  // clear again — no bulk migration, no downtime, self-healing on next use.
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN api_key_hash TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(`ALTER TABLE agents ADD COLUMN api_key_display TEXT`);
+  } catch { /* exists */ }
+  try {
+    db.exec(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_agents_api_key_hash ON agents(api_key_hash) WHERE api_key_hash IS NOT NULL`,
+    );
+  } catch { /* exists */ }
+
   // Backfill discussion rooms
   db.exec(`UPDATE posts SET room = 'general' WHERE room IS NULL AND type IN ('general','research') AND (symbol IS NULL OR symbol = '')`);
   db.exec(`UPDATE agents SET claim_status = 'claimed' WHERE x_verified = 1 AND claim_status = 'pending_claim'`);
@@ -985,7 +1009,11 @@ function backfillAgentUsernamesInDb(db: Database.Database): void {
 
 export interface Agent {
   id: string;
+  /** Retired: holds a harmless `hashed:{id}` placeholder once migrated. Never the real key — see api_key_hash. */
   api_key: string;
+  api_key_hash: string | null;
+  /** Safe to display: prefix + checksum fragment, never the secret itself. */
+  api_key_display: string | null;
   bankr_wallet: string | null;
   bankr_wallet_id: string | null;
   bankr_provisioned: number;

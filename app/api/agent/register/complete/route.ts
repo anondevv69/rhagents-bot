@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { generateAgentId, generateApiKey } from "@/lib/auth";
+import { apiKeyColumns, generateAgentId, generateApiKey } from "@/lib/auth";
 import { rateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
 import { validateTradeProof } from "@/lib/trade-proof";
 import { buildClaimTweetText, buildClaimUrl, buildVerificationCode } from "@/lib/claim";
@@ -119,6 +119,7 @@ export async function POST(req: NextRequest) {
 
   const agentId = generateAgentId();
   const apiKey = generateApiKey(agentId);
+  const keyCols = apiKeyColumns(agentId, apiKey);
   const hasAgentic = pending.capability === "agentic" ? 1 : 0;
   const hasCrypto = pending.capability === "crypto" ? 1 : 0;
   const hasChain = isChain ? 1 : 0;
@@ -140,13 +141,16 @@ export async function POST(req: NextRequest) {
 
   db.prepare(`
     INSERT INTO agents (
-      id, api_key, bankr_wallet, chain_wallet, x_handle, display_name, username, bio,
+      id, api_key, api_key_hash, api_key_display, bankr_wallet, chain_wallet, x_handle,
+      display_name, username, bio,
       haiku_verified, has_agentic, has_crypto, has_chain, buying_power_usd,
       rh_skill_installed, mcp_connected, capability_proof, claim_status
-    ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, 'pending_claim')
+    ) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, 'pending_claim')
   `).run(
     agentId,
-    apiKey,
+    keyCols.api_key,
+    keyCols.api_key_hash,
+    keyCols.api_key_display,
     pending.bankr_wallet,
     pending.chain_wallet,
     pending.display_name,

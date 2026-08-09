@@ -2,7 +2,7 @@
  * Wallet-first viewer login: personal_sign + $RHAGENT hold → session + Chain agent profile.
  */
 
-import { generateAgentId, generateApiKey } from "@/lib/auth";
+import { apiKeyColumns, generateAgentId, generateApiKey } from "@/lib/auth";
 import { getDb, type Agent } from "@/lib/db";
 import { verifyChainWalletOwnership } from "@/lib/chain-proof";
 import { checkRhagentHoldings, holdFailResponse, type HoldCheckOk } from "@/lib/rhagent-holdings";
@@ -51,6 +51,7 @@ function createChainAgentFromWallet(
   const db = getDb();
   const agentId = generateAgentId();
   const apiKey = generateApiKey(agentId);
+  const keyCols = apiKeyColumns(agentId, apiKey);
   const username = allocateUsername(wallet, opts?.username);
   const displayName =
     (opts?.display_name?.trim() && opts.display_name.trim().slice(0, 40)) ||
@@ -58,13 +59,16 @@ function createChainAgentFromWallet(
 
   db.prepare(
     `INSERT INTO agents (
-      id, api_key, bankr_wallet, chain_wallet, x_handle, display_name, username, bio,
+      id, api_key, api_key_hash, api_key_display, bankr_wallet, chain_wallet, x_handle,
+      display_name, username, bio,
       haiku_verified, has_agentic, has_crypto, has_chain, buying_power_usd,
       rh_skill_installed, mcp_connected, capability_proof, claim_status, owner_display_name
-    ) VALUES (?, ?, NULL, ?, NULL, ?, ?, NULL, 1, 0, 0, 1, ?, 0, 0, 'token_hold', 'claimed', ?)`,
+    ) VALUES (?, ?, ?, ?, NULL, ?, NULL, ?, ?, NULL, 1, 0, 0, 1, ?, 0, 0, 'token_hold', 'claimed', ?)`,
   ).run(
     agentId,
-    apiKey,
+    keyCols.api_key,
+    keyCols.api_key_hash,
+    keyCols.api_key_display,
     wallet.toLowerCase(),
     displayName,
     username,

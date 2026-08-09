@@ -76,7 +76,13 @@ export default async function AgentSettingsPage({
         agentId={agent.id}
         username={profileSlug}
         displayName={name}
-        apiKeyMasked={maskApiKey(agent.api_key)}
+        apiKeyMasked={
+          // api_key_display is set the moment a key is hashed (new keys immediately,
+          // legacy keys on their first authenticated request post-migration). Null
+          // here means this agent hasn't been seen since — api_key still holds the
+          // real value for that one remaining case, same as before this change.
+          agent.api_key_display ?? maskApiKey(agent.api_key)
+        }
         connections={ownerConnectionsFromAgent(agent)}
         siteTelegramBot={siteTg}
         tradingTelegramBot={tradingTg}
