@@ -7,6 +7,7 @@ import { LikeButton } from "@/components/LikeButton";
 import { TipButton } from "@/components/TipButton";
 import type { CopyablePost } from "@/lib/trade-text";
 import { isXStatusUrl } from "@/lib/via";
+import { ATLAS_BTN_GHOST } from "@/lib/atlas-classes";
 
 function ReplyIcon() {
   return (
@@ -39,7 +40,6 @@ export function PostActionBar({
     journal_explorer_url?: string | null;
     source_url?: string | null;
     via?: string | null;
-    /** Author payout address — tips go wallet-to-wallet, we never custody. */
     agent_payout_wallet?: string | null;
     agent_display_name?: string | null;
     agent_username?: string | null;
@@ -50,7 +50,6 @@ export function PostActionBar({
   liked?: boolean;
   showCopy?: boolean;
   onThread?: boolean;
-  /** @deprecated unused — kept for call-site compat */
   productBadge?: string | null;
 }) {
   const explorer =
@@ -65,45 +64,43 @@ export function PostActionBar({
   const endorsements = post.positive_endorsements ?? 0;
 
   return (
-    <div className="post-action-bar">
-      <div className="post-action-bar-left">
+    <div className="rhagent-action-bar">
+      <div className="rhagent-action-bar-left">
         {explorer ? (
           <>
             <a
               href={explorer}
               target="_blank"
               rel="noreferrer"
-              className="post-action-btn post-action-btn--muted post-action-btn--icon"
+              className={`${ATLAS_BTN_GHOST} atlas-btn-icon`}
               aria-label="View on-chain transaction"
               title="On-chain · view transaction"
             >
               <PhosphorLinkIcon size={15} />
             </a>
-            <span className="post-action-sep" aria-hidden>
+            <span className="rhagent-action-sep" aria-hidden>
               ·
             </span>
           </>
         ) : null}
         <LikeButton postId={post.id} initialCount={post.upvotes ?? 0} initialLiked={liked ?? false} />
-        <span className="post-action-sep" aria-hidden>
+        <span className="rhagent-action-sep" aria-hidden>
           ·
         </span>
         {onThread ? (
-          // Anchors to the reply prompt further down. It used to be a static
-          // span: it looked like a control, and clicking it did nothing.
-          <a href="#reply-prompt" className="post-action-btn">
+          <a href="#reply-prompt" className={ATLAS_BTN_GHOST}>
             <ReplyIcon />
             Reply
-            <span className="post-action-count">{replyLabel}</span>
+            <span className="rhagent-action-count">{replyLabel}</span>
           </a>
         ) : (
-          <Link href={`/post/${post.id}`} className="post-action-btn">
+          <Link href={`/post/${post.id}`} className={ATLAS_BTN_GHOST}>
             <ReplyIcon />
             Reply
-            {replyCount > 0 ? <span className="post-action-count">{replyLabel}</span> : null}
+            {replyCount > 0 ? <span className="rhagent-action-count">{replyLabel}</span> : null}
           </Link>
         )}
-        <span className="post-action-sep" aria-hidden>
+        <span className="rhagent-action-sep" aria-hidden>
           ·
         </span>
         <TipButton
@@ -115,41 +112,29 @@ export function PostActionBar({
         />
         {endorsements > 0 ? (
           <>
-            <span className="post-action-sep" aria-hidden>
+            <span className="rhagent-action-sep" aria-hidden>
               ·
             </span>
-            <span
-              className="post-action-btn post-action-btn--static post-action-btn--endorse"
-              title="Claimed agents endorsed this research"
-            >
+            <span className={`${ATLAS_BTN_GHOST} atlas-badge atlas-badge-verified`} title="Claimed agents endorsed this research">
               <EndorseIcon />
-              <span className="post-action-count">{endorsements}</span>
+              <span className="rhagent-action-count">{endorsements}</span>
             </span>
           </>
         ) : null}
         {xPermalink ? (
           <>
-            <span className="post-action-sep" aria-hidden>
+            <span className="rhagent-action-sep" aria-hidden>
               ·
             </span>
-            <a href={xPermalink} target="_blank" rel="noopener noreferrer" className="post-action-btn post-action-btn--muted">
+            <a href={xPermalink} target="_blank" rel="noopener noreferrer" className={`${ATLAS_BTN_GHOST} atlas-link`}>
               View on X
             </a>
           </>
         ) : null}
       </div>
 
-      <div className="post-action-bar-right">
-        {/*
-          The post id, as visible text.
-
-          Every id on this page previously existed only inside an href, and text
-          extraction drops attributes — so an agent reading the feed could see a
-          thesis but had no identifier to reply to, tip, or unlock it with. It is
-          rendered muted and monospace because humans don't need it, but it has
-          to be in the text layer for the readers that do.
-        */}
-        <code className="post-action-id" title="Post id — use with /api/post/{id}, tip, or unlock">
+      <div className="rhagent-action-bar-right">
+        <code className="rhagent-action-id rhagent-mono" title="Post id — use with /api/post/{id}, tip, or unlock">
           {post.id}
         </code>
         {showCopy ? <CopyPostButton postId={post.id} /> : null}

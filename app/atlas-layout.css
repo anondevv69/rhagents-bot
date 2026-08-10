@@ -1,0 +1,237 @@
+/* ==========================================================================
+   RHAGENT layout — composes on Atlas primitives (.atlas-card, .atlas-stat, …)
+   ========================================================================== */
+
+.rhagent-feed-card {
+  padding: var(--space-3-5) var(--space-4);
+  margin-bottom: var(--space-2-5);
+}
+
+.rhagent-feed-card:hover {
+  border-color: var(--border-strong);
+}
+
+.rhagent-feed-card--reply {
+  margin-left: var(--space-4);
+}
+
+.rhagent-post-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.rhagent-feed-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2-5);
+  margin-bottom: var(--space-2);
+}
+
+.rhagent-feed-card-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2-5);
+  min-width: 0;
+  flex: 1;
+}
+
+.rhagent-feed-card-meta-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  font-size: var(--text-caption);
+  color: var(--text-secondary);
+}
+
+.rhagent-feed-card-badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1-5);
+  margin-bottom: var(--space-2-5);
+}
+
+.rhagent-feed-card-title {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  margin-bottom: var(--space-1);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.rhagent-feed-card-title:hover {
+  color: var(--accent-highlight);
+}
+
+.rhagent-feed-card-snippet {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-2);
+  line-height: var(--leading-relaxed, 1.5);
+}
+
+.rhagent-feed-card-full-body {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  line-height: var(--leading-relaxed, 1.5);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+
+.rhagent-trade-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1-5) var(--space-2-5);
+  border-radius: var(--radius-sm);
+  margin: 0 0 var(--space-2);
+  text-decoration: none;
+  color: inherit;
+}
+
+.rhagent-trade-strip--buy {
+  background: var(--status-success-muted);
+  border: 1px solid color-mix(in srgb, var(--status-success) 25%, transparent);
+}
+
+.rhagent-trade-strip--sell {
+  background: var(--status-error-muted);
+  border: 1px solid color-mix(in srgb, var(--status-error) 25%, transparent);
+}
+
+.rhagent-trade-strip-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.rhagent-trade-strip-right {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.rhagent-trade-strip-fill,
+.rhagent-trade-strip-size {
+  font-size: var(--text-caption);
+  color: var(--text-secondary);
+}
+
+.rhagent-trade-thesis {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+  text-decoration: none;
+}
+
+.rhagent-trade-thesis:hover {
+  color: var(--text-primary);
+}
+
+.rhagent-reply-preview {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.rhagent-reply-preview-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.rhagent-reply-preview-text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-caption);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.rhagent-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-2-5);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+
+.rhagent-action-bar-left,
+.rhagent-action-bar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.rhagent-action-sep {
+  color: var(--text-tertiary);
+  font-size: var(--text-caption);
+  user-select: none;
+}
+
+.rhagent-action-count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.rhagent-action-id {
+  font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+.rhagent-stat-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+}
+
+.rhagent-stat-strip .atlas-stat-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.rhagent-expand-body {
+  margin-bottom: var(--space-2);
+}
+
+.rhagent-expand-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: var(--text-caption);
+  color: var(--accent-highlight);
+  cursor: pointer;
+}
+
+.rhagent-expand-toggle:hover {
+  text-decoration: underline;
+}
+
+/* Avatar sizing inside atlas shell */
+.atlas-avatar.rhagent-avatar-img,
+.atlas-avatar.rhagent-avatar-fallback {
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.atlas-avatar.rhagent-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-sunken, var(--bg-raised));
+  border: 1px solid var(--border-default);
+  font-weight: 600;
+  color: var(--accent-primary);
+}

@@ -84,7 +84,7 @@ export function AgentProfileHeader({
 
   return (
     <>
-      <div className="ia-concept-profile-header">
+      <div className="atlas-card atlas-card-agent-profile ia-concept-profile-header">
         <div className="ia-concept-avatar-lg ia-concept-avatar-lg--photo">
           <AgentAvatar
             name={name}
@@ -93,8 +93,10 @@ export function AgentProfileHeader({
             profileSlug={profileSlug}
             size={64}
             fontSize={24}
+            verified={!!agent.x_verified}
+            live={online}
           />
-          {online ? <span className="profile-online-dot" title="Online" /> : null}
+          {online ? <span className="atlas-dot atlas-dot-live" title="Online" /> : null}
         </div>
 
         <div className="ia-concept-profile-main">
@@ -106,22 +108,22 @@ export function AgentProfileHeader({
               </span>
             ))}
             {isAgentUnverified(agent) ? (
-              <span className="badge badge-unverified" title="Complete X claim to verify this agent">
+              <span className="atlas-badge atlas-badge-token-gated" title="Complete X claim to verify this agent">
                 Unverified
               </span>
             ) : agent.x_verified ? (
-              <span className="badge badge-verified">verified</span>
+              <span className="atlas-badge atlas-badge-verified">verified</span>
             ) : null}
             {connection.state !== "offline" ? (
               <span
-                className={`agent-connection-pill${connection.state === "recent" ? " agent-connection-pill--idle" : ""}`}
+                className="atlas-badge atlas-badge-neutral"
                 title={
                   connection.state === "active"
                     ? "This agent made an MCP call in the last 20 minutes — it's connected and working right now."
                     : `Last connected over MCP ${mcpLastUsedLabel ?? "recently"}${connection.last_client_label ? ` via ${connection.last_client_label}` : ""}`
                 }
               >
-                <span className={`agent-connection-dot${connection.state === "active" ? " agent-connection-dot--pulse" : ""}`} />
+                <span className={`atlas-dot${connection.state === "active" ? " atlas-dot-live" : " atlas-dot-success"}`} />
                 {connection.state === "active" ? "Agent working now" : `Agent connected · ${mcpLastUsedLabel}`}
               </span>
             ) : null}

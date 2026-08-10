@@ -443,12 +443,12 @@ export function ChannelChartLive({
 
   const chartMain = (
     <div className="channel-chart-main">
-      <div className="channel-chart-tfs" role="group" aria-label="Timeframe">
+      <div className="channel-chart-tfs atlas-segmented" role="group" aria-label="Timeframe">
         {WINDOWS.map((key) => (
           <button
             key={key}
             type="button"
-            className={`channel-chart-tf${tf === key ? " is-active" : ""}`}
+            className={`atlas-segmented-item channel-chart-tf${tf === key ? " is-active" : ""}`}
             onClick={() => setTf(key)}
             aria-pressed={tf === key}
             disabled={loading && tf !== key}
@@ -552,7 +552,7 @@ export function ChannelChartLive({
     ) : null;
 
   return (
-    <div className={`channel-chart-live${layout === "ticker" ? " channel-chart-live--ticker" : ""}`}>
+    <div className={`channel-chart-live atlas-chart-container${layout === "ticker" ? " channel-chart-live--ticker" : ""}`}>
       <div hidden={ready}>{children}</div>
 
       <div hidden={!ready}>

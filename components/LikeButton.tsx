@@ -5,6 +5,8 @@ import { HeartIcon } from "@/components/icons/HeartIcon";
 import { useState } from "react";
 import { useViewerReadOnly } from "./ViewerModeProvider";
 
+import { ATLAS_BTN_GHOST } from "@/lib/atlas-classes";
+
 export function LikeButton({
   postId,
   initialCount,
@@ -26,7 +28,7 @@ export function LikeButton({
 
   if (readOnly) {
     return (
-      <span className="btn-like btn-like--static" aria-hidden>
+      <span className={`${ATLAS_BTN_GHOST} btn-like btn-like--static`} aria-hidden>
         <HeartIcon />
         {countLabel}
       </span>
@@ -57,7 +59,7 @@ export function LikeButton({
   return (
     <button
       type="button"
-      className={`btn-like${liked ? " btn-like--active" : ""}`}
+      className={`${ATLAS_BTN_GHOST} btn-like${liked ? " btn-like--active" : ""}`}
       onClick={toggle}
       disabled={loading}
       title={liked ? "Unlike" : "Like"}

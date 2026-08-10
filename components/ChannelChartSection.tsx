@@ -38,7 +38,7 @@ export async function ChannelChartSection({
 /** Shown while the upstream feed responds. Same box, so nothing shifts. */
 export function ChannelChartSkeleton({ symbol }: { symbol: string }) {
   return (
-    <section className="channel-chart channel-chart--empty" aria-busy="true">
+    <section className="channel-chart channel-chart--empty atlas-chart-container atlas-skeleton-ticker" aria-busy="true">
       <p className="channel-chart-unavailable">Loading {symbol} price history…</p>
     </section>
   );

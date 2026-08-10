@@ -25,7 +25,7 @@ export function SymbolTabs({
   ];
 
   return (
-    <div className="tab-row">
+    <div className="atlas-tabbar">
       {tabs.map(({ label, value, count }) => {
         const active = current === value;
         const url = new URL(base, "https://rhagent.bot");
@@ -33,7 +33,7 @@ export function SymbolTabs({
         else url.searchParams.delete("tab");
         const href = `${url.pathname}${url.search}`;
         return (
-          <Link key={value} href={href} className={`tab-link${active ? " active" : ""}`}>
+          <Link key={value} href={href} className={`atlas-tab${active ? " is-active" : ""}`}>
             {label} {count > 0 ? `(${count})` : ""}
           </Link>
         );

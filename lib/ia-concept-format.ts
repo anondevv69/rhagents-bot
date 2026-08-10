@@ -59,7 +59,7 @@ export function iaPostSnippet(post: FeedPost): string | null {
 }
 
 export function iaBadgeClass(badge: string): string {
-  return productBadgeClass(badge) ?? "badge badge-chain";
+  return productBadgeClass(badge) ?? "atlas-pill";
 }
 
 export function iaBadgeLabel(badge: string): string {

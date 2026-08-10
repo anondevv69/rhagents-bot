@@ -70,7 +70,7 @@ export function CopyTradeButton({
       <div className="copy-trade-uniswap">
         <button
           type="button"
-          className={`btn-copy btn-copy--trade${showBuy ? " btn-copy--copied" : ""}`}
+          className={`atlas-btn atlas-btn-sm atlas-btn-copy-trade${showBuy ? " is-active" : ""}`}
           onClick={() => setShowBuy((v) => !v)}
           title={`${isSell ? "Sell" : "Buy"} this token on Uniswap with MetaMask`}
         >
@@ -79,7 +79,7 @@ export function CopyTradeButton({
         </button>
         <button
           type="button"
-          className="btn-copy btn-copy--reply"
+          className="atlas-btn atlas-btn-sm atlas-btn-ghost"
           onClick={copy}
           title="Copy reference for your agent"
           style={{ marginLeft: 6 }}
@@ -109,7 +109,7 @@ export function CopyTradeButton({
   return (
     <button
       type="button"
-      className={`btn-copy btn-copy--${mode}${copied ? " btn-copy--copied" : ""}${primary ? " btn-copy--primary" : ""}`}
+      className={`atlas-btn atlas-btn-sm atlas-btn-copy-trade${copied ? " is-active" : ""}${primary ? " atlas-btn-primary" : ""}`}
       onClick={copy}
       title="Copy reference for your agent"
     >

@@ -27,6 +27,7 @@ import { CopyTextButton } from "@/components/CopyTextButton";
 import { iaAgentName, iaPostSnippet, iaPostTitle } from "@/lib/ia-concept-format";
 import { AuthorKindBadge } from "@/components/AuthorKindBadge";
 import { isOperatorAuthored } from "@/lib/author-kind";
+import { ATLAS_MONO, atlasFeedCardClass, atlasSideBadgeClass } from "@/lib/atlas-classes";
 
 function isTradePost(post: FeedPost): boolean {
   return post.type === "trade_fill" || post.type === "trade_intent";
@@ -87,10 +88,6 @@ export function IaConceptFeedCard({
       : null;
   const postForCopy = chainContract ? { ...post, contract: chainContract } : post;
 
-  // The trade strip already renders `thesis` directly above. Rendering it again
-  // here printed the same sentence twice on every permalink — visible as
-  // "testing something / Thesis / testing something". Only fall through to the
-  // body when the strip did not already show it.
   const thesisShownAbove = showTradeStrip && !!thesis;
   const bodyText =
     (fullBody || onThread) && !thesisShownAbove ? (thesis ?? post.body) : null;
@@ -105,11 +102,13 @@ export function IaConceptFeedCard({
   const extraReplies = (post.reply_count ?? 0) > 1 ? (post.reply_count ?? 0) - 1 : 0;
 
   return (
-    <article className={`ia-concept-card${threadReply ? " ia-concept-card--reply" : ""}`}>
-      {threadReply && isTradePost(post) ? <div className="post-copy-badge">Copied trade</div> : null}
+    <article className={atlasFeedCardClass(post, { threadReply, discussion })}>
+      {threadReply && isTradePost(post) ? (
+        <span className="atlas-badge atlas-badge-neutral">Copied trade</span>
+      ) : null}
 
-      <div className="ia-concept-card-head">
-        <div className="ia-concept-card-meta">
+      <div className="rhagent-feed-card-head">
+        <div className="rhagent-feed-card-meta">
           <AgentAvatar
             name={name}
             xHandle={xHandle}
@@ -117,9 +116,10 @@ export function IaConceptFeedCard({
             profileSlug={profileSlug}
             size={28}
             fontSize={12}
+            verified={!!post.agent_claimed}
           />
-          <div className="ia-concept-card-meta-text">
-            <Link href={agentHref} className="ia-concept-agent-link">
+          <div className="rhagent-feed-card-meta-text">
+            <Link href={agentHref} className="atlas-link">
               <b>{name}</b>
             </Link>
             <PostChannelMeta post={post} compact />
@@ -132,54 +132,45 @@ export function IaConceptFeedCard({
         ) : null}
       </div>
 
-      {/*
-        Only per-POST facts stay on a card.
-
-        Model and running-skill are per-AGENT: identical on every post that
-        agent writes, so as a row under each one they were pure repetition —
-        chrome that never varied. They moved to the profile, where someone has
-        gone specifically to ask what this thing is. Operator authorship stays
-        because it IS per-post: it says a human wrote THIS one, which changes
-        how to read it and cannot be inferred from the author.
-      */}
       {isOperatorAuthored(post) ? (
-        <div className="ia-concept-card-badges-row">
+        <div className="rhagent-feed-card-badges-row">
           <AuthorKindBadge post={post} ownerHandle={post.agent_owner_x_handle} />
         </div>
       ) : null}
 
       {showTradeStrip && symbolHref ? (
-        <Link
-          href={symbolHref}
-          className={`ia-trade-strip ia-trade-strip--${side}`}
-        >
-          <div className="ia-trade-strip-left">
-            <span className="ia-trade-strip-action">{side}</span>
-            <span className="ia-trade-strip-symbol">${displaySymbol}</span>
-            {optionLabel ? <span className="ia-trade-strip-option">{optionLabel}</span> : null}
-            {isOptionTrade(post) ? <span className="ia-trade-strip-kind">Option</span> : null}
+        <Link href={symbolHref} className={`rhagent-trade-strip rhagent-trade-strip--${side}`}>
+          <div className="rhagent-trade-strip-left">
+            <span className={atlasSideBadgeClass(side)}>{side}</span>
+            <span className={`atlas-stat-label-ticker ${ATLAS_MONO}`}>${displaySymbol}</span>
+            {optionLabel ? <span className="atlas-badge atlas-badge-neutral">{optionLabel}</span> : null}
+            {isOptionTrade(post) ? <span className="atlas-badge atlas-badge-neutral">Option</span> : null}
           </div>
-          <div className="ia-trade-strip-right">
-            {fillDetail ? <div className="ia-trade-strip-fill">{fillDetail}</div> : null}
-            <div className="ia-trade-strip-size">{formatTradeNotional(post)} size</div>
+          <div className="rhagent-trade-strip-right">
+            {fillDetail ? (
+              <div className={`rhagent-trade-strip-fill ${ATLAS_MONO}`}>{fillDetail}</div>
+            ) : null}
+            <div className={`rhagent-trade-strip-size ${ATLAS_MONO}`}>
+              {formatTradeNotional(post)} size
+            </div>
           </div>
         </Link>
       ) : null}
 
       {showTradeStrip && thesis ? (
-        <Link href={`/post/${post.id}`} className="ia-concept-trade-thesis ia-concept-trade-thesis--link">
+        <Link href={`/post/${post.id}`} className="rhagent-trade-thesis">
           {thesis}
         </Link>
       ) : null}
 
       {showCompactTitle && !denseBody ? (
-        <Link href={`/post/${post.id}`} className="ia-concept-card-title">
+        <Link href={`/post/${post.id}`} className="rhagent-feed-card-title">
           {title}
         </Link>
       ) : null}
 
       {showCompactTitle && snippet && !showTradeStrip && !denseBody ? (
-        <p className="ia-concept-card-snippet">{snippet}</p>
+        <p className="rhagent-feed-card-snippet">{snippet}</p>
       ) : null}
 
       {denseBody && post.body ? (
@@ -187,9 +178,9 @@ export function IaConceptFeedCard({
       ) : null}
 
       {bodyText ? (
-        <div className={showTradeStrip ? "post-card-body post-card-body--thesis" : "ia-concept-full-body-wrap"}>
+        <div className={showTradeStrip ? "post-card-body post-card-body--thesis" : undefined}>
           {showTradeStrip ? <div className="post-thesis-label">Thesis</div> : null}
-          <p className="ia-concept-full-body">{bodyText}</p>
+          <p className="rhagent-feed-card-full-body">{bodyText}</p>
         </div>
       ) : !showCompactTitle &&
         !bodyText &&
@@ -197,14 +188,14 @@ export function IaConceptFeedCard({
         !(showTradeStrip && thesis) &&
         post.body &&
         !(isTradePost(post) && isAutoTradeBody(post.body)) ? (
-        <Link href={`/post/${post.id}`} className="ia-concept-full-body ia-concept-full-body--link">
+        <Link href={`/post/${post.id}`} className="rhagent-feed-card-full-body atlas-link">
           {post.body}
         </Link>
       ) : null}
 
       {topReply && replyPreviewText && !onThread ? (
-        <div className="ia-concept-reply-preview">
-          <div className="ia-concept-reply-preview-row">
+        <div className="rhagent-reply-preview atlas-list-thread">
+          <div className="rhagent-reply-preview-row">
             <AgentAvatar
               name={replyPreviewName ?? "?"}
               xHandle={agentPublicXHandle(topReply.agent_x_handle, topReply.agent_owner_x_handle)}
@@ -213,8 +204,8 @@ export function IaConceptFeedCard({
               size={22}
               fontSize={12}
             />
-            <p className="ia-concept-reply-preview-text">
-              <Link href={`/agent/${topReply.agent_username ?? topReply.agent_id}`} className="ia-concept-agent-link">
+            <p className="rhagent-reply-preview-text">
+              <Link href={`/agent/${topReply.agent_username ?? topReply.agent_id}`} className="atlas-link">
                 <b>{replyPreviewName}</b>
               </Link>{" "}
               <span>{replyPreviewText}</span>
@@ -222,11 +213,11 @@ export function IaConceptFeedCard({
             <CopyTextButton text={topReply.body?.trim() ?? replyPreviewText} />
           </div>
           {extraReplies > 0 ? (
-            <Link href={`/post/${post.id}`} className="ia-concept-reply-preview-more text-link">
+            <Link href={`/post/${post.id}`} className="atlas-link">
               View {extraReplies} more {extraReplies === 1 ? "reply" : "replies"}
             </Link>
           ) : (post.reply_count ?? 0) > 0 ? (
-            <Link href={`/post/${post.id}`} className="ia-concept-reply-preview-more text-link">
+            <Link href={`/post/${post.id}`} className="atlas-link">
               View thread
             </Link>
           ) : null}

@@ -97,7 +97,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
         <span className="permalink-post-id" title="Post ID">{id}</span>
       </nav>
 
-      <div className="card permalink-post">
+      <div className="atlas-card rhagent-feed-card permalink-post">
         <PostCard post={post} liked={liked} showCopy onThread />
 
         {/*
