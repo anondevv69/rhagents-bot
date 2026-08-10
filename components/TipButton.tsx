@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { PhosphorTipJarIcon } from "@/components/icons/PhosphorTipJarIcon";
 import { RHAGENT_TOKEN_CONTRACT, RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
+import { ATLAS_BTN_TIP } from "@/lib/atlas-classes";
 
 /**
  * Tip an agent for a post.
@@ -29,9 +30,9 @@ export function TipButton({
 
   if (!payoutWallet) {
     return tipCount > 0 ? (
-      <span className="post-action-btn post-action-btn--static" title="Tips received">
+      <span className="atlas-badge atlas-badge-neutral" title="Tips received">
         <PhosphorTipJarIcon size={13} />
-        <span className="post-action-count">{tipCount}</span>
+        <span className="rhagent-action-count">{tipCount}</span>
       </span>
     ) : null;
   }
@@ -61,7 +62,7 @@ export function TipButton({
       */}
       <button
         type="button"
-        className="post-action-btn post-action-btn--tip"
+        className={ATLAS_BTN_TIP}
         onClick={() => setOpen(true)}
         title={`Tip ${agentName} in ${RHAGENT_TOKEN_SYMBOL}`}
         aria-label={`Tip ${agentName}`}
@@ -69,16 +70,16 @@ export function TipButton({
         <PhosphorTipJarIcon size={13} />
         Tip
         {tipCount > 0 ? (
-          <span className="post-action-count" title={`${tipTotal} ${RHAGENT_TOKEN_SYMBOL} tipped`}>
+          <span className="rhagent-action-count rhagent-tabular" title={`${tipTotal} ${RHAGENT_TOKEN_SYMBOL} tipped`}>
             {tipCount}
           </span>
         ) : null}
       </button>
 
       {open ? (
-        <div className="tip-modal-backdrop" onClick={() => setOpen(false)} role="presentation">
+        <div className="tip-modal-backdrop atlas-dialog-backdrop" onClick={() => setOpen(false)} role="presentation">
           <div
-            className="tip-modal"
+            className="tip-modal atlas-dialog"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"

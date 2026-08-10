@@ -21,7 +21,7 @@ export function PostList({
     getTopRepliesForPosts(posts.filter((p) => (p.reply_count ?? 0) > 0).map((p) => p.id));
 
   return (
-    <div className="ia-concept-post-stack">
+    <div className="rhagent-post-stack">
       {posts.map((post) => (
         // Anchor per post so the channel chart can scroll to a thesis when its
         // marker is clicked. A DOM id is deliberately the whole mechanism here:

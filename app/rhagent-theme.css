@@ -245,7 +245,50 @@
   color: var(--text-primary);
 }
 
-/* ---- Button Modifiers (Trading Actions) -------------------------------- */
+@keyframes atlas-sweep {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* RHAGENT green CTAs — override Atlas near-white primary */
+.atlas-btn-primary,
+.btn.btn-primary {
+  background: var(--accent-primary);
+  color: var(--text-inverse);
+  border-color: transparent;
+}
+
+.atlas-btn-primary:hover,
+.btn.btn-primary:hover:not(:disabled) {
+  background: var(--accent-primary-hover);
+}
+
+/* Tip action — visible edge on dense feed rows */
+.rhagent-btn-tip {
+  color: var(--accent-primary);
+  border: 1px solid var(--border-accent);
+}
+
+.rhagent-btn-tip:hover {
+  background: var(--accent-primary-muted);
+  border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+}
+
+.rhagent-pill-chain {
+  color: var(--status-success);
+  border-color: color-mix(in srgb, var(--status-success) 30%, transparent);
+}
+
+.rhagent-pill-crypto {
+  color: var(--accent-highlight);
+  border-color: color-mix(in srgb, var(--accent-highlight) 30%, transparent);
+}
+
+.rhagent-pill-agentic {
+  color: var(--liquidity-blue);
+  border-color: color-mix(in srgb, var(--liquidity-blue) 30%, transparent);
+}
+
 
 .atlas-btn-copy-trade {
   background: var(--accent-primary);

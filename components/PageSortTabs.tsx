@@ -16,18 +16,14 @@ export function PageSortTabs({
   className?: string;
 }) {
   return (
-    <div className={`page-sort-tabs${className ? ` ${className}` : ""}`}>
+    <div className={`atlas-tabbar${className ? ` ${className}` : ""}`}>
       {tabs.map(({ value, label }) => {
         const active = current === value;
         const qs = new URLSearchParams(preserve ?? {});
         qs.set(param, value);
         const href = `${basePath}?${qs.toString()}`;
         return (
-          <Link
-            key={value}
-            href={href}
-            className={`page-sort-tab${active ? " page-sort-tab--active" : ""}`}
-          >
+          <Link key={value} href={href} className={`atlas-tab${active ? " is-active" : ""}`}>
             {label}
           </Link>
         );

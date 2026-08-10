@@ -15,13 +15,13 @@ export function FeedCardExpandableBody({
   const needsToggle = full.trim().length > summary.trim().length + 40;
 
   if (!needsToggle) {
-    return <p className="ia-concept-full-body">{full}</p>;
+    return <p className="rhagent-feed-card-full-body">{full}</p>;
   }
 
   return (
-    <div className="ia-concept-expand-body">
-      <p className="ia-concept-card-snippet">{open ? full : summary}</p>
-      <button type="button" className="ia-concept-expand-toggle" onClick={() => setOpen((v) => !v)}>
+    <div className="rhagent-expand-body">
+      <p className="rhagent-feed-card-snippet">{open ? full : summary}</p>
+      <button type="button" className="rhagent-expand-toggle atlas-link" onClick={() => setOpen((v) => !v)}>
         {open ? "Show less" : "Show full scan"}
       </button>
     </div>

@@ -150,36 +150,50 @@ export default async function TickersPage({
           </div>
         )
       ) : (
-        <div className="ia-concept-ticker-list">
-          {tickers.map((t) => {
-            const isSelected = selected === t.symbol.toUpperCase();
-            return (
-              <Link
-                key={`${t.product}:${t.symbol}`}
-                href={`/tickers/${encodeURIComponent(t.symbol)}?product=${t.product ?? product}`}
-                className={`ia-concept-ticker-row${isSelected ? " ia-concept-ticker-row--selected" : ""}`}
-              >
-                <div>
-                  <div className="ia-concept-ticker-sym">${t.symbol}</div>
-                  <div className="ia-concept-ticker-sub">
-                    {t.trade_count} trades · {t.agent_count} agents
-                    {t.product === "chain" && t.normie_count > 0
-                      ? ` · ${t.normie_count} normie${t.normie_count !== 1 ? "s" : ""}`
-                      : ""}
-                    {t.thesis_count > 0 ? ` · ${t.thesis_count} thesis` : ""}
-                  </div>
-                </div>
-                <div className="ia-concept-ticker-right">
-                  {t.product && productBadgeClass(t.product) ? (
-                    <span className={productBadgeClass(t.product)!} style={{ fontSize: "var(--text-caption)" }}>
-                      {productBadgeLabel(t.product)}
-                    </span>
-                  ) : null}
-                  <span className="ia-concept-ticker-sub">{formatVolume(t.volume_usd)} vol</span>
-                </div>
-              </Link>
-            );
-          })}
+        <div className="atlas-card">
+          <table className="atlas-table atlas-table-trades">
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th className="num">Trades</th>
+                <th className="num">Agents</th>
+                <th className="num">Thesis</th>
+                <th className="num">Volume</th>
+                <th>Product</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tickers.map((t) => {
+                const isSelected = selected === t.symbol.toUpperCase();
+                return (
+                  <tr key={`${t.product}:${t.symbol}`} className={isSelected ? "is-selected" : undefined}>
+                    <td>
+                      <Link
+                        href={`/tickers/${encodeURIComponent(t.symbol)}?product=${t.product ?? product}`}
+                        className="atlas-stat-label-ticker atlas-link rhagent-mono"
+                      >
+                        ${t.symbol}
+                      </Link>
+                    </td>
+                    <td className="num rhagent-tabular">{t.trade_count}</td>
+                    <td className="num rhagent-tabular">
+                      {t.agent_count}
+                      {t.product === "chain" && t.normie_count > 0
+                        ? ` + ${t.normie_count} normie${t.normie_count !== 1 ? "s" : ""}`
+                        : ""}
+                    </td>
+                    <td className="num rhagent-tabular">{t.thesis_count > 0 ? t.thesis_count : "—"}</td>
+                    <td className={`num rhagent-mono rhagent-tabular`}>{formatVolume(t.volume_usd)}</td>
+                    <td>
+                      {t.product && productBadgeClass(t.product) ? (
+                        <span className={productBadgeClass(t.product)!}>{productBadgeLabel(t.product)}</span>
+                      ) : null}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

@@ -46,14 +46,14 @@ export function AgentProfileTabs({
 
   return (
     <>
-      <nav className="ia-concept-subtabs" aria-label="Profile sections">
+      <nav className="atlas-tabbar" aria-label="Profile sections">
         {mainTabs.map(({ label, value, count }) => {
           const active = current === value;
           return (
             <a
               key={value}
               href={buildHref(profileSlug, value, value === "trades" ? sideFilter : "all")}
-              className={`ia-concept-subtab${active ? " ia-concept-subtab--active" : ""}`}
+              className={`atlas-tab${active ? " is-active" : ""}`}
             >
               {label}
               {count > 0 && value !== "skills" ? ` (${count})` : ""}
@@ -63,14 +63,14 @@ export function AgentProfileTabs({
       </nav>
 
       {current === "trades" ? (
-        <div className="ia-concept-trade-filters">
+        <div className="atlas-segmented">
           {sideTabs.map(({ label, value, count }) => {
             const active = sideFilter === value;
             return (
               <a
                 key={value}
                 href={buildHref(profileSlug, "trades", value)}
-                className={`ia-concept-subtab ia-concept-subtab--compact${active ? " ia-concept-subtab--active" : ""}`}
+                className={`atlas-segmented-item${active ? " is-active" : ""}`}
               >
                 {label}
                 {count > 0 ? ` (${count})` : ""}

@@ -1,10 +1,10 @@
 export type ProductBadgeKind = "chain" | "crypto" | "agentic";
 
-/** One class per product — use everywhere (profile, feed, tickers, rail). */
+/** One class per product — Atlas pill vocabulary. */
 export function productBadgeClass(product: string | null | undefined): string | null {
-  if (product === "chain") return "badge badge-chain";
-  if (product === "agentic") return "badge badge-agentic";
-  if (product === "crypto") return "badge badge-crypto";
+  if (product === "chain") return "atlas-pill rhagent-pill-chain";
+  if (product === "agentic") return "atlas-pill rhagent-pill-agentic";
+  if (product === "crypto") return "atlas-pill rhagent-pill-crypto";
   return null;
 }
 

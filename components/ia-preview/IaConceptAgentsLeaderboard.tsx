@@ -3,10 +3,10 @@ import type { LeaderboardAgent, LeaderboardKind } from "@/lib/agents-leaderboard
 import { formatPnlShort, formatVolume } from "@/lib/stats";
 import { agentProfilePath } from "@/lib/agent-path";
 import { AgentAvatar } from "@/components/AgentAvatar";
+import { ATLAS_MONO, atlasPnlClass } from "@/lib/atlas-classes";
 
 type UsersTab = LeaderboardKind | "all";
 
-/** Plain-language kind labels — "Normie" told a reader nothing about the account. */
 const KIND_LABEL: Record<LeaderboardKind, string> = {
   researchers: "Researcher",
   agents: "Trader",
@@ -33,19 +33,19 @@ export function IaConceptAgentsLeaderboard({
   users: LeaderboardAgent[];
   tab: UsersTab;
 }) {
-  // A researcher's P&L is structurally $0, so showing a P&L column on that board
-  // is a column of zeros. Swap the value column for what they're ranked on.
   const researchView = tab === "researchers";
 
   return (
-    <div className="ia-concept-lb-wrap">
-      <table className="ia-concept-lb-table">
+    <div className="atlas-card">
+      <table className="atlas-table atlas-table-trades">
         <thead>
           <tr>
             <th>#</th>
             <th>Agent</th>
-            <th>Activity</th>
-            <th>{researchView ? "Earned / impact" : "P&L / vol"}</th>
+            <th>Trades</th>
+            <th>Posts</th>
+            <th>{researchView ? "Earned" : "P&L"}</th>
+            <th>{researchView ? "Impact" : "Volume"}</th>
           </tr>
         </thead>
         <tbody>
@@ -55,18 +55,13 @@ export function IaConceptAgentsLeaderboard({
             const kind = a.kind;
             const isWallet = kind === "normies";
             const isResearcher = kind === "researchers";
-            const pnlClass = a.realized_pnl_usd >= 0 ? " up" : " down";
             const earned = a.earned_rhagent ?? 0;
 
             return (
               <tr key={a.id}>
-                <td>{i + 1}</td>
+                <td className="rhagent-tabular">{i + 1}</td>
                 <td>
-                  <Link
-                    href={agentProfilePath(a)}
-                    className="ia-concept-lb-name"
-                    style={{ textDecoration: "none", color: "inherit" }}
-                  >
+                  <Link href={agentProfilePath(a)} className="atlas-link" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <AgentAvatar
                       name={name}
                       xHandle={a.x_handle}
@@ -77,53 +72,37 @@ export function IaConceptAgentsLeaderboard({
                     />
                     <span>{name}</span>
                     {tab === "all" ? (
-                      <span
-                        className={`users-kind-badge users-kind-badge--${kind}`}
-                        title={KIND_TITLE[kind]}
-                      >
+                      <span className="atlas-badge atlas-badge-neutral" title={KIND_TITLE[kind]}>
                         {KIND_LABEL[kind]}
                       </span>
                     ) : null}
                   </Link>
-                  <div className="ia-concept-lb-meta">
-                    @{slug}
-                    {a.follower_count > 0 ? ` · ${a.follower_count} followers` : ""}
-                  </div>
+                  <div className="atlas-stat-label">@{slug}{a.follower_count > 0 ? ` · ${a.follower_count} followers` : ""}</div>
                 </td>
-                <td className="ia-concept-lb-meta">
-                  {/* Lead with posts for researchers — trades is the wrong headline
-                      for an account that doesn't trade. */}
-                  {isResearcher
-                    ? `${a.post_count} posts`
-                    : `${a.trade_count} trades · ${a.post_count} posts`}
-                  {isWallet ? " · Chain" : ""}
+                <td className={`num rhagent-tabular${isResearcher ? " col-side-neutral" : ""}`}>
+                  {isResearcher ? "—" : a.trade_count}
                 </td>
-                <td>
+                <td className="num rhagent-tabular">{a.post_count}</td>
+                <td className={`num ${ATLAS_MONO}`}>
                   {researchView || (tab === "all" && isResearcher) ? (
-                    <>
-                      <span className="ia-concept-lb-pnl">
-                        {compactTokens(earned)} $RHAGENT
-                      </span>
-                      <div className="ia-concept-lb-meta">
-                        {a.impact_score ?? 0} impact
-                      </div>
-                    </>
+                    <span>{compactTokens(earned)} $RHAGENT</span>
                   ) : isWallet ? (
-                    <>
-                      <span className="ia-concept-lb-meta">{formatVolume(a.volume_usd)} vol</span>
-                      {earned > 0 ? (
-                        <div className="ia-concept-lb-meta">{compactTokens(earned)} $RHAGENT</div>
-                      ) : null}
-                    </>
+                    <span className="atlas-stat-label">—</span>
+                  ) : (
+                    <span className={atlasPnlClass(a.realized_pnl_usd)}>
+                      {formatPnlShort(a.realized_pnl_usd)}
+                    </span>
+                  )}
+                </td>
+                <td className={`num ${ATLAS_MONO}`}>
+                  {researchView || (tab === "all" && isResearcher) ? (
+                    <span className="rhagent-tabular">{a.impact_score ?? 0}</span>
                   ) : (
                     <>
-                      <span className={`ia-concept-lb-pnl${pnlClass}`}>
-                        {formatPnlShort(a.realized_pnl_usd)}
-                      </span>
-                      <div className="ia-concept-lb-meta">
-                        {formatVolume(a.volume_usd)} vol
-                        {earned > 0 ? ` · ${compactTokens(earned)} $RHAGENT` : ""}
-                      </div>
+                      <span>{formatVolume(a.volume_usd)}</span>
+                      {earned > 0 && !isWallet ? (
+                        <div className="atlas-stat-label">{compactTokens(earned)} $RHAGENT</div>
+                      ) : null}
                     </>
                   )}
                 </td>

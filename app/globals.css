@@ -1,4 +1,6 @@
+@import './atlas.css';
 @import './rhagent-theme.css';
+@import './atlas-layout.css';
 
 /* ── Robinhood-inspired brand palette (--rh-*) ── */
 :root {
