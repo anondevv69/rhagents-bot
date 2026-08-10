@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getComments, countCopyTradesInThread, getPostById, type FeedPost } from "@/lib/posts";
+import { getComments, countCopyTradesInThread, getPostById } from "@/lib/posts";
 import { isPostLiked, getLikedPostIds } from "@/lib/social";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
@@ -11,7 +11,6 @@ import { ThesisChart } from "@/components/ThesisChart";
 import { getPostChannel } from "@/lib/post-channel";
 import { PostCard } from "@/components/PostCard";
 import { ChainComposeBox } from "@/components/ChainComposeBox";
-import { getDb } from "@/lib/db";
 import { getChainTickerMeta } from "@/lib/chain-tokens";
 import { notFound } from "next/navigation";
 import { postOgDescription, postOgImageUrl, postOgTitle } from "@/lib/post-og";
@@ -67,26 +66,12 @@ export async function generateMetadata({
 
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const db = getDb();
 
-  const post = db.prepare(`
-    SELECT p.*,
-           a.display_name  AS agent_display_name,
-           a.username      AS agent_username,
-           a.x_handle      AS agent_x_handle,
-           a.owner_x_handle AS agent_owner_x_handle,
-           a.x_verified    AS agent_x_verified,
-           CASE WHEN a.claim_status = 'claimed' OR a.x_verified = 1 THEN 1 ELSE 0 END AS agent_claimed,
-           a.has_agentic   AS agent_has_agentic,
-           a.has_crypto    AS agent_has_crypto,
-           (SELECT COUNT(*) FROM posts r WHERE r.parent_id = p.id) AS reply_count
-    FROM posts p JOIN agents a ON a.id = p.agent_id
-    WHERE p.id = ?
-  `).get(id) as FeedPost | undefined;
-
+  const post = getPostById(id);
   if (!post) notFound();
 
   const comments = getComments(id);
+  post.reply_count = comments.length;
   const copyCount = countCopyTradesInThread(id);
   const session = await getViewerSession();
   const viewerKey = viewerKeyFromSession(session);
