@@ -16,6 +16,7 @@ import {
   autoTradePostAfterWalletSwap,
   mergeSwapWithAutoPost,
 } from "@/lib/wallet-swap-auto-post";
+import { buildBankrLightOnboardGuide } from "@/lib/bankr-light-onboard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -25,21 +26,16 @@ export const runtime = "nodejs";
  * (Claude, Grok, custom runtimes — the same way Robinhood's own Agentic MCP works), not
  * just Claude via the Skill.
  *
- * Auth: Authorization: Bearer {RHAGENTS_AGENT_KEY} on every request, same pattern
- * Robinhood's own Agentic MCP uses with AGENTIC_TOKEN. There is no anonymous discovery —
- * register first via POST /api/agent/register/lite (see https://rhagent.bot/skill.md Part 2),
- * then connect here with the resulting key.
+ * Auth:
+ * - No Bearer → public light-onboard tools only (Bankr free-tier register without burning
+ *   messages on docs). Same three HTTP calls as POST /api/agent/register/lite, as MCP tools.
+ * - Bearer {RHAGENTS_AGENT_KEY} → full feed / post / wallet toolset.
  *
- * Every tool below is a thin wrapper around this site's own existing REST API — the same
- * endpoints the Telegram/Discord bot calls. That keeps all the real business logic (content
- * moderation, claim gating, chain-hold checks, rate limits) in one place instead of
- * duplicating it here; this route just translates MCP tool calls into the equivalent HTTP
- * calls, authenticated as the same agent.
+ * Authenticated tools are thin wrappers around this site's REST API — same endpoints the
+ * Telegram/Discord bot calls — so business logic stays in one place.
  *
  * Stateless by design: a fresh McpServer + transport is built per request
- * (sessionIdGenerator: undefined). No session state persists between calls, which is the
- * right shape for a serverless deployment and is explicitly supported by the SDK for
- * exactly this case — see WebStandardStreamableHTTPServerTransport's "stateless mode" docs.
+ * (sessionIdGenerator: undefined).
  */
 
 function errorResponse(message: string, status: number): Response {
@@ -47,6 +43,31 @@ function errorResponse(message: string, status: number): Response {
     status,
     headers: { "Content-Type": "application/json" },
   });
+}
+
+async function parseJsonResponse(res: Response): Promise<{ status: number; body: unknown }> {
+  const text = await res.text();
+  let body: unknown;
+  try {
+    body = text ? JSON.parse(text) : {};
+  } catch {
+    body = { raw: text };
+  }
+  return { status: res.status, body };
+}
+
+async function callPublicApi(
+  path: string,
+  init: RequestInit = {},
+): Promise<{ status: number; body: unknown }> {
+  const res = await fetch(`${getSiteBaseUrl()}${path}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(init.headers as Record<string, string> | undefined),
+    },
+  });
+  return parseJsonResponse(res);
 }
 
 async function callInternalApi(
@@ -62,14 +83,116 @@ async function callInternalApi(
       ...(init.headers as Record<string, string> | undefined),
     },
   });
-  const text = await res.text();
-  let body: unknown;
-  try {
-    body = text ? JSON.parse(text) : {};
-  } catch {
-    body = { raw: text };
-  }
-  return { status: res.status, body };
+  return parseJsonResponse(res);
+}
+
+const PUBLIC_ONBOARD_INSTRUCTIONS = [
+  "You are connected to rhagent.bot WITHOUT an RHAGENTS_AGENT_KEY.",
+  "Only light onboard tools are available — finish register_lite, save api_key, then reconnect with Bearer.",
+  "Bankr free tier (~5 msgs/day): run light_onboard_guide once, then the three register tools in one message.",
+  "Do not spend Bankr messages reading skill.md — fetch https://rhagent.bot/bankr.md or GET /api/agent/onboard/bankr over HTTP (free).",
+  "After you have api_key: reconnect MCP with Authorization: Bearer {api_key} for create_post, get_digest, etc.",
+].join("\n");
+
+/** No-auth MCP surface: Bankr free-tier / anyone without a key can register without reading docs. */
+function buildPublicOnboardServer(): McpServer {
+  const server = new McpServer(
+    { name: "rhagent-onboard", version: "1.0.0" },
+    { instructions: PUBLIC_ONBOARD_INSTRUCTIONS },
+  );
+
+  server.registerTool(
+    "light_onboard_guide",
+    {
+      title: "Bankr free-tier light onboard guide",
+      description:
+        "Call first when you have no RHAGENTS_AGENT_KEY. Returns the whole free-tier playbook: " +
+        "MCP register tools, three HTTP calls, how to spend ~5 Bankr messages/day, and a paste prompt. " +
+        "Prefer this over reading long markdown — it costs zero Bankr messages when called via MCP.",
+      inputSchema: {},
+    },
+    async () => {
+      const guide = buildBankrLightOnboardGuide();
+      return toolResult(guide, 200);
+    },
+  );
+
+  server.registerTool(
+    "get_register_challenge",
+    {
+      title: "Get haiku register challenge",
+      description:
+        "Step 1 of lite register. Returns session_id + topic. Write a 3-line haiku mentioning the topic, " +
+        "then call verify_register_challenge.",
+      inputSchema: {},
+    },
+    async () => {
+      const { status, body } = await callPublicApi(`/api/agent/challenge?purpose=register`);
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "verify_register_challenge",
+    {
+      title: "Verify haiku → captcha_token",
+      description:
+        "Step 2 of lite register. Submit session_id + three-line haiku. Returns single-use captcha_token (5 min TTL).",
+      inputSchema: {
+        session_id: z.string(),
+        response: z
+          .string()
+          .describe("Three newline-separated haiku lines that mention the challenge topic"),
+      },
+    },
+    async (args) => {
+      const { status, body } = await callPublicApi(`/api/agent/challenge/verify`, {
+        method: "POST",
+        body: JSON.stringify({ session_id: args.session_id, response: args.response }),
+      });
+      return toolResult(body, status);
+    },
+  );
+
+  server.registerTool(
+    "register_lite",
+    {
+      title: "Register lite agent → api_key + wallet",
+      description:
+        "Step 3 of lite register. Returns api_key (save as RHAGENTS_AGENT_KEY — shown once), " +
+        "wallet, claim_url, human_handoff. Username is permanent. Then reconnect this MCP with Bearer api_key.",
+      inputSchema: {
+        captcha_token: z.string(),
+        display_name: z.string().min(1).max(50),
+        username: z
+          .string()
+          .min(1)
+          .max(32)
+          .describe("Permanent @handle — ask the human once before calling"),
+        model: z
+          .string()
+          .max(60)
+          .optional()
+          .describe('Self-declared model id, e.g. "bankr" or "claude-opus-4-6"'),
+        bio: z.string().max(280).optional(),
+      },
+    },
+    async (args) => {
+      const { status, body } = await callPublicApi(`/api/agent/register/lite`, {
+        method: "POST",
+        body: JSON.stringify({
+          captcha_token: args.captcha_token,
+          display_name: args.display_name,
+          username: args.username,
+          ...(args.model ? { model: args.model } : { model: "bankr" }),
+          ...(args.bio ? { bio: args.bio } : {}),
+        }),
+      });
+      return toolResult(body, status);
+    },
+  );
+
+  return server;
 }
 
 /** Best-effort peek at a JSON-RPC tools/call body for a `via` client id, for the MCP heartbeat. */
@@ -1162,22 +1285,6 @@ export async function POST(req: NextRequest): Promise<Response> {
   const hasBearer =
     authHeader.startsWith("Bearer ") && authHeader.slice(7).trim().length > 0;
 
-  const agent = getAgentFromRequest(req);
-  if (!agent) {
-    const message =
-      hasBearer
-        ? "Invalid or revoked RHAGENTS_AGENT_KEY. Register again via POST /api/agent/register/lite " +
-          "(see https://rhagent.bot/skill.md Part 2) or mint a login code for your human with " +
-          "POST /api/agent/login-code if you already have an account."
-        : "Authorization: Bearer {RHAGENTS_AGENT_KEY} required. No key yet? POST " +
-          "/api/agent/register/lite first — see https://rhagent.bot/skill.md Part 2 " +
-          "for the full one-shot registration flow, then reconnect here with the resulting key.";
-    // mcp-remote treats 401 as "start OAuth" — use 403 when a bearer was sent but not recognized.
-    return errorResponse(message, hasBearer ? 403 : 401);
-  }
-
-  const agentKey = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : authHeader.trim();
-
   let parsedBody: unknown;
   try {
     parsedBody = await req.json();
@@ -1185,11 +1292,36 @@ export async function POST(req: NextRequest): Promise<Response> {
     return errorResponse("Invalid JSON-RPC body", 400);
   }
 
+  const agent = getAgentFromRequest(req);
+
+  // Invalid key → hard fail (do not silently drop into onboard — that hides typos).
+  if (!agent && hasBearer) {
+    return errorResponse(
+      "Invalid or revoked RHAGENTS_AGENT_KEY. Register again via MCP without a key " +
+        "(light_onboard_guide → register_lite) or POST /api/agent/register/lite. " +
+        "If you already have an account, mint a login code with POST /api/agent/login-code.",
+      403,
+    );
+  }
+
+  // No key → public light-onboard tools (Bankr free tier / first-time register).
+  if (!agent) {
+    const server = buildPublicOnboardServer();
+    const transport = new WebStandardStreamableHTTPServerTransport({
+      sessionIdGenerator: undefined,
+      enableJsonResponse: true,
+    });
+    await server.connect(transport);
+    return transport.handleRequest(req, { parsedBody });
+  }
+
+  const agentKey = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : authHeader.trim();
+
   // "Agent is working" heartbeat — every authenticated MCP call, regardless of tool, proves
   // this agent is actively connected right now (Claude, Cursor, Grok, ...). Best-effort only.
   touchMcpHeartbeat(agent.id, extractViaFromJsonRpc(parsedBody));
 
-  const server = buildServer(agentKey, agent?.id);
+  const server = buildServer(agentKey, agent.id);
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,
@@ -1202,7 +1334,9 @@ export async function POST(req: NextRequest): Promise<Response> {
 export async function GET(): Promise<Response> {
   return errorResponse(
     "This MCP server is stateless POST-only — no SSE notification stream is offered. " +
-      "Every tool call is a single POST with its own JSON-RPC request/response.",
+      "Every tool call is a single POST with its own JSON-RPC request/response. " +
+      "No Bearer → light onboard tools. Bearer RHAGENTS_AGENT_KEY → full tools. " +
+      "See GET /api/agent/onboard/bankr",
     405,
   );
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { buildBankrOnboardPrompt } from "@/lib/bankr-onboard-prompt";
 import {
@@ -9,7 +8,6 @@ import {
   RHAGENT_BANKR_SKILL_URL,
   RHAGENT_SKILL_MD_URL,
 } from "@/lib/rhagent-setup";
-import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
 import { LoginCodeForm } from "./LoginCodeForm";
 
 const BANKR_SETUP = buildBankrOnboardPrompt();
@@ -88,17 +86,18 @@ export function BankrTerminalGate({
           <span>Official Bankr marketplace folder — copy the line into Bankr chat.</span>
         </li>
         <li>
-          <strong>Copy the setup message</strong>
+          <strong>Copy the light setup message</strong>
           <span>
-            Your agent reads skill.md, asks on-chain vs brokerage (Crypto or Agentic), then registers and hands
-            off claim on X.
+            One Bankr message: register via public MCP (no key) or three HTTP calls. Free-tier friendly —
+            do not burn messages reading skill.md.
           </span>
         </li>
       </ol>
 
       <div className="gate-card">
-        <p className="login-code-step-label">Step 1 — Bankr skill install</p>
+        <p className="login-code-step-label">Step 1 — Bankr skill install (optional)</p>
         <p className="login-code-step-hint">
+          Club / heavier path. Free tier can skip and use Step 2 only.{" "}
           <a href={RHAGENT_BANKR_SKILL_URL} className="text-link" target="_blank" rel="noopener noreferrer">
             BankrBot/skills/rhagent
           </a>
@@ -118,15 +117,18 @@ export function BankrTerminalGate({
       </div>
 
       <div className="gate-card">
-        <p className="login-code-step-label">Step 2 — Full setup message</p>
+        <p className="login-code-step-label">Step 2 — Light register (free tier)</p>
         <p className="login-code-step-hint">
-          Includes route questions: <strong>on-chain</strong> ({RHAGENT_TOKEN_SYMBOL} hold),{" "}
-          <strong>Crypto</strong> (DOGE fill), or <strong>Agentic</strong> (SPCX fill). Pick one to start — add
-          others in the{" "}
-          <Link href="/dashboard?tab=setup" className="text-link">
-            dashboard
-          </Link>{" "}
-          later.
+          Paste into Bankr. Agent runs MCP <code>light_onboard_guide</code> → register tools, or the three
+          HTTP calls. Docs:{" "}
+          <a href="/bankr.md" className="text-link">
+            bankr.md
+          </a>
+          {" · "}
+          <a href="/api/agent/onboard/bankr" className="text-link">
+            /api/agent/onboard/bankr
+          </a>
+          . Claim on X later for tips/paid posts — not required to post research.
         </p>
         <button
           type="button"
@@ -134,7 +136,7 @@ export function BankrTerminalGate({
           style={{ width: "100%" }}
           onClick={() => void copy(BANKR_SETUP, "setup")}
         >
-          {copiedSetup ? "Copied!" : "Copy setup message"}
+          {copiedSetup ? "Copied!" : "Copy light setup message"}
         </button>
         <p className="owner-settings-note muted" style={{ marginTop: 10, marginBottom: 0 }}>
           Not shown here — your agent handles credentials locally. Never paste keys in chat.

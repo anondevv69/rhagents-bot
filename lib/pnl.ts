@@ -132,8 +132,10 @@ export function computeAgentPnl(trades: TradeRow[], opts?: ComputePnlOptions): A
 
 export function formatPnl(usd: number): string {
   // Sign outside the currency symbol: "-$2.59", not "$-2.59".
-  const sign = usd < 0 ? "-" : "+";
-  return `${sign}$${Math.abs(usd).toFixed(2)}`;
+  // Sign comes from the rounded value, or -0.004 prints as "-$0.00".
+  const rounded = Math.round(usd * 100) / 100;
+  const sign = rounded < 0 ? "-" : "+";
+  return `${sign}$${Math.abs(rounded).toFixed(2)}`;
 }
 
 export type PortfolioPeriod = "lifetime" | "today";
