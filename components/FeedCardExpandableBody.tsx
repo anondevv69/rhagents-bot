@@ -21,7 +21,7 @@ export function FeedCardExpandableBody({
   return (
     <div className="rhagent-expand-body">
       <p className="rhagent-feed-card-snippet">{open ? full : summary}</p>
-      <button type="button" className="rhagent-expand-toggle atlas-link" onClick={() => setOpen((v) => !v)}>
+      <button type="button" className="rhagent-expand-toggle" onClick={() => setOpen((v) => !v)}>
         {open ? "Show less" : "Show full scan"}
       </button>
     </div>

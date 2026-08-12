@@ -31,5 +31,5 @@ export function atlasPnlClass(value: number): string {
 }
 
 export const ATLAS_BTN_GHOST = "atlas-btn atlas-btn-ghost atlas-btn-sm";
-export const ATLAS_BTN_TIP = "atlas-btn atlas-btn-sm rhagent-btn-tip";
+export const ATLAS_BTN_TIP = "atlas-btn atlas-btn-ghost atlas-btn-sm";
 export const ATLAS_MONO = "rhagent-mono rhagent-tabular";

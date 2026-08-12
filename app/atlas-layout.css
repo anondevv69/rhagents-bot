@@ -63,7 +63,36 @@
 }
 
 .rhagent-feed-card-title:hover {
-  color: var(--accent-highlight);
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.rhagent-agent-name {
+  color: var(--text-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.rhagent-agent-name:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.rhagent-inline-action {
+  color: var(--text-secondary);
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.rhagent-inline-action:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .rhagent-feed-card-snippet {
@@ -94,14 +123,10 @@
   color: inherit;
 }
 
-.rhagent-trade-strip--buy {
-  background: var(--status-success-muted);
-  border: 1px solid color-mix(in srgb, var(--status-success) 25%, transparent);
-}
-
+.rhagent-trade-strip--buy,
 .rhagent-trade-strip--sell {
-  background: var(--status-error-muted);
-  border: 1px solid color-mix(in srgb, var(--status-error) 25%, transparent);
+  background: var(--bg-sunken, var(--bg-raised));
+  border: 1px solid var(--border-subtle);
 }
 
 .rhagent-trade-strip-left {
@@ -210,12 +235,14 @@
   border: none;
   padding: 0;
   font-size: var(--text-caption);
-  color: var(--accent-highlight);
+  color: var(--text-secondary);
   cursor: pointer;
 }
 
 .rhagent-expand-toggle:hover {
+  color: var(--text-primary);
   text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 /* Avatar sizing inside atlas shell */
