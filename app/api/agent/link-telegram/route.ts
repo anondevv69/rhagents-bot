@@ -1,63 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
-import { getViewerSession } from "@/lib/viewerSession";
-import { viewerHasIdentity, viewerIdentityKey, viewerOwnsAgent } from "@/lib/agent-identity";
+import { parseJsonBody } from "@/lib/api-response";
+import { requireOwnedAgentForLink } from "@/lib/agent-link";
 import { createTelegramOwnerLink } from "@/lib/owner-link";
-import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { siteTelegramBotUsername } from "@/lib/telegram-bots";
 
 /**
  * POST /api/agent/link-telegram
  * Body: { agent_id: string }
  *
- * Owner session mints a one-time RHTG-… code for the Telegram bot
- * (same bot as /website — claim + hosted agent).
+ * Owner session mints a one-time RHTG-… code for the Telegram bot.
  */
 export async function POST(req: NextRequest) {
-  const session = await getViewerSession();
-  if (!viewerHasIdentity(session)) {
-    return NextResponse.json(
-      { ok: false, error: "Log in to generate a Telegram link code." },
-      { status: 401 },
-    );
-  }
-
-  let body: Record<string, unknown>;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(req);
+  if (!parsed.ok) return parsed.response;
+  const { body } = parsed;
 
   const agentId = typeof body.agent_id === "string" ? body.agent_id.trim() : "";
-  if (!agentId) {
-    return NextResponse.json({ ok: false, error: "agent_id required" }, { status: 400 });
-  }
 
-  const who = viewerIdentityKey(session!);
-  if (!rateLimit(`link-tg:${who}:${agentId}`, 10, 60 * 60 * 1000)) {
-    return rateLimitResponse();
-  }
+  const guard = await requireOwnedAgentForLink(req, agentId, {
+    rateLimitScope: "link-tg",
+    unauthMessage: "Log in to generate a Telegram link code.",
+    ownershipMessage: "Only the verified owner can link Telegram.",
+  });
+  if (!guard.ok) return guard.response;
 
-  const db = getDb();
-  const agent = db.prepare(`SELECT * FROM agents WHERE id = ?`).get(agentId) as
-    | {
-        id: string;
-        owner_x_handle: string | null;
-        owner_telegram_id: string | null;
-        owner_discord_id: string | null;
-        chain_wallet: string | null;
-        x_verified: number;
-        claim_status: string;
-      }
-    | undefined;
+  const { agent } = guard;
 
-  if (!agent) {
-    return NextResponse.json({ ok: false, error: "Agent not found" }, { status: 404 });
-  }
-  if (!viewerOwnsAgent(session, agent)) {
-    return NextResponse.json({ ok: false, error: "Only the verified owner can link Telegram." }, { status: 403 });
-  }
   if (agent.owner_telegram_id) {
     return NextResponse.json(
       {
