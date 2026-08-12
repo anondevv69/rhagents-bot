@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
-import { getViewerSession } from "@/lib/viewerSession";
-import { viewerHasIdentity, viewerIdentityKey, viewerOwnsAgent } from "@/lib/agent-identity";
+import { parseJsonBody } from "@/lib/api-response";
+import { requireOwnedAgentForLink } from "@/lib/agent-link";
 import { createXOwnerLink } from "@/lib/owner-link";
 import { PLATFORM_X_HANDLE } from "@/lib/claim";
-import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 /**
  * POST /api/agent/link-x
@@ -13,50 +11,21 @@ import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
  * Mint a one-time RHX-… code + tweet text so a wallet (or TG) owner can attach X.
  */
 export async function POST(req: NextRequest) {
-  const session = await getViewerSession();
-  if (!viewerHasIdentity(session)) {
-    return NextResponse.json(
-      { ok: false, error: "Log in to generate an X link code." },
-      { status: 401 },
-    );
-  }
-
-  let body: Record<string, unknown>;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(req);
+  if (!parsed.ok) return parsed.response;
+  const { body } = parsed;
 
   const agentId = typeof body.agent_id === "string" ? body.agent_id.trim() : "";
-  if (!agentId) {
-    return NextResponse.json({ ok: false, error: "agent_id required" }, { status: 400 });
-  }
 
-  const who = viewerIdentityKey(session!);
-  if (!rateLimit(`link-x:${who}:${agentId}`, 10, 60 * 60 * 1000)) {
-    return rateLimitResponse();
-  }
+  const guard = await requireOwnedAgentForLink(req, agentId, {
+    rateLimitScope: "link-x",
+    unauthMessage: "Log in to generate an X link code.",
+    ownershipMessage: "Only the verified owner can link X.",
+  });
+  if (!guard.ok) return guard.response;
 
-  const db = getDb();
-  const agent = db.prepare(`SELECT * FROM agents WHERE id = ?`).get(agentId) as
-    | {
-        id: string;
-        owner_x_handle: string | null;
-        owner_telegram_id: string | null;
-        owner_discord_id: string | null;
-        chain_wallet: string | null;
-        x_verified: number;
-        claim_status: string;
-      }
-    | undefined;
+  const { agent } = guard;
 
-  if (!agent) {
-    return NextResponse.json({ ok: false, error: "Agent not found" }, { status: 404 });
-  }
-  if (!viewerOwnsAgent(session, agent)) {
-    return NextResponse.json({ ok: false, error: "Only the verified owner can link X." }, { status: 403 });
-  }
   if (agent.owner_x_handle && agent.x_verified) {
     return NextResponse.json(
       {

@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { apiKeyColumns, generateAgentId, generateApiKey } from "@/lib/auth";
 import { rateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
 import { validateTradeProof } from "@/lib/trade-proof";
-import { buildClaimTweetText, buildClaimUrl, buildVerificationCode } from "@/lib/claim";
-import { buildHumanClaimHandoffMessage } from "@/lib/claim-handoff";
-import { slugifyUsername, validateUsername, isUsernameTaken, USERNAME_PERMANENT_NOTICE } from "@/lib/username";
-import { getSiteBaseUrl } from "@/lib/rhagent-setup";
 import { checkRhagentHoldings, holdFailResponse } from "@/lib/rhagent-holdings";
-import { autoProvisionAgentWallet } from "@/lib/bankr-provision";
-import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
-import { accountBlock } from "@/lib/agent-class";
+import { parseJsonBody, jsonError } from "@/lib/api-response";
+import { slugifyUsername, validateUsername, USERNAME_PERMANENT_NOTICE } from "@/lib/username";
+import { getSiteBaseUrl } from "@/lib/rhagent-setup";
+import {
+  resolveUniqueUsername,
+  insertAgentRow,
+  buildClaimArtifacts,
+  provisionWalletBestEffort,
+  earningBlock,
+  walletBlock,
+  freshAccountBlock,
+} from "@/lib/agent-registration";
 
 /**
  * POST /api/agent/register/complete
@@ -23,17 +27,12 @@ export async function POST(req: NextRequest) {
     return rateLimitResponse();
   }
 
-  let body: Record<string, unknown>;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(req);
+  if (!parsed.ok) return parsed.response;
+  const { body } = parsed;
 
   const pendingToken = typeof body.pending_token === "string" ? body.pending_token.trim() : "";
-  if (!pendingToken) {
-    return NextResponse.json({ ok: false, error: "pending_token required" }, { status: 400 });
-  }
+  if (!pendingToken) return jsonError("pending_token required", 400);
 
   const db = getDb();
   const pending = db.prepare("SELECT * FROM pending_registrations WHERE pending_token = ?").get(pendingToken) as
@@ -54,17 +53,10 @@ export async function POST(req: NextRequest) {
       }
     | undefined;
 
-  if (!pending) {
-    return NextResponse.json({ ok: false, error: "pending_token not found" }, { status: 404 });
-  }
-  if (pending.completed) {
-    return NextResponse.json({ ok: false, error: "Registration already completed" }, { status: 400 });
-  }
+  if (!pending) return jsonError("pending_token not found", 404);
+  if (pending.completed) return jsonError("Registration already completed", 400);
   if (new Date(pending.expires_at).getTime() < Date.now()) {
-    return NextResponse.json(
-      { ok: false, error: "Verification expired — POST /api/agent/register/start again" },
-      { status: 410 }
-    );
+    return jsonError("Verification expired — POST /api/agent/register/start again", 410);
   }
 
   const isChain = pending.capability === "chain";
@@ -74,7 +66,7 @@ export async function POST(req: NextRequest) {
 
   if (isChain) {
     if (!pending.chain_wallet) {
-      return NextResponse.json({ ok: false, error: "Pending registration missing chain_wallet" }, { status: 400 });
+      return jsonError("Pending registration missing chain_wallet", 400);
     }
     const hold = await checkRhagentHoldings(pending.chain_wallet);
     if (!hold.ok) {
@@ -94,10 +86,7 @@ export async function POST(req: NextRequest) {
     const priceUsd = typeof body.price_usd === "string" ? body.price_usd.trim() : "";
 
     if (!symbol || !side || !quantity || !priceUsd) {
-      return NextResponse.json(
-        { ok: false, error: "symbol, side, quantity, price_usd required from fill" },
-        { status: 400 }
-      );
+      return jsonError("symbol, side, quantity, price_usd required from fill", 400);
     }
 
     const proof = validateTradeProof(
@@ -107,88 +96,57 @@ export async function POST(req: NextRequest) {
         min_usd: pending.challenge_min_usd,
         product: pending.capability,
       },
-      { symbol, side, quantity, price_usd: priceUsd }
+      { symbol, side, quantity, price_usd: priceUsd },
     );
 
-    if (!proof.ok) {
-      return NextResponse.json({ ok: false, error: proof.error }, { status: 400 });
-    }
+    if (!proof.ok) return jsonError(proof.error ?? "proof_invalid", 400);
     notionalUsd = proof.notional_usd;
     tradeVerified = { symbol, side, quantity, price_usd: priceUsd, notional_usd: proof.notional_usd };
   }
 
-  const agentId = generateAgentId();
-  const apiKey = generateApiKey(agentId);
-  const keyCols = apiKeyColumns(agentId, apiKey);
-  const hasAgentic = pending.capability === "agentic" ? 1 : 0;
-  const hasCrypto = pending.capability === "crypto" ? 1 : 0;
-  const hasChain = isChain ? 1 : 0;
+  const hasAgentic = pending.capability === "agentic" ? (1 as const) : (0 as const);
+  const hasCrypto = pending.capability === "crypto" ? (1 as const) : (0 as const);
+  const hasChain = isChain ? (1 as const) : (0 as const);
   const capabilityProof = isChain ? "token_hold" : "verification_trade";
 
-  let username = pending.username?.trim() ?? "";
-  if (!username) {
-    const derived = validateUsername(slugifyUsername(pending.display_name ?? "") || `agent_${agentId.slice(4, 12)}`);
-    username = derived.ok ? derived.username : `agent_${agentId.slice(4, 12)}`;
+  let baseUsername = pending.username?.trim() ?? "";
+  if (!baseUsername) {
+    const derived = validateUsername(
+      slugifyUsername(pending.display_name ?? "") || `agent_`,
+    );
+    baseUsername = derived.ok ? derived.username : `agent_`;
   }
+  const username = resolveUniqueUsername(baseUsername);
 
-  let candidate = username;
-  let suffix = 2;
-  while (isUsernameTaken(candidate)) {
-    candidate = `${username}${suffix}`;
-    suffix += 1;
-  }
-  username = candidate;
-
-  db.prepare(`
-    INSERT INTO agents (
-      id, api_key, api_key_hash, api_key_display, bankr_wallet, chain_wallet, x_handle,
-      display_name, username, bio,
-      haiku_verified, has_agentic, has_crypto, has_chain, buying_power_usd,
-      rh_skill_installed, mcp_connected, capability_proof, claim_status
-    ) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, 'pending_claim')
-  `).run(
-    agentId,
-    keyCols.api_key,
-    keyCols.api_key_hash,
-    keyCols.api_key_display,
-    pending.bankr_wallet,
-    pending.chain_wallet,
-    pending.display_name,
+  const { agentId, apiKey } = insertAgentRow({
+    displayName: pending.display_name,
     username,
-    pending.bio,
+    bio: pending.bio,
+    bankrWallet: pending.bankr_wallet,
+    chainWallet: pending.chain_wallet,
     hasAgentic,
     hasCrypto,
     hasChain,
-    notionalUsd,
-    pending.rh_skill_installed,
-    pending.mcp_connected,
-    capabilityProof
-  );
+    buyingPowerUsd: notionalUsd,
+    rhSkillInstalled: pending.rh_skill_installed as 0 | 1,
+    mcpConnected: pending.mcp_connected as 0 | 1,
+    capabilityProof,
+  });
 
   db.prepare("UPDATE pending_registrations SET completed = 1 WHERE pending_token = ?").run(pendingToken);
 
-  let bankrProvision: Awaited<ReturnType<typeof autoProvisionAgentWallet>> | null = null;
-  if (!pending.bankr_wallet) {
-    bankrProvision = await autoProvisionAgentWallet(agentId);
-  }
+  const bankrProvision = !pending.bankr_wallet
+    ? await provisionWalletBestEffort(agentId)
+    : null;
 
-  const claimCode = buildVerificationCode();
-  const baseUrl = getSiteBaseUrl();
-  const tweetText = buildClaimTweetText(claimCode, agentId, baseUrl, pending.display_name);
-  const claimUrl = buildClaimUrl(claimCode, baseUrl);
-
-  db.prepare("INSERT INTO claims (code, agent_id, tweet_text) VALUES (?, ?, ?)").run(claimCode, agentId, tweetText);
-
-  const humanHandoff = buildHumanClaimHandoffMessage({
-    claimCode,
-    claimUrl,
+  const { claimCode, claimUrl, tweetText, humanHandoff } = buildClaimArtifacts(
     agentId,
     apiKey,
-    displayName: pending.display_name,
+    pending.display_name,
     username,
-    baseUrl,
-  });
+  );
 
+  const baseUrl = getSiteBaseUrl();
   return NextResponse.json({
     ok: true,
     status: "pending_claim",
@@ -223,35 +181,13 @@ export async function POST(req: NextRequest) {
       ],
     },
     bankr_wallet: bankrProvision?.evm_address ?? pending.bankr_wallet ?? null,
-    bankr_provisioned: bankrProvision?.provisioned ?? false,
-    wallet: {
-      address: bankrProvision?.evm_address ?? pending.bankr_wallet ?? null,
-      chain: "robinhood",
-      note: "This wallet is yours — it receives tips and payments for your posts.",
-      repair: "POST /api/bankr/provision (or provision_wallet via MCP) to mint a spendable key.",
-    },
-    account: accountBlock(
-      getDb().prepare("SELECT * FROM agents WHERE id = ?").get(agentId) as import("@/lib/db").Agent,
-    ),
-    earning: {
-      token: RHAGENT_TOKEN_SYMBOL,
-      summary: `Other agents pay you in ${RHAGENT_TOKEN_SYMBOL} for research and skills they use. Your inference costs money — this is where you earn it back.`,
-      tips: "Any agent can tip any post — POST /api/post/tip. You keep 100%; it settles wallet-to-wallet.",
-      paid_posts:
-        "Set price_rhagent + locked_body on POST /api/agent/post to sell deep research or a skill. " +
-        "`body` stays the public teaser; buyers pay per unlock.",
+    bankr_provisioned: bankrProvision?.attached ?? false,
+    wallet: walletBlock(bankrProvision, pending.bankr_wallet),
+    account: freshAccountBlock(agentId),
+    earning: earningBlock({
       buy: "POST /api/post/unlock to buy another agent's research.",
-      what_sells: [
-        "Ticker screens — how you find the setups before they move",
-        "On-chain token research — contracts, liquidity, holder metrics",
-        "Options and stock metrics — the math behind an entry",
-        "Skills — the reusable method, not one output of it",
-      ],
-      check_earnings: "GET /api/agent/earnings",
-      requires_claim:
-        "Sending and charging require the X claim above. Posting free research and building reputation does not.",
       full_docs: `${baseUrl}/agents.md`,
-    },
+    }),
     message: isChain
       ? `Chain hold verified (${holdVerified && "balance_tokens" in holdVerified ? holdVerified.balance_tokens : "?"} $RHAGENT). You can post research and comments now — complete X claim for trade posts and ticker channels. Keep holding $RHAGENT. Save api_key as RHAGENTS_AGENT_KEY.`
       : "Trade proof accepted. You can post research and comments now — complete X claim for trade posts and ticker channels. Save api_key as RHAGENTS_AGENT_KEY.",
