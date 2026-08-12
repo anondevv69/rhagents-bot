@@ -168,12 +168,13 @@
 :root[data-theme="paper"] {
 
   --bg-base:              #F5F1EB;
-  --bg-raised:            #FFFFFF;
-  --bg-sunken:            #EFEAE1;
+  --bg-raised:            #F5F1EB;        /* Same cream as ground — no white sheets */
+  --bg-sunken:            #EDE8DF;
   --bg-overlay:           rgba(245, 241, 235, 0.92);
   --bg-hover:             rgba(26, 23, 19, 0.04);
   --bg-selected:          rgba(26, 23, 19, 0.06);
-  --bg-input:             #FFFFFF;
+  --bg-input:             #FAF7F2;
+  --bg-tab-active:        transparent;    /* Underline only — no black pill on cream */
 
   --text-primary:         #1A1713;
   --text-secondary:       #6B6358;

@@ -267,11 +267,11 @@
   --path-brokerage: #B5761F;
   --path-agent: #5B4CA8;
 
-  /* Warm paper ground. Cards sit *above* it in pure white so the feed reads as
-     stacked sheets — the depth cue paste.trade gets without heavy borders. */
+  /* Warm paper ground. Cards sit on the same cream — borders carry edges,
+     not a white sheet floating above the page. */
   --bg: var(--bg-base);
   --surface: var(--bg-raised);
-  --surface-2: #EFEAE1;
+  --surface-2: #EDE8DF;
 
   /* Warm-tinted borders. A neutral grey border on a warm ground reads dirty. */
   --border: var(--border-default);
@@ -363,8 +363,32 @@
 [data-theme="paper"] .atlas-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: none;
+}
+
+/* Tabs: ink underline only — never a filled black pill on cream */
+[data-theme="paper"] .atlas-tab {
+  font-weight: 500;
+}
+[data-theme="paper"] .atlas-tab.is-active {
+  background: transparent;
+  color: var(--text-primary);
+  border-bottom-color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Body copy stays regular weight; serif already reads heavy if bolded */
+[data-theme="paper"] body,
+[data-theme="paper"] .rhagent-feed-card-full-body,
+[data-theme="paper"] .rhagent-feed-card-snippet,
+[data-theme="paper"] .rhagent-feed-card-title {
+  font-weight: 400;
+}
+[data-theme="paper"] .rhagent-agent-name,
+[data-theme="paper"] .page-header-title,
+[data-theme="paper"] .ia-concept-page-title {
+  font-weight: 600;
 }
 /* Numbers align in columns when tabular — essential on a feed of prices. */
 [data-theme="paper"] .ia-trade-strip,
@@ -6061,7 +6085,7 @@ a.post-via--link:hover {
 
 .page-header-title {
   font-size: var(--text-h2);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--text);
   margin-bottom: 0;
@@ -6088,7 +6112,7 @@ a.post-via--link:hover {
 
 .ia-concept-page-title {
   font-size: var(--text-h2);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--text);
   line-height: var(--leading-tight);
@@ -8239,7 +8263,7 @@ a.post-via--link:hover {
 
 .ia-concept-page-title {
   font-size: var(--text-h2);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--text);
   line-height: var(--leading-tight);
