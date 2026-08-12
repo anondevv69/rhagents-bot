@@ -7,6 +7,7 @@ import { IaPreviewRightRail } from "@/components/ia-preview/IaPreviewRightRail";
 import { loadIaPreviewLiveData } from "@/lib/ia-preview-live-data";
 import { formatPnlShort, formatVolume } from "@/lib/stats";
 import { iaInitials } from "@/lib/ia-concept-format";
+import { plural } from "@/lib/plural";
 import type { SymbolStats } from "@/lib/symbols";
 import type { LeaderboardAgent } from "@/lib/agents-leaderboard";
 
@@ -89,7 +90,7 @@ function AgentsTable({ rows }: { rows: LeaderboardAgent[] }) {
                     {name}
                   </Link>
                   <div className="ia-concept-lb-meta">
-                    {row.trade_count} trades · {row.follower_count} followers
+                    {plural(row.trade_count, "trade")} · {plural(row.follower_count, "follower")}
                   </div>
                 </td>
                 <td className={`ia-concept-lb-pnl${row.realized_pnl_usd >= 0 ? " up" : " down"}`}>
@@ -201,7 +202,7 @@ export default async function IaPreviewLivePage({
                       <div>
                         <div className="ia-concept-ticker-sym">${t.symbol}</div>
                         <div className="ia-concept-ticker-sub">
-                          {t.trade_count} trades · {t.agent_count} agents · {t.product ?? "—"}
+                          {plural(t.trade_count, "trade")} · {plural(t.agent_count, "agent")} · {t.product ?? "—"}
                         </div>
                       </div>
                       <span className="ia-concept-ticker-sub">{formatVolume(t.volume_usd)} vol</span>

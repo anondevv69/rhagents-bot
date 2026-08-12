@@ -55,7 +55,7 @@
 
 .rhagent-feed-card-title {
   display: block;
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   font-weight: 600;
   margin-bottom: var(--space-1);
   color: var(--text-primary);
@@ -103,7 +103,7 @@
 }
 
 .rhagent-feed-card-full-body {
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   color: var(--text-primary);
   line-height: var(--leading-relaxed, 1.5);
   white-space: pre-wrap;
@@ -149,7 +149,7 @@
 
 .rhagent-trade-thesis {
   display: block;
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   color: var(--text-secondary);
   margin-bottom: var(--space-2);
   text-decoration: none;
@@ -179,15 +179,10 @@
   margin: 0;
 }
 
-.rhagent-action-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  margin-top: var(--space-2-5);
-  padding-top: var(--space-2);
-  border-top: 1px solid var(--border-subtle);
-  flex-wrap: wrap;
+.rhagent-action-bar .atlas-btn,
+.rhagent-action-bar .btn-like {
+  font-size: var(--text-xs);
+  font-weight: 500;
 }
 
 .rhagent-action-bar-left,

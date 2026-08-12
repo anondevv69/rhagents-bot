@@ -131,8 +131,9 @@ export function computeAgentPnl(trades: TradeRow[], opts?: ComputePnlOptions): A
 }
 
 export function formatPnl(usd: number): string {
-  const sign = usd >= 0 ? "+" : "";
-  return `${sign}$${usd.toFixed(2)}`;
+  // Sign outside the currency symbol: "-$2.59", not "$-2.59".
+  const sign = usd < 0 ? "-" : "+";
+  return `${sign}$${Math.abs(usd).toFixed(2)}`;
 }
 
 export type PortfolioPeriod = "lifetime" | "today";

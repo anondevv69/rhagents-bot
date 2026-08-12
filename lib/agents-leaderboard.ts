@@ -29,6 +29,12 @@ export interface LeaderboardAgent {
   trade_count: number;
   volume_usd: number;
   realized_pnl_usd: number;
+  /**
+   * Closed (matched buy->sell) trades. 0 means realized_pnl_usd is 0 because
+   * nothing has been realized yet, NOT because the agent broke even — the two
+   * must not rank the same. See the `pnl` sorter.
+   */
+  closed_trades: number;
   follower_count: number;
   post_count: number;
   /** $RHAGENT earned from tips + research sales + treasury grants. */
@@ -153,6 +159,7 @@ export function getAgentLeaderboard(
       trade_count: trades.length,
       volume_usd: volume,
       realized_pnl_usd: pnl.realizedPnlUsd,
+      closed_trades: pnl.closedTrades,
       follower_count: getFollowerCount(a.id),
       post_count: postCountMap.get(a.id) ?? 0,
       earned_rhagent: earned,
@@ -160,8 +167,20 @@ export function getAgentLeaderboard(
     });
   }
 
+  // An agent with nothing closed has no P&L to rank — its realized_pnl_usd is a
+  // placeholder 0, and the UI renders it as "—". Ranking that 0 against real
+  // numbers put empty wallet accounts at #1 on the P&L board, above traders who
+  // were actually down money. Rows with no realized P&L sort last instead.
+  const hasRankablePnl = (a: LeaderboardAgent) => a.closed_trades > 0;
+
   const sorters: Record<AgentSort, (a: LeaderboardAgent, b: LeaderboardAgent) => number> = {
-    pnl: (a, b) => b.realized_pnl_usd - a.realized_pnl_usd || b.trade_count - a.trade_count,
+    pnl: (a, b) => {
+      const ra = hasRankablePnl(a);
+      const rb = hasRankablePnl(b);
+      if (ra !== rb) return ra ? -1 : 1;
+      if (!ra) return b.trade_count - a.trade_count || b.post_count - a.post_count;
+      return b.realized_pnl_usd - a.realized_pnl_usd || b.trade_count - a.trade_count;
+    },
     trades: (a, b) => b.trade_count - a.trade_count || b.volume_usd - a.volume_usd,
     volume: (a, b) => b.volume_usd - a.volume_usd || b.trade_count - a.trade_count,
     followers: (a, b) => b.follower_count - a.follower_count || b.trade_count - a.trade_count,
@@ -231,6 +250,7 @@ export function getAgentLeaderboardStats(agentId: string): LeaderboardAgent | nu
     trade_count: trades.length,
     volume_usd: volume,
     realized_pnl_usd: pnl.realizedPnlUsd,
+    closed_trades: pnl.closedTrades,
     follower_count: getFollowerCount(a.id),
     post_count: postCount,
     earned_rhagent: (

@@ -109,6 +109,11 @@ export function formatVolume(usd: number): string {
 }
 
 export function formatPnlShort(usd: number): string {
-  const sign = usd >= 0 ? "+" : "";
+  // The sign goes OUTSIDE the currency symbol, and losses must keep it.
+  // This previously read `usd >= 0 ? "+" : ""` with Math.abs(), so -2.59
+  // rendered as "$2.59" — a loss displayed as an unsigned number, told apart
+  // from a gain only by colour. That fails for colourblind users, in
+  // screenshots, and anywhere the class name is stripped.
+  const sign = usd < 0 ? "-" : "+";
   return `${sign}$${Math.abs(usd).toFixed(2)}`;
 }

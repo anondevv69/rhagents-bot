@@ -82,15 +82,12 @@
   --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", ui-monospace, monospace;
   --font-display: "Inter", -apple-system, system-ui, sans-serif;
 
-  --text-xxs: 10px;
-  --text-xs: 11px;
-  --text-sm: 12px;
-  --text-base: 13px;
-  --text-md: 14px;
-  --text-lg: 16px;
-  --text-xl: 20px;
-  --text-2xl: 28px;
-  --text-3xl: 44px;
+  /* NOTE: the --text-* scale is NOT defined here.
+     globals.css imports this file first and then redefines the whole ladder in
+     its own :root (see "Typography scale" there), so anything declared here is
+     shadowed and silently dead. Atlas's original compact scale was
+     10/11/12/13/14/16/20/28/44px; the canonical values are now
+     10/12/12/14/16/18/20/28/32px. Change sizes in globals.css, not here. */
 
   /* ---------- Spacing (4px grid) ---------- */
   --space-0: 0px;
@@ -107,10 +104,10 @@
   --space-10: 40px;
 
   /* ---------- Radius ---------- */
+  /* Same story as --text-*: globals.css redefines --radius-sm/md/lg after this
+     file is imported (6/8/10px, plus --radius-pill), so Atlas's tighter 3/4/6px
+     values never applied. Only --radius and --radius-full are still live here. */
   --radius: 0.375rem;
-  --radius-sm: 3px;
-  --radius-md: 4px;
-  --radius-lg: 6px;
   --radius-full: 9999px;
 
   /* ---------- Shadows (overlays only) ---------- */
@@ -372,7 +369,7 @@ code, .code, pre, kbd {
   border: none;
   border-bottom: 2px solid transparent;
   color: var(--text-tertiary);
-  font: 500 var(--text-sm) var(--font-ui);
+  font: 500 var(--text-xs) var(--font-ui);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -782,7 +779,7 @@ button, a, select { transition: background-color 120ms ease-out; }
   border-radius: 50%;
   color: var(--text-tertiary);
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--text-xs);
   line-height: 1;
   cursor: pointer;
   padding: 0;

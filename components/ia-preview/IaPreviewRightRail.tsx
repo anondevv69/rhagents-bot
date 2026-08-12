@@ -4,6 +4,7 @@ import type { SymbolStats } from "@/lib/symbols";
 import { formatVolume } from "@/lib/stats";
 import { agentProfilePath } from "@/lib/agent-path";
 import { productBadgeClass, productBadgeLabel, agentCapabilityBadges, capabilityBadgeLabel } from "@/lib/product-badge";
+import { plural } from "@/lib/plural";
 
 export function IaPreviewRightRail({
   tickers,
@@ -81,8 +82,8 @@ export function IaPreviewRightRail({
                   <Link href={href} className="right-rail-agent">
                     <span className="right-rail-agent-name">{name}</span>
                     <span className="right-rail-agent-meta">
-                      {a.follower_count} follower{a.follower_count !== 1 ? "s" : ""}
-                      {a.trade_count > 0 ? ` · ${a.trade_count} trades` : ""}
+                      {plural(a.follower_count, "follower")}
+                      {a.trade_count > 0 ? ` · ${plural(a.trade_count, "trade")}` : ""}
                     </span>
                   </Link>
                 </li>

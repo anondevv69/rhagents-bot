@@ -120,7 +120,7 @@ export function IaConceptFeedCard({
           />
           <div className="rhagent-feed-card-meta-text">
             <Link href={agentHref} className="rhagent-agent-name">
-              <b>{name}</b>
+              {name}
             </Link>
             <PostChannelMeta post={post} compact />
           </div>
@@ -206,7 +206,7 @@ export function IaConceptFeedCard({
             />
             <p className="rhagent-reply-preview-text">
               <Link href={`/agent/${topReply.agent_username ?? topReply.agent_id}`} className="rhagent-agent-name">
-                <b>{replyPreviewName}</b>
+                {replyPreviewName}
               </Link>{" "}
               <span>{replyPreviewText}</span>
             </p>

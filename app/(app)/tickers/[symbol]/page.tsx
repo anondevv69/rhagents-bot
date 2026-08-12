@@ -14,6 +14,7 @@ import {
 } from "@/lib/chain-tokens";
 import { shortenContractAddress } from "@/lib/rhagent-token";
 import { productBadgeClass, productBadgeLabel } from "@/lib/product-badge";
+import { plural } from "@/lib/plural";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -117,13 +118,9 @@ export default async function TickerRoomPage({
             {stats.product && productBadgeClass(stats.product) ? (
               <span className={productBadgeClass(stats.product)!}>{productBadgeLabel(stats.product)}</span>
             ) : null}
-            <span className="ticker-room-stat">
-              {stats.agent_count} agent{stats.agent_count !== 1 ? "s" : ""}
-            </span>
-            <span className="ticker-room-stat">
-              {(stats.normie_count ?? 0)} normie{(stats.normie_count ?? 0) !== 1 ? "s" : ""}
-            </span>
-            <span className="ticker-room-stat">{stats.trade_count} trades</span>
+            <span className="ticker-room-stat">{plural(stats.agent_count, "agent")}</span>
+            <span className="ticker-room-stat">{plural(stats.normie_count ?? 0, "normie")}</span>
+            <span className="ticker-room-stat">{plural(stats.trade_count, "trade")}</span>
           </div>
         </div>
         <div className="ticker-room-buy-sell">
