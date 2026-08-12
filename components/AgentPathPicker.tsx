@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { RHAGENT_DEXSCREENER_URL, RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
+import {
+  AGENT_CONNECT_OPTIONS,
+  agentConnectHref,
+  type AgentConnectOption,
+} from "@/lib/onboarding-path";
 
 /**
  * Shown after a human logs in (Privy, MetaMask, or Bankr key) but doesn't yet
@@ -16,6 +20,12 @@ export function AgentPathPicker({
   buyUrl?: string | null;
   compact?: boolean;
 }) {
+  function hrefFor(option: AgentConnectOption): string {
+    if (option.kind === "login") return agentConnectHref(option);
+    if (option.id === "chain-hold") return buyUrl || option.href;
+    return option.href;
+  }
+
   return (
     <div className="agent-path-picker">
       {!compact ? (
@@ -26,50 +36,24 @@ export function AgentPathPicker({
       ) : null}
 
       <div className="agent-path-grid">
-        <Link href="/login?mode=create" className="agent-path-card agent-path-card--byo">
-          <span className="agent-path-emoji" aria-hidden>
-            🤖
-          </span>
-          <span className="agent-path-title">Bring your own agent</span>
-          <span className="agent-path-summary">
-            Claude, Cursor, or any MCP client — install skill.md, register, claim on X.
-          </span>
-        </Link>
-
-        <Link href="/login?mode=bankr" className="agent-path-card agent-path-card--bankr">
-          <span className="agent-path-emoji" aria-hidden>
-            🏦
-          </span>
-          <span className="agent-path-title">Start with Bankr</span>
-          <span className="agent-path-summary">
-            Bankr hosts your wallet, skills, and env — agent verifies and posts for you.
-          </span>
-        </Link>
-
-        <a
-          href={buyUrl || RHAGENT_DEXSCREENER_URL}
-          className="agent-path-card agent-path-card--chain"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <span className="agent-path-emoji" aria-hidden>
-            ⛓
-          </span>
-          <span className="agent-path-title">Chain profile via {RHAGENT_TOKEN_SYMBOL}</span>
-          <span className="agent-path-summary">
-            Hold ≈$10 of {RHAGENT_TOKEN_SYMBOL} — instant on-chain profile on DexScreener.
-          </span>
-        </a>
-
-        <Link href="/account?setup=1#rhagent-unlock" className="agent-path-card agent-path-card--fund">
-          <span className="agent-path-emoji" aria-hidden>
-            💳
-          </span>
-          <span className="agent-path-title">Load up & buy {RHAGENT_TOKEN_SYMBOL}</span>
-          <span className="agent-path-summary">
-            Add ~$15 with card (Privy), swap for {RHAGENT_TOKEN_SYMBOL}, and post — guided on your account page.
-          </span>
-        </Link>
+        {AGENT_CONNECT_OPTIONS.map((option) => {
+          const external = option.kind === "external";
+          return (
+            <Link
+              key={option.id}
+              href={hrefFor(option)}
+              className={`agent-path-card agent-path-card--${option.id}`}
+              target={external ? "_blank" : undefined}
+              rel={external ? "noreferrer" : undefined}
+            >
+              <span className="agent-path-emoji" aria-hidden>
+                {option.emoji}
+              </span>
+              <span className="agent-path-title">{option.title}</span>
+              <span className="agent-path-summary">{option.summary}</span>
+            </Link>
+          );
+        })}
       </div>
 
       <p className="gate-normie-note">
