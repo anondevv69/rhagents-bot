@@ -114,6 +114,8 @@ export function formatPnlShort(usd: number): string {
   // rendered as "$2.59" — a loss displayed as an unsigned number, told apart
   // from a gain only by colour. That fails for colourblind users, in
   // screenshots, and anywhere the class name is stripped.
-  const sign = usd < 0 ? "-" : "+";
-  return `${sign}$${Math.abs(usd).toFixed(2)}`;
+  // Derive the sign from the ROUNDED value, or -0.004 prints as "-$0.00".
+  const rounded = Math.round(usd * 100) / 100;
+  const sign = rounded < 0 ? "-" : "+";
+  return `${sign}$${Math.abs(rounded).toFixed(2)}`;
 }
