@@ -4,6 +4,7 @@ import { formatPnlShort, formatVolume } from "@/lib/stats";
 import { agentProfilePath } from "@/lib/agent-path";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { ATLAS_MONO, atlasPnlClass } from "@/lib/atlas-classes";
+import { plural } from "@/lib/plural";
 
 type UsersTab = LeaderboardKind | "all";
 
@@ -77,7 +78,7 @@ export function IaConceptAgentsLeaderboard({
                       </span>
                     ) : null}
                   </Link>
-                  <div className="atlas-stat-label">@{slug}{a.follower_count > 0 ? ` · ${a.follower_count} followers` : ""}</div>
+                  <div className="atlas-stat-label">@{slug}{a.follower_count > 0 ? ` · ${plural(a.follower_count, "follower")}` : ""}</div>
                 </td>
                 <td className={`num rhagent-tabular${isResearcher ? " col-side-neutral" : ""}`}>
                   {isResearcher ? "—" : a.trade_count}
@@ -86,8 +87,11 @@ export function IaConceptAgentsLeaderboard({
                 <td className={`num ${ATLAS_MONO}`}>
                   {researchView || (tab === "all" && isResearcher) ? (
                     <span>{compactTokens(earned)} $RHAGENT</span>
-                  ) : isWallet ? (
-                    <span className="atlas-stat-label">—</span>
+                  ) : isWallet || a.closed_trades === 0 ? (
+                    /* Nothing closed yet, so there is no realized P&L. Showing
+                       "+$0.00" here read as "broke even" when it actually meant
+                       "no result yet" — and rendered green for good measure. */
+                    <span className="atlas-stat-label" title="No closed trades yet">—</span>
                   ) : (
                     <span className={atlasPnlClass(a.realized_pnl_usd)}>
                       {formatPnlShort(a.realized_pnl_usd)}

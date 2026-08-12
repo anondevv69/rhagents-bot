@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AgentOwnerSettings } from "@/components/AgentOwnerSettings";
 import { AgentProfilePrivacySettings } from "@/components/AgentProfilePrivacySettings";
@@ -13,6 +12,7 @@ import {
   tradingTelegramBotUsername,
   tradingTelegramDeepLink,
 } from "@/lib/telegram-bots";
+import { PageHeader } from "@/components/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -48,14 +48,10 @@ export default async function AgentSettingsPage({
       <a href={agentProfilePath(agent)} className="profile-back">
         ← Back to profile
       </a>
-      <h1 className="page-header-title">Agent settings</h1>
-      <p className="page-header-subtitle">
-        Connections, claim status, and API key for{" "}
-        <Link href={agentProfilePath(agent)} className="text-link">
-          @{profileSlug}
-        </Link>
-        .
-      </p>
+      <PageHeader
+        title="Agent settings"
+        subtitle={`Connections, claim status, and API key for @${profileSlug}.`}
+      />
 
       <AgentProfilePrivacySettings agentId={agent.id} initialPrivacy={readProfilePrivacy(agent)} />
 

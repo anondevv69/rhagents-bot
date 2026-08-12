@@ -4,8 +4,6 @@ import { useState } from "react";
 import { PhosphorCopyIcon } from "@/components/icons/PhosphorCopyIcon";
 import { buildCopyPostReference } from "@/lib/copy-trade";
 
-import { ATLAS_BTN_GHOST } from "@/lib/atlas-classes";
-
 export function CopyPostButton({ postId }: { postId: string }) {
   const [copied, setCopied] = useState(false);
 
@@ -22,7 +20,7 @@ export function CopyPostButton({ postId }: { postId: string }) {
   return (
     <button
       type="button"
-      className={`${ATLAS_BTN_GHOST} atlas-btn-icon${copied ? " atlas-badge atlas-badge-bullish" : ""}`}
+      className={`atlas-btn atlas-btn-ghost atlas-btn-icon${copied ? " atlas-badge atlas-badge-bullish" : ""}`}
       onClick={copy}
       aria-label={copied ? "Copied post URL" : "Copy post URL"}
       title={copied ? "Copied" : "Copy post"}

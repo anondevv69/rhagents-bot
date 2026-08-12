@@ -11,6 +11,7 @@ import { isGuestSession } from "@/lib/guest-session";
 import { getViewerSession } from "@/lib/viewerSession";
 import { viewerKeyFromSession } from "@/lib/viewer-key";
 import { defaultViewerLabel, getViewerProfile } from "@/lib/viewer-profile";
+import { PageHeader } from "@/components/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -43,14 +44,14 @@ export default async function AccountPage({
 
   return (
     <div className="account-page">
-      <h1 className="page-header-title">
-        {setup === "1" ? "Set up your profile" : "Your account"}
-      </h1>
-      <p className="page-header-subtitle">
-        {setup === "1"
-          ? "You're signed in — connect a wallet, buy $RHAGENT, or verify on X."
-          : "Customize how you appear on rhagents."}
-      </p>
+      <PageHeader
+        title={setup === "1" ? "Set up your profile" : "Your account"}
+        subtitle={
+          setup === "1"
+            ? "You're signed in — connect a wallet, buy $RHAGENT, or verify on X."
+            : "Customize how you appear on rhagents."
+        }
+      />
 
       <AccountWalletPanel initialWallet={wallet} ownedAgentUsernames={ownedSlugs} />
 

@@ -6,7 +6,13 @@
    Philosophy:
    - Keep Atlas structure, spacing, and component vocabulary intact.
    - Override only: colors, semantic tokens, and add trading-specific modifiers.
-   - Never break Atlas's 4px grid, radii (3/4/6/9999), or 13px base type.
+   - Never break Atlas's 4px grid.
+
+   STALE-COMMENT WARNING: this file used to promise "radii (3/4/6/9999) and 13px
+   base type". That is no longer true. globals.css is imported after both this
+   file and atlas.css and redefines the whole --text-* ladder (16px base) and
+   --radius-sm/md/lg (6/8/10px). Size and radius tokens are owned by globals.css;
+   this file owns colour only.
    ========================================================================== */
 
 
@@ -26,7 +32,7 @@
   /* ---- Text ------------------------------------------------------------- */
   --text-primary:         #f0f0f5;        /* Slightly cool white */
   --text-secondary:       #8a8a9a;        /* Muted, readable gray */
-  --text-tertiary:        #5a5a6a;        /* Timestamps, metadata */
+  --text-tertiary:        #7a7a8c;        /* Timestamps, metadata — 4.84:1 on --bg-base (was #5a5a6a, 3.01:1, failed WCAG AA) */
   --text-inverse:         #000000;        /* For buttons on light accents */
 
   /* ---- Accents ---------------------------------------------------------- */
@@ -102,7 +108,7 @@
   /* ---- Text ------------------------------------------------------------- */
   --text-primary:         #0a0a0f;
   --text-secondary:       #52525b;
-  --text-tertiary:        #a1a1aa;
+  --text-tertiary:        #6e6e78;        /* 4.83:1 on --bg-base (was #a1a1aa, 2.46:1, failed WCAG AA) */
   --text-inverse:         #ffffff;
 
   /* ---- Accents ---------------------------------------------------------- */
@@ -115,9 +121,9 @@
   --accent-highlight-muted: rgba(37, 99, 235, 0.10);
 
   /* ---- Trading Semantics ------------------------------------------------ */
-  --status-success:         #16a34a;
-  --status-success-muted:   rgba(22, 163, 74, 0.10);
-  --status-success-hover:   #15803d;
+  --status-success:         #15803d;        /* 4.81:1 on --bg-base (was #16a34a, 3.16:1 — gains were unreadable on light) */
+  --status-success-muted:   rgba(21, 128, 61, 0.10);
+  --status-success-hover:   #127336;
 
   --status-error:           #dc2626;
   --status-error-muted:     rgba(220, 38, 38, 0.10);
@@ -177,10 +183,10 @@
   --bg-tab-active:        transparent;    /* Underline only — no black pill on cream */
 
   --text-primary:         #1A1713;
-  --text-secondary:       #6B6358;
-  --text-tertiary:        #9A9186;
+  --text-secondary:       #5C5449;
+  --text-tertiary:        #6F675C;        /* 4.95:1 on --bg-base (was #9A9186, 2.76:1, failed WCAG AA) */
   --text-inverse:         #FFFFFF;
-  --text-muted:           #6B6358;
+  --text-muted:           #5C5449;
 
   --accent-primary:         #1A1713;
   --accent-primary-hover:   #000000;
@@ -366,7 +372,7 @@
 
 .atlas-btn-sell {
   background: var(--status-error);
-  color: #ffffff;
+  color: var(--text-inverse);
 }
 
 .atlas-btn-sell:hover {
@@ -375,7 +381,7 @@
 
 .atlas-btn-buy {
   background: var(--status-success);
-  color: #ffffff;
+  color: var(--text-inverse);
 }
 
 .atlas-btn-buy:hover {
@@ -621,7 +627,7 @@
    SECTION 5: Responsive Helpers
    -------------------------------------------------------------------------- */
 
-@media (max-width: 768px) {
+@media (max-width: 768.98px) {
   .atlas-table-trades td {
     font-size: var(--text-sm);
   }

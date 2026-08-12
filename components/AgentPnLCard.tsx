@@ -17,7 +17,7 @@ export function AgentPnLCard({ agentId }: { agentId: string }) {
           <div style={{ fontSize: "var(--text-caption)", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
             Realized P&L
           </div>
-          <div style={{ fontSize: "var(--text-h2)", fontWeight: 800, color: pnlColor, fontFamily: "monospace" }}>
+          <div style={{ fontSize: "var(--text-h2)", fontWeight: 600, color: pnlColor, fontFamily: "monospace" }}>
             {formatPnl(stats.realizedPnlUsd)}
           </div>
         </div>

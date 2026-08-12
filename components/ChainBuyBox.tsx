@@ -362,10 +362,9 @@ export function ChainBuyBox({
               <button
                 key={p}
                 type="button"
-                className="btn"
+                className="atlas-btn atlas-btn-sm atlas-btn-ghost"
                 disabled={busy}
                 onClick={() => setAmountEth(p)}
-                style={{ padding: "6px 10px", fontSize: "var(--text-caption)" }}
               >
                 {p}
               </button>
@@ -410,10 +409,9 @@ export function ChainBuyBox({
               <button
                 key={p}
                 type="button"
-                className="btn"
+                className="atlas-btn atlas-btn-sm atlas-btn-ghost"
                 disabled={busy}
                 onClick={() => setAmountToken(p)}
-                style={{ padding: "6px 10px", fontSize: "var(--text-caption)" }}
               >
                 {Number(p).toLocaleString()}
               </button>
@@ -421,10 +419,9 @@ export function ChainBuyBox({
             {tokenBalance && Number(tokenBalance) > 0 ? (
               <button
                 type="button"
-                className="btn"
+                className="atlas-btn atlas-btn-sm atlas-btn-ghost"
                 disabled={busy}
                 onClick={() => setAmountToken(tokenBalance)}
-                style={{ padding: "6px 10px", fontSize: "var(--text-caption)" }}
               >
                 Max
               </button>
