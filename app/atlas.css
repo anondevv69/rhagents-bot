@@ -181,38 +181,40 @@ html, body {
    Vertical scrollbars remain visible (standard UX expectation for long pages). */
 *::-webkit-scrollbar:horizontal { height: 0; display: none; }
 
-/* ---------- Semantic type ---------- */
+/* ---------- Semantic type ----------
+   Use the app token ladder from globals.css — never hardcode 44/28px here
+   or bare <h1>s blow past page titles. */
 h1, .h1 {
-  font-family: var(--font-display);
-  font-size: 44px;
-  line-height: 1.05;
+  font-family: var(--font-display, inherit);
+  font-size: var(--text-h1);
+  line-height: var(--leading-tight, 1.25);
   letter-spacing: -0.03em;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
 }
 h2, .h2 {
-  font-family: var(--font-display);
-  font-size: 28px;
-  line-height: 1.15;
+  font-family: var(--font-display, inherit);
+  font-size: var(--text-h2);
+  line-height: var(--leading-tight, 1.25);
   letter-spacing: -0.02em;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
 }
 h3, .h3 {
-  font-family: var(--font-ui);
-  font-size: 20px;
-  line-height: 1.25;
+  font-family: var(--font-ui, inherit);
+  font-size: var(--text-h3);
+  line-height: var(--leading-snug, 1.4);
   letter-spacing: -0.015em;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
 }
 h4, .h4 {
-  font-family: var(--font-ui);
-  font-size: 16px;
-  line-height: 1.3;
+  font-family: var(--font-ui, inherit);
+  font-size: var(--text-md);
+  line-height: var(--leading-snug, 1.4);
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;

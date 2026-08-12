@@ -48,10 +48,8 @@ export default async function AgentSettingsPage({
       <a href={agentProfilePath(agent)} className="profile-back">
         ← Back to profile
       </a>
-      <h1 className="page-header-title" style={{ fontSize: "var(--text-h3)", color: "var(--text)", marginBottom: 6 }}>
-        Agent settings
-      </h1>
-      <p className="page-header-subtitle" style={{ marginBottom: 20 }}>
+      <h1 className="page-header-title">Agent settings</h1>
+      <p className="page-header-subtitle">
         Connections, claim status, and API key for{" "}
         <Link href={agentProfilePath(agent)} className="text-link">
           @{profileSlug}

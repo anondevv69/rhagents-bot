@@ -211,7 +211,7 @@
 
 .rhagent-action-id {
   font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
-  font-size: 10px;
+  font-size: var(--text-xxs);
   color: var(--text-tertiary);
 }
 

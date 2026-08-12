@@ -122,21 +122,28 @@
 
   /*
    * Typography scale (16px body, ~1.25 modular steps).
-   * Web: body 16 · h1 32 · h2 24 · h3 20 · buttons 14–16 · captions 12–14.
+   * Canonical for the app — Atlas's 13px compact scale is remapped here so
+   * .atlas-* and .rhagent-* / .page-header-* share one size ladder.
    * Mobile overrides at 768px below.
    */
+  --text-xxs: 0.625rem;         /* 10px — post ids, table caps */
+  --text-xs: 0.75rem;           /* 12px — Atlas btn-sm, meta (alias caption) */
   --text-caption: 0.75rem;      /* 12px — meta, badges, hints */
   --text-sm: 0.875rem;          /* 14px — buttons, secondary UI */
   --text-base: 1rem;            /* 16px — body copy */
   --text-md: 1.125rem;          /* 18px — lead text */
   --text-lg: 1.25rem;           /* 20px — h3 */
-  --text-xl: 1.5rem;            /* 24px — h2 */
+  --text-xl: 1.5rem;            /* 24px — h2 / page titles */
   --text-2xl: 1.75rem;          /* 28px — large h2 / mobile h1 */
   --text-3xl: 2rem;             /* 32px — h1 */
   --text-4xl: 2.25rem;          /* 36px — display */
   --text-h1: var(--text-3xl);
   --text-h2: var(--text-xl);
   --text-h3: var(--text-lg);
+  /* Legacy aliases used in globals — never leave undefined */
+  --text-body: var(--text-base);
+  --text-muted: var(--muted, var(--text-secondary));
+  --text-soft: var(--muted-faint, var(--text-tertiary));
   --leading-tight: 1.25;
   --leading-snug: 1.4;
   --leading-normal: 1.5;
@@ -262,21 +269,22 @@
 
   /* Warm paper ground. Cards sit *above* it in pure white so the feed reads as
      stacked sheets — the depth cue paste.trade gets without heavy borders. */
-  --bg: #F5F1EB;
-  --surface: #FFFFFF;
+  --bg: var(--bg-base);
+  --surface: var(--bg-raised);
   --surface-2: #EFEAE1;
 
   /* Warm-tinted borders. A neutral grey border on a warm ground reads dirty. */
-  --border: #E3DCD1;
-  --border-light: #EDE7DD;
-  --border-soft: rgba(60, 50, 35, 0.09);
-  --input-border: #DCD4C7;
-  --input-bg: #FFFFFF;
+  --border: var(--border-default);
+  --border-light: var(--border-strong);
+  --border-soft: var(--border-subtle);
+  --input-border: var(--border-default);
+  --input-bg: var(--bg-raised);
 
   /* Ink, not pure black — pure black on cream vibrates. */
-  --text: #1A1713;
-  --muted: #6B6358;
-  --muted-faint: #9A9186;
+  --text: var(--text-primary);
+  --fg: var(--text-primary);
+  --muted: var(--text-secondary);
+  --muted-faint: var(--text-tertiary);
 
   /* Ink tints: same ramp, inverted. This is what makes the literal replacement
      above work — every wash that was white is now warm ink at matched weight. */
@@ -297,17 +305,17 @@
   --link-hover: #8A5A2B;
 
   /* Direction colours — muted so a green number reads as data, not decoration. */
-  --up: #1B7A4B;
-  --down: #B4402E;
-  --danger: #B4402E;
-  --success: #1B7A4B;
-  --accent-green: var(--up);
-  --accent-red: var(--down);
+  --up: var(--status-success);
+  --down: var(--status-error);
+  --danger: var(--status-error);
+  --success: var(--status-success);
+  --accent-green: var(--status-success);
+  --accent-red: var(--status-error);
   --accent-blue: #2F5D8A;
   --accent-orange: #B5761F;
 
-  --sidebar-bg: #F5F1EB;
-  --ticker-bg: #F5F1EB;
+  --sidebar-bg: var(--bg-base);
+  --ticker-bg: var(--bg-base);
 
   --badge-agentic: #2F5D8A;
   --badge-crypto: #1B6B66;
@@ -317,6 +325,8 @@
      so the shadow belongs to the paper rather than floating grey above it. */
   --shadow-surface: 0 1px 2px rgba(60, 50, 35, 0.05), 0 1px 0 rgba(60, 50, 35, 0.03);
   --shadow-elevated: 0 12px 32px rgba(60, 50, 35, 0.12), 0 2px 6px rgba(60, 50, 35, 0.06);
+  --shadow-popover: var(--shadow-elevated);
+  --shadow-overlay: var(--shadow-elevated);
 }
 
 /* Paper refinements — restraint over decoration. */
@@ -331,15 +341,26 @@
 [data-theme="paper"] select,
 [data-theme="paper"] textarea,
 [data-theme="paper"] .badge,
+[data-theme="paper"] .atlas-badge,
+[data-theme="paper"] .atlas-pill,
+[data-theme="paper"] .atlas-btn,
+[data-theme="paper"] .atlas-tab,
+[data-theme="paper"] .atlas-tabbar,
+[data-theme="paper"] .atlas-segmented,
 [data-theme="paper"] .post-action-bar,
 [data-theme="paper"] .post-action-btn,
+[data-theme="paper"] .rhagent-action-bar,
+[data-theme="paper"] .rhagent-trade-strip,
 [data-theme="paper"] .ia-trade-strip,
 [data-theme="paper"] nav,
-[data-theme="paper"] .ia-concept-card-meta-text {
+[data-theme="paper"] .ia-concept-card-meta-text,
+[data-theme="paper"] .rhagent-feed-card-meta-text {
   font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
   letter-spacing: 0;
 }
-[data-theme="paper"] .ia-concept-card {
+[data-theme="paper"] .ia-concept-card,
+[data-theme="paper"] .rhagent-feed-card,
+[data-theme="paper"] .atlas-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-2xl);
@@ -347,7 +368,9 @@
 }
 /* Numbers align in columns when tabular — essential on a feed of prices. */
 [data-theme="paper"] .ia-trade-strip,
+[data-theme="paper"] .rhagent-trade-strip,
 [data-theme="paper"] .post-action-count,
+[data-theme="paper"] .rhagent-action-count,
 [data-theme="paper"] .tip-modal-stat {
   font-variant-numeric: tabular-nums;
 }
@@ -3774,10 +3797,11 @@ body:has(.concept-app-shell) .site-token-footer--fixed {
   }
 
   .page-header-title,
+  .ia-concept-page-title,
   .room-title,
   .ticker-room-title,
   .setup-title {
-    font-size: var(--text-md);
+    font-size: var(--text-2xl);
   }
 
   .ticker-row {
@@ -6015,20 +6039,9 @@ a.post-via--link:hover {
   box-sizing: border-box;
 }
 
-.page-header-title--slug {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-
-.page-header-title {
-  font-size: var(--text-h2);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--text);
-  margin-bottom: 0;
-}
-
 .page-header-left {
   min-width: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
@@ -6038,20 +6051,63 @@ a.post-via--link:hover {
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.page-header-title--slug {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.page-header-title {
+  font-size: var(--text-h2);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 0;
+  line-height: var(--leading-tight);
 }
 
 .page-header-subtitle {
+  margin: var(--space-1) 0 0;
   font-size: var(--text-sm);
   color: var(--muted);
-  line-height: 1.5;
-  max-width: 520px;
+  line-height: var(--leading-normal);
+  max-width: 42rem;
+}
+
+/* Back-compat aliases — PageHeader used to ship ia-concept-* class names */
+.ia-concept-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 var(--space-4);
+  flex-wrap: wrap;
+  gap: var(--space-2-5);
+}
+
+.ia-concept-page-title {
+  font-size: var(--text-h2);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: var(--leading-tight);
+}
+
+.ia-concept-page-note {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+  line-height: var(--leading-normal);
+  max-width: 42rem;
 }
 
 .page-header-description {
   font-size: var(--text-sm);
   color: var(--muted);
-  line-height: 1.5;
+  line-height: var(--leading-normal);
   margin: -4px 0 12px;
+  max-width: 520px;
 }
 
 .page-context-note {
@@ -8182,15 +8238,19 @@ a.post-via--link:hover {
 }
 
 .ia-concept-page-title {
-  font-size: var(--text-h3);
-  font-weight: 600;
+  font-size: var(--text-h2);
+  font-weight: 700;
   letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: var(--leading-tight);
 }
 
 .ia-concept-page-note {
+  margin: var(--space-1) 0 0;
   font-size: var(--text-sm);
   color: var(--muted);
-  margin: -8px 0 16px;
+  line-height: var(--leading-normal);
+  max-width: 42rem;
 }
 
 .ia-concept-card {
