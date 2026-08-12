@@ -3,20 +3,6 @@
 import { useEffect, useState } from "react";
 import { applyTheme, readStoredTheme, type SiteTheme } from "@/lib/theme";
 
-function SunIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.75" />
-      <path
-        d="M12 2v2.5M12 19.5V22M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M2 12h2.5M19.5 12H22M4.93 19.07l1.77-1.77M17.3 6.7l1.77-1.77"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 function MoonIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -31,7 +17,7 @@ function MoonIcon() {
   );
 }
 
-/** Warm editorial surface — a sheet, to distinguish paper from plain light. */
+/** Warm editorial surface — a sheet, to distinguish paper from dark. */
 function PaperIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -47,18 +33,12 @@ function PaperIcon() {
 }
 
 /**
- * Cycles dark → paper → light → dark.
- *
- * Kept as one cycling button rather than adding a second segmented control:
- * this one is already mounted in the chrome, and two theme controls in the same
- * app is exactly the kind of drift a design system exists to prevent. The icon
- * shows the active theme; the tooltip names the next one in the cycle.
+ * Cycles dark ↔ paper (cream). The cold white "light" theme is retired.
  */
-const ORDER: SiteTheme[] = ["dark", "paper", "light"];
+const ORDER: SiteTheme[] = ["dark", "paper"];
 const NEXT_LABEL: Record<SiteTheme, string> = {
   dark: "Paper mode",
-  paper: "Light mode",
-  light: "Dark mode",
+  paper: "Dark mode",
 };
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
@@ -89,7 +69,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       aria-label={`Switch to ${label.toLowerCase()}`}
       title={label}
     >
-      {theme === "paper" ? <PaperIcon /> : theme === "light" ? <SunIcon /> : <MoonIcon />}
+      {theme === "paper" ? <PaperIcon /> : <MoonIcon />}
     </button>
   );
 }
