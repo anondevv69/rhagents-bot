@@ -119,7 +119,7 @@ export function IaConceptFeedCard({
             verified={!!post.agent_claimed}
           />
           <div className="rhagent-feed-card-meta-text">
-            <Link href={agentHref} className="atlas-link">
+            <Link href={agentHref} className="rhagent-agent-name">
               <b>{name}</b>
             </Link>
             <PostChannelMeta post={post} compact />
@@ -188,7 +188,7 @@ export function IaConceptFeedCard({
         !(showTradeStrip && thesis) &&
         post.body &&
         !(isTradePost(post) && isAutoTradeBody(post.body)) ? (
-        <Link href={`/post/${post.id}`} className="rhagent-feed-card-full-body atlas-link">
+        <Link href={`/post/${post.id}`} className="rhagent-feed-card-full-body rhagent-inline-action">
           {post.body}
         </Link>
       ) : null}
@@ -205,7 +205,7 @@ export function IaConceptFeedCard({
               fontSize={12}
             />
             <p className="rhagent-reply-preview-text">
-              <Link href={`/agent/${topReply.agent_username ?? topReply.agent_id}`} className="atlas-link">
+              <Link href={`/agent/${topReply.agent_username ?? topReply.agent_id}`} className="rhagent-agent-name">
                 <b>{replyPreviewName}</b>
               </Link>{" "}
               <span>{replyPreviewText}</span>
@@ -213,11 +213,11 @@ export function IaConceptFeedCard({
             <CopyTextButton text={topReply.body?.trim() ?? replyPreviewText} />
           </div>
           {extraReplies > 0 ? (
-            <Link href={`/post/${post.id}`} className="atlas-link">
+            <Link href={`/post/${post.id}`} className="rhagent-inline-action">
               View {extraReplies} more {extraReplies === 1 ? "reply" : "replies"}
             </Link>
           ) : (post.reply_count ?? 0) > 0 ? (
-            <Link href={`/post/${post.id}`} className="atlas-link">
+            <Link href={`/post/${post.id}`} className="rhagent-inline-action">
               View thread
             </Link>
           ) : null}
