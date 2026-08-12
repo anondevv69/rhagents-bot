@@ -72,6 +72,12 @@
   --shadow-popover:         0 12px 24px rgba(0, 0, 0, 0.40);
   --shadow-toast:           0 4px 16px rgba(0, 0, 0, 0.50);
 
+  /* Shared Atlas surface tokens */
+  --bg-hover: rgba(255, 255, 255, 0.04);
+  --bg-selected: rgba(255, 255, 255, 0.06);
+  --bg-input: var(--bg-raised);
+  --text-muted: var(--text-secondary);
+
   /* ---- Chart / Dataviz -------------------------------------------------- */
   --chart-grid:             rgba(255, 255, 255, 0.04);
   --chart-line-up:          #22c55e;
@@ -146,7 +152,77 @@
   --chart-grid:             rgba(0, 0, 0, 0.06);
   --chart-line-up:          #16a34a;
   --chart-line-down:        #dc2626;
-  --chart-volume:           rgba(37, 99, 235, 0.20);
+  /* Also set Atlas hover/input tokens light remaps skip */
+  --bg-hover: rgba(17, 17, 17, 0.04);
+  --bg-selected: rgba(17, 17, 17, 0.06);
+  --bg-input: var(--bg-raised);
+  --text-muted: var(--text-secondary);
+}
+
+
+/* --------------------------------------------------------------------------
+   SECTION 2b: Paper Theme (warm editorial — Atlas tokens must remap too)
+   -------------------------------------------------------------------------- */
+
+[data-theme="paper"],
+:root[data-theme="paper"] {
+
+  --bg-base:              #F5F1EB;
+  --bg-raised:            #FFFFFF;
+  --bg-sunken:            #EFEAE1;
+  --bg-overlay:           rgba(245, 241, 235, 0.92);
+  --bg-hover:             rgba(26, 23, 19, 0.04);
+  --bg-selected:          rgba(26, 23, 19, 0.06);
+  --bg-input:             #FFFFFF;
+
+  --text-primary:         #1A1713;
+  --text-secondary:       #6B6358;
+  --text-tertiary:        #9A9186;
+  --text-inverse:         #FFFFFF;
+  --text-muted:           #6B6358;
+
+  --accent-primary:         #1A1713;
+  --accent-primary-hover:   #000000;
+  --accent-primary-muted:   rgba(26, 23, 19, 0.08);
+
+  --accent-highlight:       #2F5D8A;
+  --accent-highlight-hover: #1A1713;
+  --accent-highlight-muted: rgba(47, 93, 138, 0.10);
+
+  --status-success:         #1B7A4B;
+  --status-success-muted:   rgba(27, 122, 75, 0.10);
+  --status-success-hover:   #16633d;
+
+  --status-error:           #B4402E;
+  --status-error-muted:     rgba(180, 64, 46, 0.10);
+  --status-error-hover:     #943628;
+
+  --status-warning:         #B5761F;
+  --status-warning-muted:   rgba(181, 118, 31, 0.10);
+  --status-warning-hover:   #946015;
+
+  --agent-live:             #1B7A4B;
+  --agent-live-pulse:       rgba(27, 122, 75, 0.30);
+
+  --token-gated:            #B5761F;
+  --token-gated-bg:         rgba(181, 118, 31, 0.08);
+
+  --liquidity-blue:         #2F5D8A;
+  --liquidity-blue-muted:   rgba(47, 93, 138, 0.10);
+
+  --border-subtle:          rgba(60, 50, 35, 0.09);
+  --border-default:         #E3DCD1;
+  --border-strong:          #DCD4C7;
+  --border-accent:          rgba(27, 122, 75, 0.30);
+
+  --shadow-overlay:         0 24px 48px rgba(60, 50, 35, 0.15);
+  --shadow-popover:         0 12px 24px rgba(60, 50, 35, 0.10);
+  --shadow-toast:           0 4px 16px rgba(60, 50, 35, 0.12);
+
+  --chart-grid:             rgba(60, 50, 35, 0.08);
+  --chart-line-up:          #1B7A4B;
+  --chart-line-down:        #B4402E;
+  --chart-volume:           rgba(47, 93, 138, 0.20);
 }
 
 
@@ -329,13 +405,13 @@
 .atlas-table-trades th {
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: 10px;
+  font-size: var(--text-xxs);
   color: var(--text-tertiary);
 }
 
 .atlas-table-trades td {
   font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 .atlas-table-trades .col-pnl-positive {
@@ -489,7 +565,7 @@
   background: var(--bg-sunken);
   border: 1px solid var(--border-default);
   color: var(--text-secondary);
-  font-size: 11px;
+  font-size: var(--text-xs);
   padding: 2px 6px;
   border-radius: 3px;
 }
@@ -502,7 +578,7 @@
   border-bottom: 1px solid var(--border-subtle);
   padding: 6px 0;
   font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 .atlas-marquee-ticker-item {
@@ -546,7 +622,7 @@
 
 @media (max-width: 768px) {
   .atlas-table-trades td {
-    font-size: 13px;  /* Slightly larger for mobile readability */
+    font-size: var(--text-sm);
   }
 }
 
