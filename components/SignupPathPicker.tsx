@@ -3,63 +3,33 @@
 import Link from "next/link";
 import { useState } from "react";
 import { RHAGENT_TOKEN_SYMBOL } from "@/lib/rhagent-token";
+import {
+  INTERACT_METHOD_OPTIONS,
+  VERIFY_METHOD_OPTIONS,
+  type InteractMethod,
+  type OnboardingPath,
+  type VerifyMethod,
+} from "@/lib/onboarding-path";
 
-export type VerifyMethod = "chain" | "robinhood";
-export type InteractMethod = "dashboard" | "bot" | "agent";
-
-const ACCOUNT_TYPE_OPTIONS: {
-  id: VerifyMethod;
-  title: string;
-  summary: string;
-}[] = [
-  {
-    id: "chain",
-    title: "On-chain",
-    summary: `Wallet on Robinhood Chain + ${RHAGENT_TOKEN_SYMBOL} hold — MetaMask, Rabby, or Bankr`,
-  },
-  {
-    id: "robinhood",
-    title: "Robinhood app",
-    summary: "Brokerage trading — you’ll pick Crypto or Agentic verification on the next screen",
-  },
-];
-
-const INTERACT_OPTIONS: {
-  id: InteractMethod;
-  title: string;
-  summary: string;
-}[] = [
-  {
-    id: "dashboard",
-    title: "Dashboard",
-    summary: "Browser control panel — keys, LLM, settings",
-  },
-  {
-    id: "bot",
-    title: "Telegram / Discord",
-    summary: "Chat with our hosted trading bot",
-  },
-  {
-    id: "agent",
-    title: "Your AI agent",
-    summary: "Claude, Cursor, Bankr, or another client",
-  },
-];
+export type { InteractMethod, VerifyMethod } from "@/lib/onboarding-path";
 
 export function SignupPathPicker({
   onContinue,
   onLogin,
   onBankr,
+  initialPath,
   compact = false,
 }: {
-  onContinue: (verify: VerifyMethod, interact: InteractMethod) => void;
+  onContinue: (path: OnboardingPath) => void;
   onLogin: () => void;
   onBankr?: () => void;
+  /** Pre-select verify/interact — e.g. from /login query params via parseOnboardingPath. */
+  initialPath?: Partial<OnboardingPath>;
   /** Embedded in WelcomeLanding advanced panel — hide duplicate footer cards. */
   compact?: boolean;
 }) {
-  const [verify, setVerify] = useState<VerifyMethod | null>(null);
-  const [interact, setInteract] = useState<InteractMethod | null>(null);
+  const [verify, setVerify] = useState<VerifyMethod | null>(initialPath?.verify ?? null);
+  const [interact, setInteract] = useState<InteractMethod | null>(initialPath?.interact ?? null);
 
   const canContinue = verify !== null && interact !== null;
 
@@ -67,7 +37,7 @@ export function SignupPathPicker({
     <div className="signup-path-picker">
       <p className="gate-path-section-title">What kind of account would you like to start with?</p>
       <div className="signup-fork-grid" role="radiogroup" aria-label="Account type">
-        {ACCOUNT_TYPE_OPTIONS.map((opt) => (
+        {VERIFY_METHOD_OPTIONS.map((opt) => (
           <button
             key={opt.id}
             type="button"
@@ -117,7 +87,7 @@ export function SignupPathPicker({
 
       <p className="gate-path-section-title gate-path-section-title--spaced">How do you want to use it?</p>
       <div className="signup-interact-row" role="radiogroup" aria-label="Interaction surface">
-        {INTERACT_OPTIONS.map((opt) => (
+        {INTERACT_METHOD_OPTIONS.map((opt) => (
           <button
             key={opt.id}
             type="button"
@@ -134,7 +104,7 @@ export function SignupPathPicker({
 
       <p className={`signup-route-preview${verify && interact ? "" : " signup-route-preview--placeholder"}`}>
         {verify && interact
-          ? describeRoute(verify, interact)
+          ? describeRoute({ verify, interact })
           : !verify && !interact
             ? "→ pick an account type and how you'll use it"
             : !interact
@@ -148,7 +118,7 @@ export function SignupPathPicker({
         disabled={!canContinue}
         aria-disabled={!canContinue}
         onClick={() => {
-          if (verify && interact) onContinue(verify, interact);
+          if (verify && interact) onContinue({ verify, interact });
         }}
       >
         Continue →
@@ -191,7 +161,7 @@ export function SignupPathPicker({
   );
 }
 
-function describeRoute(verify: VerifyMethod, interact: InteractMethod): string {
+function describeRoute({ verify, interact }: OnboardingPath): string {
   if (verify === "chain") {
     if (interact === "dashboard") return "→ Connect wallet in the browser — feed profile on-chain.";
     if (interact === "bot") {
