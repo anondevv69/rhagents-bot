@@ -3,11 +3,14 @@ import { tradeNotionalUsd, getTradeThesis, formatSmartPrice } from "@/lib/trade-
 export type AgentChartEvent = {
   id: string;
   t: number;
-  kind: "buy" | "sell" | "thesis" | "research";
+  kind: "buy" | "sell" | "research";
   price: number | null;
   notional: number | null;
   agent: string;
+  /** Short fill line for chart markers (BUY $10 @ …). */
   label: string;
+  /** Optional thesis/body — shown in the rail, not as a second event. */
+  note: string | null;
   href: string;
 };
 
@@ -30,7 +33,12 @@ function postTimeMs(createdAt: string): number {
   return Number.isFinite(t) ? t : 0;
 }
 
-/** Map ticker posts → chart/timeline events for agents. */
+/**
+ * Map ticker posts → chart/timeline events.
+ *
+ * One post → one event. Trade body/thesis stays on the fill (note), never a
+ * second "thesis" row — that was doubling every buy/sell on the chart + rail.
+ */
 export function postsToAgentChartEvents(posts: PostLike[]): AgentChartEvent[] {
   const out: AgentChartEvent[] = [];
   for (const p of posts) {
@@ -53,6 +61,7 @@ export function postsToAgentChartEvents(posts: PostLike[]): AgentChartEvent[] {
         notional,
         agent,
         label: body.slice(0, 80),
+        note: null,
         href,
       });
       continue;
@@ -60,41 +69,29 @@ export function postsToAgentChartEvents(posts: PostLike[]): AgentChartEvent[] {
 
     if (p.type !== "trade_fill" && p.type !== "trade_intent") continue;
     const side = p.side === "sell" ? "sell" : p.side === "buy" ? "buy" : null;
-    const thesis = getTradeThesis(p.body);
+    if (!side) continue;
 
-    if (side) {
-      const size =
-        notional != null
-          ? notional >= 1000
-            ? `$${(notional / 1000).toFixed(1)}K`
-            : `$${notional.toFixed(0)}`
-          : "";
-      out.push({
-        id: p.id,
-        t,
-        kind: side,
-        price: priceOk,
-        notional,
-        agent,
-        label: size
-          ? `${side.toUpperCase()} ${size}${priceOk != null ? ` @ ${formatSmartPrice(priceOk)}` : ""}`
-          : `${side.toUpperCase()}${priceOk != null ? ` @ ${formatSmartPrice(priceOk)}` : ""}`,
-        href,
-      });
-    }
+    const size =
+      notional != null
+        ? notional >= 1000
+          ? `$${(notional / 1000).toFixed(1)}K`
+          : `$${notional.toFixed(0)}`
+        : "";
+    const label = size
+      ? `${side.toUpperCase()} ${size}${priceOk != null ? ` @ ${formatSmartPrice(priceOk)}` : ""}`
+      : `${side.toUpperCase()}${priceOk != null ? ` @ ${formatSmartPrice(priceOk)}` : ""}`;
 
-    if (thesis) {
-      out.push({
-        id: `${p.id}-thesis`,
-        t: t + 1,
-        kind: "thesis",
-        price: priceOk,
-        notional,
-        agent,
-        label: thesis.slice(0, 80),
-        href,
-      });
-    }
+    out.push({
+      id: p.id,
+      t,
+      kind: side,
+      price: priceOk,
+      notional,
+      agent,
+      label,
+      note: getTradeThesis(p.body),
+      href,
+    });
   }
   return out.sort((a, b) => a.t - b.t);
 }
