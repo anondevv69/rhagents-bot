@@ -8615,10 +8615,18 @@ a.post-via--link:hover {
   display: flex;
   gap: var(--space-5);
   align-items: flex-start;
-  padding-bottom: var(--space-5);
+  padding: var(--space-3) 0 var(--space-5);
   border-bottom: 1px solid var(--border-soft);
-  margin: var(--space-3) 0 var(--space-5);
+  margin: 0 0 var(--space-5);
   flex-wrap: wrap;
+  /* Sit on the page — no atlas-card box. A bordered card around the whole
+     profile header read as a floating panel with odd inset, not a page header. */
+  background: transparent;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .ia-concept-avatar-lg {

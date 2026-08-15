@@ -134,10 +134,48 @@ const poolCache = new Map<string, { pool: string | null; at: number }>();
 const candleCache = new Map<string, { candles: Candle[]; at: number }>();
 /** Pool addresses are effectively permanent; only re-resolve hourly. */
 const POOL_TTL_MS = 60 * 60_000;
-/** Candles are the live part, but still shared across all readers. */
-const CANDLE_TTL_MS = 2 * 60_000;
+/**
+ * Fresh candles are shared across all readers. Bumped from 2 → 10 min so a
+ * burst of ticker pageviews (or a Chart Live poll) does not burn the whole
+ * GeckoTerminal free-tier budget (~30 req/min) redrawing the same series.
+ */
+const CANDLE_TTL_MS = 10 * 60_000;
+/** Serve expired candles this long when upstream is rate-limited or down. */
+const CANDLE_STALE_MS = 6 * 60 * 60_000;
+/** Global backoff after a 429 — skip outbound GT calls until this expires. */
+let geckoBackoffUntil = 0;
 
 const GT = "https://api.geckoterminal.com/api/v2/networks/robinhood";
+
+function geckoRateLimited(): boolean {
+  return Date.now() < geckoBackoffUntil;
+}
+
+function noteGeckoRateLimit(res: Response): boolean {
+  if (res.status !== 429) return false;
+  // 60s is enough for the free-tier window to refill without making charts
+  // look "permanently broken" for minutes after one spike.
+  geckoBackoffUntil = Math.max(geckoBackoffUntil, Date.now() + 60_000);
+  return true;
+}
+
+function parseOhlcvList(body: unknown): Candle[] {
+  const list =
+    (body as { data?: { attributes?: { ohlcv_list?: number[][] } } })?.data
+      ?.attributes?.ohlcv_list ?? [];
+  // GeckoTerminal returns [unixSeconds, o, h, l, c, v], newest first.
+  return list
+    .filter((c) => Array.isArray(c) && c.length >= 5 && Number.isFinite(c[0]))
+    .map((c) => ({
+      t: new Date(c[0] * 1000).toISOString(),
+      o: c[1],
+      h: c[2],
+      l: c[3],
+      c: c[4],
+      v: Number.isFinite(c[5]) ? c[5] : null,
+    }))
+    .reverse(); // oldest first, so the renderer reads left to right
+}
 
 /* ── chain adapter ───────────────────────────────────────────────────────── */
 
@@ -153,13 +191,21 @@ async function deepestPool(contract: string): Promise<string | null> {
   const hit = poolCache.get(key);
   if (hit && Date.now() - hit.at < POOL_TTL_MS) return hit.pool;
 
+  if (geckoRateLimited()) {
+    // Prefer a previously-known pool over pretending there is none.
+    return hit?.pool ?? null;
+  }
+
   let pool: string | null = null;
+  let rateLimited = false;
   try {
     const res = await fetch(`${GT}/tokens/${key}/pools`, {
       headers: { accept: "application/json" },
       signal: AbortSignal.timeout(7_000),
     });
-    if (res.ok) {
+    if (noteGeckoRateLimit(res)) {
+      rateLimited = true;
+    } else if (res.ok) {
       const body = (await res.json()) as {
         data?: {
           attributes?: { address?: string; reserve_in_usd?: string; name?: string };
@@ -192,9 +238,14 @@ async function deepestPool(contract: string): Promise<string | null> {
     /* leave null — a failed lookup must not be cached as "no pool" for long */
   }
 
-  // Only cache a positive result for the full TTL. A null is likely a 429 or a
-  // timeout rather than a real absence, and caching that would turn one rate
-  // limit into an hour of empty charts.
+  if (rateLimited) {
+    // Keep any prior positive pool; do not overwrite with null.
+    return hit?.pool ?? null;
+  }
+
+  // Only cache a positive result for the full TTL. A null is likely a timeout
+  // rather than a real absence, and caching that would turn one blip into an
+  // hour of empty charts.
   poolCache.set(key, { pool, at: pool ? Date.now() : Date.now() - POOL_TTL_MS + 30_000 });
   return pool;
 }
@@ -229,31 +280,32 @@ async function chainCandles(
   const hit = candleCache.get(key);
   if (hit && Date.now() - hit.at < CANDLE_TTL_MS) return hit.candles;
 
+  // Stale-while-revalidate under rate limit: keep showing the last good series
+  // instead of blanking the chart with "pool may be new".
+  if (geckoRateLimited()) {
+    if (hit && Date.now() - hit.at < CANDLE_STALE_MS) return hit.candles;
+    return [];
+  }
+
   let candles: Candle[] = [];
+  let rateLimited = false;
   try {
     const res = await fetch(`${GT}/pools/${pool}/ohlcv/${interval}?aggregate=${aggregate}&limit=${limit}`, {
       headers: { accept: "application/json" },
       signal: AbortSignal.timeout(7_000),
     });
-    if (res.ok) {
-      const body = (await res.json()) as {
-        data?: { attributes?: { ohlcv_list?: number[][] } };
-      };
-      // GeckoTerminal returns [unixSeconds, o, h, l, c, v], newest first.
-      candles = (body.data?.attributes?.ohlcv_list ?? [])
-        .filter((c) => Array.isArray(c) && c.length >= 5 && Number.isFinite(c[0]))
-        .map((c) => ({
-          t: new Date(c[0] * 1000).toISOString(),
-          o: c[1],
-          h: c[2],
-          l: c[3],
-          c: c[4],
-          v: Number.isFinite(c[5]) ? c[5] : null,
-        }))
-        .reverse(); // oldest first, so the renderer reads left to right
+    if (noteGeckoRateLimit(res)) {
+      rateLimited = true;
+    } else if (res.ok) {
+      candles = parseOhlcvList(await res.json());
     }
   } catch {
     /* empty — surfaced to the caller as `unavailable` rather than a blank box */
+  }
+
+  if (rateLimited) {
+    if (hit && Date.now() - hit.at < CANDLE_STALE_MS) return hit.candles;
+    return [];
   }
 
   if (candles.length) candleCache.set(key, { candles, at: Date.now() });
@@ -470,9 +522,10 @@ export async function getChannelChart(
     if (!candles.length) {
       return base({
         product: "chain",
-        unavailable:
-          `No price history available for ${symbol} right now. The pool may be new, or the ` +
-          `upstream feed may be rate-limited — this is not a claim that the token is untraded.`,
+        unavailable: geckoRateLimited()
+          ? `Price history for ${symbol} is briefly unavailable — the upstream chart feed is rate-limited. Refresh in a minute.`
+          : `No price history available for ${symbol} right now. The pool may be new, or the ` +
+            `upstream feed may be rate-limited — this is not a claim that the token is untraded.`,
       });
     }
     const latest = candles[candles.length - 1].c;
