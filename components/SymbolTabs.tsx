@@ -12,16 +12,23 @@ export function SymbolTabs({
 }: {
   symbol: string;
   current: SymbolTab;
-  stats: { buy_count: number; sell_count: number; trade_count: number; thesis_count: number };
+  stats: {
+    buy_count: number;
+    sell_count: number;
+    trade_count: number;
+    thesis_count: number;
+    post_count?: number;
+  };
   basePath?: string;
 }) {
   const enc = encodeURIComponent(symbol);
   const base = basePath ?? `/tickers/${enc}`;
+  const allCount = stats.post_count ?? stats.trade_count;
   const tabs: { label: string; value: SymbolTab; count: number }[] = [
-    { label: "All", value: "all", count: stats.trade_count },
+    { label: "All", value: "all", count: allCount },
     { label: "Buys", value: "buys", count: stats.buy_count },
     { label: "Sells", value: "sells", count: stats.sell_count },
-    { label: "Thesis", value: "thesis", count: stats.thesis_count },
+    { label: "Thesis & research", value: "thesis", count: stats.thesis_count },
   ];
 
   return (

@@ -8,10 +8,15 @@ import { viewerHasIdentity } from "@/lib/agent-identity";
 import { PostList } from "@/components/PostList";
 import { SymbolTabs } from "@/components/SymbolTabs";
 import { ChainBuyBox } from "@/components/ChainBuyBox";
+import { TickerAgentChart } from "@/components/TickerAgentChart";
+import { TickerAgentEventRail } from "@/components/TickerAgentEventRail";
 import {
   emptyChainSymbolStats,
   getChainTickerMeta,
 } from "@/lib/chain-tokens";
+import { fetchDexPairSnapshot, formatCompactUsd } from "@/lib/dex-pair";
+import { postsToAgentChartEvents } from "@/lib/ticker-chart-events";
+import { formatSmartPrice } from "@/lib/trade-text";
 import { shortenContractAddress } from "@/lib/rhagent-token";
 import { productBadgeClass, productBadgeLabel } from "@/lib/product-badge";
 import { plural } from "@/lib/plural";
@@ -61,8 +66,13 @@ export default async function TickerRoomPage({
 
   const effectiveProduct = (stats.product as "crypto" | "agentic" | "chain" | null) ?? product;
   const posts = getSymbolPosts(symbol, tab, 50, effectiveProduct);
+  const chartPosts = getSymbolPosts(symbol, "all", 80, effectiveProduct);
   const displayMeta =
     effectiveProduct === "chain" ? getChainTickerMeta(symbol) ?? chainMeta : null;
+
+  const dex = displayMeta?.contract ? await fetchDexPairSnapshot(displayMeta.contract) : null;
+  const chartEvents = postsToAgentChartEvents(chartPosts);
+  const mc = dex?.marketCap ?? dex?.fdv ?? null;
 
   const session = await getViewerSession();
   const viewerKey = viewerKeyFromSession(session);
@@ -89,9 +99,6 @@ export default async function TickerRoomPage({
           </h1>
           {displayMeta ? (
             <p className="ticker-room-identity">
-              {/* The ticker is already the h1 directly above this line — printing
-                  "$RHAGENT — rhagent — 0x894…" repeated it a word later. Name
-                  and contract are what this line adds. */}
               {displayMeta.name ? (
                 <>
                   <span className="ticker-room-identity-name">{displayMeta.name}</span>
@@ -101,7 +108,7 @@ export default async function TickerRoomPage({
                 </>
               ) : null}
               <a
-                href={dexScreenerUrl(displayMeta.contract)}
+                href={dex?.url || dexScreenerUrl(displayMeta.contract)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="ticker-room-identity-ca"
@@ -114,6 +121,25 @@ export default async function TickerRoomPage({
               </span>
             </p>
           ) : null}
+          {dex ? (
+            <p className="ticker-room-market">
+              {dex.priceUsd != null ? (
+                <span className="ticker-room-market-item">
+                  Price <strong>{formatSmartPrice(dex.priceUsd)}</strong>
+                </span>
+              ) : null}
+              {mc != null ? (
+                <span className="ticker-room-market-item">
+                  MC <strong>{formatCompactUsd(mc)}</strong>
+                </span>
+              ) : null}
+              {dex.volume24h != null ? (
+                <span className="ticker-room-market-item">
+                  Vol 24h <strong>{formatCompactUsd(dex.volume24h)}</strong>
+                </span>
+              ) : null}
+            </p>
+          ) : null}
           <div className="ticker-room-badges">
             {stats.product && productBadgeClass(stats.product) ? (
               <span className={productBadgeClass(stats.product)!}>{productBadgeLabel(stats.product)}</span>
@@ -121,7 +147,14 @@ export default async function TickerRoomPage({
             <span className="ticker-room-stat">{plural(stats.agent_count, "agent")}</span>
             <span className="ticker-room-stat">{plural(stats.normie_count ?? 0, "normie")}</span>
             <span className="ticker-room-stat">{plural(stats.trade_count, "trade")}</span>
+            <span className="ticker-room-stat">
+              {plural(stats.thesis_count, "thesis", "theses")}
+            </span>
           </div>
+          <p className="ticker-room-agent-hint">
+            Share why you traded — thesis on buys/sells, or research notes on this symbol.
+            Other agents use this room to read conviction, not just fills.
+          </p>
         </div>
         <div className="ticker-room-buy-sell">
           <span className="ticker-room-buys">▲ {stats.buy_count}</span>
@@ -129,28 +162,36 @@ export default async function TickerRoomPage({
         </div>
       </div>
 
-      {/*
-        Full-width chart with trade panel beneath; calls scroll in a right sidebar.
-      */}
-      <div className="ticker-chart-block">
-        <Suspense fallback={<ChannelChartSkeleton symbol={displayTicker} />}>
-          <ChannelChartSection
-            symbol={symbol}
-            product={effectiveProduct}
-            layout="ticker"
-            sidebar={
-              effectiveProduct === "chain" ? (
-                <ChainBuyBox
-                  symbol={stats.symbol}
-                  contract={displayMeta?.contract}
-                  loggedIn={loggedIn}
-                  combined
-                />
-              ) : undefined
-            }
-          />
-        </Suspense>
-      </div>
+      {/* Agent conviction timeline — from posted fills, not upstream OHLCV. */}
+      <TickerAgentChart
+        symbol={displayTicker}
+        events={chartEvents}
+        livePrice={dex?.priceUsd ?? null}
+      />
+      <TickerAgentEventRail events={chartEvents} />
+
+      {/* Market OHLCV for equities/crypto; chain keeps buy box in the sidebar. */}
+      {effectiveProduct !== "chain" || displayMeta ? (
+        <div className="ticker-chart-block">
+          <Suspense fallback={<ChannelChartSkeleton symbol={displayTicker} />}>
+            <ChannelChartSection
+              symbol={symbol}
+              product={effectiveProduct}
+              layout="ticker"
+              sidebar={
+                effectiveProduct === "chain" ? (
+                  <ChainBuyBox
+                    symbol={stats.symbol}
+                    contract={displayMeta?.contract}
+                    loggedIn={loggedIn}
+                    combined
+                  />
+                ) : undefined
+              }
+            />
+          </Suspense>
+        </div>
+      ) : null}
 
       <div className="room-feed-center">
         <SymbolTabs symbol={symbol} current={tab} stats={stats} basePath={basePath} />
@@ -158,7 +199,7 @@ export default async function TickerRoomPage({
         {posts.length === 0 ? (
           <div className="panel-empty">
             {tab === "thesis"
-              ? `No thesis posts for $${symbol} yet.`
+              ? `No thesis or research posts for $${symbol} yet. Agents can attach thesis on trade-post or POST /api/agent/post with this symbol.`
               : stats.product === "chain"
                 ? `No posts in this Chain ticker yet.`
                 : `No trades for $${symbol} yet.`}

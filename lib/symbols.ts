@@ -10,6 +10,8 @@ export interface SymbolStats {
   buy_count: number;
   sell_count: number;
   thesis_count: number;
+  /** Trades + research/general posts on this symbol. */
+  post_count: number;
   /** Posters with App Agentic/Crypto (or non–chain-only). */
   agent_count: number;
   /** MetaMask / Chain-only accounts (no App Agentic or Crypto). */
@@ -55,7 +57,7 @@ export function getTickers(
       ${productClause}
     GROUP BY p.symbol, p.product
     HAVING COUNT(*) > 0
-  `).all(...productParams) as Omit<SymbolStats, "thesis_count" | "volume_usd">[];
+  `).all(...productParams) as Omit<SymbolStats, "thesis_count" | "volume_usd" | "post_count">[];
 
   const volumeBySymbol = new Map<string, number>();
   const volumeProductClause = product ? "AND product = ?" : "";
@@ -86,6 +88,7 @@ export function getTickers(
     agent_count: Number(row.agent_count) || 0,
     normie_count: Number(row.normie_count) || 0,
     thesis_count: countThesesForSymbol(db, row.symbol, row.product),
+    post_count: countPostsForSymbol(db, row.symbol, row.product),
     volume_usd:
       volumeBySymbol.get(`${(row.product ?? "").toLowerCase()}:${row.symbol.toUpperCase()}`) ?? 0,
   }));
@@ -142,7 +145,7 @@ export function getSymbolStats(
       )
       ${product ? "AND p.product = ?" : ""}
     GROUP BY p.symbol${product ? ", p.product" : ""}
-  `).get(...params) as Omit<SymbolStats, "thesis_count" | "volume_usd"> | undefined;
+  `).get(...params) as Omit<SymbolStats, "thesis_count" | "volume_usd" | "post_count"> | undefined;
   if (!row) return null;
   const volume = volumeForSymbol(db, symbol, product ?? row.product);
   return {
@@ -150,6 +153,7 @@ export function getSymbolStats(
     agent_count: Number(row.agent_count) || 0,
     normie_count: Number(row.normie_count) || 0,
     thesis_count: countThesesForSymbol(db, symbol, product ?? row.product),
+    post_count: countPostsForSymbol(db, symbol, product ?? row.product),
     volume_usd: volume,
   };
 }
@@ -201,11 +205,15 @@ export function getSymbolPosts(
   `).all(...params) as FeedPost[];
 
   if (tab === "thesis") {
-    return rows.filter(
-      (p) =>
+    return rows.filter((p) => {
+      if (p.type === "research" || p.type === "general") {
+        return Boolean((p.body || "").trim());
+      }
+      return (
         (p.type === "trade_fill" || p.type === "trade_intent") &&
-        getTradeThesis(p.body) !== null,
-    );
+        getTradeThesis(p.body) !== null
+      );
+    });
   }
 
   if (tab === "buys" || tab === "sells") {
@@ -224,14 +232,42 @@ function countThesesForSymbol(
   const params: string[] = [symbol.toUpperCase()];
   if (product) params.push(product);
   const rows = db.prepare(`
-    SELECT body FROM posts
+    SELECT type, body FROM posts
     WHERE parent_id IS NULL
-      AND type IN ('trade_fill', 'trade_intent')
       AND symbol = ?
+      AND (
+        type IN ('trade_fill', 'trade_intent')
+        OR type IN ('general', 'research')
+      )
       ${productClause}
-  `).all(...params) as { body: string }[];
+  `).all(...params) as { type: string; body: string }[];
 
-  return rows.filter((r) => getTradeThesis(r.body) !== null).length;
+  return rows.filter((r) => {
+    if (r.type === "research" || r.type === "general") return Boolean((r.body || "").trim());
+    return getTradeThesis(r.body) !== null;
+  }).length;
+}
+
+function countPostsForSymbol(
+  db: ReturnType<typeof getDb>,
+  symbol: string,
+  product?: string | null,
+): number {
+  const productClause = product ? "AND p.product = ?" : "";
+  const params: string[] = [symbol.toUpperCase()];
+  if (product) params.push(product);
+  const row = db.prepare(`
+    SELECT COUNT(*) AS n FROM posts p
+    WHERE p.parent_id IS NULL
+      AND p.symbol = ?
+      AND (
+        p.type IN ('trade_fill', 'trade_intent')
+        OR p.type IN ('general', 'research')
+      )
+      AND ${SQL_EXCLUDE_EMPTY_TRADE_FILLS}
+      ${productClause}
+  `).get(...params) as { n: number } | undefined;
+  return Number(row?.n) || 0;
 }
 
 function volumeForSymbol(
