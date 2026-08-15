@@ -152,6 +152,7 @@ export function emptyChainSymbolStats(symbol: string): {
   agent_count: number;
   normie_count: number;
   thesis_count: number;
+  post_count: number;
   volume_usd: number;
   last_trade_at: string | null;
 } {
@@ -164,6 +165,7 @@ export function emptyChainSymbolStats(symbol: string): {
     agent_count: 0,
     normie_count: 0,
     thesis_count: 0,
+    post_count: 0,
     volume_usd: 0,
     last_trade_at: null,
   };
