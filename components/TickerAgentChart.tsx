@@ -21,7 +21,6 @@ type Props = {
 function kindColor(kind: AgentChartEvent["kind"]): string {
   if (kind === "buy") return "#3dd68c";
   if (kind === "sell") return "#f07178";
-  if (kind === "thesis") return "#e6c07b";
   return "#7aa2f7";
 }
 
@@ -89,12 +88,7 @@ export function TickerAgentChart({ events, livePrice, symbol }: Props) {
           : e.kind === "sell"
             ? ("arrowDown" as const)
             : ("circle" as const),
-      text:
-        e.kind === "buy" || e.kind === "sell"
-          ? e.label.slice(0, 24)
-          : e.kind === "thesis"
-            ? "thesis"
-            : "note",
+      text: e.kind === "buy" || e.kind === "sell" ? e.label.slice(0, 24) : "note",
     }));
     createSeriesMarkers(series, markers);
 
@@ -142,7 +136,7 @@ export function TickerAgentChart({ events, livePrice, symbol }: Props) {
           <span className="dot sell" /> sells
         </li>
         <li>
-          <span className="dot thesis" /> thesis / research
+          <span className="dot research" /> research
         </li>
       </ul>
     </div>
