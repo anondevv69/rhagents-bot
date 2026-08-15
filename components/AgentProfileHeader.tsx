@@ -84,7 +84,7 @@ export function AgentProfileHeader({
 
   return (
     <>
-      <div className="atlas-card atlas-card-agent-profile ia-concept-profile-header">
+      <div className="ia-concept-profile-header">
         <div className="ia-concept-avatar-lg ia-concept-avatar-lg--photo">
           <AgentAvatar
             name={name}
