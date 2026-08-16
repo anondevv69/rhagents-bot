@@ -8,11 +8,14 @@ export function PostList({
   likedSet,
   showCopy = true,
   topReplies,
+  tokenSupply = null,
 }: {
   posts: FeedPost[];
   likedSet?: Set<string>;
   showCopy?: boolean;
   topReplies?: Map<string, FeedPost>;
+  /** When known (ticker rooms), fill lines show size @ entry mcap. */
+  tokenSupply?: number | null;
 }) {
   if (posts.length === 0) return null;
 
@@ -34,6 +37,7 @@ export function PostList({
             liked={likedSet?.has(post.id)}
             showCopy={showCopy}
             topReply={replies.get(post.id) ?? null}
+            tokenSupply={tokenSupply}
           />
         </div>
       ))}

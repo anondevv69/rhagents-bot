@@ -3,7 +3,6 @@ import type { FeedPost } from "@/lib/posts";
 import { agentPublicXHandle } from "@/lib/agent-identity";
 import {
   getTradeThesis,
-  formatTradeNotional,
   formatTradeFillDetail,
   isAutoTradeBody,
   isDenseScanBody,
@@ -43,6 +42,8 @@ export function IaConceptFeedCard({
   threadReply = false,
   fullBody = false,
   topReply,
+  /** Circulating supply — when set, fill line shows size @ entry mcap (FOMO). */
+  tokenSupply = null,
 }: {
   post: FeedPost;
   profileHref?: (username: string) => string;
@@ -53,6 +54,7 @@ export function IaConceptFeedCard({
   threadReply?: boolean;
   fullBody?: boolean;
   topReply?: FeedPost | null;
+  tokenSupply?: number | null;
 }) {
   const profileSlug = post.agent_username ?? post.agent_id;
   const name = iaAgentName(post);
@@ -77,7 +79,9 @@ export function IaConceptFeedCard({
     !!post.quantity &&
     parseFloat(String(post.quantity).replace(/,/g, "")) > 0;
   const showTradeStrip = showTradePill && hasRealFill;
-  const fillDetail = showTradeStrip ? formatTradeFillDetail(post) : null;
+  const fillDetail = showTradeStrip
+    ? formatTradeFillDetail(post, { supply: tokenSupply })
+    : null;
   const chainContract =
     post.product === "chain"
       ? post.contract && /^0x[a-fA-F0-9]{40}$/i.test(post.contract)
@@ -150,9 +154,6 @@ export function IaConceptFeedCard({
             {fillDetail ? (
               <div className={`rhagent-trade-strip-fill ${ATLAS_MONO}`}>{fillDetail}</div>
             ) : null}
-            <div className={`rhagent-trade-strip-size ${ATLAS_MONO}`}>
-              {formatTradeNotional(post)} size
-            </div>
           </div>
         </Link>
       ) : null}

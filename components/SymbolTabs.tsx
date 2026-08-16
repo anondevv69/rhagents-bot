@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-export type SymbolTab = "thesis" | "all" | "buys" | "sells";
+export type SymbolTab = "thesis" | "swaps" | "all" | "buys" | "sells";
 
 export function SymbolTabs({
   symbol,
@@ -21,22 +21,21 @@ export function SymbolTabs({
   };
   basePath?: string;
 }) {
-  const enc = encodeURIComponent(symbol);
-  const base = basePath ?? `/tickers/${enc}`;
-  const allCount = stats.post_count ?? stats.trade_count;
-  const tabs: { label: string; value: SymbolTab; count: number }[] = [
-    { label: "All", value: "all", count: allCount },
-    { label: "Buys", value: "buys", count: stats.buy_count },
-    { label: "Sells", value: "sells", count: stats.sell_count },
-    { label: "Thesis & research", value: "thesis", count: stats.thesis_count },
+  const base = basePath ?? `/tickers/${encodeURIComponent(symbol)}`;
+  // FOMO-style: Swaps | Thesis under the chart (not All / Buys / Sells / Research).
+  const tabs: { label: string; value: "swaps" | "thesis"; count: number }[] = [
+    { label: "Swaps", value: "swaps", count: stats.trade_count },
+    { label: "Thesis", value: "thesis", count: stats.thesis_count },
   ];
+
+  const activeTab = current === "thesis" ? "thesis" : "swaps";
 
   return (
     <div className="atlas-tabbar">
       {tabs.map(({ label, value, count }) => {
-        const active = current === value;
+        const active = activeTab === value;
         const url = new URL(base, "https://rhagent.bot");
-        if (value !== "all") url.searchParams.set("tab", value);
+        if (value !== "swaps") url.searchParams.set("tab", value);
         else url.searchParams.delete("tab");
         const href = `${url.pathname}${url.search}`;
         return (

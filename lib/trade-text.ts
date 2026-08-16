@@ -1,3 +1,5 @@
+import { formatCapUsd } from "./format-price";
+
 /** Feed-card preview truncation — use ellipsis so readers know there is more on the permalink. */
 export function truncateEllipsis(text: string, max: number): string {
   const t = text.trim();
@@ -46,8 +48,8 @@ export function tradeNotionalUsd(post: {
   price_usd?: string | null;
 }): number | null {
   if (!post.quantity || !post.price_usd) return null;
-  const q = parseFloat(post.quantity);
-  const p = parseFloat(post.price_usd);
+  const q = parseFloat(String(post.quantity).replace(/,/g, ""));
+  const p = parseFloat(String(post.price_usd).replace(/,/g, ""));
   if (!Number.isFinite(q) || !Number.isFinite(p)) return null;
   return q * p;
 }
@@ -61,17 +63,31 @@ export function formatTradeNotional(post: {
   return n != null ? `$${n.toFixed(2)}` : "—";
 }
 
-/** Optional fill breakdown: "245,018 @ $0.00000281" */
-export function formatTradeFillDetail(post: {
-  quantity?: string | null;
-  price_usd?: string | null;
-}): string | null {
-  if (!post.quantity || !post.price_usd) return null;
-  const q = parseFloat(post.quantity);
-  const p = parseFloat(post.price_usd);
-  if (!Number.isFinite(q) || !Number.isFinite(p)) return null;
-  const qtyStr = Number.isInteger(q) ? q.toLocaleString() : post.quantity;
-  return `${qtyStr} @ ${formatSmartPrice(p)}`;
+/**
+ * FOMO-style fill line: `$9.83 @ $2.55M` (size @ entry mcap) when supply is
+ * known, else `$9.83 @ $0.002549` (size @ entry price).
+ *
+ * Token quantity is the wrong headline for memecoins — readers reason in
+ * dollars in and market cap at entry, not "3.8M tokens".
+ */
+export function formatTradeFillDetail(
+  post: {
+    quantity?: string | null;
+    price_usd?: string | null;
+  },
+  opts?: { supply?: number | null },
+): string | null {
+  const n = tradeNotionalUsd(post);
+  if (n == null || !post.price_usd) return null;
+  const p = parseFloat(String(post.price_usd).replace(/,/g, ""));
+  if (!Number.isFinite(p) || p <= 0) return null;
+
+  const size = `$${n.toFixed(2)}`;
+  const supply = opts?.supply;
+  if (supply != null && Number.isFinite(supply) && supply > 0) {
+    return `${size} @ ${formatCapUsd(supply * p)}`;
+  }
+  return `${size} @ ${formatSmartPrice(p)}`;
 }
 
 export interface CopyablePost {

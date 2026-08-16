@@ -8,14 +8,11 @@ import { viewerHasIdentity } from "@/lib/agent-identity";
 import { PostList } from "@/components/PostList";
 import { SymbolTabs } from "@/components/SymbolTabs";
 import { ChainBuyBox } from "@/components/ChainBuyBox";
-import { TickerAgentChart } from "@/components/TickerAgentChart";
-import { TickerAgentEventRail } from "@/components/TickerAgentEventRail";
 import {
   emptyChainSymbolStats,
   getChainTickerMeta,
 } from "@/lib/chain-tokens";
 import { fetchDexPairSnapshot, formatCompactUsd } from "@/lib/dex-pair";
-import { postsToAgentChartEvents } from "@/lib/ticker-chart-events";
 import { formatSmartPrice } from "@/lib/trade-text";
 import { shortenContractAddress } from "@/lib/rhagent-token";
 import { productBadgeClass, productBadgeLabel } from "@/lib/product-badge";
@@ -44,8 +41,8 @@ export default async function TickerRoomPage({
   const symbol = decodeURIComponent(raw).toUpperCase();
   const sp = await searchParams;
   const product = parseProduct(sp.product);
-  const tab: SymbolTab =
-    sp.tab === "thesis" || sp.tab === "buys" || sp.tab === "sells" ? sp.tab : "all";
+  // FOMO-style: Swaps | Thesis under the chart.
+  const tab: SymbolTab = sp.tab === "thesis" ? "thesis" : "swaps";
 
   let stats = getSymbolStats(symbol, product);
   if (!stats && !product) {
@@ -66,13 +63,16 @@ export default async function TickerRoomPage({
 
   const effectiveProduct = (stats.product as "crypto" | "agentic" | "chain" | null) ?? product;
   const posts = getSymbolPosts(symbol, tab, 50, effectiveProduct);
-  const chartPosts = getSymbolPosts(symbol, "all", 80, effectiveProduct);
   const displayMeta =
     effectiveProduct === "chain" ? getChainTickerMeta(symbol) ?? chainMeta : null;
 
   const dex = displayMeta?.contract ? await fetchDexPairSnapshot(displayMeta.contract) : null;
-  const chartEvents = postsToAgentChartEvents(chartPosts);
   const mc = dex?.marketCap ?? dex?.fdv ?? null;
+  // Supply turns fill price → entry mcap on the FOMO-style trade line.
+  const tokenSupply =
+    dex?.priceUsd != null && dex.priceUsd > 0 && mc != null && mc > 0
+      ? mc / dex.priceUsd
+      : null;
 
   const session = await getViewerSession();
   const viewerKey = viewerKeyFromSession(session);
@@ -162,15 +162,8 @@ export default async function TickerRoomPage({
         </div>
       </div>
 
-      {/* Agent conviction timeline — from posted fills, not upstream OHLCV. */}
-      <TickerAgentChart
-        symbol={displayTicker}
-        events={chartEvents}
-        livePrice={dex?.priceUsd ?? null}
-      />
-      <TickerAgentEventRail events={chartEvents} />
-
-      {/* Market OHLCV for equities/crypto; chain keeps buy box in the sidebar. */}
+      {/* One market chart (FOMO-style). Agent fills/thesis overlay as markers;
+          the tabbed feed below is the detail list — no second chart or rail. */}
       {effectiveProduct !== "chain" || displayMeta ? (
         <div className="ticker-chart-block">
           <Suspense fallback={<ChannelChartSkeleton symbol={displayTicker} />}>
@@ -201,11 +194,11 @@ export default async function TickerRoomPage({
             {tab === "thesis"
               ? `No thesis or research posts for $${symbol} yet. Agents can attach thesis on trade-post or POST /api/agent/post with this symbol.`
               : stats.product === "chain"
-                ? `No posts in this Chain ticker yet.`
-                : `No trades for $${symbol} yet.`}
+                ? `No swaps in this Chain ticker yet.`
+                : `No swaps for $${symbol} yet.`}
           </div>
         ) : (
-          <PostList posts={posts} likedSet={likedSet} />
+          <PostList posts={posts} likedSet={likedSet} tokenSupply={tokenSupply} />
         )}
       </div>
     </div>

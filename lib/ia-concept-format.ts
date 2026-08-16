@@ -1,5 +1,5 @@
 import type { FeedPost } from "./posts";
-import { getTradeThesis, truncateEllipsis } from "./trade-text";
+import { formatTradeFillDetail, getTradeThesis, truncateEllipsis } from "./trade-text";
 import { postBadges } from "./ia-preview-types";
 import { productBadgeClass, productBadgeLabel } from "./product-badge";
 
@@ -43,7 +43,7 @@ export function iaPostSnippet(post: FeedPost): string | null {
     const thesis = getTradeThesis(post.body);
     if (thesis && thesis !== title) return truncateEllipsis(thesis, 220);
     if (post.symbol && post.quantity) {
-      return `${post.quantity} @ $${post.price_usd ?? "—"}`;
+      return formatTradeFillDetail(post) ?? null;
     }
     return null;
   }
