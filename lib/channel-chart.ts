@@ -93,6 +93,8 @@ export interface ThesisMarker {
   entry_price_usd: number;
   /** buy / sell — an undirected post is reported but not scored. */
   side: "buy" | "sell" | null;
+  /** Chart overlay bucket — FOMO-style swaps vs thesis toggles. */
+  kind: "swap" | "thesis";
   /** First line of the thesis, for the tooltip. */
   excerpt: string;
   /**
@@ -452,6 +454,8 @@ export function thesisMarkers(symbol: string, latestPrice: number | null, limit 
       at: asUtcIso(r.entry_price_at ?? r.created_at),
       entry_price_usd: entry,
       side,
+      kind:
+        r.type === "trade_fill" || r.type === "trade_intent" ? "swap" : "thesis",
       excerpt: r.body.split("\n")[0].slice(0, 140),
       // A post with no stated direction reports movement only. Scoring it would
       // mean guessing what the author meant, which is how a hedge becomes a win.

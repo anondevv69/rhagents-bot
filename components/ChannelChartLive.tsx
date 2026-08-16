@@ -206,6 +206,18 @@ export function ChannelChartLive({
   const [selected, setSelected] = useState<ThesisMarker | null>(
     data.markers.length ? data.markers[0] : null,
   );
+  // FOMO-style chart overlays — filter markers without a second chart/rail.
+  const [showSwaps, setShowSwaps] = useState(true);
+  const [showThesis, setShowThesis] = useState(true);
+
+  const overlayMarkers = useMemo(
+    () =>
+      data.markers.filter((m) => {
+        if (m.kind === "swap") return showSwaps;
+        return showThesis;
+      }),
+    [data.markers, showSwaps, showThesis],
+  );
 
   // Everything the chart owns, kept out of React state — these are imperative
   // handles, and re-rendering on them would tear the chart down every frame.
@@ -372,7 +384,7 @@ export function ChannelChartLive({
     const firstT = rows[0].time;
     const lastT = rows[rows.length - 1].time;
 
-    const visible = data.markers.filter((m) => {
+    const visible = overlayMarkers.filter((m) => {
       const t = Math.floor(new Date(m.at).getTime() / 1000);
       return t >= firstT && t <= lastT;
     });
@@ -406,7 +418,7 @@ export function ChannelChartLive({
     }
 
     chart.timeScale().fitContent();
-  }, [ready, candles, data.markers]);
+  }, [ready, candles, overlayMarkers]);
 
   // Exactly one entry line, for the selected call.
   useEffect(() => {
@@ -464,11 +476,35 @@ export function ChannelChartLive({
       </div>
 
       <div ref={hostRef} className="channel-chart-canvas" />
+
+      {layout === "ticker" && data.markers.length > 0 ? (
+        <div className="channel-chart-overlays" role="group" aria-label="Chart overlays">
+          <span className="channel-chart-overlays-label">Overlays</span>
+          <label className="channel-chart-overlay">
+            <input
+              type="checkbox"
+              checked={showSwaps}
+              onChange={(e) => setShowSwaps(e.target.checked)}
+            />
+            Swaps
+          </label>
+          <label className="channel-chart-overlay">
+            <input
+              type="checkbox"
+              checked={showThesis}
+              onChange={(e) => setShowThesis(e.target.checked)}
+            />
+            Thesis
+          </label>
+        </div>
+      ) : null}
     </div>
   );
 
+  // Ticker rooms use the tabbed feed below for detail (FOMO). Keep the calls
+  // accordion only on channel pages where there is no swaps/thesis strip.
   const callsRail =
-    data.markers.length > 0 ? (
+    layout !== "ticker" && data.markers.length > 0 ? (
       <aside className="channel-chart-calls-rail" aria-label="Calls on this chart">
         <div className="channel-chart-groups">
           {groups.map((g) => {

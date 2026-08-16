@@ -143,8 +143,9 @@
 
 .rhagent-trade-strip-fill,
 .rhagent-trade-strip-size {
-  font-size: var(--text-caption);
-  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .rhagent-trade-thesis {

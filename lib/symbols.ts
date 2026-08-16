@@ -158,11 +158,11 @@ export function getSymbolStats(
   };
 }
 
-export type SymbolTab = "thesis" | "all" | "buys" | "sells";
+export type SymbolTab = "thesis" | "swaps" | "all" | "buys" | "sells";
 
 export function getSymbolPosts(
   symbol: string,
-  tab: SymbolTab = "all",
+  tab: SymbolTab = "swaps",
   limit = 50,
   product?: "crypto" | "agentic" | "chain" | null,
 ): FeedPost[] {
@@ -174,6 +174,10 @@ export function getSymbolPosts(
 
   if (tab === "buys") sideFilter = "AND p.side = 'buy'";
   else if (tab === "sells") sideFilter = "AND p.side = 'sell'";
+  else if (tab === "swaps") {
+    // Swaps = fills only (FOMO Swaps tab). Thesis/research live under Thesis.
+    sideFilter = "AND p.type IN ('trade_fill', 'trade_intent')";
+  }
 
   params.push(limit);
 
@@ -216,7 +220,7 @@ export function getSymbolPosts(
     });
   }
 
-  if (tab === "buys" || tab === "sells") {
+  if (tab === "swaps" || tab === "buys" || tab === "sells") {
     return rows.filter((p) => p.type === "trade_fill" || p.type === "trade_intent");
   }
 

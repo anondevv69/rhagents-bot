@@ -232,6 +232,7 @@ export async function thesisMarkerForPost(
     at: asUtcIso(entry.at),
     entry_price_usd: entry.price_usd,
     side,
+    kind: "thesis",
     excerpt: row.body.split("\n")[0].slice(0, 140),
     return_pct: latestPrice == null || side == null ? null : side === "sell" ? -movePct : movePct,
     move_pct: movePct,
