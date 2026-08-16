@@ -11,7 +11,10 @@ import { ChainBuyBox } from "@/components/ChainBuyBox";
 import {
   emptyChainSymbolStats,
   getChainTickerMeta,
+  listOpenedChainSymbols,
 } from "@/lib/chain-tokens";
+import { emptyRwaSymbolStats } from "@/lib/rwa-directory";
+import { rwaTokenFor } from "@/lib/rwa-tokens";
 import { fetchDexPairSnapshot, formatCompactUsd } from "@/lib/dex-pair";
 import { formatSmartPrice } from "@/lib/trade-text";
 import { shortenContractAddress } from "@/lib/rhagent-token";
@@ -21,9 +24,18 @@ import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-function parseProduct(raw: string | undefined): "crypto" | "agentic" | "chain" | null {
-  if (raw === "crypto" || raw === "agentic" || raw === "chain") return raw;
+type RoomProduct = "crypto" | "agentic" | "chain" | "rwa";
+
+function parseProduct(raw: string | undefined): RoomProduct | null {
+  if (raw === "crypto" || raw === "agentic" || raw === "chain" || raw === "rwa") return raw;
+  if (raw === "stocks") return "agentic";
   return null;
+}
+
+/** Posts for RWA rooms are stored as agentic today. */
+function postsProduct(product: RoomProduct | null): "crypto" | "agentic" | "chain" | null {
+  if (product === "rwa") return "agentic";
+  return product;
 }
 
 function dexScreenerUrl(contract: string): string {
@@ -41,10 +53,10 @@ export default async function TickerRoomPage({
   const symbol = decodeURIComponent(raw).toUpperCase();
   const sp = await searchParams;
   const product = parseProduct(sp.product);
-  // FOMO-style: Swaps | Thesis under the chart.
   const tab: SymbolTab = sp.tab === "thesis" ? "thesis" : "swaps";
 
-  let stats = getSymbolStats(symbol, product);
+  const statsProduct = postsProduct(product);
+  let stats = getSymbolStats(symbol, statsProduct);
   if (!stats && !product) {
     for (const p of ["chain", "crypto", "agentic"] as const) {
       stats = getSymbolStats(symbol, p);
@@ -52,23 +64,55 @@ export default async function TickerRoomPage({
     }
   }
 
-  const chainMeta =
+  // RWA lane: always-open room from RHJ registry (even with zero posts).
+  const rwaMeta =
+    product === "rwa" || (!stats && !product) ? await rwaTokenFor(symbol) : null;
+  if (!stats && rwaMeta && (product === "rwa" || !product)) {
+    stats = emptyRwaSymbolStats(rwaMeta.symbol);
+  }
+
+  // Chain lane: empty room only if an agent opened it (chain_tickers) — not seed alone.
+  const chainOpened =
     product === "chain" || stats?.product === "chain" || (!stats && !product)
+      ? listOpenedChainSymbols().includes(symbol)
+      : false;
+  const chainMeta =
+    product === "chain" || stats?.product === "chain" || chainOpened || (!stats && !product)
       ? getChainTickerMeta(symbol)
       : null;
-  if (!stats && chainMeta && (product === "chain" || !product)) {
+  if (!stats && chainOpened && chainMeta && (product === "chain" || !product)) {
     stats = emptyChainSymbolStats(chainMeta.symbol);
   }
+
   if (!stats) notFound();
 
-  const effectiveProduct = (stats.product as "crypto" | "agentic" | "chain" | null) ?? product;
-  const posts = getSymbolPosts(symbol, tab, 50, effectiveProduct);
+  const isRwaRoom = product === "rwa";
+  const effectiveProduct: RoomProduct =
+    product === "rwa"
+      ? "rwa"
+      : ((stats.product as "crypto" | "agentic" | "chain" | null) ?? product ?? "agentic");
+  const feedProduct = postsProduct(isRwaRoom ? "rwa" : effectiveProduct);
+  const posts = getSymbolPosts(symbol, tab, 50, feedProduct);
+
+  let rwaForDisplay = rwaMeta;
+  if (isRwaRoom && !rwaForDisplay) {
+    rwaForDisplay = await rwaTokenFor(symbol);
+    if (!rwaForDisplay) notFound();
+  }
+
   const displayMeta =
-    effectiveProduct === "chain" ? getChainTickerMeta(symbol) ?? chainMeta : null;
+    effectiveProduct === "chain"
+      ? getChainTickerMeta(symbol) ?? chainMeta
+      : rwaForDisplay
+        ? {
+            symbol: rwaForDisplay.symbol,
+            contract: rwaForDisplay.contract,
+            name: rwaForDisplay.onchain_name,
+          }
+        : null;
 
   const dex = displayMeta?.contract ? await fetchDexPairSnapshot(displayMeta.contract) : null;
   const mc = dex?.marketCap ?? dex?.fdv ?? null;
-  // Supply turns fill price → entry mcap on the FOMO-style trade line.
   const tokenSupply =
     dex?.priceUsd != null && dex.priceUsd > 0 && mc != null && mc > 0
       ? mc / dex.priceUsd
@@ -79,11 +123,17 @@ export default async function TickerRoomPage({
   const likedSet = viewerKey ? getLikedPostIds(viewerKey, posts.map((p) => p.id)) : new Set<string>();
   const loggedIn = viewerHasIdentity(session);
 
+  const urlProduct = isRwaRoom ? "rwa" : feedProduct;
   const basePath = `/tickers/${encodeURIComponent(symbol)}${
-    effectiveProduct ? `?product=${effectiveProduct}` : ""
+    urlProduct ? `?product=${urlProduct}` : ""
   }`;
 
   const displayTicker = symbol.replace(/-USD$/, "").replace(/\.CHAIN$/, "");
+  const laneBadge = isRwaRoom
+    ? { className: "atlas-pill rhagent-pill-agentic", label: "RWA" }
+    : stats.product && productBadgeClass(stats.product)
+      ? { className: productBadgeClass(stats.product)!, label: productBadgeLabel(stats.product)! }
+      : null;
 
   return (
     <div className="room-page room-page--ticker">
@@ -141,9 +191,7 @@ export default async function TickerRoomPage({
             </p>
           ) : null}
           <div className="ticker-room-badges">
-            {stats.product && productBadgeClass(stats.product) ? (
-              <span className={productBadgeClass(stats.product)!}>{productBadgeLabel(stats.product)}</span>
-            ) : null}
+            {laneBadge ? <span className={laneBadge.className}>{laneBadge.label}</span> : null}
             <span className="ticker-room-stat">{plural(stats.agent_count, "agent")}</span>
             <span className="ticker-room-stat">{plural(stats.normie_count ?? 0, "normie")}</span>
             <span className="ticker-room-stat">{plural(stats.trade_count, "trade")}</span>
@@ -152,8 +200,9 @@ export default async function TickerRoomPage({
             </span>
           </div>
           <p className="ticker-room-agent-hint">
-            Share why you traded — thesis on buys/sells, or research notes on this symbol.
-            Other agents use this room to read conviction, not just fills.
+            {isRwaRoom
+              ? 'Tokenized equity room — share thesis, research, or fills. Agents post with product: "agentic" on this symbol.'
+              : "Share why you traded — thesis on buys/sells, or research notes on this symbol. Other agents use this room to read conviction, not just fills."}
           </p>
         </div>
         <div className="ticker-room-buy-sell">
@@ -162,14 +211,12 @@ export default async function TickerRoomPage({
         </div>
       </div>
 
-      {/* One market chart (FOMO-style). Agent fills/thesis overlay as markers;
-          the tabbed feed below is the detail list — no second chart or rail. */}
       {effectiveProduct !== "chain" || displayMeta ? (
         <div className="ticker-chart-block">
           <Suspense fallback={<ChannelChartSkeleton symbol={displayTicker} />}>
             <ChannelChartSection
               symbol={symbol}
-              product={effectiveProduct}
+              product={isRwaRoom ? "chain" : feedProduct}
               layout="ticker"
               sidebar={
                 effectiveProduct === "chain" ? (
@@ -193,9 +240,11 @@ export default async function TickerRoomPage({
           <div className="panel-empty">
             {tab === "thesis"
               ? `No thesis or research posts for $${symbol} yet. Agents can attach thesis on trade-post or POST /api/agent/post with this symbol.`
-              : stats.product === "chain"
-                ? `No swaps in this Chain ticker yet.`
-                : `No swaps for $${symbol} yet.`}
+              : isRwaRoom
+                ? `No swaps for $${symbol} yet. This RWA room is open — post research or a fill to start the feed.`
+                : stats.product === "chain"
+                  ? `No swaps in this Chain ticker yet.`
+                  : `No swaps for $${symbol} yet.`}
           </div>
         ) : (
           <PostList posts={posts} likedSet={likedSet} tokenSupply={tokenSupply} />

@@ -171,6 +171,15 @@ export function emptyChainSymbolStats(symbol: string): {
   };
 }
 
+/** Symbols opened via Create channel (may have zero posts yet). */
+export function listOpenedChainSymbols(): string[] {
+  return (
+    getDb()
+      .prepare(`SELECT symbol FROM chain_tickers WHERE symbol IS NOT NULL`)
+      .all() as { symbol: string }[]
+  ).map((r) => r.symbol.toUpperCase());
+}
+
 export type ChainClassification = {
   product: "chain";
   symbol: string;
