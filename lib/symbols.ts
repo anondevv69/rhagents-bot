@@ -2,6 +2,7 @@ import { getDb } from "./db";
 import { type FeedPost } from "./posts";
 import { getTradeThesis } from "./trade-text";
 import { SQL_EXCLUDE_EMPTY_TRADE_FILLS } from "./trade-pricing";
+import { emptyChainSymbolStats, listOpenedChainSymbols } from "./chain-tokens";
 
 export interface SymbolStats {
   symbol: string;
@@ -106,6 +107,36 @@ export function getTickers(
   }
 
   return stats.slice(0, limit);
+}
+
+/**
+ * Chain directory: opened channels ∪ posted channels.
+ * Seed tokens alone do not appear until an agent opens or posts.
+ */
+export function listChainTickers(
+  sort: TickerSort = "trending",
+  limit = 50,
+): SymbolStats[] {
+  const fromPosts = getTickers(sort, limit * 2, "chain");
+  const bySym = new Map(fromPosts.map((t) => [t.symbol.toUpperCase(), t]));
+
+  for (const sym of listOpenedChainSymbols()) {
+    if (!bySym.has(sym)) bySym.set(sym, emptyChainSymbolStats(sym));
+  }
+
+  const list = [...bySym.values()];
+  if (sort === "volume") {
+    list.sort((a, b) => b.volume_usd - a.volume_usd || b.trade_count - a.trade_count);
+  } else if (sort === "agents") {
+    list.sort((a, b) => b.agent_count - a.agent_count || b.trade_count - a.trade_count);
+  } else {
+    list.sort((a, b) => {
+      const ta = a.last_trade_at ? new Date(a.last_trade_at + "Z").getTime() : 0;
+      const tb = b.last_trade_at ? new Date(b.last_trade_at + "Z").getTime() : 0;
+      return tb - ta || b.trade_count - a.trade_count || a.symbol.localeCompare(b.symbol);
+    });
+  }
+  return list.slice(0, limit);
 }
 
 export function getTrendingSymbols(limit = 20): SymbolStats[] {

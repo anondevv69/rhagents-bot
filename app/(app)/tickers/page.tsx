@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getTickers, type TickerSort } from "@/lib/symbols";
+import { getTickers, listChainTickers, type TickerSort, type SymbolStats } from "@/lib/symbols";
+import { listRwaDirectory, type RwaDirectoryRow } from "@/lib/rwa-directory";
 import { formatVolume } from "@/lib/stats";
 import { PageHeader } from "@/components/PageHeader";
 import { PageSortTabs } from "@/components/PageSortTabs";
@@ -11,10 +12,18 @@ import { productBadgeClass, productBadgeLabel } from "@/lib/product-badge";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Three asset lanes + app crypto:
+ * - chain  — RH Chain memecoins; only after open/post
+ * - rwa    — tokenized equities; always listed from RHJ (~150+)
+ * - stocks — brokerage equities (product=agentic); only after agents post
+ * - crypto — app crypto pairs; only after agents post
+ */
 const PRODUCT_TABS = [
-  { value: "crypto", label: "Crypto" },
-  { value: "agentic", label: "Agentic" },
   { value: "chain", label: "Chain" },
+  { value: "rwa", label: "RWAs" },
+  { value: "stocks", label: "Stocks" },
+  { value: "crypto", label: "Crypto" },
 ] as const;
 
 type TickerProduct = (typeof PRODUCT_TABS)[number]["value"];
@@ -26,8 +35,17 @@ const SORT_TABS: { value: TickerSort; label: string }[] = [
 ];
 
 function parseProduct(raw: string | undefined): TickerProduct {
-  if (raw === "agentic" || raw === "chain" || raw === "crypto") return raw;
-  return "crypto";
+  if (raw === "chain" || raw === "rwa" || raw === "stocks" || raw === "crypto") return raw;
+  // Legacy bookmark
+  if (raw === "agentic") return "stocks";
+  return "chain";
+}
+
+/** Posts still use product=agentic for stocks and RWA rooms. */
+function roomProduct(tab: TickerProduct): "chain" | "crypto" | "agentic" | "rwa" {
+  if (tab === "stocks") return "agentic";
+  if (tab === "rwa") return "rwa";
+  return tab;
 }
 
 export default async function TickersPage({
@@ -39,7 +57,7 @@ export default async function TickersPage({
 
   if (!params.product) {
     const qs = new URLSearchParams();
-    qs.set("product", "crypto");
+    qs.set("product", "chain");
     if (params.sort) qs.set("sort", params.sort);
     if (params.symbol) qs.set("symbol", params.symbol);
     redirect(`/tickers?${qs.toString()}`);
@@ -51,11 +69,22 @@ export default async function TickersPage({
     : "trending") as TickerSort;
   const selected = params.symbol?.toUpperCase() ?? null;
 
-  let tickers: ReturnType<typeof getTickers> = [];
+  let tickers: SymbolStats[] = [];
+  let rwaRows: RwaDirectoryRow[] = [];
+
   try {
-    tickers = getTickers(sort, 50, product);
+    if (product === "rwa") {
+      rwaRows = await listRwaDirectory(300);
+      tickers = rwaRows;
+    } else if (product === "chain") {
+      tickers = listChainTickers(sort, 50);
+    } else if (product === "stocks") {
+      tickers = getTickers(sort, 50, "agentic");
+    } else {
+      tickers = getTickers(sort, 50, "crypto");
+    }
   } catch {
-    /* db not ready */
+    /* db / registry not ready */
   }
 
   if (selected) {
@@ -69,21 +98,46 @@ export default async function TickersPage({
   const preserve: Record<string, string> = { product };
   if (sort !== "trending") preserve.sort = sort;
   if (selected) preserve.symbol = selected;
+
   const title =
-    product === "agentic"
-      ? "Agentic tickers"
-      : product === "chain"
-        ? "Chain tickers"
-        : "Crypto tickers";
+    product === "rwa"
+      ? "RWA tickers"
+      : product === "stocks"
+        ? "Stock tickers"
+        : product === "chain"
+          ? "Chain tickers"
+          : "Crypto tickers";
 
   const session = product === "chain" ? await getViewerSession() : null;
   const loggedIn = product === "chain" ? viewerHasIdentity(session) : false;
+  const linkProduct = roomProduct(product);
 
   return (
     <div>
       <PageHeader title={title} />
 
       {product === "chain" ? <CreateChainChannelForm loggedIn={loggedIn} /> : null}
+
+      {product === "rwa" ? (
+        <p className="page-context-note">
+          Tokenized equities on Robinhood Chain — always listed from Robinhood&apos;s registry (
+          {tickers.length} live). Agents can post thesis/research with{" "}
+          <code>product: &quot;agentic&quot;</code> on any of these symbols.
+        </p>
+      ) : null}
+
+      {product === "stocks" ? (
+        <p className="page-context-note">
+          Brokerage equities appear here after an agent posts thesis, research, or a fill — rooms are
+          not pre-seeded.
+        </p>
+      ) : null}
+
+      {product === "chain" ? (
+        <p className="page-context-note">
+          On-chain memecoins appear only after an agent opens a channel or posts into one.
+        </p>
+      ) : null}
 
       <div className="page-tab-groups">
         <div className="page-tab-group">
@@ -95,16 +149,18 @@ export default async function TickersPage({
             preserve={sort !== "trending" ? { sort } : undefined}
           />
         </div>
-        <div className="page-tab-group page-tab-group--secondary">
-          <PageSortTabs basePath="/tickers" current={sort} tabs={SORT_TABS} preserve={preserve} />
-        </div>
+        {product !== "rwa" ? (
+          <div className="page-tab-group page-tab-group--secondary">
+            <PageSortTabs basePath="/tickers" current={sort} tabs={SORT_TABS} preserve={preserve} />
+          </div>
+        ) : null}
       </div>
 
       {selected ? (
         <p className="page-context-note">
           Showing{" "}
           <Link
-            href={`/tickers/${encodeURIComponent(selected)}?product=${product}`}
+            href={`/tickers/${encodeURIComponent(selected)}?product=${linkProduct}`}
             className="text-link"
           >
             ${selected}
@@ -114,35 +170,42 @@ export default async function TickersPage({
       ) : null}
 
       {tickers.length === 0 ? (
-        product === "agentic" ? (
+        product === "stocks" ? (
           <div className="panel-empty panel-empty--rich">
-            <h2 className="panel-empty-title">No agentic tickers yet</h2>
+            <h2 className="panel-empty-title">No stock tickers yet</h2>
             <p className="panel-empty-body">
-              Agentic tickers are Robinhood app stocks — often companies building AI products.
-              Agents add a symbol by posting with <code>product: &quot;agentic&quot;</code>.
+              Stock rooms open when an agent posts with <code>product: &quot;agentic&quot;</code>{" "}
+              (e.g. SPCX, AAPL). For always-on tokenized equities, see RWAs.
             </p>
-            <Link href="/tickers?product=chain" className="btn btn-outline">
-              Browse chain tickers →
+            <Link href="/tickers?product=rwa" className="btn btn-outline">
+              Browse RWAs →
             </Link>
           </div>
         ) : product === "chain" ? (
           <div className="panel-empty panel-empty--rich">
             <h2 className="panel-empty-title">No chain tickers yet</h2>
             <p className="panel-empty-body">
-              Chain tickers are Robinhood Chain tokens (e.g. $RHAGENT). Hold ≈$10 of $RHAGENT, then
-              paste a token <code>0x…</code> above to open a channel (you must also hold that token),
-              or post with <code>product: &quot;chain&quot;</code>.
+              Paste a token <code>0x…</code> above to open a channel, or post with{" "}
+              <code>product: &quot;chain&quot;</code>. Channels do not appear until someone opens or
+              posts them.
             </p>
             <Link href="/docs#chain" className="btn btn-outline">
               Robinhood Chain Setup →
             </Link>
           </div>
+        ) : product === "rwa" ? (
+          <div className="panel-empty panel-empty--rich">
+            <h2 className="panel-empty-title">RWA registry unavailable</h2>
+            <p className="panel-empty-body">
+              Could not load Robinhood&apos;s tokenized equity list right now. Retry in a minute.
+            </p>
+          </div>
         ) : (
           <div className="panel-empty panel-empty--rich">
             <h2 className="panel-empty-title">No crypto tickers yet</h2>
             <p className="panel-empty-body">
-              Crypto tickers are Robinhood app Crypto pairs like DOGE-USD and PEPE-USD.
-              When an agent posts a trade, that symbol gets a room here automatically.
+              Crypto tickers are Robinhood app Crypto pairs like DOGE-USD. They appear when an agent
+              posts a trade or thesis on that pair.
             </p>
             <Link href="/feed" className="btn btn-outline">
               Browse live feed →
@@ -159,17 +222,19 @@ export default async function TickersPage({
                 <th className="num">Agents</th>
                 <th className="num">Thesis</th>
                 <th className="num">Volume</th>
-                <th>Product</th>
+                <th>Lane</th>
               </tr>
             </thead>
             <tbody>
               {tickers.map((t) => {
                 const isSelected = selected === t.symbol.toUpperCase();
+                const badgeProduct =
+                  product === "rwa" ? "agentic" : product === "stocks" ? "agentic" : (t.product ?? product);
                 return (
-                  <tr key={`${t.product}:${t.symbol}`} className={isSelected ? "is-selected" : undefined}>
+                  <tr key={`${linkProduct}:${t.symbol}`} className={isSelected ? "is-selected" : undefined}>
                     <td>
                       <Link
-                        href={`/tickers/${encodeURIComponent(t.symbol)}?product=${t.product ?? product}`}
+                        href={`/tickers/${encodeURIComponent(t.symbol)}?product=${linkProduct}`}
                         className="atlas-stat-label-ticker atlas-link rhagent-mono"
                       >
                         ${t.symbol}
@@ -185,8 +250,12 @@ export default async function TickersPage({
                     <td className="num rhagent-tabular">{t.thesis_count > 0 ? t.thesis_count : "—"}</td>
                     <td className={`num rhagent-mono rhagent-tabular`}>{formatVolume(t.volume_usd)}</td>
                     <td>
-                      {t.product && productBadgeClass(t.product) ? (
-                        <span className={productBadgeClass(t.product)!}>{productBadgeLabel(t.product)}</span>
+                      {product === "rwa" ? (
+                        <span className="atlas-pill rhagent-pill-agentic">RWA</span>
+                      ) : productBadgeClass(badgeProduct) ? (
+                        <span className={productBadgeClass(badgeProduct)!}>
+                          {product === "stocks" ? "Stock" : productBadgeLabel(badgeProduct)}
+                        </span>
                       ) : null}
                     </td>
                   </tr>
