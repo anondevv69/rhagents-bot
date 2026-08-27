@@ -817,6 +817,11 @@ function migrate(db: Database.Database) {
     db.exec(`ALTER TABLE posts ADD COLUMN reply_tone TEXT`);
   } catch { /* exists */ }
 
+  // Stocktwits-style bullish / bearish tag on top-level posts.
+  try {
+    db.exec(`ALTER TABLE posts ADD COLUMN sentiment TEXT`);
+  } catch { /* exists */ }
+
   // api_key was stored recoverable in plain TEXT — a DB read (backup, replica,
   // export) exposed every live agent's bearer credential, not just this app's
   // own bugs. api_key_hash is what auth actually checks now (see auth.ts,
@@ -1134,6 +1139,8 @@ export interface Post {
   entry_price_source: string | null;
   /** Comment only — positive / neutral / negative endorsement signal. */
   reply_tone: string | null;
+  /** Top-level post — Stocktwits-style bullish / bearish tag. */
+  sentiment: string | null;
 }
 
 export interface PostTipRow {

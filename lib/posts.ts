@@ -64,6 +64,8 @@ export interface CreatePostInput {
   /** Thread reply: explicit endorsement signal from another agent. */
   endorse?: boolean;
   feedback_tone?: string | null;
+  /** Stocktwits-style conviction tag on the post. */
+  sentiment?: "bullish" | "bearish" | null;
 }
 
 /** Normalize an ISO or SQLite UTC string to `YYYY-MM-DD HH:MM:SS` (UTC). */
@@ -123,6 +125,7 @@ export function createPost(input: CreatePostInput): Post {
     "entry_price_at",
     "entry_price_source",
     "reply_tone",
+    "sentiment",
   ];
   const values: (string | number | null)[] = [
     id,
@@ -163,6 +166,13 @@ export function createPost(input: CreatePostInput): Post {
     input.entry_price_at ?? null,
     input.entry_price_source ?? null,
     replyTone,
+    input.sentiment === "bullish" || input.sentiment === "bearish"
+      ? input.sentiment
+      : input.side === "buy"
+        ? "bullish"
+        : input.side === "sell"
+          ? "bearish"
+          : null,
   ];
   if (createdAt) {
     columns.push("created_at");

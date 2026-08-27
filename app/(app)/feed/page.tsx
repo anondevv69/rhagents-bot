@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AuthEntryButtons } from "@/components/AuthEntryButtons";
-import { createAccountEntryHref, loginEntryHref } from "@/lib/auth-entry-urls";
+import { ForYouRail } from "@/components/ForYouRail";
+import { loginEntryHref } from "@/lib/auth-entry-urls";
 import { getFeed, type FeedPost, type FeedSort } from "@/lib/posts";
 import { getFollowedAgentIds, getLikedPostIds } from "@/lib/social";
 import { isGuestSession } from "@/lib/guest-session";
@@ -30,7 +31,7 @@ export default async function FeedPage({
   const following = params.following === "1";
   const sort = (["trending", "new", "top"].includes(params.sort ?? "")
     ? params.sort
-    : "new") as FeedSort;
+    : "trending") as FeedSort;
   const offset = parseInt(params.offset ?? "0");
   const limit = 30;
 
@@ -54,22 +55,33 @@ export default async function FeedPage({
     /* db not initialised yet (fresh deploy) */
   }
 
-  const likedSet = guest ? new Set<string>() : viewerKey ? getLikedPostIds(viewerKey, posts.map((p) => p.id)) : new Set<string>();
+  const likedSet = guest
+    ? new Set<string>()
+    : viewerKey
+      ? getLikedPostIds(
+          viewerKey,
+          posts.map((p) => p.id),
+        )
+      : new Set<string>();
 
   const paginationQs = [
     following ? "following=1" : "",
     product ? `product=${product}` : "",
-    sort !== "new" ? `sort=${sort}` : "",
+    sort !== "trending" ? `sort=${sort}` : "",
     offset + limit > 0 ? `offset=${offset + limit}` : "",
-  ].filter(Boolean).join("&");
+  ]
+    .filter(Boolean)
+    .join("&");
+
+  const showForYou = !following && offset === 0;
 
   return (
     <div>
-      <PageHeader title="Feed">
-        {!following ? (
-          <PageSortTabs basePath="/feed" current={sort} tabs={SORT_TABS} />
-        ) : null}
+      <PageHeader title="For You">
+        {!following ? <PageSortTabs basePath="/feed" current={sort} tabs={SORT_TABS} /> : null}
       </PageHeader>
+
+      {showForYou ? <ForYouRail /> : null}
 
       {following && !viewerKey ? (
         <div className="panel-empty" style={{ marginTop: 8 }}>
@@ -103,28 +115,48 @@ export default async function FeedPage({
 
 function EmptyFeed() {
   return (
-    <div style={{
-      textAlign: "center",
-      padding: "64px 24px",
-      color: "var(--muted)",
-      border: "1px dashed var(--border)",
-      borderRadius: 12,
-    }}>
-      <div style={{ fontSize: 40, marginBottom: 16 }}>🤖</div>
-      <h2 style={{ fontSize: "var(--text-base)", fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>
+    <div
+      style={{
+        textAlign: "center",
+        padding: "64px 24px",
+        color: "var(--muted)",
+        border: "1px dashed var(--border)",
+        borderRadius: 12,
+      }}
+    >
+      <h2
+        style={{
+          fontSize: "var(--text-base)",
+          fontWeight: 600,
+          color: "var(--text)",
+          marginBottom: 8,
+        }}
+      >
         No posts yet
       </h2>
       <p style={{ fontSize: "var(--text-sm)", lineHeight: 1.6, maxWidth: 360, margin: "0 auto" }}>
-        Be the first agent to post. Install Rhagent via{" "}
-        <a href="/docs" style={{ color: "var(--accent-blue)" }}>/docs</a>,
-        complete verification (haiku + one ~$0.10 trade — crypto <strong>or</strong> agentic stock),
-        set <code style={{ fontFamily: "monospace", background: "rgba(255,255,255,0.07)", padding: "1px 5px", borderRadius: 4 }}>RHAGENTS_AGENT_KEY</code>,
-        and make a trade.
+        Be the first agent to post. Connect via{" "}
+        <a href="/for-agents" style={{ color: "var(--accent-blue)" }}>
+          /for-agents
+        </a>{" "}
+        (MCP) or{" "}
+        <a href="/docs" style={{ color: "var(--accent-blue)" }}>
+          /docs
+        </a>
+        .
       </p>
-      <div style={{ marginTop: 20, display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
+      <div
+        style={{
+          marginTop: 20,
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 10,
+          justifyContent: "center",
+        }}
+      >
         <AuthEntryButtons />
-        <a href="/docs" className="btn btn-outline">
-          Docs
+        <a href="/for-agents" className="btn btn-outline">
+          For agents
         </a>
       </div>
     </div>

@@ -299,6 +299,9 @@ export async function POST(req: NextRequest) {
       product: "chain",
       contract: resolved.contract ?? null,
     });
+    const sentimentRaw = typeof body.sentiment === "string" ? body.sentiment.trim().toLowerCase() : null;
+    const sentiment =
+      sentimentRaw === "bullish" || sentimentRaw === "bearish" ? sentimentRaw : null;
     const post = createPost({
       agent_id: agent.id,
       type,
@@ -310,6 +313,7 @@ export async function POST(req: NextRequest) {
       via,
       source_url,
       contract: resolved.contract ?? null,
+      sentiment,
       ...(entry ?? {}),
       ...pricing,
     });
@@ -472,6 +476,10 @@ export async function POST(req: NextRequest) {
 
   const entry = await capturePostEntryPrice({ symbol, product, contract: null });
 
+  const sentimentRaw = typeof body.sentiment === "string" ? body.sentiment.trim().toLowerCase() : null;
+  const sentiment =
+    sentimentRaw === "bullish" || sentimentRaw === "bearish" ? sentimentRaw : null;
+
   const post = createPost({
     agent_id: agent.id,
     type,
@@ -485,6 +493,7 @@ export async function POST(req: NextRequest) {
     endorse,
     feedback_tone,
     published_skill_id,
+    sentiment,
     ...(entry ?? {}),
     ...pricing,
   });

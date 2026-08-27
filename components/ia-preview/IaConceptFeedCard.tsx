@@ -27,6 +27,9 @@ import { iaAgentName, iaPostSnippet, iaPostTitle } from "@/lib/ia-concept-format
 import { AuthorKindBadge } from "@/components/AuthorKindBadge";
 import { isOperatorAuthored } from "@/lib/author-kind";
 import { ATLAS_MONO, atlasFeedCardClass, atlasSideBadgeClass } from "@/lib/atlas-classes";
+import { effectiveSentiment } from "@/lib/symbol-pulse";
+import { scoreAgainstLivePrice } from "@/lib/thesis-score-sync";
+import { formatPct } from "@/lib/format-price";
 
 function isTradePost(post: FeedPost): boolean {
   return post.type === "trade_fill" || post.type === "trade_intent";
@@ -44,6 +47,7 @@ export function IaConceptFeedCard({
   topReply,
   /** Circulating supply — when set, fill line shows size @ entry mcap (FOMO). */
   tokenSupply = null,
+  livePrice = null,
 }: {
   post: FeedPost;
   profileHref?: (username: string) => string;
@@ -55,6 +59,7 @@ export function IaConceptFeedCard({
   fullBody?: boolean;
   topReply?: FeedPost | null;
   tokenSupply?: number | null;
+  livePrice?: number | null;
 }) {
   const profileSlug = post.agent_username ?? post.agent_id;
   const name = iaAgentName(post);
@@ -82,6 +87,15 @@ export function IaConceptFeedCard({
   const fillDetail = showTradeStrip
     ? formatTradeFillDetail(post, { supply: tokenSupply })
     : null;
+  const sentiment = effectiveSentiment(post);
+  const thesisScore =
+    livePrice != null
+      ? scoreAgainstLivePrice({
+          entry_price_usd: post.entry_price_usd ?? post.price_usd,
+          side: post.side,
+          livePrice,
+        })
+      : null;
   const chainContract =
     post.product === "chain"
       ? post.contract && /^0x[a-fA-F0-9]{40}$/i.test(post.contract)
@@ -136,9 +150,32 @@ export function IaConceptFeedCard({
         ) : null}
       </div>
 
-      {isOperatorAuthored(post) ? (
+      {sentiment || thesisScore || isOperatorAuthored(post) ? (
         <div className="rhagent-feed-card-badges-row">
-          <AuthorKindBadge post={post} ownerHandle={post.agent_owner_x_handle} />
+          {sentiment ? (
+            <span
+              className={`atlas-pill ${sentiment === "bullish" ? "rhagent-pill-bull" : "rhagent-pill-bear"}`}
+            >
+              {sentiment === "bullish" ? "Bullish" : "Bearish"}
+            </span>
+          ) : null}
+          {thesisScore && thesisScore.verdict !== "unscored" ? (
+            <span
+              className={`rhagent-thesis-score ${
+                thesisScore.verdict === "right"
+                  ? "is-up"
+                  : thesisScore.verdict === "wrong"
+                    ? "is-down"
+                    : ""
+              }`}
+              title="Asset move since entry — not position PnL"
+            >
+              {formatPct(thesisScore.return_pct)} since call
+            </span>
+          ) : null}
+          {isOperatorAuthored(post) ? (
+            <AuthorKindBadge post={post} ownerHandle={post.agent_owner_x_handle} />
+          ) : null}
         </div>
       ) : null}
 

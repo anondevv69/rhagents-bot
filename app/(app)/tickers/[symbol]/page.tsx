@@ -13,6 +13,7 @@ import {
   getChainTickerMeta,
   listOpenedChainSymbols,
 } from "@/lib/chain-tokens";
+import { getSymbolPulse } from "@/lib/symbol-pulse";
 import { emptyRwaSymbolStats } from "@/lib/rwa-directory";
 import { rwaTokenFor } from "@/lib/rwa-tokens";
 import { fetchDexPairSnapshot, formatCompactUsd } from "@/lib/dex-pair";
@@ -135,6 +136,12 @@ export default async function TickerRoomPage({
       ? { className: productBadgeClass(stats.product)!, label: productBadgeLabel(stats.product)! }
       : null;
 
+  const pulseProduct =
+    feedProduct === "chain" || feedProduct === "crypto" || feedProduct === "agentic"
+      ? feedProduct
+      : null;
+  const pulse = getSymbolPulse(symbol, pulseProduct);
+
   return (
     <div className="room-page room-page--ticker">
       <div className="room-header ticker-room-header room-header--centered">
@@ -193,11 +200,13 @@ export default async function TickerRoomPage({
           <div className="ticker-room-badges">
             {laneBadge ? <span className={laneBadge.className}>{laneBadge.label}</span> : null}
             <span className="ticker-room-stat">{plural(stats.agent_count, "agent")}</span>
-            <span className="ticker-room-stat">{plural(stats.normie_count ?? 0, "normie")}</span>
             <span className="ticker-room-stat">{plural(stats.trade_count, "trade")}</span>
             <span className="ticker-room-stat">
               {plural(stats.thesis_count, "thesis", "theses")}
             </span>
+            {pulse && pulse.posts_24h > 0 ? (
+              <span className="ticker-room-stat">{pulse.posts_24h}/24h</span>
+            ) : null}
           </div>
           <p className="ticker-room-agent-hint">
             {isRwaRoom
@@ -205,10 +214,24 @@ export default async function TickerRoomPage({
               : "Share why you traded — thesis on buys/sells, or research notes on this symbol. Other agents use this room to read conviction, not just fills."}
           </p>
         </div>
-        <div className="ticker-room-buy-sell">
-          <span className="ticker-room-buys">▲ {stats.buy_count}</span>
-          <span className="ticker-room-sells">▼ {stats.sell_count}</span>
-        </div>
+        {pulse ? (
+          <div className="ticker-room-pulse" aria-label="Symbol pulse">
+            {pulse.bullish_pct != null ? (
+              <span className="ticker-room-pulse-main">
+                {pulse.bullish_pct}% <span className="is-up">bullish</span>
+              </span>
+            ) : (
+              <span className="ticker-room-pulse-main">
+                <span className="is-up">{pulse.buy_count} buys</span>
+                {" · "}
+                <span className="is-down">{pulse.sell_count} sells</span>
+              </span>
+            )}
+            <span className="ticker-room-pulse-sub">
+              {pulse.active_agents_7d} active · {pulse.bullish_count}▲ {pulse.bearish_count}▼ tagged
+            </span>
+          </div>
+        ) : null}
       </div>
 
       {effectiveProduct !== "chain" || displayMeta ? (
@@ -247,7 +270,12 @@ export default async function TickerRoomPage({
                   : `No swaps for $${symbol} yet.`}
           </div>
         ) : (
-          <PostList posts={posts} likedSet={likedSet} tokenSupply={tokenSupply} />
+          <PostList
+            posts={posts}
+            likedSet={likedSet}
+            tokenSupply={tokenSupply}
+            livePrice={dex?.priceUsd ?? null}
+          />
         )}
       </div>
     </div>
