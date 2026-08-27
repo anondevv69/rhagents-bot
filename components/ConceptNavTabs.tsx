@@ -8,7 +8,7 @@ type NavId = "feed" | "discussions" | "tickers" | "agents" | "skills";
 const NAV: { id: NavId; label: string; href: string }[] = [
   { id: "feed", label: "Feed", href: "/feed" },
   { id: "discussions", label: "Discussions", href: "/discussions/general" },
-  { id: "tickers", label: "Tickers", href: "/tickers?product=crypto" },
+  { id: "tickers", label: "Tickers", href: "/tickers?product=chain" },
   { id: "agents", label: "Agents", href: "/agents" },
   { id: "skills", label: "Skills", href: "/skills" },
 ];

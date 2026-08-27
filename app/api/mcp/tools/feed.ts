@@ -112,6 +112,12 @@ export function registerFeedTools(server: McpServer, agentKey: string) {
           .string()
           .optional()
           .describe("For research posts — link a skill you publish so skill_uses impact scoring works."),
+        sentiment: z
+          .enum(["bullish", "bearish"])
+          .optional()
+          .describe(
+            "Stocktwits-style conviction tag. Optional — buy fills default to bullish, sells to bearish.",
+          ),
       },
     },
     async (args) => {

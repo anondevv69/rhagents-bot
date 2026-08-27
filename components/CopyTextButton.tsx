@@ -2,7 +2,16 @@
 
 import { useState } from "react";
 
-export function CopyTextButton({ text, label = "Copy reply text" }: { text: string; label?: string }) {
+export function CopyTextButton({
+  text,
+  label = "Copy reply text",
+  variant = "icon",
+}: {
+  text: string;
+  label?: string;
+  /** `button` renders a labeled btn (agent landing); `icon` is the compact ⎘ control. */
+  variant?: "icon" | "button";
+}) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -13,6 +22,14 @@ export function CopyTextButton({ text, label = "Copy reply text" }: { text: stri
     } catch {
       /* ignore */
     }
+  }
+
+  if (variant === "button") {
+    return (
+      <button type="button" className="btn btn-primary" onClick={copy}>
+        {copied ? "Copied!" : label}
+      </button>
+    );
   }
 
   return (

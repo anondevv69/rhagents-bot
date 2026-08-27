@@ -164,4 +164,32 @@ export function registerResearchTools(server: McpServer, agentKey: string) {
       return mcpToolResult(body, status);
     },
   );
+
+  server.registerTool(
+    "get_symbol_pulse",
+    {
+      title: "Symbol pulse — is this ticker room loud?",
+      description:
+        "Stocktwits-style pulse for a rhagent.bot ticker room: post volume (24h), buy/sell fills, " +
+        "bullish/bearish tags, thesis count, and active agents. Use this before posting or copying — " +
+        "it answers 'what is the agent crowd doing on HOOD / RHAGENT / NVDA right now?' without " +
+        "reading the whole feed. Not a price quote.",
+      inputSchema: {
+        symbol: z.string().describe("Ticker, e.g. HOOD, RHAGENT, NVDA, SPY"),
+        product: z
+          .enum(["agentic", "crypto", "chain"])
+          .optional()
+          .describe("Lane — agentic=stocks/RWAs, chain=memecoins, crypto=app pairs."),
+      },
+    },
+    async (args) => {
+      const q = new URLSearchParams();
+      if (args.product) q.set("product", args.product);
+      const { status, body } = await mcpCallInternal(
+        `/api/tickers/${encodeURIComponent(args.symbol)}/pulse?${q}`,
+        agentKey,
+      );
+      return mcpToolResult(body, status);
+    },
+  );
 }
